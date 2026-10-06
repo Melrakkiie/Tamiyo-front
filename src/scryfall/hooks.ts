@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { autocompleteCardNames, fetchCardsByIds, imageUrl, searchPrintings } from './client';
+import { autocompleteCardNames, type CardArt, cardArt, fetchCardsByIds, imageUrl, searchPrintings } from './client';
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
@@ -28,6 +28,25 @@ export function useScryfallCard(scryfallId: string | null | undefined) {
     queryKey: ['scryfall', 'card', scryfallId],
     queryFn: async () => (await fetchCardsByIds([scryfallId ?? '']))[0] ?? null,
     enabled: !!scryfallId,
+    staleTime: ONE_DAY,
+    gcTime: ONE_DAY,
+  });
+}
+
+export function useCardArts(scryfallIds: (string | null | undefined)[]) {
+  const ids = [...new Set(scryfallIds.filter((id): id is string => !!id))].sort();
+
+  return useQuery({
+    queryKey: ['scryfall', 'arts', ids],
+    queryFn: async () => {
+      const cards = await fetchCardsByIds(ids);
+      const arts: Record<string, CardArt | null> = {};
+      for (const card of cards) {
+        arts[card.id] = cardArt(card);
+      }
+      return arts;
+    },
+    enabled: ids.length > 0,
     staleTime: ONE_DAY,
     gcTime: ONE_DAY,
   });

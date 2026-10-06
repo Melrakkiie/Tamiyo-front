@@ -2056,6 +2056,16 @@ export interface components {
             name: string;
             format: string;
             commander_id?: number | null;
+            /**
+             * Format: uuid
+             * @description Scryfall id of the printing whose art (art_crop) is shown behind the deck, null when none was chosen.
+             */
+            background_scryfall_id?: string | null;
+            /**
+             * Format: uuid
+             * @description Scryfall id of the commander card, null without a commander.
+             */
+            readonly commander_scryfall_id?: string | null;
             card_count: number;
             added: string;
             updated: string;
@@ -2071,6 +2081,8 @@ export interface components {
             name: string;
             format: string;
             commander_id?: number;
+            /** Format: uuid */
+            background_scryfall_id?: string;
         };
         /** @description All fields optional; only included fields are modified. */
         UpdateDeckRequest: {
@@ -2079,6 +2091,10 @@ export interface components {
             commander_id?: number;
             /** @description Set to true to explicitly clear commander_id (set it to null). */
             clear_commander_id?: boolean;
+            /** Format: uuid */
+            background_scryfall_id?: string;
+            /** @description Set to true to remove the chosen art (set background_scryfall_id to null). */
+            clear_background_scryfall_id?: boolean;
         };
         /** @description Result of a bulk import. A malformed or unresolvable row never aborts the whole import — it's recorded as a skipped card with a warning instead. */
         ImportSummary: {

@@ -10,6 +10,7 @@ type ImageSize = 'small' | 'normal';
 interface ImageUris {
   small: string;
   normal: string;
+  art_crop?: string;
 }
 
 export interface ScryfallCard {
@@ -27,11 +28,13 @@ export interface ScryfallCard {
   power?: string;
   toughness?: string;
   colors?: string[];
+  artist?: string;
   legalities?: Record<string, string>;
   image_uris?: ImageUris;
   card_faces?: {
     image_uris?: ImageUris;
     colors?: string[];
+    artist?: string;
     type_line?: string;
     oracle_text?: string;
     power?: string;
@@ -65,6 +68,20 @@ async function scryfall<T>(pathOrUrl: string, init?: RequestInit): Promise<T | n
 
 export function imageUrl(card: ScryfallCard, size: ImageSize): string | undefined {
   return card.image_uris?.[size] ?? card.card_faces?.[0]?.image_uris?.[size];
+}
+
+export interface CardArt {
+  url: string;
+  artist: string | null;
+}
+
+export function cardArt(card: ScryfallCard): CardArt | null {
+  const face = card.card_faces?.[0];
+  const url = card.image_uris?.art_crop ?? face?.image_uris?.art_crop;
+  if (!url) {
+    return null;
+  }
+  return { url, artist: card.artist ?? face?.artist ?? null };
 }
 
 export function cardColors(card: ScryfallCard): string[] {

@@ -36,12 +36,14 @@ import {
 } from '../cards/grouping';
 import { MissingDetailsAlert } from '../cards/MissingDetailsAlert';
 import { AddToDeckModal } from '../decks/AddToDeckModal';
+import { artBackground, artCredit, deckArtId } from '../decks/art';
+import { ArtPickerModal } from '../decks/ArtPickerModal';
 import { isCommanderFormat, useDeck, useDeckCards, useDeleteDeck, useUpdateDeck } from '../decks/api';
 import { DeckCardModal } from '../decks/DeckCardModal';
 import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckLegalityPanel } from '../decks/DeckLegalityPanel';
 import { DeckStatsPanel } from '../decks/DeckStatsPanel';
-import { useCardImages } from '../scryfall/hooks';
+import { useCardArts, useCardImages } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
 
 const sortOptions: { value: DeckCardSort; label: string }[] = [
@@ -67,6 +69,10 @@ function DeckView({ id }: { id: number }) {
   const [editOpened, setEditOpened] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [tab, setTab] = useState<string | null>('cards');
+  const [artPickerOpened, setArtPickerOpened] = useState(false);
+  const artId = deck.data ? deckArtId(deck.data) : null;
+  const arts = useCardArts([artId]);
+  const art = artId ? (arts.data?.[artId] ?? null) : null;
 
   function closeEdit() {
     setEditOpened(false);
@@ -116,36 +122,51 @@ function DeckView({ id }: { id: number }) {
 
       {deck.error && <Alert color="orange">{errorMessage(deck.error)}</Alert>}
 
-      <Group justify="space-between" align="flex-start">
-        <Group gap="sm">
-          <Title order={2}>{current.name}</Title>
-          <Badge variant="light">{current.format}</Badge>
-        </Group>
-        <Group gap="xs">
-          <Button variant="default" onClick={() => setEditOpened(true)}>
-            Modifier
-          </Button>
-          {confirmingDelete ? (
-            <>
-              <Button color="red" onClick={deleteDeck} loading={remove.isPending}>
-                Confirmer la suppression
-              </Button>
-              <Button variant="default" onClick={() => setConfirmingDelete(false)}>
-                Annuler
-              </Button>
-            </>
-          ) : (
-            <Button color="red" variant="subtle" onClick={() => setConfirmingDelete(true)}>
-              Supprimer
+      <Paper
+        radius="md"
+        p={art ? 'lg' : 0}
+        mih={art ? 200 : undefined}
+        style={art ? { ...artBackground(art.url, 'light'), display: 'flex', flexDirection: 'column' } : undefined}
+      >
+        <Group justify="space-between" align="flex-start" style={art ? { marginTop: 'auto' } : undefined}>
+          <Group gap="sm">
+            <Title order={2} c={art ? 'white' : undefined}>
+              {current.name}
+            </Title>
+            <Badge variant={art ? 'white' : 'light'}>{current.format}</Badge>
+          </Group>
+          <Group gap="xs">
+            <Button variant="default" onClick={() => setArtPickerOpened(true)}>
+              Illustration
             </Button>
-          )}
+            <Button variant="default" onClick={() => setEditOpened(true)}>
+              Modifier
+            </Button>
+            {confirmingDelete ? (
+              <>
+                <Button color="red" onClick={deleteDeck} loading={remove.isPending}>
+                  Confirmer la suppression
+                </Button>
+                <Button variant="default" onClick={() => setConfirmingDelete(false)}>
+                  Annuler
+                </Button>
+              </>
+            ) : (
+              <Button color="red" variant={art ? 'filled' : 'subtle'} onClick={() => setConfirmingDelete(true)}>
+                Supprimer
+              </Button>
+            )}
+          </Group>
         </Group>
-      </Group>
+        {art && (
+          <Text size="xs" c="gray.4" ta="right" mt="xs">
+            {artCredit(art.artist)}
+          </Text>
+        )}
+      </Paper>
 
       {confirmingDelete && (
-        <Alert color="orange">
-          Supprimer ce deck ne supprime pas ses cartes : elles restent dans ta collection.
-        </Alert>
+        <Alert color="orange">Supprimer ce deck ne supprime pas ses cartes : elles restent dans ta collection.</Alert>
       )}
       {remove.error && <Alert color="red">{errorMessage(remove.error)}</Alert>}
 
@@ -169,6 +190,7 @@ function DeckView({ id }: { id: number }) {
         </Tabs.Panel>
       </Tabs>
 
+      <ArtPickerModal deck={current} opened={artPickerOpened} onClose={() => setArtPickerOpened(false)} />
       <DeckFormModal
         opened={editOpened}
         onClose={closeEdit}
