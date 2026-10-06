@@ -1,0 +1,100 @@
+import { ApiError } from '../api/errors';
+
+const SCRYFALL_API = 'https://api.scryfall.com';
+const COLLECTION_BATCH_SIZE = 75;
+const MAX_SEARCH_PAGES = 5;
+const DELAY_BETWEEN_REQUESTS_MS = 100;
+
+type ImageSize = 'small' | 'normal';
+
+interface ImageUris {
+  small: string;
+  normal: string;
+}
+
+export interface ScryfallCard {
+  id: string;
+  oracle_id?: string;
+  name: string;
+  set: string;
+  set_name: string;
+  collector_number: string;
+  cmc?: number;
+  released_at: string;
+  finishes?: string[];
+  image_uris?: ImageUris;
+  card_faces?: { image_uris?: ImageUris }[];
+}
+
+interface ScryfallList<T> {
+  data: T[];
+  has_more?: boolean;
+  next_page?: string;
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function scryfall<T>(pathOrUrl: string, init?: RequestInit): Promise<T | null> {
+  const url = pathOrUrl.startsWith('https://') ? pathOrUrl : `${SCRYFALL_API}${pathOrUrl}`;
+  const headers: Record<string, string> = init?.body ? { 'Content-Type': 'application/json' } : {};
+
+  const response = await fetch(url, { ...init, headers });
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new ApiError(response.status, 'Scryfall request failed');
+  }
+  return (await response.json()) as T;
+}
+
+export function imageUrl(card: ScryfallCard, size: ImageSize): string | undefined {
+  return card.image_uris?.[size] ?? card.card_faces?.[0]?.image_uris?.[size];
+}
+
+export async function autocompleteCardNames(query: string): Promise<string[]> {
+  const result = await scryfall<ScryfallList<string>>(
+    `/cards/autocomplete?q=${encodeURIComponent(query)}`,
+  );
+  return result?.data ?? [];
+}
+
+export async function searchPrintings(name: string): Promise<ScryfallCard[]> {
+  const card = await scryfall<ScryfallCard>(`/cards/named?exact=${encodeURIComponent(name)}`);
+  if (!card?.oracle_id) {
+    return [];
+  }
+
+  const query = encodeURIComponent(`oracleid:${card.oracle_id} game:paper`);
+  const printings: ScryfallCard[] = [];
+  let next: string | undefined = `/cards/search?q=${query}&unique=prints&order=released&dir=desc`;
+
+  for (let page = 0; next && page < MAX_SEARCH_PAGES; page++) {
+    if (page > 0) {
+      await delay(DELAY_BETWEEN_REQUESTS_MS);
+    }
+    const result: ScryfallList<ScryfallCard> | null = await scryfall<ScryfallList<ScryfallCard>>(next);
+    printings.push(...(result?.data ?? []));
+    next = result?.has_more ? result.next_page : undefined;
+  }
+
+  return printings;
+}
+
+export async function fetchCardsByIds(ids: string[]): Promise<ScryfallCard[]> {
+  const cards: ScryfallCard[] = [];
+  for (let start = 0; start < ids.length; start += COLLECTION_BATCH_SIZE) {
+    if (start > 0) {
+      await delay(500);
+    }
+    const identifiers = ids.slice(start, start + COLLECTION_BATCH_SIZE).map((id) => ({ id }));
+    const result = await scryfall<ScryfallList<ScryfallCard>>('/cards/collection', {
+      method: 'POST',
+      body: JSON.stringify({ identifiers }),
+    });
+    cards.push(...(result?.data ?? []));
+  }
+  return cards;
+}

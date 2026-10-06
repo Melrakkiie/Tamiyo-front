@@ -1,4 +1,4 @@
-import { AppShell, Burger, Button, Group, Menu, NavLink, Title } from '@mantine/core';
+import { AppShell, Burger, Button, Group, Menu, NavLink, Text, Title } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Link, Outlet, useLocation } from 'react-router';
 
@@ -12,7 +12,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Accueil', to: '/', ready: true },
-  { label: 'Collection', to: '/cards', ready: false },
+  { label: 'Collection', to: '/cards', ready: true },
   { label: 'Rangements', to: '/storages', ready: false },
   { label: 'Decks', to: '/decks', ready: false },
   { label: 'Import / export', to: '/import-export', ready: false },
@@ -72,6 +72,11 @@ export function AppLayout() {
 
       <AppShell.Main>
         <Outlet />
+        <Text size="xs" c="dimmed" ta="center" mt="xl">
+          Tamiyo is unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by
+          Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast
+          LLC.
+        </Text>
       </AppShell.Main>
     </AppShell>
   );

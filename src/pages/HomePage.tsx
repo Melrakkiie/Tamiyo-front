@@ -1,26 +1,53 @@
-import { Card, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { Badge, Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { Link } from 'react-router';
 
-const upcoming = [
-  { title: 'Collection', text: 'Tes cartes, avec leurs images, triées et filtrées.' },
+interface Section {
+  title: string;
+  text: string;
+  to?: string;
+}
+
+const sections: Section[] = [
+  { title: 'Collection', text: 'Tes cartes, avec leurs images, triées et filtrées.', to: '/cards' },
   { title: 'Rangements', text: 'Classeurs, boîtes et deckboxes, et ce qu’ils contiennent.' },
   { title: 'Decks', text: 'Tes decks, leur légalité par format et leurs statistiques.' },
   { title: 'Import / export', text: 'Depuis et vers ManaBox et Moxfield.' },
 ];
 
+function SectionContent({ section }: { section: Section }) {
+  return (
+    <>
+      <Group justify="space-between" wrap="nowrap">
+        <Text fw={600}>{section.title}</Text>
+        {!section.to && (
+          <Badge variant="light" color="gray">
+            Bientôt
+          </Badge>
+        )}
+      </Group>
+      <Text size="sm" c="dimmed">
+        {section.text}
+      </Text>
+    </>
+  );
+}
+
 export function HomePage() {
   return (
     <Stack>
       <Title order={2}>Bienvenue sur Tamiyo</Title>
-      <Text c="dimmed">Les sections suivantes arrivent bientôt.</Text>
       <SimpleGrid cols={{ base: 1, sm: 2 }}>
-        {upcoming.map((section) => (
-          <Card key={section.title} withBorder>
-            <Text fw={600}>{section.title}</Text>
-            <Text size="sm" c="dimmed">
-              {section.text}
-            </Text>
-          </Card>
-        ))}
+        {sections.map((section) =>
+          section.to ? (
+            <Card key={section.title} withBorder component={Link} to={section.to}>
+              <SectionContent section={section} />
+            </Card>
+          ) : (
+            <Card key={section.title} withBorder>
+              <SectionContent section={section} />
+            </Card>
+          ),
+        )}
       </SimpleGrid>
     </Stack>
   );

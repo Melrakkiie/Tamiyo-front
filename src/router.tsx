@@ -3,6 +3,7 @@ import { createBrowserRouter } from 'react-router';
 import { GuestOnly, RequireAuth } from './auth/guards';
 import { AppLayout } from './layout/AppLayout';
 import { AuthLayout } from './layout/AuthLayout';
+import { CollectionPage } from './pages/CollectionPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: '/', element: <HomePage /> },
+          { path: '/cards', element: <CollectionPage /> },
           { path: '/settings', element: <SettingsPage /> },
         ],
       },
