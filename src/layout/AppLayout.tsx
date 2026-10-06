@@ -14,7 +14,7 @@ const navItems: NavItem[] = [
   { label: 'Accueil', to: '/', ready: true },
   { label: 'Collection', to: '/cards', ready: true },
   { label: 'Rangements', to: '/storages', ready: true },
-  { label: 'Decks', to: '/decks', ready: false },
+  { label: 'Decks', to: '/decks', ready: true },
   { label: 'Import / export', to: '/import-export', ready: false },
 ];
 

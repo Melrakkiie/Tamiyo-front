@@ -38,6 +38,7 @@ function useInvalidateCollection() {
     Promise.all([
       queryClient.invalidateQueries({ queryKey: ['cards'] }),
       queryClient.invalidateQueries({ queryKey: ['storages'] }),
+      queryClient.invalidateQueries({ queryKey: ['decks'] }),
     ]);
 }
 
@@ -79,6 +80,14 @@ export function useUpdateCard() {
     mutationFn: async ({ id, changes }: { id: number; changes: UpdateCardInput }) =>
       unwrap(await api.PATCH('/cards/{id}', { params: { path: { id } }, body: changes })),
     onSettled: invalidate,
+  });
+}
+
+export function useCard(id: number | null | undefined) {
+  return useQuery({
+    queryKey: ['cards', 'detail', id],
+    queryFn: async () => unwrap(await api.GET('/cards/{id}', { params: { path: { id: id ?? 0 } } })),
+    enabled: !!id,
   });
 }
 

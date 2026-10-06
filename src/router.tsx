@@ -4,6 +4,8 @@ import { GuestOnly, RequireAuth } from './auth/guards';
 import { AppLayout } from './layout/AppLayout';
 import { AuthLayout } from './layout/AuthLayout';
 import { CollectionPage } from './pages/CollectionPage';
+import { DeckPage } from './pages/DeckPage';
+import { DecksPage } from './pages/DecksPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
@@ -44,6 +46,8 @@ export const router = createBrowserRouter([
           { path: '/cards', element: <CollectionPage /> },
           { path: '/storages', element: <StoragesPage /> },
           { path: '/storages/:id', element: <StoragePage /> },
+          { path: '/decks', element: <DecksPage /> },
+          { path: '/decks/:id', element: <DeckPage /> },
           { path: '/settings', element: <SettingsPage /> },
         ],
       },
