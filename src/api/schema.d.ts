@@ -1901,7 +1901,8 @@ export interface components {
             set_code?: string;
             collector_number?: string;
             foil?: boolean;
-            storage_id?: number;
+            /** @description Moves the card to this storage. null removes the card from its storage; leaving the field out keeps the current one. */
+            storage_id?: number | null;
             mana_value?: number;
         };
         Storage: {

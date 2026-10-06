@@ -13,7 +13,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Accueil', to: '/', ready: true },
   { label: 'Collection', to: '/cards', ready: true },
-  { label: 'Rangements', to: '/storages', ready: false },
+  { label: 'Rangements', to: '/storages', ready: true },
   { label: 'Decks', to: '/decks', ready: false },
   { label: 'Import / export', to: '/import-export', ready: false },
 ];
@@ -61,7 +61,7 @@ export function AppLayout() {
               component={Link}
               to={item.to}
               label={item.label}
-              active={pathname === item.to}
+              active={item.to === '/' ? pathname === '/' : pathname.startsWith(item.to)}
               onClick={close}
             />
           ) : (

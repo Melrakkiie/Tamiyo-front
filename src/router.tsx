@@ -11,6 +11,8 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { StoragePage } from './pages/StoragePage';
+import { StoragesPage } from './pages/StoragesPage';
 
 export const router = createBrowserRouter([
   {
@@ -40,6 +42,8 @@ export const router = createBrowserRouter([
         children: [
           { path: '/', element: <HomePage /> },
           { path: '/cards', element: <CollectionPage /> },
+          { path: '/storages', element: <StoragesPage /> },
+          { path: '/storages/:id', element: <StoragePage /> },
           { path: '/settings', element: <SettingsPage /> },
         ],
       },

@@ -48,7 +48,7 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
         id: card.id,
         changes: {
           ...(foil !== card.foil ? { foil } : {}),
-          ...(storageChanged && storageId ? { storage_id: Number(storageId) } : {}),
+          ...(storageChanged ? { storage_id: storageId ? Number(storageId) : null } : {}),
         },
       },
       {
@@ -97,11 +97,8 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
             data={storageOptions}
             value={storageId}
             onChange={setStorageId}
-            allowDeselect={false}
+            clearable
             searchable
-            description={
-              card.storage_id ? 'Une carte rangée peut changer de rangement, pas en sortir.' : undefined
-            }
           />
 
           <Group justify="space-between" mt="sm">
