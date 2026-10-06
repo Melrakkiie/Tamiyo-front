@@ -25,9 +25,14 @@ export interface ScryfallCard {
   released_at: string;
   finishes?: string[];
   type_line?: string;
+  mana_cost?: string;
   oracle_text?: string;
+  flavor_text?: string;
   power?: string;
   toughness?: string;
+  loyalty?: string;
+  defense?: string;
+  rarity?: string;
   colors?: string[];
   color_identity?: string[];
   artist?: string;
@@ -37,10 +42,15 @@ export interface ScryfallCard {
     image_uris?: ImageUris;
     colors?: string[];
     artist?: string;
+    name?: string;
+    mana_cost?: string;
     type_line?: string;
     oracle_text?: string;
+    flavor_text?: string;
     power?: string;
     toughness?: string;
+    loyalty?: string;
+    defense?: string;
   }[];
 }
 

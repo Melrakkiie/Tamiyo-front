@@ -5,6 +5,7 @@ import { useRef } from 'react';
 import { errorMessage } from '../api/errors';
 import type { Card } from '../api/types';
 import { CardImage } from '../cards/CardImage';
+import { CardRulesText } from '../scryfall/CardRulesText';
 import { commanderEligibility } from '../scryfall/commander';
 import { useScryfallCard } from '../scryfall/hooks';
 import { isCommanderFormat, useRemoveCardFromDeck, useUpdateDeck } from './api';
@@ -122,10 +123,12 @@ function DeckCardDetail({
                 {card.name}
               </Title>
               <Text size="sm" c="dimmed">
-                {card.set_code.toUpperCase()} · #{card.collector_number} · coût de mana {card.mana_value}
+                {card.set_code.toUpperCase()} · #{card.collector_number}
                 {card.foil ? ' · foil' : ''}
               </Text>
             </div>
+
+            <CardRulesText scryfallId={card.scryfall_id} />
 
             {error && <Alert color="red">{errorMessage(error)}</Alert>}
 

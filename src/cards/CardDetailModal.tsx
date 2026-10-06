@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Card } from '../api/types';
+import { CardRulesText } from '../scryfall/CardRulesText';
 import { useStorageOptions } from '../storages/api';
 import { useDeleteCard, useUpdateCard } from './api';
 import { CardImage } from './CardImage';
@@ -22,7 +23,7 @@ export function CardDetailModal({ card, imageUrl, onClose }: CardDetailModalProp
   const shown = lastShown.current;
 
   return (
-    <Modal opened={card !== null} onClose={onClose} title={shown?.card.name} size="lg">
+    <Modal opened={card !== null} onClose={onClose} title={shown?.card.name} size="xl">
       {shown && (
         <CardDetail key={shown.card.id} card={shown.card} imageUrl={shown.imageUrl} onClose={onClose} />
       )}
@@ -83,9 +84,11 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
               {card.name}
             </Title>
             <Text size="sm" c="dimmed">
-              {card.set_code.toUpperCase()} · #{card.collector_number} · coût de mana {card.mana_value}
+              {card.set_code.toUpperCase()} · #{card.collector_number}
             </Text>
           </div>
+
+          <CardRulesText scryfallId={card.scryfall_id} />
 
           {error && <Alert color="red">{errorMessage(error)}</Alert>}
 
