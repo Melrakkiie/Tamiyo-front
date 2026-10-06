@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api, unwrap } from '../api/client';
-import type { CardSort, CreateCardInput, DetailsRefreshSummary, UpdateCardInput } from '../api/types';
+import type { Card, CardSort, CreateCardInput, DetailsRefreshSummary, UpdateCardInput } from '../api/types';
 
 export interface CardFilters {
   page: number;
@@ -58,19 +58,23 @@ export class PartialCreationError extends Error {
   }
 }
 
+export async function createCopies(card: CreateCardInput, quantity: number): Promise<Card[]> {
+  const created: Card[] = [];
+  while (created.length < quantity) {
+    try {
+      created.push(unwrap(await api.POST('/cards', { body: card })));
+    } catch (err) {
+      throw created.length > 0 ? new PartialCreationError(created.length, quantity, err) : err;
+    }
+  }
+  return created;
+}
+
 export function useCreateCards() {
   const invalidate = useInvalidateCollection();
 
   return useMutation({
-    mutationFn: async ({ card, quantity }: { card: CreateCardInput; quantity: number }) => {
-      for (let created = 0; created < quantity; created++) {
-        try {
-          unwrap(await api.POST('/cards', { body: card }));
-        } catch (err) {
-          throw created > 0 ? new PartialCreationError(created, quantity, err) : err;
-        }
-      }
-    },
+    mutationFn: async ({ card, quantity }: { card: CreateCardInput; quantity: number }) => createCopies(card, quantity),
     onSettled: invalidate,
   });
 }

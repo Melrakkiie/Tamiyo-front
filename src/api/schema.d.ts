@@ -1411,6 +1411,230 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deck/{id}/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        /** List the cards waiting to be added to the collection for this deck */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK (empty array when nothing is pending) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PendingCard"][];
+                    };
+                };
+                400: components["responses"]["InvalidID"];
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or not owned by the authenticated user */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Add a card to the deck's pending list */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AddPendingCardRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PendingCard"];
+                    };
+                };
+                /** @description Invalid id or body */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or not owned by the authenticated user */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deck/{id}/pending/{pending_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID */
+                id: components["parameters"]["DeckID"];
+                /** @description Pending card ID */
+                pending_id: number;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a card from the deck's pending list */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID */
+                    id: components["parameters"]["DeckID"];
+                    /** @description Pending card ID */
+                    pending_id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["InvalidID"];
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck or pending card not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deck/{id}/pending/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create the pending cards in the collection and put them in the deck */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        storage_id?: number | null;
+                        /** @description Only add this pending card (all its copies) instead of the whole list. */
+                        pending_id?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PendingCommitSummary"];
+                    };
+                };
+                /** @description Invalid id or body, or storage_id doesn't reference an existing storage */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or not owned by the authenticated user */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deck/{id}/legality": {
         parameters: {
             query?: never;
@@ -1972,6 +2196,41 @@ export interface components {
             color_identity?: string | null;
             added: string;
             updated: string;
+        };
+        PendingCard: {
+            id: number;
+            deck_id: number;
+            name: string;
+            /** Format: uuid */
+            scryfall_id: string;
+            set_code: string;
+            collector_number: string;
+            foil: boolean;
+            quantity: number;
+            mana_value: number;
+            colors?: string | null;
+            /** @enum {string|null} */
+            card_type?: "Creature" | "Planeswalker" | "Battle" | "Instant" | "Sorcery" | "Artifact" | "Enchantment" | "Land" | "Other" | null;
+            color_identity?: string | null;
+            added: string;
+        };
+        AddPendingCardRequest: {
+            name: string;
+            /** Format: uuid */
+            scryfall_id: string;
+            set_code: string;
+            collector_number: string;
+            foil?: boolean;
+            /** @default 1 */
+            quantity?: number;
+            mana_value?: number;
+            colors?: string | null;
+            /** @enum {string|null} */
+            card_type?: "Creature" | "Planeswalker" | "Battle" | "Instant" | "Sorcery" | "Artifact" | "Enchantment" | "Land" | "Other" | null;
+            color_identity?: string | null;
+        };
+        PendingCommitSummary: {
+            cards_created: number;
         };
         DetailsRefreshSummary: {
             /** @description Cards whose details were filled in. */

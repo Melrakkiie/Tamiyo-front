@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api, unwrap } from '../api/client';
-import type { Deck, DeckCardSort, UpdateDeckInput } from '../api/types';
+import type { AddPendingCardInput, Deck, DeckCardSort, UpdateDeckInput } from '../api/types';
 
 export const COMMON_FORMATS = [
   'commander',
@@ -168,4 +168,69 @@ export function useSwapDeckCard() {
 
 export function isCommanderFormat(format: string) {
   return format.toLowerCase() === 'commander';
+}
+
+function useInvalidateDeckAndCollection() {
+  const queryClient = useQueryClient();
+  return () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['decks'] }),
+      queryClient.invalidateQueries({ queryKey: ['cards'] }),
+      queryClient.invalidateQueries({ queryKey: ['storages'] }),
+    ]);
+}
+
+export function usePendingCards(deckId: number) {
+  return useQuery({
+    queryKey: ['decks', 'pending', deckId],
+    queryFn: async () => unwrap(await api.GET('/deck/{id}/pending', { params: { path: { id: deckId } } })),
+  });
+}
+
+export function useAddPendingCard() {
+  const invalidate = useInvalidateDecks();
+
+  return useMutation({
+    mutationFn: async ({ deckId, card }: { deckId: number; card: AddPendingCardInput }) =>
+      unwrap(await api.POST('/deck/{id}/pending', { params: { path: { id: deckId } }, body: card })),
+    onSettled: invalidate,
+  });
+}
+
+export function useRemovePendingCard() {
+  const invalidate = useInvalidateDecks();
+
+  return useMutation({
+    mutationFn: async ({ deckId, pendingId }: { deckId: number; pendingId: number }) => {
+      unwrap(
+        await api.DELETE('/deck/{id}/pending/{pending_id}', {
+          params: { path: { id: deckId, pending_id: pendingId } },
+        }),
+      );
+    },
+    onSettled: invalidate,
+  });
+}
+
+export function useCommitPendingCards() {
+  const invalidate = useInvalidateDeckAndCollection();
+
+  return useMutation({
+    mutationFn: async ({
+      deckId,
+      storageId,
+      pendingId,
+    }: {
+      deckId: number;
+      storageId: number | null;
+      pendingId?: number;
+    }) =>
+      unwrap(
+        await api.POST('/deck/{id}/pending/commit', {
+          params: { path: { id: deckId } },
+          body: { storage_id: storageId, pending_id: pendingId },
+        }),
+      ),
+    onSettled: invalidate,
+  });
 }

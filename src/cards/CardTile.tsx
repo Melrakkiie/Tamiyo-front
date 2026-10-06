@@ -1,4 +1,4 @@
-import { Badge, Group, Stack, Text, UnstyledButton } from '@mantine/core';
+import { Badge, Box, Group, Stack, Text, UnstyledButton } from '@mantine/core';
 
 import type { Card } from '../api/types';
 import { CardImage } from './CardImage';
@@ -8,14 +8,27 @@ interface CardTileProps {
   imageUrl: string | undefined;
   imageLoading: boolean;
   storageName?: string | null;
+  notOwned?: boolean;
   onOpen: (card: Card) => void;
 }
 
-export function CardTile({ card, imageUrl, imageLoading, storageName, onOpen }: CardTileProps) {
+export function CardTile({ card, imageUrl, imageLoading, storageName, notOwned, onOpen }: CardTileProps) {
   return (
     <UnstyledButton onClick={() => onOpen(card)} aria-label={card.name}>
       <Stack gap={6}>
-        <CardImage name={card.name} url={imageUrl} loading={imageLoading} />
+        <Box
+          style={
+            notOwned
+              ? {
+                  outline: '3px solid var(--mantine-color-orange-6)',
+                  outlineOffset: 2,
+                  borderRadius: 'var(--mantine-radius-md)',
+                }
+              : undefined
+          }
+        >
+          <CardImage name={card.name} url={imageUrl} loading={imageLoading} />
+        </Box>
         <div>
           <Text size="sm" fw={500} lineClamp={1}>
             {card.name}
@@ -30,10 +43,16 @@ export function CardTile({ card, imageUrl, imageLoading, storageName, onOpen }: 
               </Badge>
             )}
           </Group>
-          {storageName !== undefined && (
-            <Text size="xs" c="dimmed" fs={storageName ? undefined : 'italic'} lineClamp={1}>
-              {storageName ?? 'Sans rangement'}
+          {notOwned ? (
+            <Text size="xs" c="orange" lineClamp={1}>
+              Pas dans ta collection
             </Text>
+          ) : (
+            storageName !== undefined && (
+              <Text size="xs" c="dimmed" fs={storageName ? undefined : 'italic'} lineClamp={1}>
+                {storageName ?? 'Sans rangement'}
+              </Text>
+            )
           )}
         </div>
       </Stack>

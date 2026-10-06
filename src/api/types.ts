@@ -14,3 +14,5 @@ export type DeckStats = components['schemas']['DeckStats'];
 export type LegalityReport = components['schemas']['LegalityReport'];
 export type UpdateDeckInput = components['schemas']['UpdateDeckRequest'];
 export type ImportSummary = components['schemas']['ImportSummary'];
+export type PendingCard = components['schemas']['PendingCard'];
+export type AddPendingCardInput = components['schemas']['AddPendingCardRequest'];

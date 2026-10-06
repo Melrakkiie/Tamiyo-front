@@ -17,6 +17,7 @@ import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Deck } from '../api/types';
+import { AddCardModal } from '../cards/AddCardModal';
 import { useCards } from '../cards/api';
 import { hasMissingDetails } from '../cards/grouping';
 import { MissingDetailsAlert } from '../cards/MissingDetailsAlert';
@@ -24,6 +25,7 @@ import { colorCode } from '../scryfall/classify';
 import { useScryfallCard } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
 import { isCommanderFormat, useAddCardToDeck } from './api';
+import { ScryfallFallback } from './ScryfallFallback';
 
 interface AddToDeckModalProps {
   deck: Deck;
@@ -73,6 +75,7 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
   const add = useAddCardToDeck();
   const [pendingCardId, setPendingCardId] = useState<number | null>(null);
+  const [scryfallPick, setScryfallPick] = useState<string | null>(null);
 
   function addCard(cardId: number) {
     setPendingCardId(cardId);
@@ -105,13 +108,18 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
           <Loader />
         </Center>
       ) : results.length === 0 ? (
-        <Text c="dimmed" ta="center" p="lg">
-          {identityFilter !== undefined
-            ? "Aucune carte de ta collection dans l'identité de couleur du commandant ne correspond."
-            : debouncedSearch
-              ? 'Aucune carte de ta collection ne correspond.'
-              : 'Ta collection est vide.'}
-        </Text>
+        <Stack gap="md">
+          <Text c="dimmed" ta="center" pt="md">
+            {identityFilter !== undefined
+              ? "Aucune carte de ta collection dans l'identité de couleur du commandant ne correspond."
+              : debouncedSearch
+                ? 'Aucune carte de ta collection ne correspond.'
+                : 'Ta collection est vide : cherche une carte pour la trouver sur Scryfall.'}
+          </Text>
+          {debouncedSearch.length >= 2 && (
+            <ScryfallFallback search={debouncedSearch} identity={identityFilter} onPick={setScryfallPick} />
+          )}
+        </Stack>
       ) : (
         <ScrollArea.Autosize mah={420} type="auto">
           <Stack gap="xs">
@@ -162,6 +170,12 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
           {cards.data.total - results.length} autres cartes : affine la recherche pour les voir.
         </Text>
       )}
+      <AddCardModal
+        card={scryfallPick ? { name: scryfallPick } : null}
+        onClose={() => setScryfallPick(null)}
+        defaultStorageId={undefined}
+        target={{ kind: 'pending', deckId }}
+      />
     </Stack>
   );
 }

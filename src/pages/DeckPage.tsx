@@ -39,11 +39,14 @@ import { MissingDetailsAlert } from '../cards/MissingDetailsAlert';
 import { AddToDeckModal } from '../decks/AddToDeckModal';
 import { artBackground, artCredit, deckArtId } from '../decks/art';
 import { ArtPickerModal } from '../decks/ArtPickerModal';
-import { isCommanderFormat, useDeck, useDeckCards, useDeleteDeck, useUpdateDeck } from '../decks/api';
+import { isCommanderFormat, useDeck, useDeckCards, useDeleteDeck, usePendingCards, useUpdateDeck } from '../decks/api';
 import { DeckCardModal } from '../decks/DeckCardModal';
 import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckLegalityPanel } from '../decks/DeckLegalityPanel';
 import { DeckStatsPanel } from '../decks/DeckStatsPanel';
+import { PendingCardModal } from '../decks/PendingCardModal';
+import { isPendingCard, pendingIdOf, pendingToCards, sortDeckCards } from '../decks/pendingCards';
+import { PendingCardsSection } from '../decks/PendingCardsSection';
 import { useCardArts, useCardImages } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
 
@@ -282,15 +285,21 @@ function DeckCards({ deck }: { deck: Deck }) {
   const [grouping, setGrouping] = useState<CardGrouping | null>('type');
   const cards = useDeckCards(deck.id, sort);
   const deckCards = cards.data ?? [];
-  const groups = grouping ? groupCards(sortIntoGroups(deckCards, grouping), grouping) : [];
+  const pending = usePendingCards(deck.id);
+  const pendingItems = pending.data ?? [];
+  const allCards =
+    pendingItems.length > 0 ? sortDeckCards([...deckCards, ...pendingToCards(pendingItems)], sort) : deckCards;
+  const groups = grouping ? groupCards(sortIntoGroups(allCards, grouping), grouping) : [];
   const showMissingDetails = (grouping === 'type' || grouping === 'color') && hasMissingDetails(deckCards);
-  const images = useCardImages(deckCards.map((card) => card.scryfall_id));
+  const images = useCardImages(allCards.map((card) => card.scryfall_id));
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
   const [addOpened, setAddOpened] = useState(false);
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
+  const [openedPending, setOpenedPending] = useState<Card | null>(null);
 
   function renderTile(card: Card) {
+    const notOwned = isPendingCard(card);
     return (
       <CardTile
         key={card.id}
@@ -298,7 +307,8 @@ function DeckCards({ deck }: { deck: Deck }) {
         imageUrl={images.data?.[card.scryfall_id]}
         imageLoading={images.isLoading}
         storageName={card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null}
-        onOpen={setOpenedCard}
+        notOwned={notOwned}
+        onOpen={notOwned ? setOpenedPending : setOpenedCard}
       />
     );
   }
@@ -330,13 +340,15 @@ function DeckCards({ deck }: { deck: Deck }) {
 
       {cards.error && <Alert color="red">{errorMessage(cards.error)}</Alert>}
 
+      <PendingCardsSection deckId={deck.id} pending={pendingItems} />
+
       {showMissingDetails && <MissingDetailsAlert />}
 
       {cards.isLoading ? (
         <Center p="xl">
           <Loader />
         </Center>
-      ) : deckCards.length === 0 ? (
+      ) : allCards.length === 0 ? (
         <Center p="xl">
           <Text c="dimmed">Ce deck est vide : ajoute des cartes de ta collection.</Text>
         </Center>
@@ -363,7 +375,7 @@ function DeckCards({ deck }: { deck: Deck }) {
         </Stack>
       ) : (
         <SimpleGrid cols={gridCols} spacing="md" verticalSpacing="lg">
-          {deckCards.map(renderTile)}
+          {allCards.map(renderTile)}
         </SimpleGrid>
       )}
 
@@ -381,6 +393,13 @@ function DeckCards({ deck }: { deck: Deck }) {
         card={openedCard}
         imageUrl={openedCard ? images.data?.[openedCard.scryfall_id] : undefined}
         onClose={() => setOpenedCard(null)}
+      />
+      <PendingCardModal
+        deckId={deck.id}
+        card={openedPending}
+        item={openedPending ? pendingItems.find((item) => item.id === pendingIdOf(openedPending)) : undefined}
+        imageUrl={openedPending ? images.data?.[openedPending.scryfall_id] : undefined}
+        onClose={() => setOpenedPending(null)}
       />
     </Stack>
   );

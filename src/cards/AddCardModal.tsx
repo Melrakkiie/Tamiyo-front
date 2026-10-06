@@ -20,6 +20,7 @@ import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
+import { useAddPendingCard } from '../decks/api';
 import { colorCode, primaryType } from '../scryfall/classify';
 import { cardColors, imageUrl, type ScryfallCard } from '../scryfall/client';
 import { usePrintings } from '../scryfall/hooks';
@@ -31,15 +32,22 @@ export interface CardToAdd {
   printing?: ScryfallCard;
 }
 
+export type AddTarget = { kind: 'collection' } | { kind: 'pending'; deckId: number };
+
 interface AddCardModalProps {
   card: CardToAdd | null;
   onClose: () => void;
   defaultStorageId: number | undefined;
+  target?: AddTarget;
 }
 
-export function AddCardModal({ card, onClose, defaultStorageId }: AddCardModalProps) {
+function modalTitle(name: string, target: AddTarget) {
+  return target.kind === 'pending' ? `Ajouter ${name} au deck` : `Ajouter ${name}`;
+}
+
+export function AddCardModal({ card, onClose, defaultStorageId, target = { kind: 'collection' } }: AddCardModalProps) {
   return (
-    <Modal opened={card !== null} onClose={onClose} title={card ? `Ajouter ${card.name}` : undefined} size="xl">
+    <Modal opened={card !== null} onClose={onClose} title={card ? modalTitle(card.name, target) : undefined} size="xl">
       {card && (
         <AddCardForm
           key={`${card.name}-${card.printing?.id ?? ''}`}
@@ -47,6 +55,7 @@ export function AddCardModal({ card, onClose, defaultStorageId }: AddCardModalPr
           initialPrinting={card.printing}
           onClose={onClose}
           defaultStorageId={defaultStorageId}
+          target={target}
         />
       )}
     </Modal>
@@ -72,9 +81,10 @@ interface AddCardFormProps {
   initialPrinting: ScryfallCard | undefined;
   onClose: () => void;
   defaultStorageId: number | undefined;
+  target: AddTarget;
 }
 
-function AddCardForm({ name, initialPrinting, onClose, defaultStorageId }: AddCardFormProps) {
+function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target }: AddCardFormProps) {
   const [printing, setPrinting] = useState<ScryfallCard | null>(initialPrinting ?? null);
   const [foil, setFoil] = useState(
     initialPrinting ? !canBeNonFoil(initialPrinting) && canBeFoil(initialPrinting) : false,
@@ -88,6 +98,8 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId }: AddCa
     : (printings.data ?? []);
   const storageOptions = useStorageOptions();
   const create = useCreateCards();
+  const addPending = useAddPendingCard();
+  const pending = target.kind === 'pending';
 
   function selectPrinting(next: ScryfallCard) {
     setPrinting(next);
@@ -100,47 +112,54 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId }: AddCa
     }
     const copies = clampQuantity(quantity);
     setQuantity(copies);
-    create.mutate(
-      {
-        card: {
-          name: printing.name,
-          scryfall_id: printing.id,
-          set_code: printing.set,
-          collector_number: printing.collector_number,
-          foil,
-          mana_value: printing.cmc ?? 0,
-          colors: colorCode(cardColors(printing)),
-          card_type: printing.type_line ? primaryType(printing.type_line) : null,
-          color_identity: printing.color_identity ? colorCode(printing.color_identity) : null,
-          storage_id: storageId ? Number(storageId) : null,
+    const details = {
+      name: printing.name,
+      scryfall_id: printing.id,
+      set_code: printing.set,
+      collector_number: printing.collector_number,
+      foil,
+      mana_value: printing.cmc ?? 0,
+      colors: colorCode(cardColors(printing)),
+      card_type: printing.type_line ? primaryType(printing.type_line) : null,
+      color_identity: printing.color_identity ? colorCode(printing.color_identity) : null,
+    };
+
+    if (target.kind === 'pending') {
+      addPending.mutate(
+        { deckId: target.deckId, card: { ...details, quantity: copies } },
+        {
+          onSuccess: () => {
+            notifications.show({
+              color: 'green',
+              message: `${copies > 1 ? `${copies} × ` : ''}${printing.name} ajoutée au deck, en attendant d'être dans ta collection.`,
+            });
+            onClose();
+          },
         },
-        quantity: copies,
-      },
-      {
-        onSuccess: () => {
-          notifications.show({
-            color: 'green',
-            message:
-              copies > 1
-                ? `${copies} exemplaires de ${printing.name} ajoutés.`
-                : `${printing.name} ajoutée à ta collection.`,
-          });
-          onClose();
-        },
-        onError: (err) => {
-          if (err instanceof PartialCreationError) {
-            setQuantity(copies - err.created);
-          }
-        },
-      },
-    );
+      );
+      return;
+    }
+
+    const card = { ...details, storage_id: storageId ? Number(storageId) : null };
+    const onSuccess = () => {
+      const what = copies > 1 ? `${copies} exemplaires de ${printing.name} ajoutés` : `${printing.name} ajoutée`;
+      notifications.show({ color: 'green', message: `${what} à ta collection.` });
+      onClose();
+    };
+    const onError = (err: unknown) => {
+      if (err instanceof PartialCreationError) {
+        setQuantity(copies - err.created);
+      }
+    };
+    create.mutate({ card, quantity: copies }, { onSuccess, onError });
   }
 
+  const activeError = pending ? addPending.error : create.error;
   const createError =
-    create.error instanceof PartialCreationError
-      ? `Seulement ${create.error.created} exemplaire(s) sur ${create.error.requested} ajouté(s) : ${errorMessage(create.error.reason)} Le nombre d'exemplaires restant est prérempli, clique sur Ajouter pour réessayer.`
-      : create.error
-        ? errorMessage(create.error)
+    activeError instanceof PartialCreationError
+      ? `Seulement ${activeError.created} exemplaire(s) sur ${activeError.requested} ajouté(s) : ${errorMessage(activeError.reason)} Le nombre d'exemplaires restant est prérempli, clique sur Ajouter pour réessayer.`
+      : activeError
+        ? errorMessage(activeError)
         : null;
 
   return (
@@ -192,15 +211,17 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId }: AddCa
 
       {printing && (
         <Group align="flex-end" grow>
-          <Select
-            label="Rangement"
-            placeholder="Aucun rangement"
-            data={storageOptions}
-            value={storageId}
-            onChange={setStorageId}
-            clearable
-            searchable
-          />
+          {!pending && (
+            <Select
+              label="Rangement"
+              placeholder="Aucun rangement"
+              data={storageOptions}
+              value={storageId}
+              onChange={setStorageId}
+              clearable
+              searchable
+            />
+          )}
           <NumberInput
             label="Exemplaires"
             min={1}
@@ -225,8 +246,8 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId }: AddCa
         <Button variant="default" onClick={onClose}>
           Annuler
         </Button>
-        <Button onClick={submit} disabled={!printing} loading={create.isPending}>
-          Ajouter
+        <Button onClick={submit} disabled={!printing} loading={pending ? addPending.isPending : create.isPending}>
+          {pending ? 'Ajouter au deck' : 'Ajouter'}
         </Button>
       </Group>
     </Stack>
