@@ -1,7 +1,5 @@
 import {
   Alert,
-  Anchor,
-  Button,
   Center,
   Group,
   Loader,
@@ -19,6 +17,7 @@ import { useSearchParams } from 'react-router';
 import { errorMessage } from '../api/errors';
 import type { Card, CardSort } from '../api/types';
 import { useCardImages } from '../scryfall/hooks';
+import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
 import { useAllStorages, useStorageOptions } from '../storages/api';
 import { AddCardModal } from './AddCardModal';
 import { useCards } from './api';
@@ -53,7 +52,8 @@ export function CardBrowser({ storageId: fixedStorageId }: CardBrowserProps) {
 
   const [search, setSearch] = useState(name);
   const [debouncedSearch] = useDebouncedValue(search.trim(), 300);
-  const [addOpened, setAddOpened] = useState(false);
+  const [cardToAdd, setCardToAdd] = useState<string | null>(null);
+  const [searchKey, setSearchKey] = useState(0);
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
 
   const storageOptions = useStorageOptions();
@@ -110,19 +110,23 @@ export function CardBrowser({ storageId: fixedStorageId }: CardBrowserProps) {
 
   return (
     <Stack>
-      <Group justify="space-between">
-        <Text size="sm" c="dimmed">
-          {cards.data
-            ? `${cards.data.total} carte${cards.data.total > 1 ? 's' : ''}${filtered ? ' correspondant aux filtres' : ''}`
-            : ' '}
-        </Text>
-        <Button onClick={() => setAddOpened(true)}>Ajouter une carte</Button>
-      </Group>
+      <ScryfallCardSearch
+        key={searchKey}
+        label="Ajouter une carte"
+        placeholder="Cherche une carte sur Scryfall, par son nom anglais (ex. Lightning Bolt)"
+        onSelect={setCardToAdd}
+      />
+
+      <Text size="sm" c="dimmed">
+        {cards.data
+          ? `${cards.data.total} carte${cards.data.total > 1 ? 's' : ''}${filtered ? ' correspondant aux filtres' : ''}`
+          : ' '}
+      </Text>
 
       <Group grow align="flex-end">
         <TextInput
-          label="Nom"
-          placeholder="Rechercher une carte"
+          label="Filtrer par nom"
+          placeholder="Nom d'une carte de ta collection"
           value={search}
           onChange={(event) => setSearch(event.currentTarget.value)}
         />
@@ -163,9 +167,9 @@ export function CardBrowser({ storageId: fixedStorageId }: CardBrowserProps) {
                   : 'Ta collection est vide pour le moment.'}
             </Text>
             {!filtered && (
-              <Anchor component="button" onClick={() => setAddOpened(true)}>
-                Ajouter une carte
-              </Anchor>
+              <Text size="sm" c="dimmed">
+                Cherche une carte dans la barre ci-dessus pour l'ajouter.
+              </Text>
             )}
           </Stack>
         </Center>
@@ -203,7 +207,14 @@ export function CardBrowser({ storageId: fixedStorageId }: CardBrowserProps) {
         Images et données de cartes fournies par Scryfall.
       </Text>
 
-      <AddCardModal opened={addOpened} onClose={() => setAddOpened(false)} defaultStorageId={storageId} />
+      <AddCardModal
+        name={cardToAdd}
+        onClose={() => {
+          setCardToAdd(null);
+          setSearchKey((key) => key + 1);
+        }}
+        defaultStorageId={storageId}
+      />
       <CardDetailModal
         card={openedCard}
         imageUrl={openedCard ? images.data?.[openedCard.scryfall_id] : undefined}

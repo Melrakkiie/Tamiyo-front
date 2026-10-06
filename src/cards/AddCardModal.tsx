@@ -1,6 +1,5 @@
 import {
   Alert,
-  Autocomplete,
   Button,
   Center,
   Group,
@@ -17,26 +16,25 @@ import {
   Text,
   UnstyledButton,
 } from '@mantine/core';
-import { useDebouncedValue } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import { imageUrl, type ScryfallCard } from '../scryfall/client';
-import { useCardNameSuggestions, usePrintings } from '../scryfall/hooks';
+import { usePrintings } from '../scryfall/hooks';
 import { useStorageOptions } from '../storages/api';
 import { PartialCreationError, useCreateCards } from './api';
 
 interface AddCardModalProps {
-  opened: boolean;
+  name: string | null;
   onClose: () => void;
   defaultStorageId: number | undefined;
 }
 
-export function AddCardModal({ opened, onClose, defaultStorageId }: AddCardModalProps) {
+export function AddCardModal({ name, onClose, defaultStorageId }: AddCardModalProps) {
   return (
-    <Modal opened={opened} onClose={onClose} title="Ajouter une carte" size="xl">
-      {opened && <AddCardForm onClose={onClose} defaultStorageId={defaultStorageId} />}
+    <Modal opened={name !== null} onClose={onClose} title={name ? `Ajouter ${name}` : undefined} size="xl">
+      {name && <AddCardForm key={name} name={name} onClose={onClose} defaultStorageId={defaultStorageId} />}
     </Modal>
   );
 }
@@ -55,24 +53,21 @@ function clampQuantity(value: number | string) {
   return Math.min(MAX_QUANTITY, Math.max(1, Math.floor(Number(value)) || 1));
 }
 
-function AddCardForm({ onClose, defaultStorageId }: { onClose: () => void; defaultStorageId: number | undefined }) {
-  const [search, setSearch] = useState('');
-  const [debouncedSearch] = useDebouncedValue(search, 300);
-  const [selectedName, setSelectedName] = useState<string | null>(null);
+interface AddCardFormProps {
+  name: string;
+  onClose: () => void;
+  defaultStorageId: number | undefined;
+}
+
+function AddCardForm({ name, onClose, defaultStorageId }: AddCardFormProps) {
   const [printing, setPrinting] = useState<ScryfallCard | null>(null);
   const [foil, setFoil] = useState(false);
   const [storageId, setStorageId] = useState<string | null>(defaultStorageId ? String(defaultStorageId) : null);
   const [quantity, setQuantity] = useState<number | string>(1);
 
-  const suggestions = useCardNameSuggestions(debouncedSearch);
-  const printings = usePrintings(selectedName);
+  const printings = usePrintings(name);
   const storageOptions = useStorageOptions();
   const create = useCreateCards();
-
-  function selectName(name: string) {
-    setSelectedName(name);
-    setPrinting(null);
-  }
 
   function selectPrinting(next: ScryfallCard) {
     setPrinting(next);
@@ -127,62 +122,50 @@ function AddCardForm({ onClose, defaultStorageId }: { onClose: () => void; defau
 
   return (
     <Stack>
-      <Autocomplete
-        label="Nom de la carte"
-        placeholder="Commence à taper, en anglais (ex. Lightning Bolt)"
-        value={search}
-        onChange={setSearch}
-        onOptionSubmit={selectName}
-        data={suggestions.data ?? []}
-        filter={({ options }) => options}
-        rightSection={suggestions.isFetching ? <Loader size="xs" /> : null}
-        data-autofocus
-      />
-
-      {suggestions.error && <Alert color="red">{errorMessage(suggestions.error)}</Alert>}
-
-      {selectedName && (
-        <Stack gap="xs">
-          <Text size="sm" fw={500}>
-            Choisis l'édition
+      <Stack gap="xs">
+        <Text size="sm" fw={500}>
+          Choisis l'édition
+        </Text>
+        {printings.isLoading ? (
+          <Center p="lg">
+            <Loader />
+          </Center>
+        ) : printings.error ? (
+          <Alert color="red">{errorMessage(printings.error)}</Alert>
+        ) : (printings.data ?? []).length === 0 ? (
+          <Text size="sm" c="dimmed">
+            Aucune édition papier trouvée pour cette carte sur Scryfall.
           </Text>
-          {printings.isLoading ? (
-            <Center p="lg">
-              <Loader />
-            </Center>
-          ) : printings.error ? (
-            <Alert color="red">{errorMessage(printings.error)}</Alert>
-          ) : (
-            <ScrollArea.Autosize mah={360} type="auto">
-              <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
-                {(printings.data ?? []).map((candidate) => (
-                  <UnstyledButton key={candidate.id} onClick={() => selectPrinting(candidate)}>
-                    <Paper
-                      withBorder
-                      p={4}
-                      radius="md"
-                      style={
-                        printing?.id === candidate.id
-                          ? { borderColor: 'var(--mantine-primary-color-filled)', borderWidth: 2 }
-                          : undefined
-                      }
-                    >
-                      <Image src={imageUrl(candidate, 'small')} alt={candidate.name} radius="sm" loading="lazy" />
-                      <Text size="xs" mt={4} lineClamp={1}>
-                        {candidate.set_name}
-                      </Text>
-                      <Text size="xs" c="dimmed">
-                        {candidate.set.toUpperCase()} · #{candidate.collector_number} ·{' '}
-                        {candidate.released_at.slice(0, 4)}
-                      </Text>
-                    </Paper>
-                  </UnstyledButton>
-                ))}
-              </SimpleGrid>
-            </ScrollArea.Autosize>
-          )}
-        </Stack>
-      )}
+        ) : (
+          <ScrollArea.Autosize mah={360} type="auto">
+            <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
+              {(printings.data ?? []).map((candidate) => (
+                <UnstyledButton key={candidate.id} onClick={() => selectPrinting(candidate)}>
+                  <Paper
+                    withBorder
+                    p={4}
+                    radius="md"
+                    style={
+                      printing?.id === candidate.id
+                        ? { borderColor: 'var(--mantine-primary-color-filled)', borderWidth: 2 }
+                        : undefined
+                    }
+                  >
+                    <Image src={imageUrl(candidate, 'small')} alt={candidate.name} radius="sm" loading="lazy" />
+                    <Text size="xs" mt={4} lineClamp={1}>
+                      {candidate.set_name}
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      {candidate.set.toUpperCase()} · #{candidate.collector_number} ·{' '}
+                      {candidate.released_at.slice(0, 4)}
+                    </Text>
+                  </Paper>
+                </UnstyledButton>
+              ))}
+            </SimpleGrid>
+          </ScrollArea.Autosize>
+        )}
+      </Stack>
 
       {printing && (
         <Group align="flex-end" grow>
