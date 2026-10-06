@@ -13,3 +13,4 @@ export type Deck = components['schemas']['Deck'];
 export type DeckStats = components['schemas']['DeckStats'];
 export type LegalityReport = components['schemas']['LegalityReport'];
 export type UpdateDeckInput = components['schemas']['UpdateDeckRequest'];
+export type ImportSummary = components['schemas']['ImportSummary'];

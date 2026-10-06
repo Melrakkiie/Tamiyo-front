@@ -48,7 +48,7 @@ function notifySessionExpired() {
   });
 }
 
-async function authFetch(request: Request): Promise<Response> {
+export async function authFetch(request: Request): Promise<Response> {
   const route = authRoute(request.url);
 
   if (route === 'other') {

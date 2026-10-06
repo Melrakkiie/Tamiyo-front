@@ -15,7 +15,7 @@ const navItems: NavItem[] = [
   { label: 'Collection', to: '/cards', ready: true },
   { label: 'Rangements', to: '/storages', ready: true },
   { label: 'Decks', to: '/decks', ready: true },
-  { label: 'Import / export', to: '/import-export', ready: false },
+  { label: 'Import / export', to: '/import-export', ready: true },
 ];
 
 export function AppLayout() {

@@ -8,6 +8,7 @@ import { DeckPage } from './pages/DeckPage';
 import { DecksPage } from './pages/DecksPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { HomePage } from './pages/HomePage';
+import { ImportExportPage } from './pages/ImportExportPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -48,6 +49,7 @@ export const router = createBrowserRouter([
           { path: '/storages/:id', element: <StoragePage /> },
           { path: '/decks', element: <DecksPage /> },
           { path: '/decks/:id', element: <DeckPage /> },
+          { path: '/import-export', element: <ImportExportPage /> },
           { path: '/settings', element: <SettingsPage /> },
         ],
       },

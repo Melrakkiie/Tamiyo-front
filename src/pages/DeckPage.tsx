@@ -23,6 +23,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
 import type { Card, Deck, DeckCardSort } from '../api/types';
+import { useExportDeck } from '../bulk/api';
 import { useCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
 import { CardTile } from '../cards/CardTile';
@@ -70,6 +71,7 @@ function DeckView({ id }: { id: number }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [tab, setTab] = useState<string | null>('cards');
   const [artPickerOpened, setArtPickerOpened] = useState(false);
+  const exportDeck = useExportDeck();
   const artId = deck.data ? deckArtId(deck.data) : null;
   const arts = useCardArts([artId]);
   const art = artId ? (arts.data?.[artId] ?? null) : null;
@@ -138,6 +140,17 @@ function DeckView({ id }: { id: number }) {
           <Group gap="xs">
             <Button variant="default" onClick={() => setArtPickerOpened(true)}>
               Illustration
+            </Button>
+            <Button
+              variant="default"
+              loading={exportDeck.isPending}
+              onClick={() =>
+                exportDeck.mutate(id, {
+                  onError: (err) => notifications.show({ color: 'red', message: errorMessage(err) }),
+                })
+              }
+            >
+              Exporter
             </Button>
             <Button variant="default" onClick={() => setEditOpened(true)}>
               Modifier
