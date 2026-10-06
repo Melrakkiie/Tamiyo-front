@@ -83,6 +83,15 @@ export function useUpdateCard() {
   });
 }
 
+export function useDeleteAllCards() {
+  const invalidate = useInvalidateCollection();
+
+  return useMutation({
+    mutationFn: async () => unwrap(await api.DELETE('/cards', { params: { query: { confirm: true } } })).deleted,
+    onSettled: invalidate,
+  });
+}
+
 export function useCard(id: number | null | undefined) {
   return useQuery({
     queryKey: ['cards', 'detail', id],

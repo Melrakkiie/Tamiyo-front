@@ -571,7 +571,44 @@ export interface paths {
                 500: components["responses"]["InternalError"];
             };
         };
-        delete?: never;
+        /**
+         * Delete every card of the account
+         * @description Deletes all of the authenticated user's cards at once: they are removed from every deck, and any deck whose commander was one of them has its commander_id cleared. Storages and decks themselves are kept. Requires confirm=true, so the collection can't be wiped by accident.
+         */
+        delete: {
+            parameters: {
+                query: {
+                    /** @description Must be true. */
+                    confirm: true;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeleteAllCardsResponse"];
+                    };
+                };
+                /** @description confirm=true is missing */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                500: components["responses"]["InternalError"];
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -1870,6 +1907,10 @@ export interface components {
             mana_value: number;
             added: string;
             updated: string;
+        };
+        DeleteAllCardsResponse: {
+            /** @description Number of cards deleted. */
+            deleted: number;
         };
         PaginatedCards: {
             data: components["schemas"]["Card"][];
