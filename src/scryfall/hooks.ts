@@ -23,6 +23,16 @@ export function useCardImages(scryfallIds: string[], size: 'small' | 'normal' = 
   });
 }
 
+export function useScryfallCard(scryfallId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['scryfall', 'card', scryfallId],
+    queryFn: async () => (await fetchCardsByIds([scryfallId ?? '']))[0] ?? null,
+    enabled: !!scryfallId,
+    staleTime: ONE_DAY,
+    gcTime: ONE_DAY,
+  });
+}
+
 export function useCardNameSuggestions(query: string) {
   const trimmed = query.trim();
 

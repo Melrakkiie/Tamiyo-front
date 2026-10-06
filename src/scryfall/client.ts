@@ -23,9 +23,20 @@ export interface ScryfallCard {
   released_at: string;
   finishes?: string[];
   type_line?: string;
+  oracle_text?: string;
+  power?: string;
+  toughness?: string;
   colors?: string[];
+  legalities?: Record<string, string>;
   image_uris?: ImageUris;
-  card_faces?: { image_uris?: ImageUris; colors?: string[] }[];
+  card_faces?: {
+    image_uris?: ImageUris;
+    colors?: string[];
+    type_line?: string;
+    oracle_text?: string;
+    power?: string;
+    toughness?: string;
+  }[];
 }
 
 interface ScryfallList<T> {

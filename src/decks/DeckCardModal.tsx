@@ -5,6 +5,8 @@ import { useRef } from 'react';
 import { errorMessage } from '../api/errors';
 import type { Card } from '../api/types';
 import { CardImage } from '../cards/CardImage';
+import { commanderEligibility } from '../scryfall/commander';
+import { useScryfallCard } from '../scryfall/hooks';
 import { isCommanderFormat, useRemoveCardFromDeck, useUpdateDeck } from './api';
 
 interface DeckCardModalProps {
@@ -29,7 +31,7 @@ export function DeckCardModal({ deckId, deckFormat, commanderId, card, imageUrl,
         <DeckCardDetail
           key={shown.card.id}
           deckId={deckId}
-          canBeCommander={isCommanderFormat(deckFormat) || commanderId === shown.card.id}
+          commanderFormat={isCommanderFormat(deckFormat)}
           isCommander={commanderId === shown.card.id}
           card={shown.card}
           imageUrl={shown.imageUrl}
@@ -40,18 +42,26 @@ export function DeckCardModal({ deckId, deckFormat, commanderId, card, imageUrl,
   );
 }
 
+const ineligibilityMessages = {
+  not_eligible:
+    "Cette carte ne peut pas être commandant : il faut une créature légendaire, un véhicule légendaire avec force et endurance, ou une carte qui précise qu'elle peut être ton commandant.",
+  banned: 'Cette carte est bannie en Commander.',
+} as const;
+
 interface DeckCardDetailProps {
   deckId: number;
-  canBeCommander: boolean;
+  commanderFormat: boolean;
   isCommander: boolean;
   card: Card;
   imageUrl: string | undefined;
   onClose: () => void;
 }
 
-function DeckCardDetail({ deckId, canBeCommander, isCommander, card, imageUrl, onClose }: DeckCardDetailProps) {
+function DeckCardDetail({ deckId, commanderFormat, isCommander, card, imageUrl, onClose }: DeckCardDetailProps) {
   const remove = useRemoveCardFromDeck();
   const update = useUpdateDeck();
+  const scryfallCard = useScryfallCard(commanderFormat ? card.scryfall_id : null);
+  const eligibility = scryfallCard.data ? commanderEligibility(scryfallCard.data) : null;
 
   function removeFromDeck() {
     remove.mutate(
@@ -99,13 +109,35 @@ function DeckCardDetail({ deckId, canBeCommander, isCommander, card, imageUrl, o
           {error && <Alert color="red">{errorMessage(error)}</Alert>}
 
           {isCommander ? (
-            <Text size="sm">C'est le commandant de ce deck.</Text>
+            <Stack gap={4}>
+              <Text size="sm">C'est le commandant de ce deck.</Text>
+              {commanderFormat && eligibility && eligibility !== 'eligible' && (
+                <Text size="sm" c="orange">
+                  {ineligibilityMessages[eligibility]}
+                </Text>
+              )}
+            </Stack>
           ) : (
-            canBeCommander && (
+            commanderFormat &&
+            (scryfallCard.isLoading ? (
+              <Button variant="light" loading disabled>
+                Définir comme commandant
+              </Button>
+            ) : scryfallCard.error || !scryfallCard.data ? (
+              <Text size="sm" c="dimmed">
+                Impossible de vérifier sur Scryfall si cette carte peut être commandant. Réessaie plus tard.
+              </Text>
+            ) : eligibility === 'eligible' ? (
               <Button variant="light" onClick={makeCommander} loading={update.isPending}>
                 Définir comme commandant
               </Button>
-            )
+            ) : (
+              eligibility && (
+                <Text size="sm" c="dimmed">
+                  {ineligibilityMessages[eligibility]}
+                </Text>
+              )
+            ))
           )}
           <Button color="red" variant="subtle" onClick={removeFromDeck} loading={remove.isPending}>
             Retirer du deck
