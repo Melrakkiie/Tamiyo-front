@@ -7,10 +7,11 @@ interface CardTileProps {
   card: Card;
   imageUrl: string | undefined;
   imageLoading: boolean;
+  storageName?: string | null;
   onOpen: (card: Card) => void;
 }
 
-export function CardTile({ card, imageUrl, imageLoading, onOpen }: CardTileProps) {
+export function CardTile({ card, imageUrl, imageLoading, storageName, onOpen }: CardTileProps) {
   return (
     <UnstyledButton onClick={() => onOpen(card)} aria-label={card.name}>
       <Stack gap={6}>
@@ -29,6 +30,11 @@ export function CardTile({ card, imageUrl, imageLoading, onOpen }: CardTileProps
               </Badge>
             )}
           </Group>
+          {storageName !== undefined && (
+            <Text size="xs" c="dimmed" fs={storageName ? undefined : 'italic'} lineClamp={1}>
+              {storageName ?? 'Sans rangement'}
+            </Text>
+          )}
         </div>
       </Stack>
     </UnstyledButton>

@@ -58,6 +58,8 @@ export function CardBrowser({ storageId: fixedStorageId }: CardBrowserProps) {
 
   const storageOptions = useStorageOptions();
   const storages = useAllStorages();
+  const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
+  const showStorage = !storageId;
   const cards = useCards({ page, limit: PAGE_SIZE, sort, name, storageId });
   const pageCards = cards.data?.data ?? [];
   const images = useCardImages(pageCards.map((card) => card.scryfall_id));
@@ -175,6 +177,9 @@ export function CardBrowser({ storageId: fixedStorageId }: CardBrowserProps) {
               card={card}
               imageUrl={images.data?.[card.scryfall_id]}
               imageLoading={images.isLoading}
+              storageName={
+                showStorage ? (card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null) : undefined
+              }
               onOpen={setOpenedCard}
             />
           ))}
