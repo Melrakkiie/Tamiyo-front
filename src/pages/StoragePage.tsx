@@ -8,6 +8,8 @@ import { CardBrowser } from '../cards/CardBrowser';
 import { StorageFormModal } from '../storages/StorageFormModal';
 import { useDeleteStorage, useStorage, useUpdateStorage } from '../storages/api';
 
+const DECK_PAGE_SIZE = 100;
+
 export function StoragePage() {
   const id = Number(useParams().id);
   return <StorageView key={id} id={id} />;
@@ -104,7 +106,10 @@ function StorageView({ id }: { id: number }) {
       )}
       {remove.error && <Alert color="red">{errorMessage(remove.error)}</Alert>}
 
-      <CardBrowser storageId={current.id} />
+      <CardBrowser
+        storageId={current.id}
+        pageSize={current.type.trim().toLowerCase() === 'deck' ? DECK_PAGE_SIZE : undefined}
+      />
 
       <StorageFormModal
         opened={editOpened}

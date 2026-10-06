@@ -625,11 +625,14 @@ export interface paths {
         put?: never;
         /**
          * Fill in missing colors and types from Scryfall
-         * @description Looks up on Scryfall every card of the account whose colors or card_type aren't known yet (cards created before they were stored, or imported while Scryfall was unreachable), and stores its colors, primary type and mana value.
+         * @description Looks up on Scryfall every card of the account whose colors or card_type aren't known yet (cards created before they were stored, or imported while Scryfall was unreachable), and stores its colors, primary type and mana value. Works through at most 750 cards per call, in id order, so a call stays short: while next_after_id is not null, call again with after_id set to it.
          */
         post: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Only look at cards with a greater id (the next_after_id of the previous call). */
+                    after_id?: number;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -643,6 +646,15 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["DetailsRefreshSummary"];
+                    };
+                };
+                /** @description after_id is not a non-negative integer */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
                     };
                 };
                 401: components["responses"]["Unauthorized"];
@@ -1962,6 +1974,10 @@ export interface components {
             updated: number;
             /** @description Cards Scryfall didn't know (their details stay unknown). */
             not_found: number;
+            /** @description Cards still missing details after this batch. */
+            remaining: number;
+            /** @description after_id to send on the next call, null when there is nothing left. */
+            next_after_id: number | null;
         };
         DeleteAllCardsResponse: {
             /** @description Number of cards deleted. */

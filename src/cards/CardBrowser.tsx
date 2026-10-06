@@ -24,7 +24,7 @@ import { useCardImages } from '../scryfall/hooks';
 import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
 import { useAllStorages, useStorageOptions } from '../storages/api';
 import { AddCardModal } from './AddCardModal';
-import { useCards, useRefreshCardDetails } from './api';
+import { type DetailsRefreshProgress, useCards, useRefreshCardDetails } from './api';
 import { CardDetailModal } from './CardDetailModal';
 import { CardTile } from './CardTile';
 import { groupCards, groupingOptions, hasMissingDetails, parseGrouping, sortForGrouping } from './grouping';
@@ -52,15 +52,16 @@ function parseSort(raw: string | null): CardSort {
 
 interface CardBrowserProps {
   storageId?: number;
+  pageSize?: number;
 }
 
-export function CardBrowser({ storageId: fixedStorageId }: CardBrowserProps) {
+export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize }: CardBrowserProps) {
   const [params, setParams] = useSearchParams();
   const page = Math.max(1, Number(params.get('page')) || 1);
   const chosenSort = parseSort(params.get('sort'));
   const grouping = parseGrouping(params.get('group'));
   const sort = grouping ? sortForGrouping[grouping] : chosenSort;
-  const pageSize = grouping ? GROUPED_PAGE_SIZE : PAGE_SIZE;
+  const pageSize = fixedPageSize ?? (grouping ? GROUPED_PAGE_SIZE : PAGE_SIZE);
   const name = params.get('q') ?? '';
   const storageId = fixedStorageId ?? (Number(params.get('storage')) || undefined);
 
@@ -77,19 +78,21 @@ export function CardBrowser({ storageId: fixedStorageId }: CardBrowserProps) {
   const cards = useCards({ page, limit: pageSize, sort, name, storageId });
   const pageCards = cards.data?.data ?? [];
   const images = useCardImages(pageCards.map((card) => card.scryfall_id));
-  const refreshDetails = useRefreshCardDetails();
+  const [refreshProgress, setRefreshProgress] = useState<DetailsRefreshProgress | null>(null);
+  const refreshDetails = useRefreshCardDetails(setRefreshProgress);
   const showMissingDetails =
     (grouping === 'type' || grouping === 'color' || sortsNeedingDetails.includes(sort)) && hasMissingDetails(pageCards);
 
   function fillMissingDetails() {
+    setRefreshProgress(null);
     refreshDetails.mutate(undefined, {
-      onSuccess: ({ updated, not_found }) => {
+      onSuccess: ({ updated, notFound }) => {
         notifications.show({
-          color: not_found > 0 ? 'yellow' : 'green',
+          color: notFound > 0 ? 'yellow' : 'green',
           message:
             `${updated} carte${updated > 1 ? 's' : ''} complétée${updated > 1 ? 's' : ''}.` +
-            (not_found > 0
-              ? ` ${not_found} carte${not_found > 1 ? 's' : ''} introuvable${not_found > 1 ? 's' : ''} sur Scryfall.`
+            (notFound > 0
+              ? ` ${notFound} carte${notFound > 1 ? 's' : ''} introuvable${notFound > 1 ? 's' : ''} sur Scryfall.`
               : ''),
         });
       },
@@ -218,9 +221,18 @@ export function CardBrowser({ storageId: fixedStorageId }: CardBrowserProps) {
               Certaines cartes ont été ajoutées avant que Tamiyo ne retienne leur couleur et leur type : elles sont
               classées à part. Tamiyo peut aller chercher ces informations sur Scryfall.
             </Text>
+            {refreshDetails.isPending && refreshProgress && refreshProgress.remaining > 0 && (
+              <Text size="sm">
+                {refreshProgress.updated + refreshProgress.notFound} cartes traitées, encore{' '}
+                {refreshProgress.remaining}…
+              </Text>
+            )}
             {refreshDetails.error && (
               <Text size="sm" c="red">
                 {errorMessage(refreshDetails.error)}
+                {refreshProgress && refreshProgress.updated > 0
+                  ? ` ${refreshProgress.updated} cartes ont quand même été complétées, relance pour finir.`
+                  : ''}
               </Text>
             )}
             <Button size="xs" onClick={fillMissingDetails} loading={refreshDetails.isPending}>

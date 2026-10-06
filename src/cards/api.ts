@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api, unwrap } from '../api/client';
-import type { CardSort, CreateCardInput, UpdateCardInput } from '../api/types';
+import type { CardSort, CreateCardInput, DetailsRefreshSummary, UpdateCardInput } from '../api/types';
 
 export interface CardFilters {
   page: number;
@@ -111,11 +111,31 @@ export function useDeleteCard() {
   });
 }
 
-export function useRefreshCardDetails() {
+export interface DetailsRefreshProgress {
+  updated: number;
+  notFound: number;
+  remaining: number;
+}
+
+export function useRefreshCardDetails(onProgress: (progress: DetailsRefreshProgress) => void) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => unwrap(await api.POST('/cards/refresh-details')),
+    mutationFn: async () => {
+      const progress: DetailsRefreshProgress = { updated: 0, notFound: 0, remaining: 0 };
+      let afterId: number | null = 0;
+      while (afterId !== null) {
+        const batch: DetailsRefreshSummary = unwrap(
+          await api.POST('/cards/refresh-details', { params: { query: { after_id: afterId } } }),
+        );
+        progress.updated += batch.updated;
+        progress.notFound += batch.not_found;
+        progress.remaining = batch.remaining;
+        onProgress({ ...progress });
+        afterId = batch.next_after_id;
+      }
+      return progress;
+    },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['cards'] }),
   });
 }
