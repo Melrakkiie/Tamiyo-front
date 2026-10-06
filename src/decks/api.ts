@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api, unwrap } from '../api/client';
-import type { CardSort, Deck, UpdateDeckInput } from '../api/types';
+import type { Deck, DeckCardSort, UpdateDeckInput } from '../api/types';
 
 export const COMMON_FORMATS = [
   'commander',
@@ -43,7 +43,7 @@ export function useDeck(id: number) {
   });
 }
 
-export function useDeckCards(id: number, sort: CardSort) {
+export function useDeckCards(id: number, sort: DeckCardSort) {
   return useQuery({
     queryKey: ['decks', 'cards', id, sort],
     queryFn: async () =>

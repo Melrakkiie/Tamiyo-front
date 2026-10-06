@@ -21,7 +21,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
-import type { Card, CardSort, Deck } from '../api/types';
+import type { Card, Deck, DeckCardSort } from '../api/types';
 import { useCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
 import { CardTile } from '../cards/CardTile';
@@ -34,7 +34,7 @@ import { DeckStatsPanel } from '../decks/DeckStatsPanel';
 import { useCardImages } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
 
-const sortOptions: { value: CardSort; label: string }[] = [
+const sortOptions: { value: DeckCardSort; label: string }[] = [
   { value: 'name', label: 'Nom (A → Z)' },
   { value: 'mana_value', label: 'Coût de mana croissant' },
   { value: '-mana_value', label: 'Coût de mana décroissant' },
@@ -231,7 +231,7 @@ function CommanderSection({ deck }: { deck: Deck }) {
 }
 
 function DeckCards({ deck }: { deck: Deck }) {
-  const [sort, setSort] = useState<CardSort>('name');
+  const [sort, setSort] = useState<DeckCardSort>('name');
   const cards = useDeckCards(deck.id, sort);
   const deckCards = cards.data ?? [];
   const images = useCardImages(deckCards.map((card) => card.scryfall_id));
@@ -247,7 +247,7 @@ function DeckCards({ deck }: { deck: Deck }) {
           label="Tri"
           data={sortOptions}
           value={sort}
-          onChange={(value) => value && setSort(value as CardSort)}
+          onChange={(value) => value && setSort(value as DeckCardSort)}
           allowDeselect={false}
           w={240}
         />
