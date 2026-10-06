@@ -139,6 +139,33 @@ export function useRemoveCardFromDeck() {
   });
 }
 
+export function useSwapDeckCard() {
+  const invalidate = useInvalidateDecks();
+
+  return useMutation({
+    mutationFn: async ({
+      deckId,
+      fromCardId,
+      toCardId,
+      isCommander,
+    }: {
+      deckId: number;
+      fromCardId: number;
+      toCardId: number;
+      isCommander: boolean;
+    }) => {
+      unwrap(await api.PUT('/deck/{id}/cards/{card_id}', { params: { path: { id: deckId, card_id: toCardId } } }));
+      if (isCommander) {
+        unwrap(await api.PATCH('/deck/{id}', { params: { path: { id: deckId } }, body: { commander_id: toCardId } }));
+      }
+      unwrap(
+        await api.DELETE('/deck/{id}/cards/{card_id}', { params: { path: { id: deckId, card_id: fromCardId } } }),
+      );
+    },
+    onSettled: invalidate,
+  });
+}
+
 export function isCommanderFormat(format: string) {
   return format.toLowerCase() === 'commander';
 }

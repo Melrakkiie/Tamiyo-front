@@ -143,3 +143,17 @@ export function useRefreshCardDetails(onProgress: (progress: DetailsRefreshProgr
       ]),
   });
 }
+
+export function useCollectionCopies(name: string | null) {
+  return useQuery({
+    queryKey: ['cards', 'copies', name],
+    queryFn: async () => {
+      const result = unwrap(
+        await api.GET('/cards', { params: { query: { name: name ?? '', limit: 100, sort: 'name' } } }),
+      );
+      const wanted = (name ?? '').toLowerCase();
+      return result.data.filter((card) => card.name.toLowerCase() === wanted);
+    },
+    enabled: !!name,
+  });
+}

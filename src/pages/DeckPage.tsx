@@ -342,6 +342,7 @@ function DeckCards({ deck }: { deck: Deck }) {
         deckId={deck.id}
         deckFormat={deck.format}
         commanderId={deck.commander_id}
+        deckCardIds={new Set(deckCards.map((card) => card.id))}
         card={openedCard}
         imageUrl={openedCard ? images.data?.[openedCard.scryfall_id] : undefined}
         onClose={() => setOpenedCard(null)}
