@@ -1,4 +1,5 @@
 import { ApiError } from '../api/errors';
+import type { ScryfallRef } from './dragDrop';
 
 const SCRYFALL_API = 'https://api.scryfall.com';
 const COLLECTION_BATCH_SIZE = 75;
@@ -86,6 +87,12 @@ export function cardArt(card: ScryfallCard): CardArt | null {
 
 export function cardColors(card: ScryfallCard): string[] {
   return card.colors ?? card.card_faces?.flatMap((face) => face.colors ?? []) ?? [];
+}
+
+export async function fetchCard(ref: ScryfallRef): Promise<ScryfallCard | null> {
+  const path =
+    'id' in ref ? `/cards/${ref.id}` : `/cards/${encodeURIComponent(ref.set)}/${encodeURIComponent(ref.number)}`;
+  return scryfall<ScryfallCard>(path);
 }
 
 export async function autocompleteCardNames(query: string): Promise<string[]> {

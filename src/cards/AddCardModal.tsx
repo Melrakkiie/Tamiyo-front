@@ -26,16 +26,29 @@ import { usePrintings } from '../scryfall/hooks';
 import { useStorageOptions } from '../storages/api';
 import { PartialCreationError, useCreateCards } from './api';
 
+export interface CardToAdd {
+  name: string;
+  printing?: ScryfallCard;
+}
+
 interface AddCardModalProps {
-  name: string | null;
+  card: CardToAdd | null;
   onClose: () => void;
   defaultStorageId: number | undefined;
 }
 
-export function AddCardModal({ name, onClose, defaultStorageId }: AddCardModalProps) {
+export function AddCardModal({ card, onClose, defaultStorageId }: AddCardModalProps) {
   return (
-    <Modal opened={name !== null} onClose={onClose} title={name ? `Ajouter ${name}` : undefined} size="xl">
-      {name && <AddCardForm key={name} name={name} onClose={onClose} defaultStorageId={defaultStorageId} />}
+    <Modal opened={card !== null} onClose={onClose} title={card ? `Ajouter ${card.name}` : undefined} size="xl">
+      {card && (
+        <AddCardForm
+          key={`${card.name}-${card.printing?.id ?? ''}`}
+          name={card.name}
+          initialPrinting={card.printing}
+          onClose={onClose}
+          defaultStorageId={defaultStorageId}
+        />
+      )}
     </Modal>
   );
 }
@@ -56,17 +69,23 @@ function clampQuantity(value: number | string) {
 
 interface AddCardFormProps {
   name: string;
+  initialPrinting: ScryfallCard | undefined;
   onClose: () => void;
   defaultStorageId: number | undefined;
 }
 
-function AddCardForm({ name, onClose, defaultStorageId }: AddCardFormProps) {
-  const [printing, setPrinting] = useState<ScryfallCard | null>(null);
-  const [foil, setFoil] = useState(false);
+function AddCardForm({ name, initialPrinting, onClose, defaultStorageId }: AddCardFormProps) {
+  const [printing, setPrinting] = useState<ScryfallCard | null>(initialPrinting ?? null);
+  const [foil, setFoil] = useState(
+    initialPrinting ? !canBeNonFoil(initialPrinting) && canBeFoil(initialPrinting) : false,
+  );
   const [storageId, setStorageId] = useState<string | null>(defaultStorageId ? String(defaultStorageId) : null);
   const [quantity, setQuantity] = useState<number | string>(1);
 
   const printings = usePrintings(name);
+  const candidates = initialPrinting
+    ? [initialPrinting, ...(printings.data ?? []).filter((candidate) => candidate.id !== initialPrinting.id)]
+    : (printings.data ?? []);
   const storageOptions = useStorageOptions();
   const create = useCreateCards();
 
@@ -129,20 +148,20 @@ function AddCardForm({ name, onClose, defaultStorageId }: AddCardFormProps) {
         <Text size="sm" fw={500}>
           Choisis l'édition
         </Text>
-        {printings.isLoading ? (
+        {printings.isLoading && candidates.length === 0 ? (
           <Center p="lg">
             <Loader />
           </Center>
-        ) : printings.error ? (
+        ) : printings.error && candidates.length === 0 ? (
           <Alert color="red">{errorMessage(printings.error)}</Alert>
-        ) : (printings.data ?? []).length === 0 ? (
+        ) : candidates.length === 0 ? (
           <Text size="sm" c="dimmed">
             Aucune édition papier trouvée pour cette carte sur Scryfall.
           </Text>
         ) : (
           <ScrollArea.Autosize mah={360} type="auto">
             <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
-              {(printings.data ?? []).map((candidate) => (
+              {candidates.map((candidate) => (
                 <UnstyledButton key={candidate.id} onClick={() => selectPrinting(candidate)}>
                   <Paper
                     withBorder

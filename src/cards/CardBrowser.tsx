@@ -19,9 +19,11 @@ import { useSearchParams } from 'react-router';
 import { errorMessage } from '../api/errors';
 import type { Card, CardSort } from '../api/types';
 import { useCardImages } from '../scryfall/hooks';
+import { DropOverlay } from '../scryfall/DropOverlay';
 import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
+import { useScryfallDrop } from '../scryfall/useScryfallDrop';
 import { useAllStorages, useStorageOptions } from '../storages/api';
-import { AddCardModal } from './AddCardModal';
+import { AddCardModal, type CardToAdd } from './AddCardModal';
 import { useCards } from './api';
 import { CardDetailModal } from './CardDetailModal';
 import { CardTile } from './CardTile';
@@ -66,7 +68,8 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
 
   const [search, setSearch] = useState(name);
   const [debouncedSearch] = useDebouncedValue(search.trim(), 300);
-  const [cardToAdd, setCardToAdd] = useState<string | null>(null);
+  const [cardToAdd, setCardToAdd] = useState<CardToAdd | null>(null);
+  const drop = useScryfallDrop((printing) => setCardToAdd({ name: printing.name, printing }));
   const [searchKey, setSearchKey] = useState(0);
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
 
@@ -147,8 +150,12 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
         key={searchKey}
         label="Ajouter une carte"
         placeholder="Cherche une carte sur Scryfall, par son nom anglais (ex. Lightning Bolt)"
-        onSelect={setCardToAdd}
+        onSelect={(selected) => setCardToAdd({ name: selected })}
       />
+      <Text size="xs" c="dimmed" mt={-8}>
+        Tu peux aussi glisser-déposer une carte depuis scryfall.com, directement dans l'édition voulue.
+      </Text>
+      <DropOverlay dragging={drop.dragging} resolving={drop.resolving} />
 
       <Text size="sm" c="dimmed">
         {cards.data
@@ -263,7 +270,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
       </Text>
 
       <AddCardModal
-        name={cardToAdd}
+        card={cardToAdd}
         onClose={() => {
           setCardToAdd(null);
           setSearchKey((key) => key + 1);
