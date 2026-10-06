@@ -9,6 +9,7 @@ export interface CardFilters {
   sort: CardSort;
   name: string;
   storageId: number | undefined;
+  colorIdentity?: string;
 }
 
 export function useCards(filters: CardFilters) {
@@ -24,6 +25,7 @@ export function useCards(filters: CardFilters) {
               sort: filters.sort,
               name: filters.name || undefined,
               storage_id: filters.storageId,
+              color_identity: filters.colorIdentity,
             },
           },
         }),

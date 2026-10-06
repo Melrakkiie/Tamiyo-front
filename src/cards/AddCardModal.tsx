@@ -111,6 +111,7 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId }: AddCa
           mana_value: printing.cmc ?? 0,
           colors: colorCode(cardColors(printing)),
           card_type: printing.type_line ? primaryType(printing.type_line) : null,
+          color_identity: printing.color_identity ? colorCode(printing.color_identity) : null,
           storage_id: storageId ? Number(storageId) : null,
         },
         quantity: copies,

@@ -134,5 +134,5 @@ export function sortIntoGroups(cards: Card[], grouping: CardGrouping): Card[] {
 }
 
 export function hasMissingDetails(cards: Card[]): boolean {
-  return cards.some((card) => card.colors == null || card.card_type == null);
+  return cards.some((card) => card.colors == null || card.card_type == null || card.color_identity == null);
 }

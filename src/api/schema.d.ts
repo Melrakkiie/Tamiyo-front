@@ -500,6 +500,8 @@ export interface paths {
                     storage_id?: number;
                     /** @description Case-insensitive partial match on the card name. */
                     name?: string;
+                    /** @description Only return cards whose color identity fits inside these colors (e.g. a commander's identity), in any order. An empty value keeps colorless cards only. Cards whose color identity isn't known yet are left out. */
+                    color_identity?: string;
                     /** @description 1-based page number. */
                     page?: number;
                     /** @description Number of cards per page (max 100). */
@@ -1966,6 +1968,8 @@ export interface components {
              * @enum {string|null}
              */
             card_type?: "Creature" | "Planeswalker" | "Battle" | "Instant" | "Sorcery" | "Artifact" | "Enchantment" | "Land" | "Other" | null;
+            /** @description Color identity as WUBRG letters in that order, empty for a colorless card, null when not known yet (see POST /cards/refresh-details). */
+            color_identity?: string | null;
             added: string;
             updated: string;
         };
@@ -2011,6 +2015,8 @@ export interface components {
              * @enum {string|null}
              */
             card_type?: "Creature" | "Planeswalker" | "Battle" | "Instant" | "Sorcery" | "Artifact" | "Enchantment" | "Land" | "Other" | null;
+            /** @description WUBRG letters (any case and order, normalized to WUBRG order), empty for colorless. Optional: left unknown when omitted. */
+            color_identity?: string | null;
         };
         /** @description All fields optional; only included fields are modified. */
         UpdateCardRequest: {
@@ -2026,6 +2032,7 @@ export interface components {
             colors?: string;
             /** @enum {string} */
             card_type?: "Creature" | "Planeswalker" | "Battle" | "Instant" | "Sorcery" | "Artifact" | "Enchantment" | "Land" | "Other";
+            color_identity?: string;
         };
         Storage: {
             id: number;

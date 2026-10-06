@@ -29,6 +29,7 @@ export interface ScryfallCard {
   power?: string;
   toughness?: string;
   colors?: string[];
+  color_identity?: string[];
   artist?: string;
   legalities?: Record<string, string>;
   image_uris?: ImageUris;

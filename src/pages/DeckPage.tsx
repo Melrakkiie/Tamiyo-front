@@ -368,7 +368,7 @@ function DeckCards({ deck }: { deck: Deck }) {
       )}
 
       <AddToDeckModal
-        deckId={deck.id}
+        deck={deck}
         deckCardIds={new Set(deckCards.map((card) => card.id))}
         opened={addOpened}
         onClose={() => setAddOpened(false)}

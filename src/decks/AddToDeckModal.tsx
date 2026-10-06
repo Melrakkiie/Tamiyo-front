@@ -1,31 +1,74 @@
-import { Alert, Badge, Button, Center, Group, Loader, Modal, ScrollArea, Stack, Text, TextInput } from '@mantine/core';
+import {
+  Alert,
+  Badge,
+  Button,
+  Center,
+  Group,
+  Loader,
+  Modal,
+  ScrollArea,
+  Stack,
+  Switch,
+  Text,
+  TextInput,
+} from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
+import type { Deck } from '../api/types';
 import { useCards } from '../cards/api';
+import { hasMissingDetails } from '../cards/grouping';
+import { MissingDetailsAlert } from '../cards/MissingDetailsAlert';
+import { colorCode } from '../scryfall/classify';
+import { useScryfallCard } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
-import { useAddCardToDeck } from './api';
+import { isCommanderFormat, useAddCardToDeck } from './api';
 
 interface AddToDeckModalProps {
-  deckId: number;
+  deck: Deck;
   deckCardIds: Set<number>;
   opened: boolean;
   onClose: () => void;
 }
 
-export function AddToDeckModal({ deckId, deckCardIds, opened, onClose }: AddToDeckModalProps) {
+export function AddToDeckModal({ deck, deckCardIds, opened, onClose }: AddToDeckModalProps) {
   return (
     <Modal opened={opened} onClose={onClose} title="Ajouter des cartes de ta collection" size="lg">
-      {opened && <AddToDeckList deckId={deckId} deckCardIds={deckCardIds} />}
+      {opened && <AddToDeckList deck={deck} deckCardIds={deckCardIds} />}
     </Modal>
   );
 }
 
-function AddToDeckList({ deckId, deckCardIds }: { deckId: number; deckCardIds: Set<number> }) {
+const colorNames: Record<string, string> = { W: 'blanc', U: 'bleu', B: 'noir', R: 'rouge', G: 'vert' };
+
+function identityLabel(identity: string) {
+  return identity === ''
+    ? 'incolore'
+    : identity
+        .split('')
+        .map((color) => colorNames[color])
+        .join(', ');
+}
+
+function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<number> }) {
+  const deckId = deck.id;
+  const commander = useScryfallCard(isCommanderFormat(deck.format) ? deck.commander_scryfall_id : null);
+  const commanderIdentity = commander.data?.color_identity ? colorCode(commander.data.color_identity) : null;
+  const [restrictToIdentity, setRestrictToIdentity] = useState(true);
+  const identityFilter = commanderIdentity !== null && restrictToIdentity ? commanderIdentity : undefined;
   const [search, setSearch] = useState('');
   const [debouncedSearch] = useDebouncedValue(search.trim(), 300);
-  const cards = useCards({ page: 1, limit: 30, sort: 'name', name: debouncedSearch, storageId: undefined });
+  const cards = useCards({
+    page: 1,
+    limit: 30,
+    sort: 'name',
+    name: debouncedSearch,
+    storageId: undefined,
+    colorIdentity: identityFilter,
+  });
+  const unfiltered = useCards({ page: 1, limit: 30, sort: 'name', name: debouncedSearch, storageId: undefined });
+  const someIdentitiesUnknown = identityFilter !== undefined && hasMissingDetails(unfiltered.data?.data ?? []);
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
   const add = useAddCardToDeck();
@@ -46,6 +89,14 @@ function AddToDeckList({ deckId, deckCardIds }: { deckId: number; deckCardIds: S
         onChange={(event) => setSearch(event.currentTarget.value)}
         data-autofocus
       />
+      {commanderIdentity !== null && (
+        <Switch
+          label={`Seulement l'identité de couleur du commandant (${identityLabel(commanderIdentity)})`}
+          checked={restrictToIdentity}
+          onChange={(event) => setRestrictToIdentity(event.currentTarget.checked)}
+        />
+      )}
+      {someIdentitiesUnknown && <MissingDetailsAlert />}
       {add.error && <Alert color="red">{errorMessage(add.error)}</Alert>}
       {cards.error && <Alert color="red">{errorMessage(cards.error)}</Alert>}
 
@@ -55,7 +106,11 @@ function AddToDeckList({ deckId, deckCardIds }: { deckId: number; deckCardIds: S
         </Center>
       ) : results.length === 0 ? (
         <Text c="dimmed" ta="center" p="lg">
-          {debouncedSearch ? 'Aucune carte de ta collection ne correspond.' : 'Ta collection est vide.'}
+          {identityFilter !== undefined
+            ? "Aucune carte de ta collection dans l'identité de couleur du commandant ne correspond."
+            : debouncedSearch
+              ? 'Aucune carte de ta collection ne correspond.'
+              : 'Ta collection est vide.'}
         </Text>
       ) : (
         <ScrollArea.Autosize mah={420} type="auto">
