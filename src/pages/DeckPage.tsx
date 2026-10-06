@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Center,
+  Divider,
   Group,
   Loader,
   Paper,
@@ -25,6 +26,15 @@ import type { Card, Deck, DeckCardSort } from '../api/types';
 import { useCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
 import { CardTile } from '../cards/CardTile';
+import {
+  type CardGrouping,
+  groupCards,
+  groupingOptions,
+  hasMissingDetails,
+  parseGrouping,
+  sortIntoGroups,
+} from '../cards/grouping';
+import { MissingDetailsAlert } from '../cards/MissingDetailsAlert';
 import { AddToDeckModal } from '../decks/AddToDeckModal';
 import { isCommanderFormat, useDeck, useDeckCards, useDeleteDeck, useUpdateDeck } from '../decks/api';
 import { DeckCardModal } from '../decks/DeckCardModal';
@@ -40,6 +50,8 @@ const sortOptions: { value: DeckCardSort; label: string }[] = [
   { value: '-mana_value', label: 'Coût de mana décroissant' },
   { value: '-added', label: 'Ajoutées récemment' },
 ];
+
+const gridCols = { base: 2, xs: 3, sm: 4, lg: 6 };
 
 export function DeckPage() {
   const id = Number(useParams().id);
@@ -232,29 +244,58 @@ function CommanderSection({ deck }: { deck: Deck }) {
 
 function DeckCards({ deck }: { deck: Deck }) {
   const [sort, setSort] = useState<DeckCardSort>('name');
+  const [grouping, setGrouping] = useState<CardGrouping | null>('type');
   const cards = useDeckCards(deck.id, sort);
   const deckCards = cards.data ?? [];
+  const groups = grouping ? groupCards(sortIntoGroups(deckCards, grouping), grouping) : [];
+  const showMissingDetails = (grouping === 'type' || grouping === 'color') && hasMissingDetails(deckCards);
   const images = useCardImages(deckCards.map((card) => card.scryfall_id));
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
   const [addOpened, setAddOpened] = useState(false);
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
 
+  function renderTile(card: Card) {
+    return (
+      <CardTile
+        key={card.id}
+        card={card}
+        imageUrl={images.data?.[card.scryfall_id]}
+        imageLoading={images.isLoading}
+        storageName={card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null}
+        onOpen={setOpenedCard}
+      />
+    );
+  }
+
   return (
     <Stack>
       <Group justify="space-between" align="flex-end">
-        <Select
-          label="Tri"
-          data={sortOptions}
-          value={sort}
-          onChange={(value) => value && setSort(value as DeckCardSort)}
-          allowDeselect={false}
-          w={240}
-        />
+        <Group align="flex-end">
+          <Select
+            label="Grouper par"
+            placeholder="Aucun regroupement"
+            data={groupingOptions}
+            value={grouping}
+            onChange={(value) => setGrouping(parseGrouping(value))}
+            clearable
+            w={200}
+          />
+          <Select
+            label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
+            data={sortOptions}
+            value={sort}
+            onChange={(value) => value && setSort(value as DeckCardSort)}
+            allowDeselect={false}
+            w={240}
+          />
+        </Group>
         <Button onClick={() => setAddOpened(true)}>Ajouter des cartes</Button>
       </Group>
 
       {cards.error && <Alert color="red">{errorMessage(cards.error)}</Alert>}
+
+      {showMissingDetails && <MissingDetailsAlert />}
 
       {cards.isLoading ? (
         <Center p="xl">
@@ -264,18 +305,30 @@ function DeckCards({ deck }: { deck: Deck }) {
         <Center p="xl">
           <Text c="dimmed">Ce deck est vide : ajoute des cartes de ta collection.</Text>
         </Center>
-      ) : (
-        <SimpleGrid cols={{ base: 2, xs: 3, sm: 4, lg: 6 }} spacing="md" verticalSpacing="lg">
-          {deckCards.map((card) => (
-            <CardTile
-              key={card.id}
-              card={card}
-              imageUrl={images.data?.[card.scryfall_id]}
-              imageLoading={images.isLoading}
-              storageName={card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null}
-              onOpen={setOpenedCard}
-            />
+      ) : grouping ? (
+        <Stack gap="lg">
+          {groups.map((group) => (
+            <Stack key={group.label} gap="sm">
+              <Divider
+                labelPosition="left"
+                label={
+                  <Title order={4}>
+                    {group.label}{' '}
+                    <Text span size="sm" c="dimmed">
+                      ({group.cards.length})
+                    </Text>
+                  </Title>
+                }
+              />
+              <SimpleGrid cols={gridCols} spacing="md" verticalSpacing="lg">
+                {group.cards.map(renderTile)}
+              </SimpleGrid>
+            </Stack>
           ))}
+        </Stack>
+      ) : (
+        <SimpleGrid cols={gridCols} spacing="md" verticalSpacing="lg">
+          {deckCards.map(renderTile)}
         </SimpleGrid>
       )}
 

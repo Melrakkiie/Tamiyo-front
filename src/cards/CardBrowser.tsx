@@ -1,6 +1,5 @@
 import {
   Alert,
-  Button,
   Center,
   Divider,
   Group,
@@ -14,7 +13,6 @@ import {
   Title,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { notifications } from '@mantine/notifications';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
@@ -24,9 +22,10 @@ import { useCardImages } from '../scryfall/hooks';
 import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
 import { useAllStorages, useStorageOptions } from '../storages/api';
 import { AddCardModal } from './AddCardModal';
-import { type DetailsRefreshProgress, useCards, useRefreshCardDetails } from './api';
+import { useCards } from './api';
 import { CardDetailModal } from './CardDetailModal';
 import { CardTile } from './CardTile';
+import { MissingDetailsAlert } from './MissingDetailsAlert';
 import { groupCards, groupingOptions, hasMissingDetails, parseGrouping, sortForGrouping } from './grouping';
 
 const PAGE_SIZE = 24;
@@ -78,26 +77,8 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const cards = useCards({ page, limit: pageSize, sort, name, storageId });
   const pageCards = cards.data?.data ?? [];
   const images = useCardImages(pageCards.map((card) => card.scryfall_id));
-  const [refreshProgress, setRefreshProgress] = useState<DetailsRefreshProgress | null>(null);
-  const refreshDetails = useRefreshCardDetails(setRefreshProgress);
   const showMissingDetails =
     (grouping === 'type' || grouping === 'color' || sortsNeedingDetails.includes(sort)) && hasMissingDetails(pageCards);
-
-  function fillMissingDetails() {
-    setRefreshProgress(null);
-    refreshDetails.mutate(undefined, {
-      onSuccess: ({ updated, notFound }) => {
-        notifications.show({
-          color: notFound > 0 ? 'yellow' : 'green',
-          message:
-            `${updated} carte${updated > 1 ? 's' : ''} complétée${updated > 1 ? 's' : ''}.` +
-            (notFound > 0
-              ? ` ${notFound} carte${notFound > 1 ? 's' : ''} introuvable${notFound > 1 ? 's' : ''} sur Scryfall.`
-              : ''),
-        });
-      },
-    });
-  }
 
   function renderTile(card: Card) {
     return (
@@ -214,33 +195,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
 
       {cards.error && <Alert color="red">{errorMessage(cards.error)}</Alert>}
 
-      {showMissingDetails && (
-        <Alert color="yellow">
-          <Stack gap="xs" align="flex-start">
-            <Text size="sm">
-              Certaines cartes ont été ajoutées avant que Tamiyo ne retienne leur couleur et leur type : elles sont
-              classées à part. Tamiyo peut aller chercher ces informations sur Scryfall.
-            </Text>
-            {refreshDetails.isPending && refreshProgress && refreshProgress.remaining > 0 && (
-              <Text size="sm">
-                {refreshProgress.updated + refreshProgress.notFound} cartes traitées, encore{' '}
-                {refreshProgress.remaining}…
-              </Text>
-            )}
-            {refreshDetails.error && (
-              <Text size="sm" c="red">
-                {errorMessage(refreshDetails.error)}
-                {refreshProgress && refreshProgress.updated > 0
-                  ? ` ${refreshProgress.updated} cartes ont quand même été complétées, relance pour finir.`
-                  : ''}
-              </Text>
-            )}
-            <Button size="xs" onClick={fillMissingDetails} loading={refreshDetails.isPending}>
-              Compléter depuis Scryfall
-            </Button>
-          </Stack>
-        </Alert>
-      )}
+      {showMissingDetails && <MissingDetailsAlert />}
 
       {cards.isLoading ? (
         <Center p="xl">

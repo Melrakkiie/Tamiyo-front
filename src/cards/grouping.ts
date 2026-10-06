@@ -85,6 +85,54 @@ export function groupCards(cards: Card[], grouping: CardGrouping): CardGroup[] {
   return groups;
 }
 
+const typeRanks: Record<CardType, number> = {
+  Creature: 1,
+  Planeswalker: 2,
+  Battle: 3,
+  Instant: 4,
+  Sorcery: 5,
+  Artifact: 6,
+  Enchantment: 7,
+  Land: 8,
+  Other: 9,
+};
+
+const colorRanks: Record<string, number> = { W: 1, U: 2, B: 3, R: 4, G: 5 };
+
+function colorRank(card: Card): number {
+  if (card.card_type === 'Land') {
+    return 8;
+  }
+  if (card.colors === null || card.colors === undefined) {
+    return 9;
+  }
+  if (card.colors === '') {
+    return 7;
+  }
+  if (card.colors.length > 1) {
+    return 6;
+  }
+  return colorRanks[card.colors] ?? 9;
+}
+
+function groupRank(card: Card, grouping: CardGrouping): number {
+  switch (grouping) {
+    case 'type':
+      return card.card_type ? typeRanks[card.card_type] : 10;
+    case 'color':
+      return colorRank(card);
+    case 'mana':
+      return Math.floor(card.mana_value);
+  }
+}
+
+export function sortIntoGroups(cards: Card[], grouping: CardGrouping): Card[] {
+  return cards
+    .map((card, index) => ({ card, index, rank: groupRank(card, grouping) }))
+    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .map(({ card }) => card);
+}
+
 export function hasMissingDetails(cards: Card[]): boolean {
   return cards.some((card) => card.colors == null || card.card_type == null);
 }

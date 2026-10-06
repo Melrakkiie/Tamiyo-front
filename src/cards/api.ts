@@ -136,6 +136,10 @@ export function useRefreshCardDetails(onProgress: (progress: DetailsRefreshProgr
       }
       return progress;
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['cards'] }),
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['cards'] }),
+        queryClient.invalidateQueries({ queryKey: ['decks'] }),
+      ]),
   });
 }
