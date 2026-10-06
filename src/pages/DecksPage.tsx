@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
 import { errorMessage } from '../api/errors';
+import { capitalize, groupByRecent } from '../layout/groupByRecent';
 import { useAllDecks, useCreateDeck } from '../decks/api';
 import { DeckFormModal } from '../decks/DeckFormModal';
 
@@ -43,21 +44,33 @@ export function DecksPage() {
           <Text c="dimmed">Aucun deck pour le moment.</Text>
         </Center>
       ) : (
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
-          {decks.data?.map((deck) => (
-            <Card key={deck.id} withBorder component={Link} to={`/decks/${deck.id}`}>
-              <Group justify="space-between" wrap="nowrap">
-                <Text fw={600} lineClamp={1}>
-                  {deck.name}
+        <Stack gap="xl">
+          {groupByRecent(decks.data ?? [], (deck) => deck.format, capitalize).map((group) => (
+            <Stack key={group.key} gap="sm">
+              <Title order={3} size="h4">
+                {group.label}{' '}
+                <Text span size="sm" c="dimmed">
+                  ({group.items.length})
                 </Text>
-                <Badge variant="light">{deck.format}</Badge>
-              </Group>
-              <Text size="sm" c="dimmed">
-                {deck.card_count} carte{deck.card_count > 1 ? 's' : ''}
-              </Text>
-            </Card>
+              </Title>
+              <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
+                {group.items.map((deck) => (
+                  <Card key={deck.id} withBorder component={Link} to={`/decks/${deck.id}`}>
+                    <Group justify="space-between" wrap="nowrap">
+                      <Text fw={600} lineClamp={1}>
+                        {deck.name}
+                      </Text>
+                      <Badge variant="light">{deck.format}</Badge>
+                    </Group>
+                    <Text size="sm" c="dimmed">
+                      {deck.card_count} carte{deck.card_count > 1 ? 's' : ''}
+                    </Text>
+                  </Card>
+                ))}
+              </SimpleGrid>
+            </Stack>
           ))}
-        </SimpleGrid>
+        </Stack>
       )}
 
       <DeckFormModal

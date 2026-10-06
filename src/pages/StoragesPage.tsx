@@ -4,8 +4,19 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
 import { errorMessage } from '../api/errors';
+import { capitalize, groupByRecent } from '../layout/groupByRecent';
 import { StorageFormModal } from '../storages/StorageFormModal';
 import { useAllStorages, useCreateStorage } from '../storages/api';
+
+const storageTypeLabels: Record<string, string> = {
+  binder: 'Classeurs',
+  box: 'Boîtes',
+  deck: 'Decks',
+};
+
+function storageTypeLabel(type: string) {
+  return storageTypeLabels[type] ?? capitalize(type);
+}
 
 export function StoragesPage() {
   const navigate = useNavigate();
@@ -43,21 +54,33 @@ export function StoragesPage() {
           <Text c="dimmed">Aucun rangement pour le moment. Crée ton premier classeur ou ta première boîte.</Text>
         </Center>
       ) : (
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
-          {storages.data?.map((storage) => (
-            <Card key={storage.id} withBorder component={Link} to={`/storages/${storage.id}`}>
-              <Group justify="space-between" wrap="nowrap">
-                <Text fw={600} lineClamp={1}>
-                  {storage.name}
+        <Stack gap="xl">
+          {groupByRecent(storages.data ?? [], (storage) => storage.type, storageTypeLabel).map((group) => (
+            <Stack key={group.key} gap="sm">
+              <Title order={3} size="h4">
+                {group.label}{' '}
+                <Text span size="sm" c="dimmed">
+                  ({group.items.length})
                 </Text>
-                <Badge variant="light">{storage.type}</Badge>
-              </Group>
-              <Text size="sm" c="dimmed">
-                {storage.card_count} carte{storage.card_count > 1 ? 's' : ''}
-              </Text>
-            </Card>
+              </Title>
+              <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
+                {group.items.map((storage) => (
+                  <Card key={storage.id} withBorder component={Link} to={`/storages/${storage.id}`}>
+                    <Group justify="space-between" wrap="nowrap">
+                      <Text fw={600} lineClamp={1}>
+                        {storage.name}
+                      </Text>
+                      <Badge variant="light">{storage.type}</Badge>
+                    </Group>
+                    <Text size="sm" c="dimmed">
+                      {storage.card_count} carte{storage.card_count > 1 ? 's' : ''}
+                    </Text>
+                  </Card>
+                ))}
+              </SimpleGrid>
+            </Stack>
           ))}
-        </SimpleGrid>
+        </Stack>
       )}
 
       <StorageFormModal
