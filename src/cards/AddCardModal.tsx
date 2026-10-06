@@ -20,7 +20,8 @@ import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import { imageUrl, type ScryfallCard } from '../scryfall/client';
+import { colorCode, primaryType } from '../scryfall/classify';
+import { cardColors, imageUrl, type ScryfallCard } from '../scryfall/client';
 import { usePrintings } from '../scryfall/hooks';
 import { useStorageOptions } from '../storages/api';
 import { PartialCreationError, useCreateCards } from './api';
@@ -89,6 +90,8 @@ function AddCardForm({ name, onClose, defaultStorageId }: AddCardFormProps) {
           collector_number: printing.collector_number,
           foil,
           mana_value: printing.cmc ?? 0,
+          colors: colorCode(cardColors(printing)),
+          card_type: printing.type_line ? primaryType(printing.type_line) : null,
           storage_id: storageId ? Number(storageId) : null,
         },
         quantity: copies,

@@ -22,8 +22,10 @@ export interface ScryfallCard {
   cmc?: number;
   released_at: string;
   finishes?: string[];
+  type_line?: string;
+  colors?: string[];
   image_uris?: ImageUris;
-  card_faces?: { image_uris?: ImageUris }[];
+  card_faces?: { image_uris?: ImageUris; colors?: string[] }[];
 }
 
 interface ScryfallList<T> {
@@ -52,6 +54,10 @@ async function scryfall<T>(pathOrUrl: string, init?: RequestInit): Promise<T | n
 
 export function imageUrl(card: ScryfallCard, size: ImageSize): string | undefined {
   return card.image_uris?.[size] ?? card.card_faces?.[0]?.image_uris?.[size];
+}
+
+export function cardColors(card: ScryfallCard): string[] {
+  return card.colors ?? card.card_faces?.flatMap((face) => face.colors ?? []) ?? [];
 }
 
 export async function autocompleteCardNames(query: string): Promise<string[]> {

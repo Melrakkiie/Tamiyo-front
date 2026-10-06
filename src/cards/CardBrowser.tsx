@@ -1,6 +1,8 @@
 import {
   Alert,
+  Button,
   Center,
+  Divider,
   Group,
   Loader,
   Pagination,
@@ -9,8 +11,10 @@ import {
   Stack,
   Text,
   TextInput,
+  Title,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
@@ -20,11 +24,13 @@ import { useCardImages } from '../scryfall/hooks';
 import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
 import { useAllStorages, useStorageOptions } from '../storages/api';
 import { AddCardModal } from './AddCardModal';
-import { useCards } from './api';
+import { useCards, useRefreshCardDetails } from './api';
 import { CardDetailModal } from './CardDetailModal';
 import { CardTile } from './CardTile';
+import { groupCards, groupingOptions, hasMissingDetails, parseGrouping, sortForGrouping } from './grouping';
 
 const PAGE_SIZE = 24;
+const GROUPED_PAGE_SIZE = 48;
 
 const sortOptions: { value: CardSort; label: string }[] = [
   { value: '-updated', label: 'Modifiées récemment' },
@@ -33,7 +39,12 @@ const sortOptions: { value: CardSort; label: string }[] = [
   { value: '-name', label: 'Nom (Z → A)' },
   { value: 'mana_value', label: 'Coût de mana croissant' },
   { value: '-mana_value', label: 'Coût de mana décroissant' },
+  { value: 'color', label: 'Couleur (blanc → vert)' },
+  { value: '-color', label: 'Couleur (vert → blanc)' },
+  { value: 'type', label: 'Type' },
 ];
+
+const sortsNeedingDetails: CardSort[] = ['color', '-color', 'type', '-type'];
 
 function parseSort(raw: string | null): CardSort {
   return sortOptions.find((option) => option.value === raw)?.value ?? '-updated';
@@ -46,7 +57,10 @@ interface CardBrowserProps {
 export function CardBrowser({ storageId: fixedStorageId }: CardBrowserProps) {
   const [params, setParams] = useSearchParams();
   const page = Math.max(1, Number(params.get('page')) || 1);
-  const sort = parseSort(params.get('sort'));
+  const chosenSort = parseSort(params.get('sort'));
+  const grouping = parseGrouping(params.get('group'));
+  const sort = grouping ? sortForGrouping[grouping] : chosenSort;
+  const pageSize = grouping ? GROUPED_PAGE_SIZE : PAGE_SIZE;
   const name = params.get('q') ?? '';
   const storageId = fixedStorageId ?? (Number(params.get('storage')) || undefined);
 
@@ -60,9 +74,44 @@ export function CardBrowser({ storageId: fixedStorageId }: CardBrowserProps) {
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
   const showStorage = !storageId;
-  const cards = useCards({ page, limit: PAGE_SIZE, sort, name, storageId });
+  const cards = useCards({ page, limit: pageSize, sort, name, storageId });
   const pageCards = cards.data?.data ?? [];
   const images = useCardImages(pageCards.map((card) => card.scryfall_id));
+  const refreshDetails = useRefreshCardDetails();
+  const showMissingDetails =
+    (grouping === 'type' || grouping === 'color' || sortsNeedingDetails.includes(sort)) && hasMissingDetails(pageCards);
+
+  function fillMissingDetails() {
+    refreshDetails.mutate(undefined, {
+      onSuccess: ({ updated, not_found }) => {
+        notifications.show({
+          color: not_found > 0 ? 'yellow' : 'green',
+          message:
+            `${updated} carte${updated > 1 ? 's' : ''} complétée${updated > 1 ? 's' : ''}.` +
+            (not_found > 0
+              ? ` ${not_found} carte${not_found > 1 ? 's' : ''} introuvable${not_found > 1 ? 's' : ''} sur Scryfall.`
+              : ''),
+        });
+      },
+    });
+  }
+
+  function renderTile(card: Card) {
+    return (
+      <CardTile
+        key={card.id}
+        card={card}
+        imageUrl={images.data?.[card.scryfall_id]}
+        imageLoading={images.isLoading}
+        storageName={
+          showStorage ? (card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null) : undefined
+        }
+        onOpen={setOpenedCard}
+      />
+    );
+  }
+
+  const gridCols = { base: 2, xs: 3, sm: 4, lg: 6 };
 
   function updateParams(changes: Record<string, string | null>) {
     setParams(
@@ -142,15 +191,44 @@ export function CardBrowser({ storageId: fixedStorageId }: CardBrowserProps) {
           />
         )}
         <Select
+          label="Grouper par"
+          placeholder="Aucun regroupement"
+          data={groupingOptions}
+          value={grouping}
+          onChange={(value) => updateParams({ group: value, page: null })}
+          clearable
+        />
+        <Select
           label="Tri"
           data={sortOptions}
-          value={sort}
+          value={grouping ? null : sort}
+          placeholder={grouping ? 'Selon le regroupement' : undefined}
           onChange={(value) => updateParams({ sort: value === '-updated' ? null : value, page: null })}
           allowDeselect={false}
+          disabled={!!grouping}
         />
       </Group>
 
       {cards.error && <Alert color="red">{errorMessage(cards.error)}</Alert>}
+
+      {showMissingDetails && (
+        <Alert color="yellow">
+          <Stack gap="xs" align="flex-start">
+            <Text size="sm">
+              Certaines cartes ont été ajoutées avant que Tamiyo ne retienne leur couleur et leur type : elles sont
+              classées à part. Tamiyo peut aller chercher ces informations sur Scryfall.
+            </Text>
+            {refreshDetails.error && (
+              <Text size="sm" c="red">
+                {errorMessage(refreshDetails.error)}
+              </Text>
+            )}
+            <Button size="xs" onClick={fillMissingDetails} loading={refreshDetails.isPending}>
+              Compléter depuis Scryfall
+            </Button>
+          </Stack>
+        </Alert>
+      )}
 
       {cards.isLoading ? (
         <Center p="xl">
@@ -173,20 +251,30 @@ export function CardBrowser({ storageId: fixedStorageId }: CardBrowserProps) {
             )}
           </Stack>
         </Center>
-      ) : (
-        <SimpleGrid cols={{ base: 2, xs: 3, sm: 4, lg: 6 }} spacing="md" verticalSpacing="lg">
-          {pageCards.map((card) => (
-            <CardTile
-              key={card.id}
-              card={card}
-              imageUrl={images.data?.[card.scryfall_id]}
-              imageLoading={images.isLoading}
-              storageName={
-                showStorage ? (card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null) : undefined
-              }
-              onOpen={setOpenedCard}
-            />
+      ) : grouping ? (
+        <Stack gap="lg">
+          {groupCards(pageCards, grouping).map((group, index) => (
+            <Stack key={`${index}-${group.label}`} gap="sm">
+              <Divider
+                labelPosition="left"
+                label={
+                  <Title order={4}>
+                    {group.label}{' '}
+                    <Text span size="sm" c="dimmed">
+                      ({group.cards.length})
+                    </Text>
+                  </Title>
+                }
+              />
+              <SimpleGrid cols={gridCols} spacing="md" verticalSpacing="lg">
+                {group.cards.map(renderTile)}
+              </SimpleGrid>
+            </Stack>
           ))}
+        </Stack>
+      ) : (
+        <SimpleGrid cols={gridCols} spacing="md" verticalSpacing="lg">
+          {pageCards.map(renderTile)}
         </SimpleGrid>
       )}
 

@@ -110,3 +110,12 @@ export function useDeleteCard() {
     onSettled: invalidate,
   });
 }
+
+export function useRefreshCardDetails() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => unwrap(await api.POST('/cards/refresh-details')),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['cards'] }),
+  });
+}

@@ -505,7 +505,7 @@ export interface paths {
                     /** @description Number of cards per page (max 100). */
                     limit?: number;
                     /** @description Sort field, with an optional "-" prefix for descending order. id is always used as a secondary tie-breaker for a stable order. */
-                    sort?: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value";
+                    sort?: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "color" | "-color" | "type" | "-type";
                 };
                 header?: never;
                 path?: never;
@@ -609,6 +609,48 @@ export interface paths {
                 500: components["responses"]["InternalError"];
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cards/refresh-details": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fill in missing colors and types from Scryfall
+         * @description Looks up on Scryfall every card of the account whose colors or card_type aren't known yet (cards created before they were stored, or imported while Scryfall was unreachable), and stores its colors, primary type and mana value.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DetailsRefreshSummary"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                500: components["responses"]["InternalError"];
+                502: components["responses"]["BadGateway"];
+            };
+        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1905,8 +1947,21 @@ export interface components {
             storage_id?: number | null;
             /** @description Converted mana cost (CMC). */
             mana_value: number;
+            /** @description The card's colors as WUBRG letters in that order ("WR" for a Boros card), empty for a colorless card, null when not known yet (see POST /cards/refresh-details). */
+            colors?: string | null;
+            /**
+             * @description Primary type, from the type line (lands first, then creatures, planeswalkers...). null when not known yet.
+             * @enum {string|null}
+             */
+            card_type?: "Creature" | "Planeswalker" | "Battle" | "Instant" | "Sorcery" | "Artifact" | "Enchantment" | "Land" | "Other" | null;
             added: string;
             updated: string;
+        };
+        DetailsRefreshSummary: {
+            /** @description Cards whose details were filled in. */
+            updated: number;
+            /** @description Cards Scryfall didn't know (their details stay unknown). */
+            not_found: number;
         };
         DeleteAllCardsResponse: {
             /** @description Number of cards deleted. */
@@ -1933,6 +1988,13 @@ export interface components {
              * @default 0
              */
             mana_value: number;
+            /** @description WUBRG letters (any case and order, normalized to WUBRG order), empty for colorless. Optional: left unknown when omitted. */
+            colors?: string | null;
+            /**
+             * @description Primary type. Optional, left unknown when omitted.
+             * @enum {string|null}
+             */
+            card_type?: "Creature" | "Planeswalker" | "Battle" | "Instant" | "Sorcery" | "Artifact" | "Enchantment" | "Land" | "Other" | null;
         };
         /** @description All fields optional; only included fields are modified. */
         UpdateCardRequest: {
@@ -1945,6 +2007,9 @@ export interface components {
             /** @description Moves the card to this storage. null removes the card from its storage; leaving the field out keeps the current one. */
             storage_id?: number | null;
             mana_value?: number;
+            colors?: string;
+            /** @enum {string} */
+            card_type?: "Creature" | "Planeswalker" | "Battle" | "Instant" | "Sorcery" | "Artifact" | "Enchantment" | "Land" | "Other";
         };
         Storage: {
             id: number;
