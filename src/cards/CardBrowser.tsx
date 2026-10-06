@@ -149,7 +149,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
       <ScryfallCardSearch
         key={searchKey}
         label="Ajouter une carte"
-        placeholder="Cherche une carte sur Scryfall, par son nom anglais (ex. Lightning Bolt)"
+        placeholder="Cherche une carte sur Scryfall (ex. Lightning Bolt, ou t:creature c:g)"
         onSelect={(selected) => setCardToAdd({ name: selected })}
       />
       <Text size="xs" c="dimmed" mt={-8}>

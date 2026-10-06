@@ -106,6 +106,27 @@ export async function fetchCard(ref: ScryfallRef): Promise<ScryfallCard | null> 
   return scryfall<ScryfallCard>(path);
 }
 
+export interface CardSuggestion {
+  name: string;
+  typeLine?: string;
+}
+
+const MAX_SEARCH_SUGGESTIONS = 30;
+
+export function isAdvancedQuery(query: string) {
+  return /[:<>=]/.test(query) || /^[!"(-]/.test(query.trim());
+}
+
+export async function searchCardSuggestions(query: string): Promise<CardSuggestion[]> {
+  const result = await scryfall<ScryfallList<ScryfallCard>>(
+    `/cards/search?q=${encodeURIComponent(query)}&unique=cards&order=name`,
+  );
+  return (result?.data ?? []).slice(0, MAX_SEARCH_SUGGESTIONS).map((card) => ({
+    name: card.name,
+    typeLine: card.type_line ?? card.card_faces?.[0]?.type_line,
+  }));
+}
+
 export async function autocompleteCardNames(query: string): Promise<string[]> {
   const result = await scryfall<ScryfallList<string>>(
     `/cards/autocomplete?q=${encodeURIComponent(query)}`,

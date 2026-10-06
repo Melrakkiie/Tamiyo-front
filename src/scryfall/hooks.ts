@@ -1,6 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { autocompleteCardNames, type CardArt, cardArt, fetchCardsByIds, imageUrl, searchPrintings } from './client';
+import { ApiError } from '../api/errors';
+import {
+  autocompleteCardNames,
+  type CardArt,
+  cardArt,
+  type CardSuggestion,
+  fetchCardsByIds,
+  imageUrl,
+  isAdvancedQuery,
+  searchCardSuggestions,
+  searchPrintings,
+} from './client';
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
@@ -55,11 +66,30 @@ export function useCardArts(scryfallIds: (string | null | undefined)[]) {
 export function useCardNameSuggestions(query: string) {
   const trimmed = query.trim();
 
+  const advanced = isAdvancedQuery(trimmed);
+
   return useQuery({
-    queryKey: ['scryfall', 'autocomplete', trimmed.toLowerCase()],
-    queryFn: () => autocompleteCardNames(trimmed),
+    queryKey: ['scryfall', advanced ? 'search' : 'autocomplete', trimmed.toLowerCase()],
+    queryFn: async (): Promise<CardSuggestion[]> => {
+      const byName = async () => (await autocompleteCardNames(trimmed)).map((name) => ({ name }));
+      if (!advanced) {
+        return byName();
+      }
+      try {
+        return await searchCardSuggestions(trimmed);
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 400) {
+          const names = await byName();
+          if (names.length > 0) {
+            return names;
+          }
+        }
+        throw err;
+      }
+    },
     enabled: trimmed.length >= 2,
     staleTime: ONE_DAY,
+    retry: (failureCount, error) => !(error instanceof ApiError && error.status === 400) && failureCount < 2,
   });
 }
 
