@@ -102,6 +102,11 @@ export function AppLayout() {
                 )}
               </Box>
               <Menu.Divider />
+              {account.data && (
+                <Menu.Item component={Link} to={`/users/${account.data.id}`}>
+                  Mon profil
+                </Menu.Item>
+              )}
               <Menu.Item component={Link} to="/settings">
                 Paramètres
               </Menu.Item>

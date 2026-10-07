@@ -12,6 +12,7 @@ import { HomePage } from './pages/HomePage';
 import { ImportExportPage } from './pages/ImportExportPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -53,6 +54,7 @@ export const router = createBrowserRouter([
           { path: '/decks/:id', element: <DeckPage /> },
           { path: '/import-export', element: <ImportExportPage /> },
           { path: '/settings', element: <SettingsPage /> },
+          { path: '/users/:id', element: <ProfilePage /> },
         ],
       },
     ],

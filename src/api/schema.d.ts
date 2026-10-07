@@ -1267,6 +1267,118 @@ export interface paths {
         };
         trace?: never;
     };
+    "/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A user's public profile */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Profile"];
+                    };
+                };
+                /** @description id is not a UUID */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description No such user */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{id}/decks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A user's public decks
+         * @description Decks whose visibility is public, with the same pagination, sort and response shape as GET /deck. An unknown user simply has no decks.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    limit?: number;
+                    sort?: "name" | "-name" | "added" | "-added" | "updated" | "-updated";
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PaginatedDecks"];
+                    };
+                };
+                /** @description id is not a UUID, or invalid page, limit or sort */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deck": {
         parameters: {
             query?: never;
@@ -2412,6 +2524,8 @@ export interface components {
             new_password: string;
         };
         Me: {
+            /** Format: uuid */
+            id: string;
             /** Format: email */
             email: string;
             /** @description Cosmetic name shown instead of the email, null until set. */
@@ -2626,6 +2740,14 @@ export interface components {
             pending_count?: number;
             added: string;
             updated: string;
+        };
+        /** @description What any signed-in user can see of another user; never the email. */
+        Profile: {
+            /** Format: uuid */
+            id: string;
+            display_name: string | null;
+            /** Format: uuid */
+            avatar_scryfall_id: string | null;
         };
         PaginatedDecks: {
             data: components["schemas"]["Deck"][];

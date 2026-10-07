@@ -1,16 +1,14 @@
-import { Alert, Badge, Button, Card, Center, Group, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { Alert, Button, Center, Group, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 
 import { errorMessage } from '../api/errors';
-import type { Deck } from '../api/types';
-import { artBackground, deckArtId } from '../decks/art';
+import { deckArtId } from '../decks/art';
 import { capitalize, groupByRecent } from '../layout/groupByRecent';
 import { useAllDecks, useCreateDeck } from '../decks/api';
 import { DeckFormModal } from '../decks/DeckFormModal';
-import { visibilityOption } from '../decks/visibility';
-import type { CardArt } from '../scryfall/client';
+import { DeckTile } from '../decks/DeckTile';
 import { useCardArts } from '../scryfall/hooks';
 
 export function DecksPage() {
@@ -88,50 +86,5 @@ export function DecksPage() {
         }
       />
     </Stack>
-  );
-}
-
-function totalCards(deck: Deck) {
-  return deck.card_count + (deck.pending_count ?? 0);
-}
-
-function DeckTile({ deck, art }: { deck: Deck; art: CardArt | null }) {
-  return (
-    <Card
-      withBorder
-      component={Link}
-      to={`/decks/${deck.id}`}
-      mih={128}
-      style={art ? { ...artBackground(art.url), color: 'white' } : undefined}
-    >
-      <Stack justify="space-between" h="100%" gap="xs">
-        <div>
-          <Group justify="space-between" align="flex-start" wrap="nowrap">
-            <Text fw={600} lineClamp={1}>
-              {deck.name}
-            </Text>
-            <Stack gap={4} align="flex-end">
-              <Badge variant={art ? 'white' : 'light'}>{deck.format}</Badge>
-              <Badge
-                variant={art ? 'white' : 'light'}
-                color={visibilityOption(deck.visibility).color}
-                size="sm"
-                title={visibilityOption(deck.visibility).description}
-              >
-                {visibilityOption(deck.visibility).label}
-              </Badge>
-            </Stack>
-          </Group>
-          <Text size="sm" c={art ? 'gray.3' : 'dimmed'}>
-            {totalCards(deck)} carte{totalCards(deck) > 1 ? 's' : ''}
-          </Text>
-        </div>
-        {art?.artist && (
-          <Text size="xs" c="gray.4" ta="right" lineClamp={1}>
-            Illustration : {art.artist}
-          </Text>
-        )}
-      </Stack>
-    </Card>
   );
 }

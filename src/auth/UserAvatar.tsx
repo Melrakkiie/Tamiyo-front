@@ -19,14 +19,28 @@ export function useAvatarArt(scryfallId: string | null | undefined) {
   return scryfallId ? (arts.data?.[scryfallId] ?? null) : null;
 }
 
-export function UserAvatar({ size = 32 }: { size?: number }) {
-  const account = useAccount();
-  const art = useAvatarArt(account.data?.avatar_scryfall_id);
-  const name = account.data?.display_name || account.data?.email || '';
+interface ProfileAvatarProps {
+  scryfallId: string | null | undefined;
+  name: string;
+  size?: number;
+}
 
+export function ProfileAvatar({ scryfallId, name, size = 32 }: ProfileAvatarProps) {
+  const art = useAvatarArt(scryfallId);
   return (
     <Avatar src={art?.url} alt={name} size={size} radius="xl" color="blue">
       {initials(name)}
     </Avatar>
+  );
+}
+
+export function UserAvatar({ size = 32 }: { size?: number }) {
+  const account = useAccount();
+  return (
+    <ProfileAvatar
+      scryfallId={account.data?.avatar_scryfall_id}
+      name={account.data?.display_name || account.data?.email || ''}
+      size={size}
+    />
   );
 }
