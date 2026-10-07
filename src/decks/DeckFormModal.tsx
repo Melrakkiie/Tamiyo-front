@@ -1,9 +1,11 @@
-import { Alert, Autocomplete, Button, Group, Modal, Stack, TextInput } from '@mantine/core';
+import { Alert, Autocomplete, Button, Group, Modal, Select, Stack, TextInput } from '@mantine/core';
 import { isNotEmpty, useForm } from '@mantine/form';
+import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Deck } from '../api/types';
 import { useDeckFormats, type DeckInput } from './api';
+import { visibilityOption, visibilityOptions } from './visibility';
 
 interface DeckFormModalProps {
   opened: boolean;
@@ -28,13 +30,23 @@ function DeckForm({ onClose, submitLabel, initial, pending, error, onSubmit }: O
   const formats = useDeckFormats();
   const form = useForm<DeckInput>({
     mode: 'uncontrolled',
-    initialValues: { name: initial?.name ?? '', format: initial?.format ?? 'commander' },
+    initialValues: {
+      name: initial?.name ?? '',
+      format: initial?.format ?? 'commander',
+      visibility: initial?.visibility ?? 'unlisted',
+    },
     validate: {
       name: isNotEmpty('Nom requis'),
       format: isNotEmpty('Format requis'),
     },
-    transformValues: (values) => ({ name: values.name.trim(), format: values.format.trim().toLowerCase() }),
+    transformValues: (values) => ({
+      name: values.name.trim(),
+      format: values.format.trim().toLowerCase(),
+      visibility: values.visibility,
+    }),
   });
+  const [visibility, setVisibility] = useState(form.getValues().visibility);
+  form.watch('visibility', ({ value }) => setVisibility(value));
 
   return (
     <form onSubmit={form.onSubmit(onSubmit)}>
@@ -47,6 +59,14 @@ function DeckForm({ onClose, submitLabel, initial, pending, error, onSubmit }: O
           data={formats}
           key={form.key('format')}
           {...form.getInputProps('format')}
+        />
+        <Select
+          label="Visibilité"
+          description={visibilityOption(visibility).description}
+          data={visibilityOptions.map(({ value, label }) => ({ value, label }))}
+          allowDeselect={false}
+          key={form.key('visibility')}
+          {...form.getInputProps('visibility')}
         />
         <Group justify="flex-end">
           <Button variant="default" onClick={onClose}>

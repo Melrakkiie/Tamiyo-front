@@ -48,6 +48,7 @@ import {
   groupByStorage,
   parseDeckGrouping,
 } from '../decks/storageGrouping';
+import { visibilityOption } from '../decks/visibility';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import type { FaceTypes } from '../scryfall/classify';
 import { useCardArts, useCardBackImages, useCardFaceTypes, useCardImages, useManaCosts } from '../scryfall/hooks';
@@ -140,6 +141,13 @@ function DeckView({ id }: { id: number }) {
               {current.name}
             </Title>
             <Badge variant={art ? 'white' : 'light'}>{current.format}</Badge>
+            <Badge
+              variant={art ? 'white' : 'light'}
+              color={visibilityOption(current.visibility).color}
+              title={visibilityOption(current.visibility).description}
+            >
+              {visibilityOption(current.visibility).label}
+            </Badge>
           </Group>
           <Group gap="xs">
             <Button variant="default" onClick={() => setArtPickerOpened(true)}>

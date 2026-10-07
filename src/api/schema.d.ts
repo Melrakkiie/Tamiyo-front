@@ -2620,6 +2620,7 @@ export interface components {
              * @description Scryfall id of the commander card, null without a commander.
              */
             readonly commander_scryfall_id?: string | null;
+            visibility: components["schemas"]["DeckVisibility"];
             card_count: number;
             /** @description Copies waiting in the deck's pending list (not in the collection yet), not counted in card_count. */
             pending_count?: number;
@@ -2639,6 +2640,7 @@ export interface components {
             commander_id?: number;
             /** Format: uuid */
             background_scryfall_id?: string;
+            visibility?: components["schemas"]["DeckVisibility"];
         };
         /** @description All fields optional; only included fields are modified. */
         UpdateDeckRequest: {
@@ -2653,7 +2655,14 @@ export interface components {
             background_scryfall_id?: string;
             /** @description Set to true to remove the chosen art (set background_scryfall_id to null). */
             clear_background_scryfall_id?: boolean;
+            visibility?: components["schemas"]["DeckVisibility"];
         };
+        /**
+         * @description Who may see the deck once decks can be shared: only its owner (private), anyone with its link (unlisted), or anyone, listed when browsing decks (public). No effect yet: deck routes only serve the owner's decks.
+         * @default unlisted
+         * @enum {string}
+         */
+        DeckVisibility: "private" | "unlisted" | "public";
         /** @description Result of a bulk import. A malformed or unresolvable row never aborts the whole import — it's recorded as a skipped card with a warning instead. */
         ImportSummary: {
             cards_created?: number;

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api, unwrap } from '../api/client';
 import type { AddPendingCardInput, Deck, DeckCardSort, PendingCard, UpdateDeckInput } from '../api/types';
+import type { DeckVisibility } from './visibility';
 
 export const COMMON_FORMATS = [
   'commander',
@@ -77,6 +78,7 @@ function useInvalidateDecks() {
 export interface DeckInput {
   name: string;
   format: string;
+  visibility: DeckVisibility;
 }
 
 export function useCreateDeck() {

@@ -9,6 +9,7 @@ import { artBackground, deckArtId } from '../decks/art';
 import { capitalize, groupByRecent } from '../layout/groupByRecent';
 import { useAllDecks, useCreateDeck } from '../decks/api';
 import { DeckFormModal } from '../decks/DeckFormModal';
+import { visibilityOption } from '../decks/visibility';
 import type { CardArt } from '../scryfall/client';
 import { useCardArts } from '../scryfall/hooks';
 
@@ -105,11 +106,21 @@ function DeckTile({ deck, art }: { deck: Deck; art: CardArt | null }) {
     >
       <Stack justify="space-between" h="100%" gap="xs">
         <div>
-          <Group justify="space-between" wrap="nowrap">
+          <Group justify="space-between" align="flex-start" wrap="nowrap">
             <Text fw={600} lineClamp={1}>
               {deck.name}
             </Text>
-            <Badge variant={art ? 'white' : 'light'}>{deck.format}</Badge>
+            <Stack gap={4} align="flex-end">
+              <Badge variant={art ? 'white' : 'light'}>{deck.format}</Badge>
+              <Badge
+                variant={art ? 'white' : 'light'}
+                color={visibilityOption(deck.visibility).color}
+                size="sm"
+                title={visibilityOption(deck.visibility).description}
+              >
+                {visibilityOption(deck.visibility).label}
+              </Badge>
+            </Stack>
           </Group>
           <Text size="sm" c={art ? 'gray.3' : 'dimmed'}>
             {totalCards(deck)} carte{totalCards(deck) > 1 ? 's' : ''}
