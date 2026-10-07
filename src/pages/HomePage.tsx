@@ -1,6 +1,8 @@
 import { Badge, Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { Link } from 'react-router';
 
+import { useAccount } from '../auth/account';
+
 interface Section {
   title: string;
   text: string;
@@ -33,9 +35,11 @@ function SectionContent({ section }: { section: Section }) {
 }
 
 export function HomePage() {
+  const account = useAccount();
+  const displayName = account.data?.display_name;
   return (
     <Stack>
-      <Title order={2}>Bienvenue sur Tamiyo</Title>
+      <Title order={2}>{displayName ? `Bienvenue sur Tamiyo, ${displayName}` : 'Bienvenue sur Tamiyo'}</Title>
       <SimpleGrid cols={{ base: 1, sm: 2 }}>
         {sections.map((section) =>
           section.to ? (

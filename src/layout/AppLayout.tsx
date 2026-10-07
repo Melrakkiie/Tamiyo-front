@@ -2,6 +2,7 @@ import { AppShell, Burger, Button, Group, Menu, NavLink, Text, Title } from '@ma
 import { useDisclosure } from '@mantine/hooks';
 import { Link, Outlet, useLocation } from 'react-router';
 
+import { useAccount } from '../auth/account';
 import { logout } from '../auth/actions';
 
 interface NavItem {
@@ -21,6 +22,8 @@ const navItems: NavItem[] = [
 export function AppLayout() {
   const [opened, { toggle, close }] = useDisclosure();
   const { pathname } = useLocation();
+  const account = useAccount();
+  const accountLabel = account.data?.display_name || 'Mon compte';
   function handleLogout() {
     void logout();
   }
@@ -39,7 +42,11 @@ export function AppLayout() {
           </Group>
           <Menu position="bottom-end" width={200}>
             <Menu.Target>
-              <Button variant="subtle">Mon compte</Button>
+              <Button variant="subtle" maw={220}>
+                <Text span inherit truncate>
+                  {accountLabel}
+                </Text>
+              </Button>
             </Menu.Target>
             <Menu.Dropdown>
               <Menu.Item component={Link} to="/settings">

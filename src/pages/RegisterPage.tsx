@@ -4,23 +4,26 @@ import { useMutation } from '@tanstack/react-query';
 import { Link } from 'react-router';
 
 import { errorMessage } from '../api/errors';
+import { MAX_DISPLAY_NAME_LENGTH } from '../auth/account';
 import { register } from '../auth/actions';
 
-type RegisterValues = { email: string; password: string; confirmPassword: string };
+type RegisterValues = { email: string; displayName: string; password: string; confirmPassword: string };
 
 export function RegisterPage() {
   const form = useForm<RegisterValues>({
     mode: 'uncontrolled',
-    initialValues: { email: '', password: '', confirmPassword: '' },
+    initialValues: { email: '', displayName: '', password: '', confirmPassword: '' },
     validate: {
       email: isEmail('Email invalide'),
+      displayName: (value) =>
+        [...value.trim()].length > MAX_DISPLAY_NAME_LENGTH ? `${MAX_DISPLAY_NAME_LENGTH} caractères maximum` : null,
       password: hasLength({ min: 8 }, '8 caractères minimum'),
       confirmPassword: matchesField('password', 'Les mots de passe ne correspondent pas'),
     },
   });
 
   const mutation = useMutation({
-    mutationFn: (values: RegisterValues) => register(values.email, values.password),
+    mutationFn: (values: RegisterValues) => register(values.email, values.password, values.displayName),
   });
 
   return (
@@ -42,6 +45,13 @@ export function RegisterPage() {
           autoComplete="email"
           key={form.key('email')}
           {...form.getInputProps('email')}
+        />
+        <TextInput
+          label="Pseudo"
+          description="Facultatif, affiché à la place de ton email. Modifiable plus tard."
+          autoComplete="nickname"
+          key={form.key('displayName')}
+          {...form.getInputProps('displayName')}
         />
         <PasswordInput
           label="Mot de passe"

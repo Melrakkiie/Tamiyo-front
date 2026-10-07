@@ -6,8 +6,10 @@ export async function login(email: string, password: string) {
   setAccessToken(data.token);
 }
 
-export async function register(email: string, password: string) {
-  const data = unwrap(await api.POST('/auth/register', { body: { email, password } }));
+export async function register(email: string, password: string, displayName: string) {
+  const data = unwrap(
+    await api.POST('/auth/register', { body: { email, password, display_name: displayName.trim() || null } }),
+  );
   setAccessToken(data.token);
 }
 

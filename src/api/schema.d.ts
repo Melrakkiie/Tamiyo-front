@@ -98,7 +98,7 @@ export interface paths {
                         "application/json": components["schemas"]["TokenPair"];
                     };
                 };
-                /** @description Missing/invalid email, or password shorter than 8 characters. */
+                /** @description Missing/invalid email, password shorter than 8 characters, or display_name longer than 32 characters. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -525,7 +525,53 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Set or clear the account's display name
+         * @description A purely cosmetic name shown instead of the email. Not unique. Trimmed; null or a blank string clears it.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateMeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Me"];
+                    };
+                };
+                /** @description display_name missing, not a string, or longer than 32 characters. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description User no longer exists */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/auth/email": {
@@ -2338,6 +2384,8 @@ export interface components {
             /** Format: email */
             email: string;
             password: string;
+            /** @description Optional cosmetic name, trimmed; blank means none. */
+            display_name?: string | null;
         };
         LoginRequest: {
             /** Format: email */
@@ -2365,6 +2413,12 @@ export interface components {
         Me: {
             /** Format: email */
             email: string;
+            /** @description Cosmetic name shown instead of the email, null until set. */
+            display_name: string | null;
+        };
+        UpdateMeRequest: {
+            /** @description Trimmed; null or a blank string clears it. */
+            display_name: string | null;
         };
         ChangeEmailRequest: {
             current_password: string;
