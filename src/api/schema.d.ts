@@ -1476,7 +1476,7 @@ export interface paths {
             query?: never;
             header?: never;
             path: {
-                /** @description Deck ID */
+                /** @description Deck ID (a UUID) */
                 id: components["parameters"]["DeckID"];
             };
             cookie?: never;
@@ -1487,7 +1487,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Deck ID */
+                    /** @description Deck ID (a UUID) */
                     id: components["parameters"]["DeckID"];
                 };
                 cookie?: never;
@@ -1527,7 +1527,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Deck ID */
+                    /** @description Deck ID (a UUID) */
                     id: components["parameters"]["DeckID"];
                 };
                 cookie?: never;
@@ -1562,7 +1562,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Deck ID */
+                    /** @description Deck ID (a UUID) */
                     id: components["parameters"]["DeckID"];
                 };
                 cookie?: never;
@@ -1610,7 +1610,7 @@ export interface paths {
             query?: never;
             header?: never;
             path: {
-                /** @description Deck ID */
+                /** @description Deck ID (a UUID) */
                 id: components["parameters"]["DeckID"];
             };
             cookie?: never;
@@ -1624,7 +1624,7 @@ export interface paths {
                 };
                 header?: never;
                 path: {
-                    /** @description Deck ID */
+                    /** @description Deck ID (a UUID) */
                     id: components["parameters"]["DeckID"];
                 };
                 cookie?: never;
@@ -1666,7 +1666,7 @@ export interface paths {
             query?: never;
             header?: never;
             path: {
-                /** @description Deck ID */
+                /** @description Deck ID (a UUID) */
                 id: components["parameters"]["DeckID"];
                 /** @description Card ID */
                 card_id: components["parameters"]["CardIDPath"];
@@ -1683,7 +1683,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Deck ID */
+                    /** @description Deck ID (a UUID) */
                     id: components["parameters"]["DeckID"];
                     /** @description Card ID */
                     card_id: components["parameters"]["CardIDPath"];
@@ -1699,7 +1699,7 @@ export interface paths {
                     };
                     content?: never;
                 };
-                /** @description id or card_id is not a valid integer */
+                /** @description id is not a UUID, or card_id is not a valid integer */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1731,7 +1731,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Deck ID */
+                    /** @description Deck ID (a UUID) */
                     id: components["parameters"]["DeckID"];
                     /** @description Card ID */
                     card_id: components["parameters"]["CardIDPath"];
@@ -1747,7 +1747,7 @@ export interface paths {
                     };
                     content?: never;
                 };
-                /** @description id or card_id is not a valid integer */
+                /** @description id is not a UUID, or card_id is not a valid integer */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1770,7 +1770,7 @@ export interface paths {
             query?: never;
             header?: never;
             path: {
-                /** @description Deck ID */
+                /** @description Deck ID (a UUID) */
                 id: components["parameters"]["DeckID"];
             };
             cookie?: never;
@@ -1784,7 +1784,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Deck ID */
+                    /** @description Deck ID (a UUID) */
                     id: components["parameters"]["DeckID"];
                 };
                 cookie?: never;
@@ -1820,7 +1820,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Deck ID */
+                    /** @description Deck ID (a UUID) */
                     id: components["parameters"]["DeckID"];
                 };
                 cookie?: never;
@@ -1872,7 +1872,7 @@ export interface paths {
             query?: never;
             header?: never;
             path: {
-                /** @description Deck ID */
+                /** @description Deck ID (a UUID) */
                 id: components["parameters"]["DeckID"];
                 /** @description Pending card ID */
                 pending_id: number;
@@ -1888,7 +1888,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Deck ID */
+                    /** @description Deck ID (a UUID) */
                     id: components["parameters"]["DeckID"];
                     /** @description Pending card ID */
                     pending_id: number;
@@ -1927,7 +1927,7 @@ export interface paths {
             query?: never;
             header?: never;
             path: {
-                /** @description Deck ID */
+                /** @description Deck ID (a UUID) */
                 id: components["parameters"]["DeckID"];
             };
             cookie?: never;
@@ -1943,7 +1943,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Deck ID */
+                    /** @description Deck ID (a UUID) */
                     id: components["parameters"]["DeckID"];
                 };
                 cookie?: never;
@@ -2000,7 +2000,7 @@ export interface paths {
             query?: never;
             header?: never;
             path: {
-                /** @description Deck ID */
+                /** @description Deck ID (a UUID) */
                 id: components["parameters"]["DeckID"];
             };
             cookie?: never;
@@ -2014,7 +2014,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Deck ID */
+                    /** @description Deck ID (a UUID) */
                     id: components["parameters"]["DeckID"];
                 };
                 cookie?: never;
@@ -2030,7 +2030,7 @@ export interface paths {
                         "application/json": components["schemas"]["LegalityReport"];
                     };
                 };
-                /** @description id is not a valid integer, or the deck's format isn't one Scryfall recognizes. */
+                /** @description id is not a UUID, or the deck's format isn't one Scryfall recognizes. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -2066,7 +2066,7 @@ export interface paths {
             query?: never;
             header?: never;
             path: {
-                /** @description Deck ID */
+                /** @description Deck ID (a UUID) */
                 id: components["parameters"]["DeckID"];
             };
             cookie?: never;
@@ -2080,7 +2080,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Deck ID */
+                    /** @description Deck ID (a UUID) */
                     id: components["parameters"]["DeckID"];
                 };
                 cookie?: never;
@@ -2096,7 +2096,7 @@ export interface paths {
                         "application/json": components["schemas"]["DeckStats"];
                     };
                 };
-                /** @description id is not a valid integer, or the deck's format isn't one Scryfall recognizes. */
+                /** @description id is not a UUID, or the deck's format isn't one Scryfall recognizes. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -2127,13 +2127,13 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/shared/decks/{share_id}": {
+    "/shared/decks/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A deck's share_id. Anything that isn't a UUID is answered with 404. */
-                share_id: components["parameters"]["ShareID"];
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
             };
             cookie?: never;
         };
@@ -2146,8 +2146,8 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description A deck's share_id. Anything that isn't a UUID is answered with 404. */
-                    share_id: components["parameters"]["ShareID"];
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
                 };
                 cookie?: never;
             };
@@ -2162,7 +2162,7 @@ export interface paths {
                         "application/json": components["schemas"]["SharedDeck"];
                     };
                 };
-                /** @description No deck has this share_id, or the deck is private. */
+                /** @description No deck has this id, or the deck is private. */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -2183,13 +2183,13 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/shared/decks/{share_id}/legality": {
+    "/shared/decks/{id}/legality": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A deck's share_id. Anything that isn't a UUID is answered with 404. */
-                share_id: components["parameters"]["ShareID"];
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
             };
             cookie?: never;
         };
@@ -2202,8 +2202,8 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description A deck's share_id. Anything that isn't a UUID is answered with 404. */
-                    share_id: components["parameters"]["ShareID"];
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
                 };
                 cookie?: never;
             };
@@ -2227,7 +2227,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description No deck has this share_id, or the deck is private. */
+                /** @description No deck has this id, or the deck is private. */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -2249,13 +2249,13 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/shared/decks/{share_id}/stats": {
+    "/shared/decks/{id}/stats": {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A deck's share_id. Anything that isn't a UUID is answered with 404. */
-                share_id: components["parameters"]["ShareID"];
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
             };
             cookie?: never;
         };
@@ -2268,8 +2268,8 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description A deck's share_id. Anything that isn't a UUID is answered with 404. */
-                    share_id: components["parameters"]["ShareID"];
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
                 };
                 cookie?: never;
             };
@@ -2293,7 +2293,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description No deck has this share_id, or the deck is private. */
+                /** @description No deck has this id, or the deck is private. */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -2599,7 +2599,7 @@ export interface paths {
             query?: never;
             header?: never;
             path: {
-                /** @description Deck ID */
+                /** @description Deck ID (a UUID) */
                 id: components["parameters"]["DeckID"];
             };
             cookie?: never;
@@ -2613,7 +2613,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Deck ID */
+                    /** @description Deck ID (a UUID) */
                     id: components["parameters"]["DeckID"];
                 };
                 cookie?: never;
@@ -2794,7 +2794,8 @@ export interface components {
         };
         PendingCard: {
             id: number;
-            deck_id: number;
+            /** Format: uuid */
+            deck_id: string;
             name: string;
             /** Format: uuid */
             scryfall_id: string;
@@ -2920,7 +2921,11 @@ export interface components {
             type?: string;
         };
         Deck: {
-            id: number;
+            /**
+             * Format: uuid
+             * @description Random identifier generated when the deck is created. It is also the id of the deck's read-only page (GET /shared/decks/{id}), which only resolves while the deck is public or unlisted.
+             */
+            readonly id: string;
             name: string;
             format: string;
             commander_id?: number | null;
@@ -2937,11 +2942,6 @@ export interface components {
              */
             readonly commander_scryfall_id?: string | null;
             visibility: components["schemas"]["DeckVisibility"];
-            /**
-             * Format: uuid
-             * @description Random identifier of the deck's share link (GET /shared/decks/{share_id}). Only resolves while the deck is public or unlisted.
-             */
-            readonly share_id: string;
             card_count: number;
             /** @description Copies waiting in the deck's pending list (not in the collection yet), not counted in card_count. */
             pending_count?: number;
@@ -2950,7 +2950,7 @@ export interface components {
         };
         SharedDeckInfo: {
             /** Format: uuid */
-            share_id: string;
+            id: string;
             name: string;
             format: string;
             /** @enum {string} */
@@ -3032,7 +3032,7 @@ export interface components {
         };
     };
     responses: {
-        /** @description id is not a valid integer */
+        /** @description id is not a valid integer (a UUID for decks) */
         InvalidID: {
             headers: {
                 [name: string]: unknown;
@@ -3101,10 +3101,8 @@ export interface components {
         CardID: number;
         /** @description Storage ID */
         StorageID: number;
-        /** @description A deck's share_id. Anything that isn't a UUID is answered with 404. */
-        ShareID: string;
-        /** @description Deck ID */
-        DeckID: number;
+        /** @description Deck ID (a UUID) */
+        DeckID: string;
         /** @description Card ID */
         CardIDPath: number;
     };

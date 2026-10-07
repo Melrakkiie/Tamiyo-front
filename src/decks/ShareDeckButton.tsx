@@ -8,7 +8,7 @@ import { sharedDeckPath, sharedDeckUrl } from './shared';
 
 export function ShareDeckButton({ deck }: { deck: Deck }) {
   const update = useUpdateDeck();
-  const url = sharedDeckUrl(deck.share_id);
+  const url = sharedDeckUrl(deck.id);
   const isPrivate = deck.visibility === 'private';
 
   function makeUnlisted() {
@@ -59,7 +59,7 @@ export function ShareDeckButton({ deck }: { deck: Deck }) {
             </Group>
             <Text size="xs" c="dimmed">
               Pour ne plus le partager, passe-le en « Privé » depuis Modifier : le lien cessera de marcher.{' '}
-              <Anchor href={sharedDeckPath(deck.share_id)} target="_blank" rel="noreferrer" size="xs">
+              <Anchor href={sharedDeckPath(deck.id)} target="_blank" rel="noreferrer" size="xs">
                 Voir la page partagée
               </Anchor>
             </Text>

@@ -63,7 +63,7 @@ export const router = createBrowserRouter([
   },
   {
     element: <SharedLayout />,
-    children: [{ path: '/shared/:shareId', element: <SharedDeckPage /> }],
+    children: [{ path: '/shared/:id', element: <SharedDeckPage /> }],
   },
   { path: '*', element: <NotFoundPage /> },
 ]);

@@ -1,5 +1,5 @@
 interface Recent {
-  id: number;
+  id: number | string;
   updated: string;
 }
 
@@ -9,8 +9,12 @@ export interface Group<T> {
   items: T[];
 }
 
+function compareIds(a: number | string, b: number | string) {
+  return typeof a === 'number' && typeof b === 'number' ? a - b : String(a).localeCompare(String(b));
+}
+
 function byMostRecent(a: Recent, b: Recent) {
-  return b.updated.localeCompare(a.updated) || b.id - a.id;
+  return b.updated.localeCompare(a.updated) || compareIds(b.id, a.id);
 }
 
 export function groupByRecent<T extends Recent>(

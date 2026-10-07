@@ -16,7 +16,7 @@ export interface CardToAdd {
   printing?: ScryfallCard;
 }
 
-export type AddTarget = { kind: 'collection' } | { kind: 'pending'; deckId: number };
+export type AddTarget = { kind: 'collection' } | { kind: 'pending'; deckId: string };
 
 interface AddCardModalProps {
   card: CardToAdd | null;

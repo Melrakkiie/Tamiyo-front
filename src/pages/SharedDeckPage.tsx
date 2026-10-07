@@ -26,7 +26,6 @@ import { CardImage } from '../cards/CardImage';
 import { CardSizeControl, useCardSize } from '../cards/CardSizeControl';
 import { CardTile } from '../cards/CardTile';
 import { type CardGrouping, groupingOptions, parseGrouping } from '../cards/grouping';
-import { useAllDecks } from '../decks/api';
 import { artBackground, artCredit, deckArtId } from '../decks/art';
 import { DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
 import { LegalityWarning } from '../decks/DeckLegalityWarning';
@@ -47,15 +46,15 @@ const sortOptions: { value: SharedSort; label: string }[] = [
 ];
 
 export function SharedDeckPage() {
-  const { shareId = '' } = useParams();
-  return <SharedDeckView key={shareId} shareId={shareId} />;
+  const { id = '' } = useParams();
+  return <SharedDeckView key={id} deckId={id} />;
 }
 
-function SharedDeckView({ shareId }: { shareId: string }) {
-  const shared = useSharedDeck(shareId);
-  const legality = useSharedDeckLegality(shareId);
+function SharedDeckView({ deckId }: { deckId: string }) {
+  const shared = useSharedDeck(deckId);
+  const legality = useSharedDeckLegality(deckId);
   const [tab, setTab] = useState<string | null>('cards');
-  const stats = useSharedDeckStats(shareId, tab === 'stats');
+  const stats = useSharedDeckStats(deckId, tab === 'stats');
   const { status } = useSession();
   const signedIn = status === 'authenticated';
   const artId = shared.data ? deckArtId(shared.data.deck) : null;
@@ -134,7 +133,7 @@ function SharedDeckView({ shareId }: { shareId: string }) {
         )}
       </Paper>
 
-      {signedIn && <OwnDeckNotice ownerId={owner.id} shareId={deck.share_id} />}
+      {signedIn && <OwnDeckNotice ownerId={owner.id} deckId={deck.id} />}
 
       <LegalityWarning legality={legality} />
 
@@ -155,23 +154,18 @@ function SharedDeckView({ shareId }: { shareId: string }) {
   );
 }
 
-function OwnDeckNotice({ ownerId, shareId }: { ownerId: string; shareId: string }) {
+function OwnDeckNotice({ ownerId, deckId }: { ownerId: string; deckId: string }) {
   const account = useAccount();
-  const own = account.data?.id === ownerId;
-  const decks = useAllDecks();
-  const ownDeck = own ? decks.data?.find((deck) => deck.share_id === shareId) : undefined;
 
-  if (!own) {
+  if (account.data?.id !== ownerId) {
     return null;
   }
   return (
     <Alert color="blue" variant="light">
       C'est ton deck, tel que le voient les personnes qui ont son lien.{' '}
-      {ownDeck && (
-        <Anchor component={Link} to={`/decks/${ownDeck.id}`} size="sm">
-          Le modifier
-        </Anchor>
-      )}
+      <Anchor component={Link} to={`/decks/${deckId}`} size="sm">
+        Le modifier
+      </Anchor>
     </Alert>
   );
 }

@@ -37,14 +37,14 @@ export function useDeckFormats() {
   return [...new Set([...COMMON_FORMATS, ...(data ?? []).map((deck) => deck.format.toLowerCase())])].sort();
 }
 
-export function useDeck(id: number) {
+export function useDeck(id: string) {
   return useQuery({
     queryKey: ['decks', 'detail', id],
     queryFn: async () => unwrap(await api.GET('/deck/{id}', { params: { path: { id } } })),
   });
 }
 
-export function useDeckCards(id: number, sort: DeckCardSort) {
+export function useDeckCards(id: string, sort: DeckCardSort) {
   return useQuery({
     queryKey: ['decks', 'cards', id, sort],
     queryFn: async () =>
@@ -52,7 +52,7 @@ export function useDeckCards(id: number, sort: DeckCardSort) {
   });
 }
 
-export function useDeckStats(id: number, enabled: boolean) {
+export function useDeckStats(id: string, enabled: boolean) {
   return useQuery({
     queryKey: ['decks', 'stats', id],
     queryFn: async () => unwrap(await api.GET('/deck/{id}/stats', { params: { path: { id } } })),
@@ -61,7 +61,7 @@ export function useDeckStats(id: number, enabled: boolean) {
   });
 }
 
-export function useDeckLegality(id: number, enabled: boolean) {
+export function useDeckLegality(id: string, enabled: boolean) {
   return useQuery({
     queryKey: ['decks', 'legality', id],
     queryFn: async () => unwrap(await api.GET('/deck/{id}/legality', { params: { path: { id } } })),
@@ -94,7 +94,7 @@ export function useUpdateDeck() {
   const invalidate = useInvalidateDecks();
 
   return useMutation({
-    mutationFn: async ({ id, changes }: { id: number; changes: UpdateDeckInput }) =>
+    mutationFn: async ({ id, changes }: { id: string; changes: UpdateDeckInput }) =>
       unwrap(await api.PATCH('/deck/{id}', { params: { path: { id } }, body: changes })),
     onSettled: invalidate,
   });
@@ -104,7 +104,7 @@ export function useDeleteDeck() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string) => {
       unwrap(await api.DELETE('/deck/{id}', { params: { path: { id } } }));
     },
     onSettled: (_data, _error, id) => {
@@ -120,7 +120,7 @@ export function useAddCardToDeck() {
   const invalidate = useInvalidateDecks();
 
   return useMutation({
-    mutationFn: async ({ deckId, cardId }: { deckId: number; cardId: number }) => {
+    mutationFn: async ({ deckId, cardId }: { deckId: string; cardId: number }) => {
       unwrap(await api.PUT('/deck/{id}/cards/{card_id}', { params: { path: { id: deckId, card_id: cardId } } }));
     },
     onSettled: invalidate,
@@ -131,7 +131,7 @@ export function useRemoveCardFromDeck() {
   const invalidate = useInvalidateDecks();
 
   return useMutation({
-    mutationFn: async ({ deckId, cardId, isCommander }: { deckId: number; cardId: number; isCommander: boolean }) => {
+    mutationFn: async ({ deckId, cardId, isCommander }: { deckId: string; cardId: number; isCommander: boolean }) => {
       if (isCommander) {
         unwrap(await api.PATCH('/deck/{id}', { params: { path: { id: deckId } }, body: { clear_commander_id: true } }));
       }
@@ -151,7 +151,7 @@ export function useSwapDeckCard() {
       toCardId,
       isCommander,
     }: {
-      deckId: number;
+      deckId: string;
       fromCardId: number;
       toCardId: number;
       isCommander: boolean;
@@ -182,7 +182,7 @@ function useInvalidateDeckAndCollection() {
     ]);
 }
 
-export function usePendingCards(deckId: number) {
+export function usePendingCards(deckId: string) {
   return useQuery({
     queryKey: ['decks', 'pending', deckId],
     queryFn: async () => unwrap(await api.GET('/deck/{id}/pending', { params: { path: { id: deckId } } })),
@@ -193,7 +193,7 @@ export function useAddPendingCard() {
   const invalidate = useInvalidateDecks();
 
   return useMutation({
-    mutationFn: async ({ deckId, card }: { deckId: number; card: AddPendingCardInput }) =>
+    mutationFn: async ({ deckId, card }: { deckId: string; card: AddPendingCardInput }) =>
       unwrap(await api.POST('/deck/{id}/pending', { params: { path: { id: deckId } }, body: card })),
     onSettled: invalidate,
   });
@@ -203,7 +203,7 @@ export function useRemovePendingCard() {
   const invalidate = useInvalidateDecks();
 
   return useMutation({
-    mutationFn: async ({ deckId, pendingId }: { deckId: number; pendingId: number }) => {
+    mutationFn: async ({ deckId, pendingId }: { deckId: string; pendingId: number }) => {
       unwrap(
         await api.DELETE('/deck/{id}/pending/{pending_id}', {
           params: { path: { id: deckId, pending_id: pendingId } },
@@ -223,7 +223,7 @@ export function useCommitPendingCards() {
       storageId,
       pendingId,
     }: {
-      deckId: number;
+      deckId: string;
       storageId: number | null;
       pendingId?: number;
     }) =>
@@ -262,7 +262,7 @@ export function useReplaceDeckCardWithPending() {
       isCommander,
       card,
     }: {
-      deckId: number;
+      deckId: string;
       fromCardId: number;
       isCommander: boolean;
       card: AddPendingCardInput;
@@ -292,7 +292,7 @@ export function useReplacePendingCard() {
       isCommander,
       card,
     }: {
-      deckId: number;
+      deckId: string;
       from: PendingCard;
       isCommander: boolean;
       card: AddPendingCardInput;
@@ -331,7 +331,7 @@ export function useReplacePendingWithOwned() {
       toCardId,
       isCommander,
     }: {
-      deckId: number;
+      deckId: string;
       from: PendingCard;
       toCardId: number;
       isCommander: boolean;

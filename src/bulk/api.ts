@@ -105,6 +105,6 @@ export function useExportCollection() {
 
 export function useExportDeck() {
   return useMutation({
-    mutationFn: (deckId: number) => download(`/export/moxfield/deck/${deckId}`, 'Moxfield_Deck_export.txt'),
+    mutationFn: (deckId: string) => download(`/export/moxfield/deck/${deckId}`, 'Moxfield_Deck_export.txt'),
   });
 }

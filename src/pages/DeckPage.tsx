@@ -56,11 +56,11 @@ const sortOptions: { value: DeckCardSort; label: string }[] = [
 ];
 
 export function DeckPage() {
-  const id = Number(useParams().id);
+  const id = useParams().id ?? '';
   return <DeckView key={id} id={id} />;
 }
 
-function DeckView({ id }: { id: number }) {
+function DeckView({ id }: { id: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const deck = useDeck(id);

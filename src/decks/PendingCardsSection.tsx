@@ -7,7 +7,7 @@ import type { PendingCard } from '../api/types';
 import { useStorageOptions } from '../storages/api';
 import { useCommitPendingCards } from './api';
 
-export function PendingCardsSection({ deckId, pending }: { deckId: number; pending: PendingCard[] }) {
+export function PendingCardsSection({ deckId, pending }: { deckId: string; pending: PendingCard[] }) {
   const storageOptions = useStorageOptions();
   const commit = useCommitPendingCards();
   const [storageId, setStorageId] = useState<string | null>(null);

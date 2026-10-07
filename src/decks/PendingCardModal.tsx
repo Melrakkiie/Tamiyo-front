@@ -13,7 +13,7 @@ import { isCommanderFormat, useCommitPendingCards, useRemovePendingCard, useUpda
 import { EditionSwitcher } from './EditionSwitcher';
 
 interface PendingCardModalProps {
-  deckId: number;
+  deckId: string;
   deckFormat: string;
   commanderPendingId: number | null | undefined;
   deckCardIds: Set<number>;
@@ -175,7 +175,7 @@ const ineligibilityMessages = {
 } as const;
 
 interface PendingCommanderControlProps {
-  deckId: number;
+  deckId: string;
   item: PendingCard;
   isCommander: boolean;
   onDone: () => void;

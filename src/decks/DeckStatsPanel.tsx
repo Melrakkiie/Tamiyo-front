@@ -46,7 +46,7 @@ function StatTile({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-export function DeckStatsPanel({ deckId }: { deckId: number }) {
+export function DeckStatsPanel({ deckId }: { deckId: string }) {
   return <DeckStatsView stats={useDeckStats(deckId, true)} />;
 }
 

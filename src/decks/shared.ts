@@ -3,36 +3,34 @@ import { useQuery } from '@tanstack/react-query';
 import { api, unwrap } from '../api/client';
 import type { Card, SharedDeckCard } from '../api/types';
 
-export function sharedDeckPath(shareId: string) {
-  return `/shared/${shareId}`;
+export function sharedDeckPath(deckId: string) {
+  return `/shared/${deckId}`;
 }
 
-export function sharedDeckUrl(shareId: string) {
-  return new URL(sharedDeckPath(shareId), window.location.origin).toString();
+export function sharedDeckUrl(deckId: string) {
+  return new URL(sharedDeckPath(deckId), window.location.origin).toString();
 }
 
-export function useSharedDeck(shareId: string) {
+export function useSharedDeck(deckId: string) {
   return useQuery({
-    queryKey: ['shared', shareId, 'deck'],
-    queryFn: async () => unwrap(await api.GET('/shared/decks/{share_id}', { params: { path: { share_id: shareId } } })),
+    queryKey: ['shared', deckId, 'deck'],
+    queryFn: async () => unwrap(await api.GET('/shared/decks/{id}', { params: { path: { id: deckId } } })),
   });
 }
 
-export function useSharedDeckStats(shareId: string, enabled: boolean) {
+export function useSharedDeckStats(deckId: string, enabled: boolean) {
   return useQuery({
-    queryKey: ['shared', shareId, 'stats'],
-    queryFn: async () =>
-      unwrap(await api.GET('/shared/decks/{share_id}/stats', { params: { path: { share_id: shareId } } })),
+    queryKey: ['shared', deckId, 'stats'],
+    queryFn: async () => unwrap(await api.GET('/shared/decks/{id}/stats', { params: { path: { id: deckId } } })),
     enabled,
     staleTime: 5 * 60_000,
   });
 }
 
-export function useSharedDeckLegality(shareId: string) {
+export function useSharedDeckLegality(deckId: string) {
   return useQuery({
-    queryKey: ['shared', shareId, 'legality'],
-    queryFn: async () =>
-      unwrap(await api.GET('/shared/decks/{share_id}/legality', { params: { path: { share_id: shareId } } })),
+    queryKey: ['shared', deckId, 'legality'],
+    queryFn: async () => unwrap(await api.GET('/shared/decks/{id}/legality', { params: { path: { id: deckId } } })),
     staleTime: 5 * 60_000,
   });
 }

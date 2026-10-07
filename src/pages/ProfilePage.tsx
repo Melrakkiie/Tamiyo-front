@@ -107,7 +107,7 @@ export function ProfilePage() {
                         key={deck.id}
                         deck={deck}
                         art={artId ? (deckArts.data?.[artId] ?? null) : null}
-                        to={own ? `/decks/${deck.id}` : sharedDeckPath(deck.share_id)}
+                        to={own ? `/decks/${deck.id}` : sharedDeckPath(deck.id)}
                         showVisibility={false}
                       />
                     );

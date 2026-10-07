@@ -14,7 +14,7 @@ import { isCommanderFormat, useRemoveCardFromDeck, useUpdateDeck } from './api';
 import { EditionSwitcher } from './EditionSwitcher';
 
 interface DeckCardModalProps {
-  deckId: number;
+  deckId: string;
   deckFormat: string;
   commanderId: number | null | undefined;
   deckCardIds: Set<number>;
@@ -63,7 +63,7 @@ const ineligibilityMessages = {
 } as const;
 
 interface DeckCardDetailProps {
-  deckId: number;
+  deckId: string;
   commanderFormat: boolean;
   isCommander: boolean;
   deckCardIds: Set<number>;

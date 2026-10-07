@@ -32,7 +32,7 @@ import {
 export type EditionSource = { kind: 'card'; card: Card } | { kind: 'pending'; item: PendingCard };
 
 interface EditionSwitcherProps {
-  deckId: number;
+  deckId: string;
   source: EditionSource;
   deckCardIds: Set<number>;
   isCommander: boolean;
