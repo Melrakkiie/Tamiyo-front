@@ -135,20 +135,22 @@ function DeckView({ id }: { id: number }) {
         mih={art ? 200 : undefined}
         style={art ? { ...artBackground(art.url, 'light'), display: 'flex', flexDirection: 'column' } : undefined}
       >
-        <Group justify="space-between" align="flex-start" style={art ? { marginTop: 'auto' } : undefined}>
-          <Group gap="sm">
+        <Group justify="space-between" align="flex-end" style={art ? { marginTop: 'auto' } : undefined}>
+          <Stack gap={6}>
             <Title order={2} c={art ? 'white' : undefined}>
               {current.name}
             </Title>
-            <Badge variant={art ? 'white' : 'light'}>{current.format}</Badge>
-            <Badge
-              variant={art ? 'white' : 'light'}
-              color={visibilityOption(current.visibility).color}
-              title={visibilityOption(current.visibility).description}
-            >
-              {visibilityOption(current.visibility).label}
-            </Badge>
-          </Group>
+            <Group gap="xs">
+              <Badge variant={art ? 'white' : 'light'}>{current.format}</Badge>
+              <Badge
+                variant={art ? 'white' : 'light'}
+                color={visibilityOption(current.visibility).color}
+                title={visibilityOption(current.visibility).description}
+              >
+                {visibilityOption(current.visibility).label}
+              </Badge>
+            </Group>
+          </Stack>
           <Group gap="xs">
             <Button variant="default" onClick={() => setArtPickerOpened(true)}>
               Illustration
