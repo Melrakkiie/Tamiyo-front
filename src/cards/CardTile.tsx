@@ -104,7 +104,12 @@ export function CardTile({
 }: CardTileProps) {
   const [shownUrl, setShownUrl] = useState<string | undefined>(undefined);
   const onPreview = () =>
-    showCardPreview({ name: card.name, scryfallId: card.scryfall_id, imageUrl: shownUrl ?? imageUrl });
+    showCardPreview({
+      name: card.name,
+      scryfallId: card.scryfall_id,
+      imageUrl: shownUrl ?? imageUrl,
+      open: () => onOpen(card),
+    });
   if (textOnly) {
     return <CardRow card={card} notOwned={notOwned} manaCost={manaCost} onOpen={onOpen} onPreview={onPreview} />;
   }
@@ -136,7 +141,12 @@ export function CardTile({
             backUrl={backImageUrl}
             onFlip={(url) => {
               setShownUrl(url);
-              showCardPreview({ name: card.name, scryfallId: card.scryfall_id, imageUrl: url });
+              showCardPreview({
+                name: card.name,
+                scryfallId: card.scryfall_id,
+                imageUrl: url,
+                open: () => onOpen(card),
+              });
             }}
           />
           {quantity > 1 && (

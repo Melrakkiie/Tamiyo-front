@@ -4,14 +4,19 @@ export interface PreviewCard {
   name: string;
   scryfallId: string;
   imageUrl: string | undefined;
+  open?: () => void;
 }
 
 let current: PreviewCard | null = null;
 let fallback: PreviewCard | null = null;
+let fallbackPath: string | null = null;
 const listeners = new Set<() => void>();
 
 function sameCard(a: PreviewCard | null, b: PreviewCard | null) {
-  return a === b || (!!a && !!b && a.scryfallId === b.scryfallId && a.imageUrl === b.imageUrl && a.name === b.name);
+  return (
+    a === b ||
+    (!!a && !!b && a.scryfallId === b.scryfallId && a.imageUrl === b.imageUrl && a.name === b.name && a.open === b.open)
+  );
 }
 
 function notify() {
@@ -25,9 +30,10 @@ export function showCardPreview(card: PreviewCard | null) {
   }
 }
 
-export function setDefaultCardPreview(card: PreviewCard | null) {
-  if (!sameCard(fallback, card)) {
+export function setDefaultCardPreview(card: PreviewCard | null, path: string | null = null) {
+  if (!sameCard(fallback, card) || fallbackPath !== path) {
     fallback = card;
+    fallbackPath = card ? path : null;
     notify();
   }
 }
@@ -39,6 +45,6 @@ function subscribe(listener: () => void) {
   };
 }
 
-export function useCardPreview() {
-  return useSyncExternalStore(subscribe, () => current ?? fallback);
+export function useCardPreview(path: string) {
+  return useSyncExternalStore(subscribe, () => current ?? (fallbackPath === path ? fallback : null));
 }

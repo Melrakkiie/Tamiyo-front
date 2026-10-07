@@ -20,7 +20,7 @@ import {
 import { notifications } from '@mantine/notifications';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useLocation, useNavigate, useParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
 import type { Card, Deck, DeckCardSort } from '../api/types';
@@ -251,7 +251,7 @@ function CommanderSection({ deck }: { deck: Deck }) {
 
   function previewCommander() {
     if (commanderScryfallId) {
-      showCardPreview({ name: commanderName ?? 'Commandant', scryfallId: commanderScryfallId, imageUrl: undefined });
+      showCardPreview(null);
     }
   }
 
@@ -352,6 +352,7 @@ function GroupCount({ label, cards, backFaces }: { label: string; cards: Card[];
 }
 
 function DeckCards({ deck }: { deck: Deck }) {
+  const { pathname } = useLocation();
   const [sort, setSort] = useState<DeckCardSort>('name');
   const [grouping, setGrouping] = useState<DeckCardGrouping | null>('type');
   const { size, setSize, textOnly, gridProps } = useCardSize();
@@ -403,13 +404,26 @@ function DeckCards({ deck }: { deck: Deck }) {
     ? allCards.find((card) => card.scryfall_id === commanderScryfallId)?.name
     : undefined;
   const commanderImage = commanderScryfallId ? images.data?.[commanderScryfallId] : undefined;
+  const commanderCard = allCards.find((card) =>
+    deck.commander_id
+      ? card.id === deck.commander_id
+      : isPendingCard(card) && pendingIdOf(card) === deck.commander_pending_id,
+  );
   useEffect(() => {
     setDefaultCardPreview(
       commanderScryfallId
-        ? { name: commanderName ?? 'Commandant', scryfallId: commanderScryfallId, imageUrl: commanderImage }
+        ? {
+            name: commanderName ?? 'Commandant',
+            scryfallId: commanderScryfallId,
+            imageUrl: commanderImage,
+            open: commanderCard
+              ? () => (isPendingCard(commanderCard) ? setOpenedPending : setOpenedCard)(commanderCard)
+              : undefined,
+          }
         : null,
+      pathname,
     );
-  }, [commanderScryfallId, commanderName, commanderImage]);
+  });
   useEffect(() => () => setDefaultCardPreview(null), []);
 
   function renderTile(card: Card) {
