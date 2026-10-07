@@ -26,6 +26,7 @@ import { useAllStorages, useStorageOptions } from '../storages/api';
 import { AddCardModal, type CardToAdd } from './AddCardModal';
 import { useCards } from './api';
 import { CardDetailModal } from './CardDetailModal';
+import { CardSizeControl, useCardSize } from './CardSizeControl';
 import { CardTile } from './CardTile';
 import { MissingDetailsAlert } from './MissingDetailsAlert';
 import { groupCards, groupingOptions, hasMissingDetails, parseGrouping, sortForGrouping } from './grouping';
@@ -98,7 +99,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
     );
   }
 
-  const gridCols = { base: 2, xs: 3, sm: 4, lg: 6 };
+  const { size, setSize, gridCols } = useCardSize();
 
   function updateParams(changes: Record<string, string | null>) {
     setParams(
@@ -157,11 +158,14 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
       </Text>
       <DropOverlay dragging={drop.dragging} resolving={drop.resolving} />
 
-      <Text size="sm" c="dimmed">
-        {cards.data
-          ? `${cards.data.total} carte${cards.data.total > 1 ? 's' : ''}${filtered ? ' correspondant aux filtres' : ''}`
-          : ' '}
-      </Text>
+      <Group justify="space-between" align="flex-end">
+        <Text size="sm" c="dimmed">
+          {cards.data
+            ? `${cards.data.total} carte${cards.data.total > 1 ? 's' : ''}${filtered ? ' correspondant aux filtres' : ''}`
+            : ' '}
+        </Text>
+        <CardSizeControl value={size} onChange={setSize} />
+      </Group>
 
       <Group grow align="flex-end">
         <TextInput

@@ -26,6 +26,7 @@ import type { Card, Deck, DeckCardSort } from '../api/types';
 import { useExportDeck } from '../bulk/api';
 import { useCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
+import { CardSizeControl, useCardSize } from '../cards/CardSizeControl';
 import { CardTile } from '../cards/CardTile';
 import { groupCards, hasMissingDetails, sortIntoGroups } from '../cards/grouping';
 import { MissingDetailsAlert } from '../cards/MissingDetailsAlert';
@@ -55,8 +56,6 @@ const sortOptions: { value: DeckCardSort; label: string }[] = [
   { value: '-mana_value', label: 'Coût de mana décroissant' },
   { value: '-added', label: 'Ajoutées récemment' },
 ];
-
-const gridCols = { base: 2, xs: 3, sm: 4, lg: 6 };
 
 export function DeckPage() {
   const id = Number(useParams().id);
@@ -305,6 +304,7 @@ function CommanderSection({ deck }: { deck: Deck }) {
 function DeckCards({ deck }: { deck: Deck }) {
   const [sort, setSort] = useState<DeckCardSort>('name');
   const [grouping, setGrouping] = useState<DeckCardGrouping | null>('type');
+  const { size, setSize, gridCols } = useCardSize();
   const cards = useDeckCards(deck.id, sort);
   const deckCards = cards.data ?? [];
   const pending = usePendingCards(deck.id);
@@ -342,6 +342,13 @@ function DeckCards({ deck }: { deck: Deck }) {
 
   return (
     <Stack>
+      <Group justify="space-between" align="flex-end">
+        <Text size="sm" c="dimmed">
+          {cards.data ? `${allCards.length} carte${allCards.length > 1 ? 's' : ''}` : ' '}
+        </Text>
+        <CardSizeControl value={size} onChange={setSize} />
+      </Group>
+
       <Group justify="space-between" align="flex-end">
         <Group align="flex-end">
           <Select
