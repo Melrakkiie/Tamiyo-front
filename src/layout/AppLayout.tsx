@@ -4,6 +4,7 @@ import { Link, Outlet, useLocation } from 'react-router';
 
 import { useAccount } from '../auth/account';
 import { logout } from '../auth/actions';
+import { UserAvatar } from '../auth/UserAvatar';
 
 interface NavItem {
   label: string;
@@ -42,7 +43,7 @@ export function AppLayout() {
           </Group>
           <Menu position="bottom-end" width={200}>
             <Menu.Target>
-              <Button variant="subtle" maw={220}>
+              <Button variant="subtle" maw={240} leftSection={<UserAvatar size={26} />}>
                 <Text span inherit truncate>
                   {accountLabel}
                 </Text>

@@ -5,6 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 
 import { errorMessage } from '../api/errors';
 import { changePassword } from '../auth/actions';
+import { AvatarSection } from '../auth/AvatarSection';
 import { ChangeEmailSection } from '../auth/ChangeEmailSection';
 import { DisplayNameSection } from '../auth/DisplayNameSection';
 import { DeleteCollectionSection } from '../cards/DeleteCollectionSection';
@@ -37,6 +38,8 @@ export function SettingsPage() {
   return (
     <Stack maw={480}>
       <Title order={2}>Paramètres</Title>
+
+      <AvatarSection />
 
       <DisplayNameSection />
 

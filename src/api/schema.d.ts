@@ -526,8 +526,8 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Set or clear the account's display name
-         * @description A purely cosmetic name shown instead of the email. Not unique. Trimmed; null or a blank string clears it.
+         * Set or clear the account's display name and avatar
+         * @description Only the fields present change; at least one is required. The display name is a purely cosmetic name shown instead of the email, not unique. The avatar is a Scryfall card id whose art crop is shown (only the id is stored). null or a blank string clears a field.
          */
         patch: {
             parameters: {
@@ -551,7 +551,7 @@ export interface paths {
                         "application/json": components["schemas"]["Me"];
                     };
                 };
-                /** @description display_name missing, not a string, or longer than 32 characters. */
+                /** @description No field given, a field that isn't a string, display_name longer than 32 characters, or avatar_scryfall_id not a UUID. Nothing is changed. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -2415,10 +2415,20 @@ export interface components {
             email: string;
             /** @description Cosmetic name shown instead of the email, null until set. */
             display_name: string | null;
+            /**
+             * Format: uuid
+             * @description Scryfall card whose art crop is the avatar, null until set.
+             */
+            avatar_scryfall_id: string | null;
         };
         UpdateMeRequest: {
             /** @description Trimmed; null or a blank string clears it. */
-            display_name: string | null;
+            display_name?: string | null;
+            /**
+             * Format: uuid
+             * @description Scryfall card id whose art crop becomes the avatar; null or a blank string clears it.
+             */
+            avatar_scryfall_id?: string | null;
         };
         ChangeEmailRequest: {
             current_password: string;
