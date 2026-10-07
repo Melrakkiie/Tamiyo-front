@@ -36,3 +36,11 @@ export async function changePassword(currentPassword: string, newPassword: strin
   );
   await endSession(revokeRefreshCookie);
 }
+
+export async function requestEmailChange(currentPassword: string, newEmail: string) {
+  unwrap(await api.POST('/auth/email', { body: { current_password: currentPassword, new_email: newEmail } }));
+}
+
+export async function confirmEmailChange(token: string) {
+  unwrap(await api.POST('/auth/confirm-email', { body: { token } }));
+}

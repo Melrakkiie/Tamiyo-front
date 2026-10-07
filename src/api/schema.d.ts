@@ -482,6 +482,200 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The authenticated account */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Me"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description User no longer exists */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask to change the authenticated user's email
+         * @description Requires the current password. The email doesn't change yet: a single-use confirmation token is emailed to the current address (as a link when EMAIL_CHANGE_URL_TEMPLATE is set), valid for EMAIL_CHANGE_TOKEN_TTL_MINUTES (a day by default). The account keeps its current email until the token is sent to /auth/confirm-email.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ChangeEmailRequest"];
+                };
+            };
+            responses: {
+                /** @description Accepted, the confirmation email was sent */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Missing field, invalid email, or new_email is the current email. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Missing/invalid access token, or current_password is incorrect. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description User no longer exists */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description new_email already belongs to an account */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/confirm-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm an email change
+         * @description Consumes the single-use token emailed to the current address by /auth/email and switches the account to the new email. A notice is then sent to the new address. Sessions stay open.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ConfirmEmailRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Missing token */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Invalid, expired, or already-used token */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The new email was registered by another account in the meantime */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                429: components["responses"]["TooManyRequests"];
+                500: components["responses"]["InternalError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/cards": {
         parameters: {
             query?: never;
@@ -2167,6 +2361,18 @@ export interface components {
         ChangePasswordRequest: {
             current_password: string;
             new_password: string;
+        };
+        Me: {
+            /** Format: email */
+            email: string;
+        };
+        ChangeEmailRequest: {
+            current_password: string;
+            /** Format: email */
+            new_email: string;
+        };
+        ConfirmEmailRequest: {
+            token: string;
         };
         ForgotPasswordRequest: {
             /** Format: email */

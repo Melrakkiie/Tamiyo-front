@@ -13,8 +13,11 @@ import type { paths } from './schema';
 
 function authRoute(url: string): 'none' | 'password' | 'other' {
   const path = new URL(url, window.location.origin).pathname;
-  if (path === `${API_BASE_PATH}/auth/password`) {
+  if (path === `${API_BASE_PATH}/auth/password` || path === `${API_BASE_PATH}/auth/email`) {
     return 'password';
+  }
+  if (path === `${API_BASE_PATH}/auth/me`) {
+    return 'none';
   }
   return path.startsWith(`${API_BASE_PATH}/auth/`) ? 'other' : 'none';
 }

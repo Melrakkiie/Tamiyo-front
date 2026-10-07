@@ -5,6 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 
 import { errorMessage } from '../api/errors';
 import { changePassword } from '../auth/actions';
+import { ChangeEmailSection } from '../auth/ChangeEmailSection';
 import { DeleteCollectionSection } from '../cards/DeleteCollectionSection';
 
 type ChangePasswordValues = { currentPassword: string; newPassword: string; confirmPassword: string };
@@ -35,6 +36,8 @@ export function SettingsPage() {
   return (
     <Stack maw={480}>
       <Title order={2}>Paramètres</Title>
+
+      <ChangeEmailSection />
 
       <Paper withBorder p="lg">
         <form onSubmit={form.onSubmit((values) => mutation.mutate(values))}>

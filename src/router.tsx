@@ -4,6 +4,7 @@ import { GuestOnly, RequireAuth } from './auth/guards';
 import { AppLayout } from './layout/AppLayout';
 import { AuthLayout } from './layout/AuthLayout';
 import { CollectionPage } from './pages/CollectionPage';
+import { ConfirmEmailPage } from './pages/ConfirmEmailPage';
 import { DeckPage } from './pages/DeckPage';
 import { DecksPage } from './pages/DecksPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
     children: [
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
       { path: '/reset-password', element: <ResetPasswordPage /> },
+      { path: '/confirm-email', element: <ConfirmEmailPage /> },
     ],
   },
   {
