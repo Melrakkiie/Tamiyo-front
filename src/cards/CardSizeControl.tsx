@@ -1,15 +1,17 @@
 import { Input, SegmentedControl } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
 
-export type CardSize = 'small' | 'medium' | 'large';
+export type CardSize = 'text' | 'small' | 'medium' | 'large';
 
 const sizes: { value: CardSize; label: string }[] = [
+  { value: 'text', label: 'Texte' },
   { value: 'small', label: 'Petites' },
   { value: 'medium', label: 'Moyennes' },
   { value: 'large', label: 'Grandes' },
 ];
 
 const gridColumns: Record<CardSize, { base: number; xs: number; sm: number; lg: number }> = {
+  text: { base: 1, xs: 1, sm: 2, lg: 3 },
   small: { base: 3, xs: 4, sm: 6, lg: 8 },
   medium: { base: 2, xs: 3, sm: 4, lg: 6 },
   large: { base: 1, xs: 2, sm: 3, lg: 4 },
@@ -26,12 +28,20 @@ export function useCardSize() {
     deserialize: (value) => (value && isCardSize(value) ? value : 'medium'),
     serialize: (value) => value,
   });
-  return { size, setSize, gridCols: gridColumns[size] };
+  return {
+    size,
+    setSize,
+    textOnly: size === 'text',
+    gridProps:
+      size === 'text'
+        ? { cols: gridColumns[size], spacing: 'xs', verticalSpacing: 'xs' }
+        : { cols: gridColumns[size], spacing: 'md', verticalSpacing: 'lg' },
+  };
 }
 
 export function CardSizeControl({ value, onChange }: { value: CardSize; onChange: (size: CardSize) => void }) {
   return (
-    <Input.Wrapper label="Taille des cartes">
+    <Input.Wrapper label="Affichage des cartes">
       <div>
         <SegmentedControl
           data={sizes}

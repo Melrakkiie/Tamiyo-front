@@ -17,22 +17,42 @@ import {
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
-export function useCardImages(scryfallIds: string[], size: 'small' | 'normal' = 'normal') {
+function useScryfallCardsByIds<T>(scryfallIds: string[], select: (cards: Record<string, ScryfallCard>) => T) {
   const ids = [...new Set(scryfallIds)].sort();
 
   return useQuery({
-    queryKey: ['scryfall', 'images', size, ids],
+    queryKey: ['scryfall', 'cards', ids],
     queryFn: async () => {
-      const cards = await fetchCardsByIds(ids);
-      const urls: Record<string, string | undefined> = {};
-      for (const card of cards) {
-        urls[card.id] = imageUrl(card, size);
+      const cards: Record<string, ScryfallCard> = {};
+      for (const card of await fetchCardsByIds(ids)) {
+        cards[card.id] = card;
       }
-      return urls;
+      return cards;
     },
+    select,
     enabled: ids.length > 0,
     staleTime: ONE_DAY,
     gcTime: ONE_DAY,
+  });
+}
+
+export function useCardImages(scryfallIds: string[], size: 'small' | 'normal' = 'normal') {
+  return useScryfallCardsByIds(scryfallIds, (cards) => {
+    const urls: Record<string, string | undefined> = {};
+    for (const [id, card] of Object.entries(cards)) {
+      urls[id] = imageUrl(card, size);
+    }
+    return urls;
+  });
+}
+
+export function useManaCosts(scryfallIds: string[]) {
+  return useScryfallCardsByIds(scryfallIds, (cards) => {
+    const costs: Record<string, string> = {};
+    for (const [id, card] of Object.entries(cards)) {
+      costs[id] = card.mana_cost ?? card.card_faces?.[0]?.mana_cost ?? '';
+    }
+    return costs;
   });
 }
 

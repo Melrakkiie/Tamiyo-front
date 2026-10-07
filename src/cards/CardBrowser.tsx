@@ -18,7 +18,7 @@ import { useSearchParams } from 'react-router';
 
 import { errorMessage } from '../api/errors';
 import type { Card, CardSort } from '../api/types';
-import { useCardImages } from '../scryfall/hooks';
+import { useCardImages, useManaCosts } from '../scryfall/hooks';
 import { DropOverlay } from '../scryfall/DropOverlay';
 import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
 import { useScryfallDrop } from '../scryfall/useScryfallDrop';
@@ -83,6 +83,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const copiesTotal = copies.data?.total;
   const pageCards = cards.data?.data ?? [];
   const images = useCardImages(pageCards.map((card) => card.scryfall_id));
+  const manaCosts = useManaCosts(pageCards.map((card) => card.scryfall_id));
   const showMissingDetails =
     (grouping === 'type' || grouping === 'color' || sortsNeedingDetails.includes(sort)) && hasMissingDetails(pageCards);
 
@@ -93,6 +94,8 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
         card={card}
         imageUrl={images.data?.[card.scryfall_id]}
         imageLoading={images.isLoading}
+        textOnly={textOnly}
+        manaCost={manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)}
         storageName={
           showStorage ? (card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null) : undefined
         }
@@ -101,7 +104,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
     );
   }
 
-  const { size, setSize, gridCols } = useCardSize();
+  const { size, setSize, textOnly, gridProps } = useCardSize();
 
   function updateParams(changes: Record<string, string | null>) {
     setParams(
@@ -246,16 +249,12 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
                   </Title>
                 }
               />
-              <SimpleGrid cols={gridCols} spacing="md" verticalSpacing="lg">
-                {group.cards.map(renderTile)}
-              </SimpleGrid>
+              <SimpleGrid {...gridProps}>{group.cards.map(renderTile)}</SimpleGrid>
             </Stack>
           ))}
         </Stack>
       ) : (
-        <SimpleGrid cols={gridCols} spacing="md" verticalSpacing="lg">
-          {pageCards.map(renderTile)}
-        </SimpleGrid>
+        <SimpleGrid {...gridProps}>{pageCards.map(renderTile)}</SimpleGrid>
       )}
 
       {totalPages > 1 && (

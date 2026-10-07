@@ -3,27 +3,7 @@ import { Fragment, useState } from 'react';
 
 import type { ScryfallCard } from './client';
 import { useFrenchPrinting, useScryfallCard } from './hooks';
-
-const SYMBOL_BASE = 'https://svgs.scryfall.io/card-symbols';
-
-function withSymbols(text: string) {
-  return text.split(/(\{[^}]+\})/g).map((part, index) => {
-    const symbol = /^\{([^}]+)\}$/.exec(part);
-    if (!symbol) {
-      return <Fragment key={index}>{part}</Fragment>;
-    }
-    const code = symbol[1].replace(/\//g, '').toUpperCase();
-    return (
-      <img
-        key={index}
-        src={`${SYMBOL_BASE}/${encodeURIComponent(code)}.svg`}
-        alt={part}
-        title={part}
-        style={{ height: '1em', width: '1em', verticalAlign: '-0.15em', margin: '0 1px' }}
-      />
-    );
-  });
-}
+import { withSymbols } from './manaSymbols';
 
 function RulesParagraphs({ text }: { text: string }) {
   return (

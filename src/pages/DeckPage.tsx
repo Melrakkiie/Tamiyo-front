@@ -47,7 +47,7 @@ import {
   groupByStorage,
   parseDeckGrouping,
 } from '../decks/storageGrouping';
-import { useCardArts, useCardImages } from '../scryfall/hooks';
+import { useCardArts, useCardImages, useManaCosts } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
 
 const sortOptions: { value: DeckCardSort; label: string }[] = [
@@ -304,7 +304,7 @@ function CommanderSection({ deck }: { deck: Deck }) {
 function DeckCards({ deck }: { deck: Deck }) {
   const [sort, setSort] = useState<DeckCardSort>('name');
   const [grouping, setGrouping] = useState<DeckCardGrouping | null>('type');
-  const { size, setSize, gridCols } = useCardSize();
+  const { size, setSize, textOnly, gridProps } = useCardSize();
   const cards = useDeckCards(deck.id, sort);
   const deckCards = cards.data ?? [];
   const pending = usePendingCards(deck.id);
@@ -313,6 +313,7 @@ function DeckCards({ deck }: { deck: Deck }) {
     pendingItems.length > 0 ? sortDeckCards([...deckCards, ...pendingToCards(pendingItems)], sort) : deckCards;
   const showMissingDetails = (grouping === 'type' || grouping === 'color') && hasMissingDetails(deckCards);
   const images = useCardImages(allCards.map((card) => card.scryfall_id));
+  const manaCosts = useManaCosts(allCards.map((card) => card.scryfall_id));
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
   const stacks = stackCards(allCards, deck.commander_id);
@@ -334,6 +335,8 @@ function DeckCards({ deck }: { deck: Deck }) {
         card={card}
         imageUrl={images.data?.[card.scryfall_id]}
         imageLoading={images.isLoading}
+        textOnly={textOnly}
+        manaCost={manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)}
         storageName={card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null}
         notOwned={notOwned}
         onOpen={notOwned ? setOpenedPending : setOpenedCard}
@@ -402,16 +405,12 @@ function DeckCards({ deck }: { deck: Deck }) {
                   </Title>
                 }
               />
-              <SimpleGrid cols={gridCols} spacing="md" verticalSpacing="lg">
-                {group.cards.map(renderTile)}
-              </SimpleGrid>
+              <SimpleGrid {...gridProps}>{group.cards.map(renderTile)}</SimpleGrid>
             </Stack>
           ))}
         </Stack>
       ) : (
-        <SimpleGrid cols={gridCols} spacing="md" verticalSpacing="lg">
-          {stacks.map(renderTile)}
-        </SimpleGrid>
+        <SimpleGrid {...gridProps}>{stacks.map(renderTile)}</SimpleGrid>
       )}
 
       <AddToDeckModal
