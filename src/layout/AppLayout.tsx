@@ -1,4 +1,4 @@
-import { AppShell, Burger, Button, Group, Menu, NavLink, Text, Title } from '@mantine/core';
+import { AppShell, Box, Burger, Group, Menu, NavLink, Text, Title, UnstyledButton } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Link, Outlet, useLocation } from 'react-router';
 
@@ -24,7 +24,7 @@ export function AppLayout() {
   const [opened, { toggle, close }] = useDisclosure();
   const { pathname } = useLocation();
   const account = useAccount();
-  const accountLabel = account.data?.display_name || 'Mon compte';
+  const displayName = account.data?.display_name;
   function handleLogout() {
     void logout();
   }
@@ -41,15 +41,24 @@ export function AppLayout() {
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" aria-label="Menu" />
             <Title order={3}>Tamiyo</Title>
           </Group>
-          <Menu position="bottom-end" width={200}>
+          <Menu position="bottom-end" width={240}>
             <Menu.Target>
-              <Button variant="subtle" maw={240} leftSection={<UserAvatar size={26} />}>
-                <Text span inherit truncate>
-                  {accountLabel}
-                </Text>
-              </Button>
+              <UnstyledButton aria-label="Mon compte" style={{ borderRadius: '50%' }}>
+                <UserAvatar size={40} />
+              </UnstyledButton>
             </Menu.Target>
             <Menu.Dropdown>
+              <Box px="sm" py={6}>
+                <Text size="sm" fw={600} truncate>
+                  {displayName || 'Mon compte'}
+                </Text>
+                {account.data && (
+                  <Text size="xs" c="dimmed" truncate>
+                    {account.data.email}
+                  </Text>
+                )}
+              </Box>
+              <Menu.Divider />
               <Menu.Item component={Link} to="/settings">
                 Paramètres
               </Menu.Item>
