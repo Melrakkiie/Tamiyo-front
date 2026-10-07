@@ -4,6 +4,16 @@ import { errorMessage } from '../api/errors';
 import { useDeckLegality } from './api';
 
 const REASONS: [RegExp, (...groups: string[]) => string][] = [
+  [
+    /^deck size: (\d+) cards, (.+) requires exactly (\d+)$/,
+    (count, format, size) =>
+      `le deck compte ${count} cartes, alors que le format ${format} en demande exactement ${size}`,
+  ],
+  [
+    /^deck size: (\d+) cards, (.+) requires at least (\d+)$/,
+    (count, format, size) =>
+      `le deck compte ${count} cartes, alors que le format ${format} en demande au moins ${size}`,
+  ],
   [/^could not verify legality/, () => 'légalité invérifiable : carte introuvable sur Scryfall'],
   [/^not legal in (.+)$/, (format) => `non légale en ${format}`],
   [/^restricted in (.+)$/, (format) => `restreinte en ${format}`],
@@ -17,6 +27,10 @@ const REASONS: [RegExp, (...groups: string[]) => string][] = [
     (card, commander) => `hors de l'identité couleur du commandant (carte : ${card}, commandant : ${commander})`,
   ],
 ];
+
+function capitalize(text: string) {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
 
 function translateReason(reason: string): string {
   for (const [pattern, translate] of REASONS) {
@@ -68,12 +82,20 @@ export function DeckLegalityPanel({ deckId }: { deckId: number }) {
         <List spacing="xs">
           {issues.map((issue, index) => (
             <List.Item key={`${issue.card_id ?? 'deck'}-${index}`}>
-              <Text span fw={500}>
-                {issue.card_name}
-              </Text>{' '}
-              <Text span c="dimmed">
-                : {translateReason(issue.reason)}
-              </Text>
+              {issue.card_name ? (
+                <>
+                  <Text span fw={500}>
+                    {issue.card_name}
+                  </Text>{' '}
+                  <Text span c="dimmed">
+                    : {translateReason(issue.reason)}
+                  </Text>
+                </>
+              ) : (
+                <Text span fw={500}>
+                  {capitalize(translateReason(issue.reason))}
+                </Text>
+              )}
             </List.Item>
           ))}
         </List>

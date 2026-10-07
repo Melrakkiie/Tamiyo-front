@@ -2352,6 +2352,7 @@ export interface components {
     schemas: {
         LegalityIssue: {
             card_id?: number;
+            /** @description Empty for an issue about the whole deck, such as its size. */
             card_name: string;
             reason: string;
         };
