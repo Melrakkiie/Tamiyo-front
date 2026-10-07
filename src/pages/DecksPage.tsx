@@ -90,6 +90,10 @@ export function DecksPage() {
   );
 }
 
+function totalCards(deck: Deck) {
+  return deck.card_count + (deck.pending_count ?? 0);
+}
+
 function DeckTile({ deck, art }: { deck: Deck; art: CardArt | null }) {
   return (
     <Card
@@ -108,7 +112,7 @@ function DeckTile({ deck, art }: { deck: Deck; art: CardArt | null }) {
             <Badge variant={art ? 'white' : 'light'}>{deck.format}</Badge>
           </Group>
           <Text size="sm" c={art ? 'gray.3' : 'dimmed'}>
-            {deck.card_count} carte{deck.card_count > 1 ? 's' : ''}
+            {totalCards(deck)} carte{totalCards(deck) > 1 ? 's' : ''}
           </Text>
         </div>
         {art?.artist && (

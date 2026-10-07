@@ -2333,6 +2333,8 @@ export interface components {
              */
             readonly commander_scryfall_id?: string | null;
             card_count: number;
+            /** @description Copies waiting in the deck's pending list (not in the collection yet), not counted in card_count. */
+            pending_count?: number;
             added: string;
             updated: string;
         };

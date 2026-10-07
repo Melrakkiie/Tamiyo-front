@@ -190,7 +190,7 @@ function DeckView({ id }: { id: number }) {
 
       <Tabs value={tab} onChange={setTab}>
         <Tabs.List>
-          <Tabs.Tab value="cards">Cartes ({current.card_count})</Tabs.Tab>
+          <Tabs.Tab value="cards">Cartes ({current.card_count + (current.pending_count ?? 0)})</Tabs.Tab>
           <Tabs.Tab value="stats">Statistiques</Tabs.Tab>
           <Tabs.Tab value="legality">Légalité</Tabs.Tab>
         </Tabs.List>
