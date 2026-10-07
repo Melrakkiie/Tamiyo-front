@@ -1,6 +1,7 @@
-import { Image, Paper, ScrollArea, SimpleGrid, Text, UnstyledButton } from '@mantine/core';
+import { Group, Image, Paper, ScrollArea, SimpleGrid, Text, UnstyledButton } from '@mantine/core';
 
 import { imageUrl, type ScryfallCard } from './client';
+import { SetIcon } from './SetIcon';
 
 interface PrintingGridProps {
   printings: ScryfallCard[];
@@ -30,9 +31,12 @@ export function PrintingGrid({ printings, selectedId, disabled, onSelect }: Prin
               <Text size="xs" mt={4} lineClamp={1}>
                 {printing.set_name}
               </Text>
-              <Text size="xs" c="dimmed">
-                {printing.set.toUpperCase()} · #{printing.collector_number} · {printing.released_at.slice(0, 4)}
-              </Text>
+              <Group gap={4} justify="space-between" align="center" wrap="nowrap">
+                <Text size="xs" c="dimmed">
+                  {printing.set.toUpperCase()} · #{printing.collector_number} · {printing.released_at.slice(0, 4)}
+                </Text>
+                <SetIcon setCode={printing.set} size={22} />
+              </Group>
             </Paper>
           </UnstyledButton>
         ))}

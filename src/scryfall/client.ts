@@ -87,6 +87,22 @@ async function scryfall<T>(pathOrUrl: string, init?: RequestInit): Promise<T | n
   return (await response.json()) as T;
 }
 
+interface ScryfallSet {
+  code: string;
+  icon_svg_uri?: string;
+}
+
+export async function fetchSetIcons(): Promise<Record<string, string>> {
+  const result = await scryfall<ScryfallList<ScryfallSet>>('/sets');
+  const icons: Record<string, string> = {};
+  for (const set of result?.data ?? []) {
+    if (set.icon_svg_uri) {
+      icons[set.code.toLowerCase()] = set.icon_svg_uri;
+    }
+  }
+  return icons;
+}
+
 export function imageUrl(card: ScryfallCard, size: ImageSize): string | undefined {
   return card.image_uris?.[size] ?? card.card_faces?.[0]?.image_uris?.[size];
 }

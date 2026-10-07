@@ -11,6 +11,7 @@ import {
   type CardSuggestion,
   fetchCardsByIds,
   fetchFrenchPrinting,
+  fetchSetIcons,
   imageUrl,
   isAdvancedQuery,
   searchCardSuggestions,
@@ -182,4 +183,13 @@ export function useBackImageOf(card: ScryfallCard | null | undefined) {
 export function useBackImage(scryfallId: string | null | undefined) {
   const card = useScryfallCard(scryfallId);
   return useBackImageOf(card.data);
+}
+
+export function useSetIcons() {
+  return useQuery({
+    queryKey: ['scryfall', 'sets'],
+    queryFn: fetchSetIcons,
+    staleTime: ONE_DAY,
+    gcTime: ONE_DAY,
+  });
 }

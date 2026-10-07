@@ -1,4 +1,16 @@
-import { Alert, Badge, Center, Image, Loader, Paper, SimpleGrid, Stack, Text, UnstyledButton } from '@mantine/core';
+import {
+  Alert,
+  Badge,
+  Center,
+  Group,
+  Image,
+  Loader,
+  Paper,
+  SimpleGrid,
+  Stack,
+  Text,
+  UnstyledButton,
+} from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 
 import { errorMessage } from '../api/errors';
@@ -8,6 +20,7 @@ import type { ScryfallCard } from '../scryfall/client';
 import { useCardImages, usePrintings } from '../scryfall/hooks';
 import { foilFor, printingDetails } from '../scryfall/printing';
 import { PrintingGrid } from '../scryfall/PrintingGrid';
+import { SetIcon } from '../scryfall/SetIcon';
 import { useAllStorages } from '../storages/api';
 import {
   useReplaceDeckCardWithPending,
@@ -112,8 +125,10 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
                 <UnstyledButton key={copy.id} onClick={() => chooseOwned(copy)} disabled={busy}>
                   <Paper withBorder p={4} radius="md" style={busy ? { opacity: 0.5 } : undefined}>
                     <Image src={images.data?.[copy.scryfall_id]} alt={copy.name} radius="sm" loading="lazy" />
-                    <Text size="xs" mt={4}>
-                      {copy.set_code.toUpperCase()} · #{copy.collector_number}{' '}
+                    <Group gap={4} mt={4} wrap="nowrap">
+                      <Text size="xs">
+                        {copy.set_code.toUpperCase()} · #{copy.collector_number}
+                      </Text>
                       {copy.foil && (
                         <Badge size="xs" variant="light">
                           foil
@@ -124,10 +139,15 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
                           proxy
                         </Badge>
                       )}
-                    </Text>
-                    <Text size="xs" c="dimmed" lineClamp={1}>
-                      {copy.storage_id ? (storageNames.get(copy.storage_id) ?? 'Rangement inconnu') : 'Sans rangement'}
-                    </Text>
+                    </Group>
+                    <Group gap={4} justify="space-between" align="center" wrap="nowrap">
+                      <Text size="xs" c="dimmed" lineClamp={1}>
+                        {copy.storage_id
+                          ? (storageNames.get(copy.storage_id) ?? 'Rangement inconnu')
+                          : 'Sans rangement'}
+                      </Text>
+                      <SetIcon setCode={copy.set_code} size={22} />
+                    </Group>
                   </Paper>
                 </UnstyledButton>
               ))}
