@@ -1,13 +1,15 @@
-import { Alert, Button, Divider, Grid, Modal, Stack, Text, Title } from '@mantine/core';
+import { Alert, Button, Divider, Grid, Modal, Select, Stack, Text, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Card } from '../api/types';
+import { useUpdateCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
 import { CardRulesText } from '../scryfall/CardRulesText';
 import { commanderEligibility } from '../scryfall/commander';
 import { useScryfallCard } from '../scryfall/hooks';
+import { useAllStorages, useStorageOptions } from '../storages/api';
 import { isCommanderFormat, useRemoveCardFromDeck, useUpdateDeck } from './api';
 import { EditionSwitcher } from './EditionSwitcher';
 
@@ -83,6 +85,28 @@ function DeckCardDetail({
   const update = useUpdateDeck();
   const scryfallCard = useScryfallCard(commanderFormat ? card.scryfall_id : null);
   const eligibility = scryfallCard.data ? commanderEligibility(scryfallCard.data) : null;
+  const storageOptions = useStorageOptions();
+  const storages = useAllStorages();
+  const updateCard = useUpdateCard();
+  const [storageId, setStorageId] = useState<string | null>(card.storage_id ? String(card.storage_id) : null);
+
+  function moveToStorage(next: string | null) {
+    const previous = storageId;
+    setStorageId(next);
+    updateCard.mutate(
+      { id: card.id, changes: { storage_id: next ? Number(next) : null } },
+      {
+        onSuccess: () => {
+          const label = storages.data?.find((storage) => String(storage.id) === next)?.name;
+          notifications.show({
+            color: 'green',
+            message: label ? `${card.name} est rangée dans ${label}.` : `${card.name} n'est plus dans un rangement.`,
+          });
+        },
+        onError: () => setStorageId(previous),
+      },
+    );
+  }
 
   function removeFromDeck() {
     remove.mutate(
@@ -108,7 +132,7 @@ function DeckCardDetail({
     );
   }
 
-  const error = remove.error ?? update.error;
+  const error = remove.error ?? update.error ?? updateCard.error;
 
   return (
     <Stack gap="lg">
@@ -163,6 +187,16 @@ function DeckCardDetail({
                 )
               ))
             )}
+            <Select
+              label="Rangement"
+              placeholder="Aucun rangement"
+              data={storageOptions}
+              value={storageId}
+              onChange={moveToStorage}
+              clearable
+              searchable
+              disabled={updateCard.isPending}
+            />
             <Button color="red" variant="subtle" onClick={removeFromDeck} loading={remove.isPending}>
               Retirer du deck
             </Button>
