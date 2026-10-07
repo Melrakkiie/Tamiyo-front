@@ -24,7 +24,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { ApiError, errorMessage } from '../api/errors';
 import type { Card, Deck, DeckCardSort } from '../api/types';
 import { useExportDeck } from '../bulk/api';
-import { useCard } from '../cards/api';
+import { copyCount, useCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
 import { CardSizeControl, useCardSize } from '../cards/CardSizeControl';
 import { CardTile } from '../cards/CardTile';
@@ -39,7 +39,7 @@ import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckLegalityPanel } from '../decks/DeckLegalityPanel';
 import { DeckStatsPanel } from '../decks/DeckStatsPanel';
 import { PendingCardModal } from '../decks/PendingCardModal';
-import { isPendingCard, pendingIdOf, pendingToCards, sortDeckCards } from '../decks/pendingCards';
+import { isPendingCard, pendingIdOf, pendingToCards, sortDeckCards, stackCards } from '../decks/pendingCards';
 import { PendingCardsSection } from '../decks/PendingCardsSection';
 import {
   type DeckCardGrouping,
@@ -315,11 +315,12 @@ function DeckCards({ deck }: { deck: Deck }) {
   const images = useCardImages(allCards.map((card) => card.scryfall_id));
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
+  const stacks = stackCards(allCards, deck.commander_id);
   const groups =
     grouping === 'storage'
-      ? groupByStorage(allCards, storageNames)
+      ? groupByStorage(stacks, storageNames)
       : grouping
-        ? groupCards(sortIntoGroups(allCards, grouping), grouping)
+        ? groupCards(sortIntoGroups(stacks, grouping), grouping)
         : [];
   const [addOpened, setAddOpened] = useState(false);
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
@@ -396,7 +397,7 @@ function DeckCards({ deck }: { deck: Deck }) {
                   <Title order={4}>
                     {group.label}{' '}
                     <Text span size="sm" c="dimmed">
-                      ({group.cards.length})
+                      ({group.cards.reduce((total, card) => total + copyCount(card), 0)})
                     </Text>
                   </Title>
                 }
@@ -409,7 +410,7 @@ function DeckCards({ deck }: { deck: Deck }) {
         </Stack>
       ) : (
         <SimpleGrid cols={gridCols} spacing="md" verticalSpacing="lg">
-          {allCards.map(renderTile)}
+          {stacks.map(renderTile)}
         </SimpleGrid>
       )}
 

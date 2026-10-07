@@ -508,6 +508,8 @@ export interface paths {
                     limit?: number;
                     /** @description Sort field, with an optional "-" prefix for descending order. id is always used as a secondary tie-breaker for a stable order. */
                     sort?: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "color" | "-color" | "type" | "-type";
+                    /** @description Return one entry per stack of identical copies (same printing, foil and storage) instead of one per card. Each entry is the stack's lowest-id copy with quantity and copy_ids set; total, page and limit then count stacks. added is the oldest copy's, updated the most recent one's. */
+                    stack?: boolean;
                 };
                 header?: never;
                 path?: never;
@@ -2196,6 +2198,10 @@ export interface components {
             color_identity?: string | null;
             added: string;
             updated: string;
+            /** @description Only with GET /cards?stack=true, the number of copies in the stack. */
+            quantity?: number;
+            /** @description Only with GET /cards?stack=true, the ids of the stack's copies, lowest first. */
+            copy_ids?: number[];
         };
         PendingCard: {
             id: number;

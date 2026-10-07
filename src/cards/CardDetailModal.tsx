@@ -7,6 +7,7 @@ import {
   Group,
   Loader,
   Modal,
+  NumberInput,
   Select,
   Stack,
   Switch,
@@ -24,7 +25,7 @@ import { usePrintings } from '../scryfall/hooks';
 import { canBeFoil, canBeNonFoil, foilFor, printingDetails } from '../scryfall/printing';
 import { PrintingGrid } from '../scryfall/PrintingGrid';
 import { useStorageOptions } from '../storages/api';
-import { useDeleteCard, useUpdateCard } from './api';
+import { copyIds, useDeleteCopies, useUpdateCopies } from './api';
 import { CardImage } from './CardImage';
 
 interface CardDetailModalProps {
@@ -60,9 +61,14 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
   const otherPrintings = (printings.data ?? []).filter((candidate) => candidate.id !== card.scryfall_id);
   const [storageId, setStorageId] = useState<string | null>(card.storage_id ? String(card.storage_id) : null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const ids = copyIds(card);
+  const [count, setCount] = useState<number | string>(1);
+  const selectedCount = Math.min(ids.length, Math.max(1, Math.floor(Number(count)) || 1));
+  const selectedIds = ids.slice(ids.length - selectedCount);
+  const several = selectedCount > 1;
 
-  const update = useUpdateCard();
-  const remove = useDeleteCard();
+  const update = useUpdateCopies();
+  const remove = useDeleteCopies();
 
   const storageChanged = storageId !== (card.storage_id ? String(card.storage_id) : null);
   const changed = foil !== card.foil || storageChanged || printing !== null;
@@ -80,7 +86,7 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
   function save() {
     update.mutate(
       {
-        id: card.id,
+        ids: selectedIds,
         changes: {
           ...(printing ? printingChanges(printing) : {}),
           ...(foil !== card.foil ? { foil } : {}),
@@ -92,8 +98,10 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
           notifications.show({
             color: 'green',
             message: printing
-              ? `${card.name} : ton exemplaire est maintenant l'édition ${printing.set.toUpperCase()} #${printing.collector_number}.`
-              : 'Carte mise à jour.',
+              ? `${card.name} : ${several ? `${selectedCount} exemplaires sont` : 'ton exemplaire est'} maintenant en édition ${printing.set.toUpperCase()} #${printing.collector_number}.`
+              : several
+                ? `${selectedCount} exemplaires mis à jour.`
+                : 'Carte mise à jour.',
           });
           onClose();
         },
@@ -102,9 +110,14 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
   }
 
   function deleteCard() {
-    remove.mutate(card.id, {
+    remove.mutate(selectedIds, {
       onSuccess: () => {
-        notifications.show({ color: 'green', message: `${card.name} a été supprimée de ta collection.` });
+        notifications.show({
+          color: 'green',
+          message: several
+            ? `${selectedCount} exemplaires de ${card.name} ont été supprimés de ta collection.`
+            : `${card.name} a été supprimée de ta collection.`,
+        });
         onClose();
       },
     });
@@ -139,6 +152,19 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
 
             {error && <Alert color="red">{errorMessage(error)}</Alert>}
 
+            {ids.length > 1 && (
+              <NumberInput
+                label={`Exemplaires concernés, sur ${ids.length}`}
+                description="Les changements et la suppression ne portent que sur ce nombre d'exemplaires."
+                min={1}
+                max={ids.length}
+                allowDecimal={false}
+                value={count}
+                onChange={setCount}
+                w={260}
+              />
+            )}
+
             <Switch
               label="Foil"
               checked={foil}
@@ -160,7 +186,7 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
               {confirmingDelete ? (
                 <Group gap="xs">
                   <Button color="red" onClick={deleteCard} loading={remove.isPending}>
-                    Confirmer la suppression
+                    {several ? `Supprimer ${selectedCount} exemplaires` : 'Confirmer la suppression'}
                   </Button>
                   <Button variant="default" onClick={() => setConfirmingDelete(false)}>
                     Annuler

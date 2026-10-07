@@ -10,6 +10,15 @@ export interface CardFilters {
   name: string;
   storageId: number | undefined;
   colorIdentity?: string;
+  stack?: boolean;
+}
+
+export function copyIds(card: Card): number[] {
+  return card.copy_ids && card.copy_ids.length > 0 ? card.copy_ids : [card.id];
+}
+
+export function copyCount(card: Card): number {
+  return card.quantity ?? 1;
 }
 
 export function useCards(filters: CardFilters) {
@@ -26,6 +35,7 @@ export function useCards(filters: CardFilters) {
               name: filters.name || undefined,
               storage_id: filters.storageId,
               color_identity: filters.colorIdentity,
+              stack: filters.stack,
             },
           },
         }),
@@ -85,6 +95,32 @@ export function useUpdateCard() {
   return useMutation({
     mutationFn: async ({ id, changes }: { id: number; changes: UpdateCardInput }) =>
       unwrap(await api.PATCH('/cards/{id}', { params: { path: { id } }, body: changes })),
+    onSettled: invalidate,
+  });
+}
+
+export function useUpdateCopies() {
+  const invalidate = useInvalidateCollection();
+
+  return useMutation({
+    mutationFn: async ({ ids, changes }: { ids: number[]; changes: UpdateCardInput }) => {
+      for (const id of ids) {
+        unwrap(await api.PATCH('/cards/{id}', { params: { path: { id } }, body: changes }));
+      }
+    },
+    onSettled: invalidate,
+  });
+}
+
+export function useDeleteCopies() {
+  const invalidate = useInvalidateCollection();
+
+  return useMutation({
+    mutationFn: async (ids: number[]) => {
+      for (const id of ids) {
+        unwrap(await api.DELETE('/cards/{id}', { params: { path: { id } } }));
+      }
+    },
     onSettled: invalidate,
   });
 }

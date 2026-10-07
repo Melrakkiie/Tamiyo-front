@@ -152,6 +152,13 @@ function DeckCardDetail({
               </Text>
             </div>
 
+            {(card.quantity ?? 1) > 1 && (
+              <Text size="sm" c="dimmed">
+                {card.quantity} exemplaires identiques dans ce deck (même édition, même rangement) : les actions
+                ci-dessous ne portent que sur l'un d'eux.
+              </Text>
+            )}
+
             <CardRulesText scryfallId={card.scryfall_id} />
 
             {error && <Alert color="red">{errorMessage(error)}</Alert>}

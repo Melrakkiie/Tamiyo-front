@@ -13,10 +13,15 @@ interface CardTileProps {
 }
 
 export function CardTile({ card, imageUrl, imageLoading, storageName, notOwned, onOpen }: CardTileProps) {
+  const quantity = card.quantity ?? 1;
   return (
-    <UnstyledButton onClick={() => onOpen(card)} aria-label={card.name}>
+    <UnstyledButton
+      onClick={() => onOpen(card)}
+      aria-label={quantity > 1 ? `${card.name}, ${quantity} exemplaires` : card.name}
+    >
       <Stack gap={6}>
         <Box
+          pos="relative"
           style={
             notOwned
               ? {
@@ -28,6 +33,19 @@ export function CardTile({ card, imageUrl, imageLoading, storageName, notOwned, 
           }
         >
           <CardImage name={card.name} url={imageUrl} loading={imageLoading} />
+          {quantity > 1 && (
+            <Badge
+              pos="absolute"
+              top={8}
+              right={8}
+              size="lg"
+              variant="filled"
+              color={notOwned ? 'orange' : 'dark'}
+              style={{ boxShadow: 'var(--mantine-shadow-sm)' }}
+            >
+              ×{quantity}
+            </Badge>
+          )}
         </Box>
         <div>
           <Text size="sm" fw={500} lineClamp={1}>

@@ -50,3 +50,28 @@ export function sortDeckCards(cards: Card[], sort: DeckCardSort) {
     .sort((a, b) => compare(a.card, b.card, sort) || a.index - b.index)
     .map(({ card }) => card);
 }
+
+function stackKey(card: Card, commanderId: number | null | undefined) {
+  if (isPendingCard(card)) {
+    return `pending-${pendingIdOf(card)}`;
+  }
+  if (card.id === commanderId) {
+    return 'commander';
+  }
+  return `${card.scryfall_id}-${card.foil}-${card.storage_id ?? ''}`;
+}
+
+export function stackCards(cards: Card[], commanderId: number | null | undefined): Card[] {
+  const stacks = new Map<string, Card>();
+  for (const card of cards) {
+    const key = stackKey(card, commanderId);
+    const stack = stacks.get(key);
+    if (stack) {
+      stack.quantity = (stack.quantity ?? 1) + 1;
+      stack.copy_ids = [...(stack.copy_ids ?? []), card.id];
+    } else {
+      stacks.set(key, { ...card, quantity: 1, copy_ids: [card.id] });
+    }
+  }
+  return [...stacks.values()];
+}

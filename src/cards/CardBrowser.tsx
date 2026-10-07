@@ -24,7 +24,7 @@ import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
 import { useScryfallDrop } from '../scryfall/useScryfallDrop';
 import { useAllStorages, useStorageOptions } from '../storages/api';
 import { AddCardModal, type CardToAdd } from './AddCardModal';
-import { useCards } from './api';
+import { copyCount, useCards } from './api';
 import { CardDetailModal } from './CardDetailModal';
 import { CardSizeControl, useCardSize } from './CardSizeControl';
 import { CardTile } from './CardTile';
@@ -78,7 +78,9 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
   const showStorage = !storageId;
-  const cards = useCards({ page, limit: pageSize, sort, name, storageId });
+  const cards = useCards({ page, limit: pageSize, sort, name, storageId, stack: true });
+  const copies = useCards({ page: 1, limit: 1, sort: '-updated', name, storageId });
+  const copiesTotal = copies.data?.total;
   const pageCards = cards.data?.data ?? [];
   const images = useCardImages(pageCards.map((card) => card.scryfall_id));
   const showMissingDetails =
@@ -160,8 +162,8 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
 
       <Group justify="space-between" align="flex-end">
         <Text size="sm" c="dimmed">
-          {cards.data
-            ? `${cards.data.total} carte${cards.data.total > 1 ? 's' : ''}${filtered ? ' correspondant aux filtres' : ''}`
+          {copiesTotal !== undefined
+            ? `${copiesTotal} carte${copiesTotal > 1 ? 's' : ''}${filtered ? ' correspondant aux filtres' : ''}`
             : ' '}
         </Text>
         <CardSizeControl value={size} onChange={setSize} />
@@ -239,7 +241,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
                   <Title order={4}>
                     {group.label}{' '}
                     <Text span size="sm" c="dimmed">
-                      ({group.cards.length})
+                      ({group.cards.reduce((total, card) => total + copyCount(card), 0)})
                     </Text>
                   </Title>
                 }
