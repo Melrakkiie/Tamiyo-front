@@ -123,6 +123,11 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
               Enregistrer
             </Button>
           </Group>
+          {confirmingDelete && (
+            <Text size="xs" c="dimmed">
+              Si cette carte est dans un deck, elle y restera entourée en orange, à rajouter à ta collection plus tard.
+            </Text>
+          )}
         </Stack>
       </Grid.Col>
     </Grid>

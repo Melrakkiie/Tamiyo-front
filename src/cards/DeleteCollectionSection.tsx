@@ -20,7 +20,7 @@ export function DeleteCollectionSection() {
       onSuccess: (deleted) => {
         notifications.show({
           color: 'green',
-          message: `${deleted} carte${deleted > 1 ? 's' : ''} supprimée${deleted > 1 ? 's' : ''}. Tes rangements et tes decks sont conservés.`,
+          message: `${deleted} carte${deleted > 1 ? 's' : ''} supprimée${deleted > 1 ? 's' : ''}. Tes rangements et tes decks sont conservés, les cartes de tes decks restent à y rajouter.`,
         });
         setConfirmation('');
       },
@@ -36,9 +36,10 @@ export function DeleteCollectionSection() {
         <div>
           <Text fw={500}>Supprimer toute la collection</Text>
           <Text size="sm" c="dimmed">
-            Supprime définitivement tes {total} carte{total > 1 ? 's' : ''}. Tes rangements et tes decks sont
-            conservés, mais vidés. Cette action est irréversible : pense à exporter ta collection avant si tu
-            veux pouvoir la réimporter.
+            Supprime définitivement tes {total} carte{total > 1 ? 's' : ''}. Tes rangements sont conservés mais vidés ;
+            tes decks gardent leurs cartes en orange, à rajouter à ta collection plus tard (les commandants sont
+            retirés). Cette action est irréversible : pense à exporter ta collection avant si tu veux pouvoir la
+            réimporter.
           </Text>
         </div>
 
