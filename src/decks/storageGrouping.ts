@@ -1,0 +1,45 @@
+import type { Card } from '../api/types';
+import { type CardGroup, type CardGrouping, groupingOptions } from '../cards/grouping';
+import { isPendingCard } from './pendingCards';
+
+export type DeckCardGrouping = CardGrouping | 'storage';
+
+export const deckGroupingOptions: { value: DeckCardGrouping; label: string }[] = [
+  ...groupingOptions,
+  { value: 'storage', label: 'Rangement' },
+];
+
+export function parseDeckGrouping(raw: string | null): DeckCardGrouping | null {
+  return deckGroupingOptions.find((option) => option.value === raw)?.value ?? null;
+}
+
+export function groupByStorage(cards: Card[], storageNames: Map<number, string>): CardGroup[] {
+  const byStorage = new Map<number, Card[]>();
+  const unknownStorage: Card[] = [];
+  const withoutStorage: Card[] = [];
+  const notOwned: Card[] = [];
+  for (const card of cards) {
+    if (isPendingCard(card)) {
+      notOwned.push(card);
+    } else if (card.storage_id == null) {
+      withoutStorage.push(card);
+    } else if (storageNames.has(card.storage_id)) {
+      byStorage.set(card.storage_id, [...(byStorage.get(card.storage_id) ?? []), card]);
+    } else {
+      unknownStorage.push(card);
+    }
+  }
+  const groups: CardGroup[] = [...byStorage.entries()]
+    .map(([storageId, storageCards]) => ({ label: storageNames.get(storageId) ?? '', cards: storageCards }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }));
+  if (unknownStorage.length > 0) {
+    groups.push({ label: 'Rangement inconnu', cards: unknownStorage });
+  }
+  if (withoutStorage.length > 0) {
+    groups.push({ label: 'Sans rangement', cards: withoutStorage });
+  }
+  if (notOwned.length > 0) {
+    groups.push({ label: 'Pas encore dans ta collection', cards: notOwned });
+  }
+  return groups;
+}

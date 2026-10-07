@@ -27,14 +27,7 @@ import { useExportDeck } from '../bulk/api';
 import { useCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
 import { CardTile } from '../cards/CardTile';
-import {
-  type CardGrouping,
-  groupCards,
-  groupingOptions,
-  hasMissingDetails,
-  parseGrouping,
-  sortIntoGroups,
-} from '../cards/grouping';
+import { groupCards, hasMissingDetails, sortIntoGroups } from '../cards/grouping';
 import { MissingDetailsAlert } from '../cards/MissingDetailsAlert';
 import { AddToDeckModal } from '../decks/AddToDeckModal';
 import { artBackground, artCredit, deckArtId } from '../decks/art';
@@ -47,6 +40,12 @@ import { DeckStatsPanel } from '../decks/DeckStatsPanel';
 import { PendingCardModal } from '../decks/PendingCardModal';
 import { isPendingCard, pendingIdOf, pendingToCards, sortDeckCards } from '../decks/pendingCards';
 import { PendingCardsSection } from '../decks/PendingCardsSection';
+import {
+  type DeckCardGrouping,
+  deckGroupingOptions,
+  groupByStorage,
+  parseDeckGrouping,
+} from '../decks/storageGrouping';
 import { useCardArts, useCardImages } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
 
@@ -305,18 +304,23 @@ function CommanderSection({ deck }: { deck: Deck }) {
 
 function DeckCards({ deck }: { deck: Deck }) {
   const [sort, setSort] = useState<DeckCardSort>('name');
-  const [grouping, setGrouping] = useState<CardGrouping | null>('type');
+  const [grouping, setGrouping] = useState<DeckCardGrouping | null>('type');
   const cards = useDeckCards(deck.id, sort);
   const deckCards = cards.data ?? [];
   const pending = usePendingCards(deck.id);
   const pendingItems = pending.data ?? [];
   const allCards =
     pendingItems.length > 0 ? sortDeckCards([...deckCards, ...pendingToCards(pendingItems)], sort) : deckCards;
-  const groups = grouping ? groupCards(sortIntoGroups(allCards, grouping), grouping) : [];
   const showMissingDetails = (grouping === 'type' || grouping === 'color') && hasMissingDetails(deckCards);
   const images = useCardImages(allCards.map((card) => card.scryfall_id));
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
+  const groups =
+    grouping === 'storage'
+      ? groupByStorage(allCards, storageNames)
+      : grouping
+        ? groupCards(sortIntoGroups(allCards, grouping), grouping)
+        : [];
   const [addOpened, setAddOpened] = useState(false);
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
   const [openedPending, setOpenedPending] = useState<Card | null>(null);
@@ -343,9 +347,9 @@ function DeckCards({ deck }: { deck: Deck }) {
           <Select
             label="Grouper par"
             placeholder="Aucun regroupement"
-            data={groupingOptions}
+            data={deckGroupingOptions}
             value={grouping}
-            onChange={(value) => setGrouping(parseGrouping(value))}
+            onChange={(value) => setGrouping(parseDeckGrouping(value))}
             clearable
             w={200}
           />
@@ -377,8 +381,8 @@ function DeckCards({ deck }: { deck: Deck }) {
         </Center>
       ) : grouping ? (
         <Stack gap="lg">
-          {groups.map((group) => (
-            <Stack key={group.label} gap="sm">
+          {groups.map((group, index) => (
+            <Stack key={`${index}-${group.label}`} gap="sm">
               <Divider
                 labelPosition="left"
                 label={
