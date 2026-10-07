@@ -16,6 +16,7 @@ interface ImageUris {
 
 export interface ScryfallCard {
   id: string;
+  layout?: string;
   oracle_id?: string;
   name: string;
   set: string;

@@ -15,6 +15,7 @@ import {
   Tabs,
   Text,
   Title,
+  Tooltip,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useQueryClient } from '@tanstack/react-query';
@@ -28,7 +29,7 @@ import { copyCount, useCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
 import { CardSizeControl, useCardSize } from '../cards/CardSizeControl';
 import { CardTile } from '../cards/CardTile';
-import { groupCards, hasMissingDetails, sortIntoGroups } from '../cards/grouping';
+import { groupCards, hasMissingDetails, sortIntoGroups, typeLabels } from '../cards/grouping';
 import { MissingDetailsAlert } from '../cards/MissingDetailsAlert';
 import { AddToDeckModal } from '../decks/AddToDeckModal';
 import { artBackground, artCredit, deckArtId } from '../decks/art';
@@ -48,7 +49,8 @@ import {
   parseDeckGrouping,
 } from '../decks/storageGrouping';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
-import { useCardArts, useCardImages, useManaCosts } from '../scryfall/hooks';
+import type { FaceTypes } from '../scryfall/classify';
+import { useCardArts, useCardFaceTypes, useCardImages, useManaCosts } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
 
 const sortOptions: { value: DeckCardSort; label: string }[] = [
@@ -306,6 +308,49 @@ function CommanderSection({ deck }: { deck: Deck }) {
   );
 }
 
+interface BackFaceEntry {
+  name: string;
+  quantity: number;
+}
+
+function GroupCount({ label, cards, backFaces }: { label: string; cards: Card[]; backFaces: BackFaceEntry[] }) {
+  const count = cards.reduce((total, card) => total + copyCount(card), 0);
+  const others = backFaces.reduce((total, entry) => total + entry.quantity, 0);
+  if (others === 0) {
+    return <>({count})</>;
+  }
+  return (
+    <>
+      ({count}{' '}
+      <Tooltip
+        multiline
+        w={320}
+        withArrow
+        label={
+          <Stack gap={4}>
+            <Text size="sm" fw={700}>
+              Autres {label.toLowerCase()} (au verso)
+            </Text>
+            {backFaces.map((entry) => (
+              <Text key={entry.name} size="sm">
+                {entry.quantity} {entry.name}
+              </Text>
+            ))}
+            <Text size="sm" mt={4}>
+              Total {label.toLowerCase()} : <strong>{count + others}</strong>
+            </Text>
+          </Stack>
+        }
+      >
+        <Text span inherit style={{ textDecoration: 'underline dotted', cursor: 'help' }}>
+          + {others} autre{others > 1 ? 's' : ''}
+        </Text>
+      </Tooltip>
+      )
+    </>
+  );
+}
+
 function DeckCards({ deck }: { deck: Deck }) {
   const [sort, setSort] = useState<DeckCardSort>('name');
   const [grouping, setGrouping] = useState<DeckCardGrouping | null>('type');
@@ -321,12 +366,32 @@ function DeckCards({ deck }: { deck: Deck }) {
   const manaCosts = useManaCosts(allCards.map((card) => card.scryfall_id));
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
+  const faceTypes = useCardFaceTypes(allCards.map((card) => card.scryfall_id));
   const stacks = stackCards(allCards, deck.commander_id);
+  const groupedStacks =
+    grouping === 'type'
+      ? stacks.map((card) => {
+          const types: FaceTypes | undefined = faceTypes.data?.[card.scryfall_id];
+          return types ? { ...card, card_type: types.front } : card;
+        })
+      : stacks;
+  const backFaces = new Map<string, Map<string, number>>();
+  if (grouping === 'type') {
+    for (const card of groupedStacks) {
+      const types: FaceTypes | undefined = faceTypes.data?.[card.scryfall_id];
+      if (types?.back && types.back !== types.front) {
+        const label = typeLabels[types.back];
+        const entries = backFaces.get(label) ?? new Map<string, number>();
+        entries.set(card.name, (entries.get(card.name) ?? 0) + copyCount(card));
+        backFaces.set(label, entries);
+      }
+    }
+  }
   const groups =
     grouping === 'storage'
-      ? groupByStorage(stacks, storageNames)
+      ? groupByStorage(groupedStacks, storageNames)
       : grouping
-        ? groupCards(sortIntoGroups(stacks, grouping), grouping)
+        ? groupCards(sortIntoGroups(groupedStacks, grouping), grouping)
         : [];
   const [addOpened, setAddOpened] = useState(false);
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
@@ -419,7 +484,13 @@ function DeckCards({ deck }: { deck: Deck }) {
                   <Title order={4}>
                     {group.label}{' '}
                     <Text span size="sm" c="dimmed">
-                      ({group.cards.reduce((total, card) => total + copyCount(card), 0)})
+                      <GroupCount
+                        label={group.label}
+                        cards={group.cards}
+                        backFaces={[...(backFaces.get(group.label) ?? new Map<string, number>())]
+                          .map(([name, quantity]) => ({ name, quantity }))
+                          .sort((a, b) => a.name.localeCompare(b.name))}
+                      />
                     </Text>
                   </Title>
                 }

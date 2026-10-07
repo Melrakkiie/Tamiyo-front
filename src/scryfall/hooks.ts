@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { ApiError } from '../api/errors';
+import { type FaceTypes, faceTypes } from './classify';
 import {
   autocompleteCardNames,
   type CardArt,
@@ -43,6 +44,16 @@ export function useCardImages(scryfallIds: string[], size: 'small' | 'normal' = 
       urls[id] = imageUrl(card, size);
     }
     return urls;
+  });
+}
+
+export function useCardFaceTypes(scryfallIds: string[]) {
+  return useScryfallCardsByIds(scryfallIds, (cards) => {
+    const types: Record<string, FaceTypes> = {};
+    for (const [id, card] of Object.entries(cards)) {
+      types[id] = faceTypes(card);
+    }
+    return types;
   });
 }
 

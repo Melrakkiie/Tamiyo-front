@@ -19,7 +19,7 @@ export const sortForGrouping: Record<CardGrouping, CardSort> = {
   mana: 'mana_value',
 };
 
-const typeLabels: Record<CardType, string> = {
+export const typeLabels: Record<CardType, string> = {
   Creature: 'Créatures',
   Planeswalker: 'Planeswalkers',
   Battle: 'Batailles',
