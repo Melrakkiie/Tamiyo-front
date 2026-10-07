@@ -36,7 +36,7 @@ import { ArtPickerModal } from '../decks/ArtPickerModal';
 import { isCommanderFormat, useDeck, useDeckCards, useDeleteDeck, usePendingCards, useUpdateDeck } from '../decks/api';
 import { DeckCardModal } from '../decks/DeckCardModal';
 import { DeckFormModal } from '../decks/DeckFormModal';
-import { DeckLegalityPanel } from '../decks/DeckLegalityPanel';
+import { DeckLegalityWarning } from '../decks/DeckLegalityWarning';
 import { DeckStatsPanel } from '../decks/DeckStatsPanel';
 import { PendingCardModal } from '../decks/PendingCardModal';
 import { isPendingCard, pendingIdOf, pendingToCards, sortDeckCards, stackCards } from '../decks/pendingCards';
@@ -180,6 +180,8 @@ function DeckView({ id }: { id: number }) {
         )}
       </Paper>
 
+      <DeckLegalityWarning deck={current} />
+
       {confirmingDelete && (
         <Alert color="orange">Supprimer ce deck ne supprime pas ses cartes : elles restent dans ta collection.</Alert>
       )}
@@ -191,7 +193,6 @@ function DeckView({ id }: { id: number }) {
         <Tabs.List>
           <Tabs.Tab value="cards">Cartes ({current.card_count + (current.pending_count ?? 0)})</Tabs.Tab>
           <Tabs.Tab value="stats">Statistiques</Tabs.Tab>
-          <Tabs.Tab value="legality">Légalité</Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="cards" pt="md">
@@ -199,9 +200,6 @@ function DeckView({ id }: { id: number }) {
         </Tabs.Panel>
         <Tabs.Panel value="stats" pt="md">
           {tab === 'stats' && <DeckStatsPanel deckId={current.id} />}
-        </Tabs.Panel>
-        <Tabs.Panel value="legality" pt="md">
-          {tab === 'legality' && <DeckLegalityPanel deckId={current.id} />}
         </Tabs.Panel>
       </Tabs>
 
