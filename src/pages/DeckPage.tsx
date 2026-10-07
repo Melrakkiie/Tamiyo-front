@@ -233,13 +233,19 @@ function DeckView({ id }: { id: number }) {
 
 function CommanderSection({ deck }: { deck: Deck }) {
   const commander = useCard(deck.commander_id);
-  const image = useCardImages(commander.data ? [commander.data.scryfall_id] : [], 'small');
+  const pending = usePendingCards(deck.id);
+  const pendingCommander = deck.commander_pending_id
+    ? pending.data?.find((item) => item.id === deck.commander_pending_id)
+    : undefined;
+  const commanderName = commander.data?.name ?? pendingCommander?.name;
+  const commanderScryfallId = commander.data?.scryfall_id ?? pendingCommander?.scryfall_id;
+  const image = useCardImages(commanderScryfallId ? [commanderScryfallId] : [], 'small');
   const update = useUpdateDeck();
 
-  if (!deck.commander_id) {
+  if (!deck.commander_id && !deck.commander_pending_id) {
     return isCommanderFormat(deck.format) ? (
       <Text size="sm" c="dimmed">
-        Pas encore de commandant : ouvre une carte du deck pour la définir comme commandant.
+        Pas encore de commandant : ouvre une carte du deck, même entourée en orange, pour la définir comme commandant.
       </Text>
     ) : null;
   }
@@ -247,11 +253,23 @@ function CommanderSection({ deck }: { deck: Deck }) {
   return (
     <Paper withBorder p="sm" maw={420}>
       <Group wrap="nowrap" align="center">
-        <Box w={72} style={{ flexShrink: 0 }}>
+        <Box
+          w={72}
+          style={{
+            flexShrink: 0,
+            ...(pendingCommander
+              ? {
+                  outline: '3px solid var(--mantine-color-orange-6)',
+                  outlineOffset: 2,
+                  borderRadius: 'var(--mantine-radius-md)',
+                }
+              : {}),
+          }}
+        >
           <CardImage
-            name={commander.data?.name ?? ''}
-            url={commander.data ? image.data?.[commander.data.scryfall_id] : undefined}
-            loading={commander.isLoading || image.isLoading}
+            name={commanderName ?? ''}
+            url={commanderScryfallId ? image.data?.[commanderScryfallId] : undefined}
+            loading={commander.isLoading || pending.isLoading || image.isLoading}
           />
         </Box>
         <Stack gap={4} style={{ minWidth: 0 }}>
@@ -259,8 +277,13 @@ function CommanderSection({ deck }: { deck: Deck }) {
             Commandant
           </Text>
           <Text fw={600} lineClamp={1}>
-            {commander.data?.name ?? '…'}
+            {commanderName ?? '…'}
           </Text>
+          {pendingCommander && (
+            <Text size="xs" c="orange">
+              Pas encore dans ta collection
+            </Text>
+          )}
           {update.error && (
             <Text size="xs" c="red">
               {errorMessage(update.error)}
@@ -396,6 +419,8 @@ function DeckCards({ deck }: { deck: Deck }) {
       />
       <PendingCardModal
         deckId={deck.id}
+        deckFormat={deck.format}
+        commanderPendingId={deck.commander_pending_id}
         card={openedPending}
         item={openedPending ? pendingItems.find((item) => item.id === pendingIdOf(openedPending)) : undefined}
         imageUrl={openedPending ? images.data?.[openedPending.scryfall_id] : undefined}

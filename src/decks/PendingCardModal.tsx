@@ -6,18 +6,30 @@ import { errorMessage } from '../api/errors';
 import type { Card, PendingCard } from '../api/types';
 import { CardImage } from '../cards/CardImage';
 import { CardRulesText } from '../scryfall/CardRulesText';
+import { commanderEligibility } from '../scryfall/commander';
+import { useScryfallCard } from '../scryfall/hooks';
 import { useStorageOptions } from '../storages/api';
-import { useCommitPendingCards, useRemovePendingCard } from './api';
+import { isCommanderFormat, useCommitPendingCards, useRemovePendingCard, useUpdateDeck } from './api';
 
 interface PendingCardModalProps {
   deckId: number;
+  deckFormat: string;
+  commanderPendingId: number | null | undefined;
   card: Card | null;
   item: PendingCard | undefined;
   imageUrl: string | undefined;
   onClose: () => void;
 }
 
-export function PendingCardModal({ deckId, card, item, imageUrl, onClose }: PendingCardModalProps) {
+export function PendingCardModal({
+  deckId,
+  deckFormat,
+  commanderPendingId,
+  card,
+  item,
+  imageUrl,
+  onClose,
+}: PendingCardModalProps) {
   const lastShown = useRef<{ card: Card; item: PendingCard | undefined; imageUrl: string | undefined } | null>(null);
   if (card) {
     lastShown.current = { card, item, imageUrl };
@@ -85,6 +97,14 @@ export function PendingCardModal({ deckId, card, item, imageUrl, onClose }: Pend
                 </Text>
               </div>
               <CardRulesText scryfallId={shown.card.scryfall_id} />
+              {isCommanderFormat(deckFormat) && shown.item && (
+                <PendingCommanderControl
+                  deckId={deckId}
+                  item={shown.item}
+                  isCommander={commanderPendingId === shown.item.id}
+                  onDone={onClose}
+                />
+              )}
               <Divider />
               <Text size="sm">
                 {shown.item && shown.item.quantity > 1
@@ -122,5 +142,74 @@ export function PendingCardModal({ deckId, card, item, imageUrl, onClose }: Pend
         </Grid>
       )}
     </Modal>
+  );
+}
+
+const ineligibilityMessages = {
+  not_eligible:
+    "Cette carte ne peut pas être commandant : il faut une créature légendaire, un véhicule légendaire avec force et endurance, ou une carte qui précise qu'elle peut être ton commandant.",
+  banned: 'Cette carte est bannie en Commander.',
+} as const;
+
+interface PendingCommanderControlProps {
+  deckId: number;
+  item: PendingCard;
+  isCommander: boolean;
+  onDone: () => void;
+}
+
+function PendingCommanderControl({ deckId, item, isCommander, onDone }: PendingCommanderControlProps) {
+  const scryfallCard = useScryfallCard(isCommander ? null : item.scryfall_id);
+  const eligibility = scryfallCard.data ? commanderEligibility(scryfallCard.data) : null;
+  const update = useUpdateDeck();
+
+  if (isCommander) {
+    return <Text size="sm">C'est le commandant de ce deck.</Text>;
+  }
+
+  function makeCommander() {
+    update.mutate(
+      { id: deckId, changes: { commander_pending_id: item.id } },
+      {
+        onSuccess: () => {
+          notifications.show({ color: 'green', message: `${item.name} est maintenant le commandant du deck.` });
+          onDone();
+        },
+      },
+    );
+  }
+
+  if (scryfallCard.isLoading) {
+    return (
+      <Button variant="light" loading disabled>
+        Définir comme commandant
+      </Button>
+    );
+  }
+  if (!scryfallCard.data) {
+    return (
+      <Text size="sm" c="dimmed">
+        Impossible de vérifier sur Scryfall si cette carte peut être commandant. Réessaie plus tard.
+      </Text>
+    );
+  }
+  if (eligibility !== 'eligible') {
+    return eligibility ? (
+      <Text size="sm" c="dimmed">
+        {ineligibilityMessages[eligibility]}
+      </Text>
+    ) : null;
+  }
+  return (
+    <Stack gap={4}>
+      <Button variant="light" onClick={makeCommander} loading={update.isPending}>
+        Définir comme commandant
+      </Button>
+      {update.error && (
+        <Text size="xs" c="red">
+          {errorMessage(update.error)}
+        </Text>
+      )}
+    </Stack>
   );
 }

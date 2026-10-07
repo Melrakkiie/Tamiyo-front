@@ -2322,6 +2322,8 @@ export interface components {
             name: string;
             format: string;
             commander_id?: number | null;
+            /** @description The commander when it's one of the deck's pending cards (not in the collection yet). At most one of commander_id and commander_pending_id is set. */
+            commander_pending_id?: number | null;
             /**
              * Format: uuid
              * @description Scryfall id of the printing whose art (art_crop) is shown behind the deck, null when none was chosen.
@@ -2357,6 +2359,8 @@ export interface components {
             name?: string;
             format?: string;
             commander_id?: number;
+            /** @description Make one of the deck's pending cards the commander (clears commander_id). Setting commander_id clears it in turn. */
+            commander_pending_id?: number;
             /** @description Set to true to explicitly clear commander_id (set it to null). */
             clear_commander_id?: boolean;
             /** Format: uuid */

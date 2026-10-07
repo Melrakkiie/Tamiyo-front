@@ -37,9 +37,8 @@ export function DeleteCollectionSection() {
           <Text fw={500}>Supprimer toute la collection</Text>
           <Text size="sm" c="dimmed">
             Supprime définitivement tes {total} carte{total > 1 ? 's' : ''}. Tes rangements sont conservés mais vidés ;
-            tes decks gardent leurs cartes en orange, à rajouter à ta collection plus tard (les commandants sont
-            retirés). Cette action est irréversible : pense à exporter ta collection avant si tu veux pouvoir la
-            réimporter.
+            tes decks gardent leurs cartes (commandants compris) en orange, à rajouter à ta collection plus tard. Cette
+            action est irréversible : pense à exporter ta collection avant si tu veux pouvoir la réimporter.
           </Text>
         </div>
 
