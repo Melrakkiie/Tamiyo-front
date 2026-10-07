@@ -17,7 +17,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { SharedDeckPage } from './pages/SharedDeckPage';
+import { SharedDeckRedirect } from './pages/SharedDeckPage';
 import { StoragePage } from './pages/StoragePage';
 import { StoragesPage } from './pages/StoragesPage';
 
@@ -53,7 +53,6 @@ export const router = createBrowserRouter([
           { path: '/storages', element: <StoragesPage /> },
           { path: '/storages/:id', element: <StoragePage /> },
           { path: '/decks', element: <DecksPage /> },
-          { path: '/decks/:id', element: <DeckPage /> },
           { path: '/import-export', element: <ImportExportPage /> },
           { path: '/settings', element: <SettingsPage /> },
           { path: '/users/:id', element: <ProfilePage /> },
@@ -63,7 +62,10 @@ export const router = createBrowserRouter([
   },
   {
     element: <SharedLayout />,
-    children: [{ path: '/shared/:id', element: <SharedDeckPage /> }],
+    children: [
+      { path: '/decks/:id', element: <DeckPage /> },
+      { path: '/shared/:id', element: <SharedDeckRedirect /> },
+    ],
   },
   { path: '*', element: <NotFoundPage /> },
 ]);

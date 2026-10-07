@@ -1,14 +1,15 @@
 import { Anchor, Button, CopyButton, Group, Popover, Stack, Text, TextInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { Link } from 'react-router';
 
 import { errorMessage } from '../api/errors';
 import type { Deck } from '../api/types';
 import { useUpdateDeck } from './api';
-import { sharedDeckPath, sharedDeckUrl } from './shared';
+import { deckUrl } from './shared';
 
 export function ShareDeckButton({ deck }: { deck: Deck }) {
   const update = useUpdateDeck();
-  const url = sharedDeckUrl(deck.id);
+  const url = deckUrl(deck.id);
   const isPrivate = deck.visibility === 'private';
 
   function makeUnlisted() {
@@ -59,8 +60,8 @@ export function ShareDeckButton({ deck }: { deck: Deck }) {
             </Group>
             <Text size="xs" c="dimmed">
               Pour ne plus le partager, passe-le en « Privé » depuis Modifier : le lien cessera de marcher.{' '}
-              <Anchor href={sharedDeckPath(deck.id)} target="_blank" rel="noreferrer" size="xs">
-                Voir la page partagée
+              <Anchor component={Link} to={`/decks/${deck.id}?vue=visiteur`} size="xs">
+                Voir comme un visiteur
               </Anchor>
             </Text>
           </Stack>

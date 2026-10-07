@@ -3,12 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { api, unwrap } from '../api/client';
 import type { Card, SharedDeckCard } from '../api/types';
 
-export function sharedDeckPath(deckId: string) {
-  return `/shared/${deckId}`;
-}
-
-export function sharedDeckUrl(deckId: string) {
-  return new URL(sharedDeckPath(deckId), window.location.origin).toString();
+export function deckUrl(deckId: string) {
+  return new URL(`/decks/${deckId}`, window.location.origin).toString();
 }
 
 export function useSharedDeck(deckId: string) {

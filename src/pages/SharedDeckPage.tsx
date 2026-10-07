@@ -15,7 +15,7 @@ import {
   Title,
 } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router';
+import { Link, Navigate, useLocation, useParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
 import type { Card, SharedDeck } from '../api/types';
@@ -45,12 +45,12 @@ const sortOptions: { value: SharedSort; label: string }[] = [
   { value: '-mana_value', label: 'Coût de mana décroissant' },
 ];
 
-export function SharedDeckPage() {
+export function SharedDeckRedirect() {
   const { id = '' } = useParams();
-  return <SharedDeckView key={id} deckId={id} />;
+  return <Navigate to={`/decks/${id}`} replace />;
 }
 
-function SharedDeckView({ deckId }: { deckId: string }) {
+export function SharedDeckView({ deckId }: { deckId: string }) {
   const shared = useSharedDeck(deckId);
   const legality = useSharedDeckLegality(deckId);
   const [tab, setTab] = useState<string | null>('cards');
@@ -74,7 +74,11 @@ function SharedDeckView({ deckId }: { deckId: string }) {
     return (
       <Stack align="flex-start">
         <Alert color="orange">
-          {notFound ? "Ce deck n'existe pas, ou son propriétaire ne le partage plus." : errorMessage(shared.error)}
+          {!notFound
+            ? errorMessage(shared.error)
+            : signedIn
+              ? "Ce deck n'existe pas, ou son propriétaire ne le partage pas."
+              : "Ce deck n'existe pas, ou son propriétaire ne le partage pas. S'il est à toi, connecte-toi pour le voir."}
         </Alert>
         {signedIn && (
           <Anchor component={Link} to="/decks">
@@ -162,9 +166,9 @@ function OwnDeckNotice({ ownerId, deckId }: { ownerId: string; deckId: string })
   }
   return (
     <Alert color="blue" variant="light">
-      C'est ton deck, tel que le voient les personnes qui ont son lien.{' '}
+      Tu vois ton deck comme les personnes qui ont son lien.{' '}
       <Anchor component={Link} to={`/decks/${deckId}`} size="sm">
-        Le modifier
+        Revenir à l'édition
       </Anchor>
     </Alert>
   );

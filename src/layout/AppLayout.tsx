@@ -35,7 +35,7 @@ const navItems: NavItem[] = [
   { label: 'Import / export', to: '/import-export' },
 ];
 
-const pagesWithCards = /^\/(cards|storages\/[^/]+|decks\/[^/]+|shared\/[^/]+)\/?$/;
+const pagesWithCards = /^\/(cards|storages\/[^/]+|decks\/[^/]+)\/?$/;
 
 function isActive(item: NavItem, pathname: string) {
   return item.to === '/' ? pathname === '/' : pathname.startsWith(item.to);

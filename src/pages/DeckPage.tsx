@@ -18,10 +18,11 @@ import {
 import { notifications } from '@mantine/notifications';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
 import type { Card, Deck, DeckCardSort } from '../api/types';
+import { useSession } from '../auth/useSession';
 import { useExportDeck } from '../bulk/api';
 import { useCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
@@ -47,6 +48,7 @@ import { visibilityOption } from '../decks/visibility';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import { useCardArts, useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
+import { SharedDeckView } from './SharedDeckPage';
 
 const sortOptions: { value: DeckCardSort; label: string }[] = [
   { value: 'name', label: 'Nom (A → Z)' },
@@ -57,7 +59,33 @@ const sortOptions: { value: DeckCardSort; label: string }[] = [
 
 export function DeckPage() {
   const id = useParams().id ?? '';
-  return <DeckView key={id} id={id} />;
+  return <DeckRoute key={id} id={id} />;
+}
+
+function DeckRoute({ id }: { id: string }) {
+  const { status } = useSession();
+  const [searchParams] = useSearchParams();
+
+  if (status !== 'authenticated' || searchParams.get('vue') === 'visiteur') {
+    return <SharedDeckView deckId={id} />;
+  }
+  return <OwnDeckRoute id={id} />;
+}
+
+function OwnDeckRoute({ id }: { id: string }) {
+  const deck = useDeck(id);
+
+  if (deck.isLoading) {
+    return (
+      <Center p="xl">
+        <Loader />
+      </Center>
+    );
+  }
+  if (!deck.data && deck.error instanceof ApiError && (deck.error.status === 404 || deck.error.status === 400)) {
+    return <SharedDeckView deckId={id} />;
+  }
+  return <DeckView id={id} />;
 }
 
 function DeckView({ id }: { id: string }) {
