@@ -18,7 +18,7 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
@@ -47,6 +47,7 @@ import {
   groupByStorage,
   parseDeckGrouping,
 } from '../decks/storageGrouping';
+import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import { useCardArts, useCardImages, useManaCosts } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
 
@@ -248,8 +249,14 @@ function CommanderSection({ deck }: { deck: Deck }) {
     ) : null;
   }
 
+  function previewCommander() {
+    if (commanderScryfallId) {
+      showCardPreview({ name: commanderName ?? 'Commandant', scryfallId: commanderScryfallId, imageUrl: undefined });
+    }
+  }
+
   return (
-    <Paper withBorder p="sm" maw={420}>
+    <Paper withBorder p="sm" maw={420} onMouseEnter={previewCommander}>
       <Group wrap="nowrap" align="center">
         <Box
           w={72}
@@ -326,6 +333,20 @@ function DeckCards({ deck }: { deck: Deck }) {
   const [addOpened, setAddOpened] = useState(false);
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
   const [openedPending, setOpenedPending] = useState<Card | null>(null);
+
+  const commanderScryfallId = isCommanderFormat(deck.format) ? deck.commander_scryfall_id : null;
+  const commanderName = commanderScryfallId
+    ? allCards.find((card) => card.scryfall_id === commanderScryfallId)?.name
+    : undefined;
+  const commanderImage = commanderScryfallId ? images.data?.[commanderScryfallId] : undefined;
+  useEffect(() => {
+    setDefaultCardPreview(
+      commanderScryfallId
+        ? { name: commanderName ?? 'Commandant', scryfallId: commanderScryfallId, imageUrl: commanderImage }
+        : null,
+    );
+  }, [commanderScryfallId, commanderName, commanderImage]);
+  useEffect(() => () => setDefaultCardPreview(null), []);
 
   function renderTile(card: Card) {
     const notOwned = isPendingCard(card);

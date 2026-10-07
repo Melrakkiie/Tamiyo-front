@@ -1,6 +1,7 @@
 import { Badge, Box, Group, Paper, Stack, Text, UnstyledButton } from '@mantine/core';
 
 import type { Card } from '../api/types';
+import { showCardPreview } from '../layout/cardPreview';
 import { withSymbols } from '../scryfall/manaSymbols';
 import { CardImage } from './CardImage';
 
@@ -42,11 +43,14 @@ function CardRow({
   notOwned,
   manaCost,
   onOpen,
-}: Pick<CardTileProps, 'card' | 'notOwned' | 'manaCost' | 'onOpen'>) {
+  onPreview,
+}: Pick<CardTileProps, 'card' | 'notOwned' | 'manaCost' | 'onOpen'> & { onPreview: () => void }) {
   const quantity = card.quantity ?? 1;
   return (
     <UnstyledButton
       onClick={() => onOpen(card)}
+      onMouseEnter={onPreview}
+      onFocus={onPreview}
       aria-label={quantity > 1 ? `${card.name}, ${quantity} exemplaires` : card.name}
     >
       <Paper
@@ -89,13 +93,16 @@ export function CardTile({
   manaCost,
   onOpen,
 }: CardTileProps) {
+  const onPreview = () => showCardPreview({ name: card.name, scryfallId: card.scryfall_id, imageUrl });
   if (textOnly) {
-    return <CardRow card={card} notOwned={notOwned} manaCost={manaCost} onOpen={onOpen} />;
+    return <CardRow card={card} notOwned={notOwned} manaCost={manaCost} onOpen={onOpen} onPreview={onPreview} />;
   }
   const quantity = card.quantity ?? 1;
   return (
     <UnstyledButton
       onClick={() => onOpen(card)}
+      onMouseEnter={onPreview}
+      onFocus={onPreview}
       aria-label={quantity > 1 ? `${card.name}, ${quantity} exemplaires` : card.name}
     >
       <Stack gap={6}>

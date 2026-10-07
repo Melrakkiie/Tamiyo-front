@@ -1,30 +1,57 @@
-import { AppShell, Box, Burger, Group, Menu, NavLink, Text, Title, UnstyledButton } from '@mantine/core';
+import {
+  AppShell,
+  Box,
+  Burger,
+  Button,
+  Drawer,
+  Group,
+  Menu,
+  NavLink,
+  Text,
+  Title,
+  UnstyledButton,
+} from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
+import { useEffect } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
 
 import { useAccount } from '../auth/account';
 import { logout } from '../auth/actions';
 import { UserAvatar } from '../auth/UserAvatar';
+import { showCardPreview } from './cardPreview';
+import { CardPreviewPanel } from './CardPreviewPanel';
 
 interface NavItem {
   label: string;
   to: string;
-  ready: boolean;
 }
 
 const navItems: NavItem[] = [
-  { label: 'Accueil', to: '/', ready: true },
-  { label: 'Collection', to: '/cards', ready: true },
-  { label: 'Rangements', to: '/storages', ready: true },
-  { label: 'Decks', to: '/decks', ready: true },
-  { label: 'Import / export', to: '/import-export', ready: true },
+  { label: 'Accueil', to: '/' },
+  { label: 'Collection', to: '/cards' },
+  { label: 'Rangements', to: '/storages' },
+  { label: 'Decks', to: '/decks' },
+  { label: 'Import / export', to: '/import-export' },
 ];
+
+const pagesWithCards = /^\/(cards|storages\/[^/]+|decks\/[^/]+)\/?$/;
+
+function isActive(item: NavItem, pathname: string) {
+  return item.to === '/' ? pathname === '/' : pathname.startsWith(item.to);
+}
 
 export function AppLayout() {
   const [opened, { toggle, close }] = useDisclosure();
   const { pathname } = useLocation();
   const account = useAccount();
   const displayName = account.data?.display_name;
+  const showPreview = pagesWithCards.test(pathname);
+
+  useEffect(() => {
+    showCardPreview(null);
+    close();
+  }, [pathname]);
+
   function handleLogout() {
     void logout();
   }
@@ -32,14 +59,30 @@ export function AppLayout() {
   return (
     <AppShell
       header={{ height: 56 }}
-      navbar={{ width: 240, breakpoint: 'sm', collapsed: { mobile: !opened } }}
+      navbar={{ width: { sm: 300, lg: 360 }, breakpoint: 'sm', collapsed: { mobile: true, desktop: !showPreview } }}
       padding="md"
     >
       <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          <Group gap="sm">
-            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" aria-label="Menu" />
-            <Title order={3}>Tamiyo</Title>
+        <Group h="100%" px="md" justify="space-between" wrap="nowrap">
+          <Group gap="lg" wrap="nowrap">
+            <Group gap="sm" wrap="nowrap">
+              <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" aria-label="Menu" />
+              <Title order={3}>Tamiyo</Title>
+            </Group>
+            <Group gap={4} visibleFrom="sm" wrap="nowrap">
+              {navItems.map((item) => (
+                <Button
+                  key={item.to}
+                  component={Link}
+                  to={item.to}
+                  variant={isActive(item, pathname) ? 'light' : 'subtle'}
+                  color={isActive(item, pathname) ? undefined : 'gray'}
+                  size="compact-md"
+                >
+                  {item.label}
+                </Button>
+              ))}
+            </Group>
           </Group>
           <Menu position="bottom-end" width={240}>
             <Menu.Target>
@@ -70,29 +113,26 @@ export function AppLayout() {
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar p="sm">
-        {navItems.map((item) =>
-          item.ready ? (
-            <NavLink
-              key={item.to}
-              component={Link}
-              to={item.to}
-              label={item.label}
-              active={item.to === '/' ? pathname === '/' : pathname.startsWith(item.to)}
-              onClick={close}
-            />
-          ) : (
-            <NavLink key={item.to} label={item.label} description="Bientôt" disabled />
-          ),
-        )}
-      </AppShell.Navbar>
+      <Drawer opened={opened} onClose={close} title="Tamiyo" size={260}>
+        {navItems.map((item) => (
+          <NavLink
+            key={item.to}
+            component={Link}
+            to={item.to}
+            label={item.label}
+            active={isActive(item, pathname)}
+            onClick={close}
+          />
+        ))}
+      </Drawer>
+
+      <AppShell.Navbar p="md">{showPreview && <CardPreviewPanel />}</AppShell.Navbar>
 
       <AppShell.Main>
         <Outlet />
         <Text size="xs" c="dimmed" ta="center" mt="xl">
-          Tamiyo is unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by
-          Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast
-          LLC.
+          Tamiyo is unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards.
+          Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC.
         </Text>
       </AppShell.Main>
     </AppShell>
