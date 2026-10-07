@@ -1,4 +1,4 @@
-import { Alert, Button, Divider, Grid, Modal, Select, Stack, Text, Title } from '@mantine/core';
+import { Alert, Button, Divider, Grid, Modal, Select, Stack, Switch, Text, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useRef, useState } from 'react';
 
@@ -90,6 +90,7 @@ function DeckCardDetail({
   const storages = useAllStorages();
   const updateCard = useUpdateCard();
   const [storageId, setStorageId] = useState<string | null>(card.storage_id ? String(card.storage_id) : null);
+  const [proxy, setProxy] = useState(card.proxy);
 
   function moveToStorage(next: string | null) {
     const previous = storageId;
@@ -105,6 +106,21 @@ function DeckCardDetail({
           });
         },
         onError: () => setStorageId(previous),
+      },
+    );
+  }
+
+  function toggleProxy(next: boolean) {
+    setProxy(next);
+    updateCard.mutate(
+      { id: card.id, changes: { proxy: next } },
+      {
+        onSuccess: () =>
+          notifications.show({
+            color: 'green',
+            message: next ? `${card.name} est marquée comme proxy.` : `${card.name} n'est plus marquée comme proxy.`,
+          }),
+        onError: () => setProxy(!next),
       },
     );
   }
@@ -150,6 +166,7 @@ function DeckCardDetail({
               <Text size="sm" c="dimmed">
                 {card.set_code.toUpperCase()} · #{card.collector_number}
                 {card.foil ? ' · foil' : ''}
+                {proxy ? ' · proxy' : ''}
               </Text>
             </div>
 
@@ -203,6 +220,13 @@ function DeckCardDetail({
               onChange={moveToStorage}
               clearable
               searchable
+              disabled={updateCard.isPending}
+            />
+            <Switch
+              label="Proxy"
+              description="Une impression de remplacement, pas une vraie carte."
+              checked={proxy}
+              onChange={(event) => toggleProxy(event.currentTarget.checked)}
               disabled={updateCard.isPending}
             />
             <Button color="red" variant="subtle" onClick={removeFromDeck} loading={remove.isPending}>

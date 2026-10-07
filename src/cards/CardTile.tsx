@@ -78,6 +78,11 @@ function CardRow({
                 Foil
               </Badge>
             )}
+            {card.proxy && (
+              <Badge size="xs" variant="light" color="gray">
+                Proxy
+              </Badge>
+            )}
           </Group>
           <ManaCost card={card} manaCost={manaCost} />
         </Group>
@@ -159,6 +164,11 @@ export function CardTile({
             {card.foil && (
               <Badge size="xs" variant="light">
                 Foil
+              </Badge>
+            )}
+            {card.proxy && (
+              <Badge size="xs" variant="light" color="gray">
+                Proxy
               </Badge>
             )}
           </Group>

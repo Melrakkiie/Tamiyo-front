@@ -11,6 +11,7 @@ export function pendingToCards(pending: PendingCard[]): Card[] {
       set_code: item.set_code,
       collector_number: item.collector_number,
       foil: item.foil,
+      proxy: false,
       storage_id: null,
       mana_value: item.mana_value,
       colors: item.colors,
@@ -58,7 +59,7 @@ function stackKey(card: Card, commanderId: number | null | undefined) {
   if (card.id === commanderId) {
     return 'commander';
   }
-  return `${card.scryfall_id}-${card.foil}-${card.storage_id ?? ''}`;
+  return `${card.scryfall_id}-${card.foil}-${card.proxy}-${card.storage_id ?? ''}`;
 }
 
 export function stackCards(cards: Card[], commanderId: number | null | undefined): Card[] {

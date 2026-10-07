@@ -67,6 +67,7 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
   );
   const [storageId, setStorageId] = useState<string | null>(defaultStorageId ? String(defaultStorageId) : null);
   const [quantity, setQuantity] = useState<number | string>(1);
+  const [proxy, setProxy] = useState(false);
 
   const printings = usePrintings(name);
   const candidates = initialPrinting
@@ -106,7 +107,7 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
       return;
     }
 
-    const card = { ...details, storage_id: storageId ? Number(storageId) : null };
+    const card = { ...details, proxy, storage_id: storageId ? Number(storageId) : null };
     const onSuccess = () => {
       const what = copies > 1 ? `${copies} exemplaires de ${printing.name} ajoutés` : `${printing.name} ajoutée`;
       notifications.show({ color: 'green', message: `${what} à ta collection.` });
@@ -177,6 +178,9 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
             disabled={!canBeFoil(printing) || !canBeNonFoil(printing)}
             mb={8}
           />
+          {!pending && (
+            <Switch label="Proxy" checked={proxy} onChange={(event) => setProxy(event.currentTarget.checked)} mb={8} />
+          )}
         </Group>
       )}
 

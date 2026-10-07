@@ -119,6 +119,11 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
                           foil
                         </Badge>
                       )}
+                      {copy.proxy && (
+                        <Badge size="xs" variant="light" color="gray">
+                          proxy
+                        </Badge>
+                      )}
                     </Text>
                     <Text size="xs" c="dimmed" lineClamp={1}>
                       {copy.storage_id ? (storageNames.get(copy.storage_id) ?? 'Rangement inconnu') : 'Sans rangement'}

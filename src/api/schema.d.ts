@@ -748,7 +748,7 @@ export interface paths {
                     limit?: number;
                     /** @description Sort field, with an optional "-" prefix for descending order. id is always used as a secondary tie-breaker for a stable order. */
                     sort?: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "color" | "-color" | "type" | "-type";
-                    /** @description Return one entry per stack of identical copies (same printing, foil and storage) instead of one per card. Each entry is the stack's lowest-id copy with quantity and copy_ids set; total, page and limit then count stacks. added is the oldest copy's, updated the most recent one's. */
+                    /** @description Return one entry per stack of identical copies (same printing, foil, proxy and storage) instead of one per card. Each entry is the stack's lowest-id copy with quantity and copy_ids set; total, page and limit then count stacks. added is the oldest copy's, updated the most recent one's. */
                     stack?: boolean;
                 };
                 header?: never;
@@ -2455,6 +2455,8 @@ export interface components {
             set_code: string;
             collector_number: string;
             foil: boolean;
+            /** @description A printed stand-in rather than a real copy. */
+            proxy: boolean;
             storage_id?: number | null;
             /** @description Converted mana cost (CMC). */
             mana_value: number;
@@ -2538,6 +2540,11 @@ export interface components {
             collector_number: string;
             /** @default false */
             foil: boolean;
+            /**
+             * @description A printed stand-in rather than a real copy.
+             * @default false
+             */
+            proxy?: boolean;
             storage_id?: number | null;
             /**
              * @description Converted mana cost (CMC). Not fetched automatically from Scryfall — supplied by the client, same as name or set_code.
@@ -2562,6 +2569,8 @@ export interface components {
             set_code?: string;
             collector_number?: string;
             foil?: boolean;
+            /** @description A printed stand-in rather than a real copy. */
+            proxy?: boolean;
             /** @description Moves the card to this storage. null removes the card from its storage; leaving the field out keeps the current one. */
             storage_id?: number | null;
             mana_value?: number;

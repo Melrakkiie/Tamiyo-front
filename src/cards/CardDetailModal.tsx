@@ -56,6 +56,7 @@ function printingChanges(printing: ScryfallCard): UpdateCardInput {
 function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string | undefined; onClose: () => void }) {
   const storageOptions = useStorageOptions();
   const [foil, setFoil] = useState(card.foil);
+  const [proxy, setProxy] = useState(card.proxy);
   const [printing, setPrinting] = useState<ScryfallCard | null>(null);
   const backImage = useBackImage(card.scryfall_id);
   const printingBackImage = useBackImageOf(printing);
@@ -73,7 +74,7 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
   const remove = useDeleteCopies();
 
   const storageChanged = storageId !== (card.storage_id ? String(card.storage_id) : null);
-  const changed = foil !== card.foil || storageChanged || printing !== null;
+  const changed = foil !== card.foil || proxy !== card.proxy || storageChanged || printing !== null;
 
   function selectPrinting(next: ScryfallCard) {
     if (printing?.id === next.id) {
@@ -92,6 +93,7 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
         changes: {
           ...(printing ? printingChanges(printing) : {}),
           ...(foil !== card.foil ? { foil } : {}),
+          ...(proxy !== card.proxy ? { proxy } : {}),
           ...(storageChanged ? { storage_id: storageId ? Number(storageId) : null } : {}),
         },
       },
@@ -174,6 +176,12 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
               checked={foil}
               onChange={(event) => setFoil(event.currentTarget.checked)}
               disabled={printing !== null && (!canBeFoil(printing) || !canBeNonFoil(printing))}
+            />
+            <Switch
+              label="Proxy"
+              description="Une impression de remplacement, pas une vraie carte."
+              checked={proxy}
+              onChange={(event) => setProxy(event.currentTarget.checked)}
             />
 
             <Select
