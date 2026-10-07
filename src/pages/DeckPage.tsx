@@ -425,6 +425,7 @@ function DeckCards({ deck }: { deck: Deck }) {
         deckId={deck.id}
         deckFormat={deck.format}
         commanderPendingId={deck.commander_pending_id}
+        deckCardIds={new Set(deckCards.map((card) => card.id))}
         card={openedPending}
         item={openedPending ? pendingItems.find((item) => item.id === pendingIdOf(openedPending)) : undefined}
         imageUrl={openedPending ? images.data?.[openedPending.scryfall_id] : undefined}

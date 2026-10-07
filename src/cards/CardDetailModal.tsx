@@ -1,10 +1,28 @@
-import { Alert, Button, Grid, Group, Modal, Select, Stack, Switch, Text, Title } from '@mantine/core';
+import {
+  Alert,
+  Button,
+  Center,
+  Divider,
+  Grid,
+  Group,
+  Loader,
+  Modal,
+  Select,
+  Stack,
+  Switch,
+  Text,
+  Title,
+} from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useRef, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import type { Card } from '../api/types';
+import type { Card, UpdateCardInput } from '../api/types';
 import { CardRulesText } from '../scryfall/CardRulesText';
+import { imageUrl as printingImageUrl, type ScryfallCard } from '../scryfall/client';
+import { usePrintings } from '../scryfall/hooks';
+import { canBeFoil, canBeNonFoil, foilFor, printingDetails } from '../scryfall/printing';
+import { PrintingGrid } from '../scryfall/PrintingGrid';
 import { useStorageOptions } from '../storages/api';
 import { useDeleteCard, useUpdateCard } from './api';
 import { CardImage } from './CardImage';
@@ -24,16 +42,22 @@ export function CardDetailModal({ card, imageUrl, onClose }: CardDetailModalProp
 
   return (
     <Modal opened={card !== null} onClose={onClose} title={shown?.card.name} size="xl">
-      {shown && (
-        <CardDetail key={shown.card.id} card={shown.card} imageUrl={shown.imageUrl} onClose={onClose} />
-      )}
+      {shown && <CardDetail key={shown.card.id} card={shown.card} imageUrl={shown.imageUrl} onClose={onClose} />}
     </Modal>
   );
+}
+
+function printingChanges(printing: ScryfallCard): UpdateCardInput {
+  const { card_type, color_identity, ...details } = printingDetails(printing);
+  return { ...details, card_type: card_type ?? undefined, color_identity: color_identity ?? undefined };
 }
 
 function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string | undefined; onClose: () => void }) {
   const storageOptions = useStorageOptions();
   const [foil, setFoil] = useState(card.foil);
+  const [printing, setPrinting] = useState<ScryfallCard | null>(null);
+  const printings = usePrintings(card.name);
+  const otherPrintings = (printings.data ?? []).filter((candidate) => candidate.id !== card.scryfall_id);
   const [storageId, setStorageId] = useState<string | null>(card.storage_id ? String(card.storage_id) : null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -41,20 +65,36 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
   const remove = useDeleteCard();
 
   const storageChanged = storageId !== (card.storage_id ? String(card.storage_id) : null);
-  const changed = foil !== card.foil || storageChanged;
+  const changed = foil !== card.foil || storageChanged || printing !== null;
+
+  function selectPrinting(next: ScryfallCard) {
+    if (printing?.id === next.id) {
+      setPrinting(null);
+      setFoil(card.foil);
+      return;
+    }
+    setPrinting(next);
+    setFoil(foilFor(next, card.foil));
+  }
 
   function save() {
     update.mutate(
       {
         id: card.id,
         changes: {
+          ...(printing ? printingChanges(printing) : {}),
           ...(foil !== card.foil ? { foil } : {}),
           ...(storageChanged ? { storage_id: storageId ? Number(storageId) : null } : {}),
         },
       },
       {
         onSuccess: () => {
-          notifications.show({ color: 'green', message: 'Carte mise à jour.' });
+          notifications.show({
+            color: 'green',
+            message: printing
+              ? `${card.name} : ton exemplaire est maintenant l'édition ${printing.set.toUpperCase()} #${printing.collector_number}.`
+              : 'Carte mise à jour.',
+          });
           onClose();
         },
       },
@@ -73,63 +113,102 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
   const error = update.error ?? remove.error;
 
   return (
-    <Grid gutter="lg">
-      <Grid.Col span={{ base: 12, sm: 5 }}>
-        <CardImage name={card.name} url={imageUrl} loading={false} />
-      </Grid.Col>
-      <Grid.Col span={{ base: 12, sm: 7 }}>
-        <Stack>
-          <div>
-            <Title order={3} size="h4">
-              {card.name}
-            </Title>
-            <Text size="sm" c="dimmed">
-              {card.set_code.toUpperCase()} · #{card.collector_number}
-            </Text>
-          </div>
-
-          <CardRulesText scryfallId={card.scryfall_id} />
-
-          {error && <Alert color="red">{errorMessage(error)}</Alert>}
-
-          <Switch label="Foil" checked={foil} onChange={(event) => setFoil(event.currentTarget.checked)} />
-
-          <Select
-            label="Rangement"
-            placeholder="Aucun rangement"
-            data={storageOptions}
-            value={storageId}
-            onChange={setStorageId}
-            clearable
-            searchable
+    <Stack gap="lg">
+      <Grid gutter="lg">
+        <Grid.Col span={{ base: 12, sm: 5 }}>
+          <CardImage
+            name={card.name}
+            url={printing ? printingImageUrl(printing, 'normal') : imageUrl}
+            loading={false}
           />
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, sm: 7 }}>
+          <Stack>
+            <div>
+              <Title order={3} size="h4">
+                {card.name}
+              </Title>
+              <Text size="sm" c="dimmed">
+                {printing
+                  ? `${card.set_code.toUpperCase()} · #${card.collector_number} → ${printing.set.toUpperCase()} · #${printing.collector_number}`
+                  : `${card.set_code.toUpperCase()} · #${card.collector_number}`}
+              </Text>
+            </div>
 
-          <Group justify="space-between" mt="sm">
-            {confirmingDelete ? (
-              <Group gap="xs">
-                <Button color="red" onClick={deleteCard} loading={remove.isPending}>
-                  Confirmer la suppression
+            <CardRulesText scryfallId={printing?.id ?? card.scryfall_id} />
+
+            {error && <Alert color="red">{errorMessage(error)}</Alert>}
+
+            <Switch
+              label="Foil"
+              checked={foil}
+              onChange={(event) => setFoil(event.currentTarget.checked)}
+              disabled={printing !== null && (!canBeFoil(printing) || !canBeNonFoil(printing))}
+            />
+
+            <Select
+              label="Rangement"
+              placeholder="Aucun rangement"
+              data={storageOptions}
+              value={storageId}
+              onChange={setStorageId}
+              clearable
+              searchable
+            />
+
+            <Group justify="space-between" mt="sm">
+              {confirmingDelete ? (
+                <Group gap="xs">
+                  <Button color="red" onClick={deleteCard} loading={remove.isPending}>
+                    Confirmer la suppression
+                  </Button>
+                  <Button variant="default" onClick={() => setConfirmingDelete(false)}>
+                    Annuler
+                  </Button>
+                </Group>
+              ) : (
+                <Button color="red" variant="subtle" onClick={() => setConfirmingDelete(true)}>
+                  Supprimer
                 </Button>
-                <Button variant="default" onClick={() => setConfirmingDelete(false)}>
-                  Annuler
-                </Button>
-              </Group>
-            ) : (
-              <Button color="red" variant="subtle" onClick={() => setConfirmingDelete(true)}>
-                Supprimer
+              )}
+              <Button onClick={save} disabled={!changed} loading={update.isPending}>
+                Enregistrer
               </Button>
+            </Group>
+            {confirmingDelete && (
+              <Text size="xs" c="dimmed">
+                Si cette carte est dans un deck, elle y restera entourée en orange, à rajouter à ta collection plus
+                tard.
+              </Text>
             )}
-            <Button onClick={save} disabled={!changed} loading={update.isPending}>
-              Enregistrer
-            </Button>
-          </Group>
-          {confirmingDelete && (
+          </Stack>
+        </Grid.Col>
+      </Grid>
+      <Divider />
+      <Stack gap="xs">
+        <Text size="sm" fw={500}>
+          Changer d'édition
+        </Text>
+        {printings.isLoading ? (
+          <Center p="md">
+            <Loader size="sm" />
+          </Center>
+        ) : printings.error ? (
+          <Alert color="red">{errorMessage(printings.error)}</Alert>
+        ) : otherPrintings.length === 0 ? (
+          <Text size="sm" c="dimmed">
+            Aucune autre édition papier de cette carte sur Scryfall.
+          </Text>
+        ) : (
+          <>
             <Text size="xs" c="dimmed">
-              Si cette carte est dans un deck, elle y restera entourée en orange, à rajouter à ta collection plus tard.
+              Choisis l'édition de ton exemplaire puis enregistre : la carte garde son rangement et reste dans ses
+              decks.
             </Text>
-          )}
-        </Stack>
-      </Grid.Col>
-    </Grid>
+            <PrintingGrid printings={otherPrintings} selectedId={printing?.id} onSelect={selectPrinting} />
+          </>
+        )}
+      </Stack>
+    </Stack>
   );
 }

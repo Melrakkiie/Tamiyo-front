@@ -1,29 +1,13 @@
-import {
-  Alert,
-  Button,
-  Center,
-  Group,
-  Image,
-  Loader,
-  Modal,
-  NumberInput,
-  Paper,
-  ScrollArea,
-  Select,
-  SimpleGrid,
-  Stack,
-  Switch,
-  Text,
-  UnstyledButton,
-} from '@mantine/core';
+import { Alert, Button, Center, Group, Loader, Modal, NumberInput, Select, Stack, Switch, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import { useAddPendingCard } from '../decks/api';
-import { colorCode, primaryType } from '../scryfall/classify';
-import { cardColors, imageUrl, type ScryfallCard } from '../scryfall/client';
+import type { ScryfallCard } from '../scryfall/client';
 import { usePrintings } from '../scryfall/hooks';
+import { canBeFoil, canBeNonFoil, printingDetails } from '../scryfall/printing';
+import { PrintingGrid } from '../scryfall/PrintingGrid';
 import { useStorageOptions } from '../storages/api';
 import { PartialCreationError, useCreateCards } from './api';
 
@@ -63,14 +47,6 @@ export function AddCardModal({ card, onClose, defaultStorageId, target = { kind:
 }
 
 const MAX_QUANTITY = 20;
-
-function canBeNonFoil(printing: ScryfallCard) {
-  return printing.finishes ? printing.finishes.includes('nonfoil') : true;
-}
-
-function canBeFoil(printing: ScryfallCard) {
-  return printing.finishes ? printing.finishes.some((finish) => finish === 'foil' || finish === 'etched') : true;
-}
 
 function clampQuantity(value: number | string) {
   return Math.min(MAX_QUANTITY, Math.max(1, Math.floor(Number(value)) || 1));
@@ -112,17 +88,7 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
     }
     const copies = clampQuantity(quantity);
     setQuantity(copies);
-    const details = {
-      name: printing.name,
-      scryfall_id: printing.id,
-      set_code: printing.set,
-      collector_number: printing.collector_number,
-      foil,
-      mana_value: printing.cmc ?? 0,
-      colors: colorCode(cardColors(printing)),
-      card_type: printing.type_line ? primaryType(printing.type_line) : null,
-      color_identity: printing.color_identity ? colorCode(printing.color_identity) : null,
-    };
+    const details = { ...printingDetails(printing), foil };
 
     if (target.kind === 'pending') {
       addPending.mutate(
@@ -179,33 +145,7 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
             Aucune édition papier trouvée pour cette carte sur Scryfall.
           </Text>
         ) : (
-          <ScrollArea.Autosize mah={360} type="auto">
-            <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
-              {candidates.map((candidate) => (
-                <UnstyledButton key={candidate.id} onClick={() => selectPrinting(candidate)}>
-                  <Paper
-                    withBorder
-                    p={4}
-                    radius="md"
-                    style={
-                      printing?.id === candidate.id
-                        ? { borderColor: 'var(--mantine-primary-color-filled)', borderWidth: 2 }
-                        : undefined
-                    }
-                  >
-                    <Image src={imageUrl(candidate, 'small')} alt={candidate.name} radius="sm" loading="lazy" />
-                    <Text size="xs" mt={4} lineClamp={1}>
-                      {candidate.set_name}
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      {candidate.set.toUpperCase()} · #{candidate.collector_number} ·{' '}
-                      {candidate.released_at.slice(0, 4)}
-                    </Text>
-                  </Paper>
-                </UnstyledButton>
-              ))}
-            </SimpleGrid>
-          </ScrollArea.Autosize>
+          <PrintingGrid printings={candidates} selectedId={printing?.id} onSelect={selectPrinting} />
         )}
       </Stack>
 

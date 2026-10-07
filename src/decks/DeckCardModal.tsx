@@ -209,7 +209,7 @@ function DeckCardDetail({
       <Divider />
       <EditionSwitcher
         deckId={deckId}
-        card={card}
+        source={{ kind: 'card', card }}
         deckCardIds={deckCardIds}
         isCommander={isCommander}
         onSwapped={onClose}

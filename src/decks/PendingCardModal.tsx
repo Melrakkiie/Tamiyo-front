@@ -10,11 +10,13 @@ import { commanderEligibility } from '../scryfall/commander';
 import { useScryfallCard } from '../scryfall/hooks';
 import { useStorageOptions } from '../storages/api';
 import { isCommanderFormat, useCommitPendingCards, useRemovePendingCard, useUpdateDeck } from './api';
+import { EditionSwitcher } from './EditionSwitcher';
 
 interface PendingCardModalProps {
   deckId: number;
   deckFormat: string;
   commanderPendingId: number | null | undefined;
+  deckCardIds: Set<number>;
   card: Card | null;
   item: PendingCard | undefined;
   imageUrl: string | undefined;
@@ -25,6 +27,7 @@ export function PendingCardModal({
   deckId,
   deckFormat,
   commanderPendingId,
+  deckCardIds,
   card,
   item,
   imageUrl,
@@ -81,65 +84,80 @@ export function PendingCardModal({
   return (
     <Modal opened={card !== null} onClose={onClose} title={shown?.card.name} size="xl">
       {shown && (
-        <Grid gutter="lg">
-          <Grid.Col span={{ base: 12, sm: 5 }}>
-            <CardImage name={shown.card.name} url={shown.imageUrl} loading={false} />
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, sm: 7 }}>
-            <Stack>
-              <div>
-                <Title order={3} size="h4">
-                  {shown.card.name}
-                </Title>
-                <Text size="sm" c="dimmed">
-                  {shown.card.set_code.toUpperCase()} · #{shown.card.collector_number}
-                  {shown.card.foil ? ' · foil' : ''}
+        <Stack gap="lg">
+          <Grid gutter="lg">
+            <Grid.Col span={{ base: 12, sm: 5 }}>
+              <CardImage name={shown.card.name} url={shown.imageUrl} loading={false} />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 7 }}>
+              <Stack>
+                <div>
+                  <Title order={3} size="h4">
+                    {shown.card.name}
+                  </Title>
+                  <Text size="sm" c="dimmed">
+                    {shown.card.set_code.toUpperCase()} · #{shown.card.collector_number}
+                    {shown.card.foil ? ' · foil' : ''}
+                  </Text>
+                </div>
+                <CardRulesText scryfallId={shown.card.scryfall_id} />
+                {isCommanderFormat(deckFormat) && shown.item && (
+                  <PendingCommanderControl
+                    deckId={deckId}
+                    item={shown.item}
+                    isCommander={commanderPendingId === shown.item.id}
+                    onDone={onClose}
+                  />
+                )}
+                <Divider />
+                <Text size="sm">
+                  {shown.item && shown.item.quantity > 1
+                    ? `Ces ${shown.item.quantity} exemplaires ne sont pas encore dans ta collection.`
+                    : "Cette carte n'est pas encore dans ta collection."}
                 </Text>
-              </div>
-              <CardRulesText scryfallId={shown.card.scryfall_id} />
-              {isCommanderFormat(deckFormat) && shown.item && (
-                <PendingCommanderControl
-                  deckId={deckId}
-                  item={shown.item}
-                  isCommander={commanderPendingId === shown.item.id}
-                  onDone={onClose}
-                />
-              )}
-              <Divider />
-              <Text size="sm">
-                {shown.item && shown.item.quantity > 1
-                  ? `Ces ${shown.item.quantity} exemplaires ne sont pas encore dans ta collection.`
-                  : "Cette carte n'est pas encore dans ta collection."}
-              </Text>
-              <Group align="flex-end" grow>
-                <Select
-                  label="Rangement"
-                  placeholder="Aucun rangement"
-                  data={storageOptions}
-                  value={storageId}
-                  onChange={setStorageId}
-                  clearable
-                  searchable
-                />
-                <Button color="orange" onClick={addToCollection} loading={commit.isPending} disabled={!shown.item}>
-                  Ajouter à ma collection
+                <Group align="flex-end" grow>
+                  <Select
+                    label="Rangement"
+                    placeholder="Aucun rangement"
+                    data={storageOptions}
+                    value={storageId}
+                    onChange={setStorageId}
+                    clearable
+                    searchable
+                  />
+                  <Button color="orange" onClick={addToCollection} loading={commit.isPending} disabled={!shown.item}>
+                    Ajouter à ma collection
+                  </Button>
+                </Group>
+                {(commit.error || remove.error) && (
+                  <Alert color="red">
+                    {commit.error
+                      ? errorMessage(commit.error, { 400: "Le rangement choisi n'existe plus. Choisis-en un autre." })
+                      : errorMessage(remove.error)}
+                  </Alert>
+                )}
+                <Button color="red" variant="subtle" onClick={removeFromDeck} loading={remove.isPending}>
+                  {shown.item && shown.item.quantity > 1
+                    ? `Retirer les ${shown.item.quantity} exemplaires du deck`
+                    : 'Retirer du deck'}
                 </Button>
-              </Group>
-              {(commit.error || remove.error) && (
-                <Alert color="red">
-                  {commit.error
-                    ? errorMessage(commit.error, { 400: "Le rangement choisi n'existe plus. Choisis-en un autre." })
-                    : errorMessage(remove.error)}
-                </Alert>
-              )}
-              <Button color="red" variant="subtle" onClick={removeFromDeck} loading={remove.isPending}>
-                {shown.item && shown.item.quantity > 1
-                  ? `Retirer les ${shown.item.quantity} exemplaires du deck`
-                  : 'Retirer du deck'}
-              </Button>
-            </Stack>
-          </Grid.Col>
-        </Grid>
+              </Stack>
+            </Grid.Col>
+          </Grid>
+          {shown.item && (
+            <>
+              <Divider />
+              <EditionSwitcher
+                key={shown.item.id}
+                deckId={deckId}
+                source={{ kind: 'pending', item: shown.item }}
+                deckCardIds={deckCardIds}
+                isCommander={commanderPendingId === shown.item.id}
+                onSwapped={onClose}
+              />
+            </>
+          )}
+        </Stack>
       )}
     </Modal>
   );
