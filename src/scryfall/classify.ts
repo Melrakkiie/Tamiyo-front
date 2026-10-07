@@ -1,4 +1,4 @@
-import type { ScryfallCard } from './client';
+import { isDoubleFaced, type ScryfallCard } from './client';
 
 export const cardTypes = [
   'Creature',
@@ -35,8 +35,6 @@ export function colorCode(colors: string[]): string {
   return ['W', 'U', 'B', 'R', 'G'].filter((color) => upper.includes(color)).join('');
 }
 
-const doubleFacedLayouts = ['transform', 'modal_dfc', 'reversible_card'];
-
 export interface FaceTypes {
   front: CardType;
   back: CardType | null;
@@ -46,6 +44,5 @@ export function faceTypes(card: ScryfallCard): FaceTypes {
   const faces = card.card_faces ?? [];
   const front = primaryType(faces[0]?.type_line ?? card.type_line ?? '');
   const backTypeLine = faces[1]?.type_line;
-  const doubleFaced = !!card.layout && doubleFacedLayouts.includes(card.layout);
-  return { front, back: doubleFaced && backTypeLine ? primaryType(backTypeLine) : null };
+  return { front, back: isDoubleFaced(card) && backTypeLine ? primaryType(backTypeLine) : null };
 }

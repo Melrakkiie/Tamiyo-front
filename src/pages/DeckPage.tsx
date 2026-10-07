@@ -50,7 +50,7 @@ import {
 } from '../decks/storageGrouping';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import type { FaceTypes } from '../scryfall/classify';
-import { useCardArts, useCardFaceTypes, useCardImages, useManaCosts } from '../scryfall/hooks';
+import { useCardArts, useCardBackImages, useCardFaceTypes, useCardImages, useManaCosts } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
 
 const sortOptions: { value: DeckCardSort; label: string }[] = [
@@ -363,6 +363,7 @@ function DeckCards({ deck }: { deck: Deck }) {
     pendingItems.length > 0 ? sortDeckCards([...deckCards, ...pendingToCards(pendingItems)], sort) : deckCards;
   const showMissingDetails = (grouping === 'type' || grouping === 'color') && hasMissingDetails(deckCards);
   const images = useCardImages(allCards.map((card) => card.scryfall_id));
+  const backImages = useCardBackImages(allCards.map((card) => card.scryfall_id));
   const manaCosts = useManaCosts(allCards.map((card) => card.scryfall_id));
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
@@ -418,6 +419,7 @@ function DeckCards({ deck }: { deck: Deck }) {
         key={card.id}
         card={card}
         imageUrl={images.data?.[card.scryfall_id]}
+        backImageUrl={backImages.data?.[card.scryfall_id]}
         imageLoading={images.isLoading}
         textOnly={textOnly}
         manaCost={manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)}

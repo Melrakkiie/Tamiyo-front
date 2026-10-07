@@ -18,7 +18,7 @@ import { useSearchParams } from 'react-router';
 
 import { errorMessage } from '../api/errors';
 import type { Card, CardSort } from '../api/types';
-import { useCardImages, useManaCosts } from '../scryfall/hooks';
+import { useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
 import { DropOverlay } from '../scryfall/DropOverlay';
 import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
 import { useScryfallDrop } from '../scryfall/useScryfallDrop';
@@ -83,6 +83,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const copiesTotal = copies.data?.total;
   const pageCards = cards.data?.data ?? [];
   const images = useCardImages(pageCards.map((card) => card.scryfall_id));
+  const backImages = useCardBackImages(pageCards.map((card) => card.scryfall_id));
   const manaCosts = useManaCosts(pageCards.map((card) => card.scryfall_id));
   const showMissingDetails =
     (grouping === 'type' || grouping === 'color' || sortsNeedingDetails.includes(sort)) && hasMissingDetails(pageCards);
@@ -93,6 +94,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
         key={card.id}
         card={card}
         imageUrl={images.data?.[card.scryfall_id]}
+        backImageUrl={backImages.data?.[card.scryfall_id]}
         imageLoading={images.isLoading}
         textOnly={textOnly}
         manaCost={manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)}

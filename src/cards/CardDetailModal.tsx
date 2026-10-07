@@ -21,7 +21,7 @@ import { errorMessage } from '../api/errors';
 import type { Card, UpdateCardInput } from '../api/types';
 import { CardRulesText } from '../scryfall/CardRulesText';
 import { imageUrl as printingImageUrl, type ScryfallCard } from '../scryfall/client';
-import { usePrintings } from '../scryfall/hooks';
+import { useBackImage, useBackImageOf, usePrintings } from '../scryfall/hooks';
 import { canBeFoil, canBeNonFoil, foilFor, printingDetails } from '../scryfall/printing';
 import { PrintingGrid } from '../scryfall/PrintingGrid';
 import { useStorageOptions } from '../storages/api';
@@ -57,6 +57,8 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
   const storageOptions = useStorageOptions();
   const [foil, setFoil] = useState(card.foil);
   const [printing, setPrinting] = useState<ScryfallCard | null>(null);
+  const backImage = useBackImage(card.scryfall_id);
+  const printingBackImage = useBackImageOf(printing);
   const printings = usePrintings(card.name);
   const otherPrintings = (printings.data ?? []).filter((candidate) => candidate.id !== card.scryfall_id);
   const [storageId, setStorageId] = useState<string | null>(card.storage_id ? String(card.storage_id) : null);
@@ -130,8 +132,10 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
       <Grid gutter="lg">
         <Grid.Col span={{ base: 12, sm: 5 }}>
           <CardImage
+            key={printing?.id ?? card.scryfall_id}
             name={card.name}
             url={printing ? printingImageUrl(printing, 'normal') : imageUrl}
+            backUrl={printing ? printingBackImage : backImage}
             loading={false}
           />
         </Grid.Col>

@@ -4,6 +4,8 @@ import { ApiError } from '../api/errors';
 import { type FaceTypes, faceTypes } from './classify';
 import {
   autocompleteCardNames,
+  backImageUrl,
+  meldResultId,
   type CardArt,
   cardArt,
   type CardSuggestion,
@@ -45,6 +47,26 @@ export function useCardImages(scryfallIds: string[], size: 'small' | 'normal' = 
     }
     return urls;
   });
+}
+
+export function useCardBackImages(scryfallIds: string[], size: 'small' | 'normal' = 'normal') {
+  const cards = useScryfallCardsByIds(scryfallIds, (byId) => byId);
+  const byId: Record<string, ScryfallCard> = cards.data ?? {};
+  const meldIds: Record<string, string> = {};
+  for (const [id, card] of Object.entries(byId)) {
+    const meldId = meldResultId(card);
+    if (meldId) {
+      meldIds[id] = meldId;
+    }
+  }
+  const meldResults = useScryfallCardsByIds(Object.values(meldIds), (byId) => byId);
+
+  const urls: Record<string, string | undefined> = {};
+  for (const [id, card] of Object.entries(byId)) {
+    const meldResult: ScryfallCard | undefined = meldIds[id] ? meldResults.data?.[meldIds[id]] : undefined;
+    urls[id] = meldResult ? imageUrl(meldResult, size) : backImageUrl(card, size);
+  }
+  return { data: urls };
 }
 
 export function useCardFaceTypes(scryfallIds: string[]) {
@@ -144,4 +166,20 @@ export function usePrintings(name: string | null) {
     enabled: !!name,
     staleTime: ONE_DAY,
   });
+}
+
+export function useBackImageOf(card: ScryfallCard | null | undefined) {
+  const meldResult = useScryfallCard(card ? meldResultId(card) : null);
+  if (!card) {
+    return undefined;
+  }
+  if (meldResultId(card)) {
+    return meldResult.data ? imageUrl(meldResult.data, 'normal') : undefined;
+  }
+  return backImageUrl(card, 'normal');
+}
+
+export function useBackImage(scryfallId: string | null | undefined) {
+  const card = useScryfallCard(scryfallId);
+  return useBackImageOf(card.data);
 }

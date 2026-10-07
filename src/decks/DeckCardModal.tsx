@@ -8,7 +8,7 @@ import { useUpdateCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
 import { CardRulesText } from '../scryfall/CardRulesText';
 import { commanderEligibility } from '../scryfall/commander';
-import { useScryfallCard } from '../scryfall/hooks';
+import { useBackImage, useScryfallCard } from '../scryfall/hooks';
 import { useAllStorages, useStorageOptions } from '../storages/api';
 import { isCommanderFormat, useRemoveCardFromDeck, useUpdateDeck } from './api';
 import { EditionSwitcher } from './EditionSwitcher';
@@ -84,6 +84,7 @@ function DeckCardDetail({
   const remove = useRemoveCardFromDeck();
   const update = useUpdateDeck();
   const scryfallCard = useScryfallCard(commanderFormat ? card.scryfall_id : null);
+  const backImage = useBackImage(card.scryfall_id);
   const eligibility = scryfallCard.data ? commanderEligibility(scryfallCard.data) : null;
   const storageOptions = useStorageOptions();
   const storages = useAllStorages();
@@ -138,7 +139,7 @@ function DeckCardDetail({
     <Stack gap="lg">
       <Grid gutter="lg">
         <Grid.Col span={{ base: 12, sm: 5 }}>
-          <CardImage name={card.name} url={imageUrl} loading={false} />
+          <CardImage name={card.name} url={imageUrl} backUrl={backImage} loading={false} />
         </Grid.Col>
         <Grid.Col span={{ base: 12, sm: 7 }}>
           <Stack>

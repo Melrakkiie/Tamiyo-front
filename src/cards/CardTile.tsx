@@ -1,5 +1,7 @@
 import { Badge, Box, Group, Paper, Stack, Text, UnstyledButton } from '@mantine/core';
 
+import { useState } from 'react';
+
 import type { Card } from '../api/types';
 import { showCardPreview } from '../layout/cardPreview';
 import { withSymbols } from '../scryfall/manaSymbols';
@@ -8,6 +10,7 @@ import { CardImage } from './CardImage';
 interface CardTileProps {
   card: Card;
   imageUrl: string | undefined;
+  backImageUrl?: string;
   imageLoading: boolean;
   storageName?: string | null;
   notOwned?: boolean;
@@ -86,6 +89,7 @@ function CardRow({
 export function CardTile({
   card,
   imageUrl,
+  backImageUrl,
   imageLoading,
   storageName,
   notOwned,
@@ -93,7 +97,9 @@ export function CardTile({
   manaCost,
   onOpen,
 }: CardTileProps) {
-  const onPreview = () => showCardPreview({ name: card.name, scryfallId: card.scryfall_id, imageUrl });
+  const [shownUrl, setShownUrl] = useState<string | undefined>(undefined);
+  const onPreview = () =>
+    showCardPreview({ name: card.name, scryfallId: card.scryfall_id, imageUrl: shownUrl ?? imageUrl });
   if (textOnly) {
     return <CardRow card={card} notOwned={notOwned} manaCost={manaCost} onOpen={onOpen} onPreview={onPreview} />;
   }
@@ -118,7 +124,16 @@ export function CardTile({
               : undefined
           }
         >
-          <CardImage name={card.name} url={imageUrl} loading={imageLoading} />
+          <CardImage
+            name={card.name}
+            url={imageUrl}
+            loading={imageLoading}
+            backUrl={backImageUrl}
+            onFlip={(url) => {
+              setShownUrl(url);
+              showCardPreview({ name: card.name, scryfallId: card.scryfall_id, imageUrl: url });
+            }}
+          />
           {quantity > 1 && (
             <Badge
               pos="absolute"

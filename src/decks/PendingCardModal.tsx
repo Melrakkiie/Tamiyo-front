@@ -7,7 +7,7 @@ import type { Card, PendingCard } from '../api/types';
 import { CardImage } from '../cards/CardImage';
 import { CardRulesText } from '../scryfall/CardRulesText';
 import { commanderEligibility } from '../scryfall/commander';
-import { useScryfallCard } from '../scryfall/hooks';
+import { useBackImage, useScryfallCard } from '../scryfall/hooks';
 import { useStorageOptions } from '../storages/api';
 import { isCommanderFormat, useCommitPendingCards, useRemovePendingCard, useUpdateDeck } from './api';
 import { EditionSwitcher } from './EditionSwitcher';
@@ -87,7 +87,7 @@ export function PendingCardModal({
         <Stack gap="lg">
           <Grid gutter="lg">
             <Grid.Col span={{ base: 12, sm: 5 }}>
-              <CardImage name={shown.card.name} url={shown.imageUrl} loading={false} />
+              <PendingCardImage card={shown.card} imageUrl={shown.imageUrl} />
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 7 }}>
               <Stack>
@@ -161,6 +161,11 @@ export function PendingCardModal({
       )}
     </Modal>
   );
+}
+
+function PendingCardImage({ card, imageUrl }: { card: Card; imageUrl: string | undefined }) {
+  const backImage = useBackImage(card.scryfall_id);
+  return <CardImage key={card.id} name={card.name} url={imageUrl} backUrl={backImage} loading={false} />;
 }
 
 const ineligibilityMessages = {

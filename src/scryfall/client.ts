@@ -17,6 +17,7 @@ interface ImageUris {
 export interface ScryfallCard {
   id: string;
   layout?: string;
+  all_parts?: { id: string; component: string; name: string }[];
   oracle_id?: string;
   name: string;
   set: string;
@@ -88,6 +89,24 @@ async function scryfall<T>(pathOrUrl: string, init?: RequestInit): Promise<T | n
 
 export function imageUrl(card: ScryfallCard, size: ImageSize): string | undefined {
   return card.image_uris?.[size] ?? card.card_faces?.[0]?.image_uris?.[size];
+}
+
+const doubleFacedLayouts = ['transform', 'modal_dfc', 'reversible_card'];
+
+export function isDoubleFaced(card: ScryfallCard) {
+  return !!card.layout && doubleFacedLayouts.includes(card.layout);
+}
+
+export function backImageUrl(card: ScryfallCard, size: ImageSize): string | undefined {
+  return isDoubleFaced(card) ? card.card_faces?.[1]?.image_uris?.[size] : undefined;
+}
+
+export function meldResultId(card: ScryfallCard): string | undefined {
+  if (card.layout !== 'meld') {
+    return undefined;
+  }
+  const result = card.all_parts?.find((part) => part.component === 'meld_result');
+  return result && result.id !== card.id ? result.id : undefined;
 }
 
 export interface CardArt {
