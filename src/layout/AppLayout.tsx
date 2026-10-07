@@ -20,6 +20,7 @@ import { logout } from '../auth/actions';
 import { UserAvatar } from '../auth/UserAvatar';
 import { showCardPreview } from './cardPreview';
 import { CardPreviewPanel } from './CardPreviewPanel';
+import { FanContentNotice } from './FanContentNotice';
 
 interface NavItem {
   label: string;
@@ -34,7 +35,7 @@ const navItems: NavItem[] = [
   { label: 'Import / export', to: '/import-export' },
 ];
 
-const pagesWithCards = /^\/(cards|storages\/[^/]+|decks\/[^/]+)\/?$/;
+const pagesWithCards = /^\/(cards|storages\/[^/]+|decks\/[^/]+|shared\/[^/]+)\/?$/;
 
 function isActive(item: NavItem, pathname: string) {
   return item.to === '/' ? pathname === '/' : pathname.startsWith(item.to);
@@ -135,10 +136,7 @@ export function AppLayout() {
 
       <AppShell.Main>
         <Outlet />
-        <Text size="xs" c="dimmed" ta="center" mt="xl">
-          Tamiyo is unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards.
-          Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC.
-        </Text>
+        <FanContentNotice />
       </AppShell.Main>
     </AppShell>
   );

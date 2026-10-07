@@ -746,7 +746,7 @@ export interface paths {
                     page?: number;
                     /** @description Number of cards per page (max 100). */
                     limit?: number;
-                    /** @description Sort field, with an optional "-" prefix for descending order. id is always used as a secondary tie-breaker for a stable order. */
+                    /** @description Sort field, with an optional "-" prefix for descending order. id is always used as a secondary tie-breaker for a stable order. "color" groups cards as white, blue, black, red, green, multicolor, colorless, lands, then cards whose colors aren't known yet; "type" by primary type (creature, planeswalker, battle, instant, sorcery, artifact, enchantment, land, other, unknown). Both sort by name within a group. */
                     sort?: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "color" | "-color" | "type" | "-type";
                     /** @description Return one entry per stack of identical copies (same printing, foil, proxy and storage) instead of one per card. Each entry is the stack's lowest-id copy with quantity and copy_ids set; total, page and limit then count stacks. added is the oldest copy's, updated the most recent one's. */
                     stack?: boolean;
@@ -817,7 +817,7 @@ export interface paths {
         };
         /**
          * Delete every card of the account
-         * @description Deletes all of the authenticated user's cards at once: they are removed from every deck, and any deck whose commander was one of them has its commander_id cleared. Storages and decks themselves are kept. Requires confirm=true, so the collection can't be wiped by accident.
+         * @description Deletes all of the authenticated user's cards at once: every deck keeps its cards in its pending list, its commander included (as commander_pending_id). Storages and decks themselves are kept. Requires confirm=true, so the collection can't be wiped by accident.
          */
         delete: {
             parameters: {
@@ -869,7 +869,7 @@ export interface paths {
         put?: never;
         /**
          * Fill in missing colors and types from Scryfall
-         * @description Looks up on Scryfall every card of the account whose colors or card_type aren't known yet (cards created before they were stored, or imported while Scryfall was unreachable), and stores its colors, primary type and mana value. Works through at most 750 cards per call, in id order, so a call stays short: while next_after_id is not null, call again with after_id set to it.
+         * @description Looks up on Scryfall the cards of the account whose colors, card_type or color_identity aren't known yet (cards created before they were stored, or imported while Scryfall was unreachable), and stores their colors, primary type, color identity and mana value. Works through at most 750 cards per call, in id order, so a call stays short: while next_after_id is not null, call again with after_id set to it.
          */
         post: {
             parameters: {
@@ -961,7 +961,7 @@ export interface paths {
         post?: never;
         /**
          * Delete a card
-         * @description Removes the card from any deck it belongs to, and clears commander_id on any deck where it was the commander.
+         * @description Removes the card from the collection. Each deck it was in gets it back in its pending list (to add to the collection again later); a deck whose commander it was keeps it as commander_pending_id.
          */
         delete: {
             parameters: {
@@ -1280,7 +1280,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    id: string;
+                    id: components["parameters"]["UserID"];
                 };
                 cookie?: never;
             };
@@ -1344,7 +1344,7 @@ export interface paths {
                 };
                 header?: never;
                 path: {
-                    id: string;
+                    id: components["parameters"]["UserID"];
                 };
                 cookie?: never;
             };
@@ -1775,7 +1775,10 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** List the cards waiting to be added to the collection for this deck */
+        /**
+         * List the cards waiting to be added to the collection for this deck
+         * @description Cards picked on Scryfall for this deck but not in the collection yet, sorted by name. POST /deck/{id}/pending/commit creates them in the collection and puts them in the deck.
+         */
         get: {
             parameters: {
                 query?: never;
@@ -1931,7 +1934,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Create the pending cards in the collection and put them in the deck */
+        /**
+         * Create the pending cards in the collection and put them in the deck
+         * @description Creates one card per copy of every pending card (or only the one given as pending_id), in the given storage (or without storage), adds each one to the deck, and removes it from the pending list. Items are handled one at a time: if something fails, the items already handled stay done and the rest stay pending.
+         */
         post: {
             parameters: {
                 query?: never;
@@ -1971,7 +1977,7 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["Unauthorized"];
-                /** @description Deck not found, or not owned by the authenticated user */
+                /** @description Deck not found (or not owned by the authenticated user), or unknown pending_id */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -2109,6 +2115,194 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
+                500: components["responses"]["InternalError"];
+                502: components["responses"]["BadGateway"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shared/decks/{share_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A deck's share_id. Anything that isn't a UUID is answered with 404. */
+                share_id: components["parameters"]["ShareID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * A shared deck, its owner and its cards
+         * @description Works without authentication. Resolves only public and unlisted decks. Owned copies and pending cards are merged into one list, with no storage, proxy or ownership details.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description A deck's share_id. Anything that isn't a UUID is answered with 404. */
+                    share_id: components["parameters"]["ShareID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SharedDeck"];
+                    };
+                };
+                /** @description No deck has this share_id, or the deck is private. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                429: components["responses"]["SharedTooManyRequests"];
+                500: components["responses"]["InternalError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shared/decks/{share_id}/legality": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A deck's share_id. Anything that isn't a UUID is answered with 404. */
+                share_id: components["parameters"]["ShareID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Legality of a shared deck
+         * @description Same report as GET /deck/{id}/legality, without card ids. Works without authentication.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description A deck's share_id. Anything that isn't a UUID is answered with 404. */
+                    share_id: components["parameters"]["ShareID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LegalityReport"];
+                    };
+                };
+                /** @description The deck's format isn't one Scryfall recognizes */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No deck has this share_id, or the deck is private. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                429: components["responses"]["SharedTooManyRequests"];
+                500: components["responses"]["InternalError"];
+                502: components["responses"]["BadGateway"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shared/decks/{share_id}/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A deck's share_id. Anything that isn't a UUID is answered with 404. */
+                share_id: components["parameters"]["ShareID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Statistics of a shared deck
+         * @description Same statistics as GET /deck/{id}/stats. Works without authentication.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description A deck's share_id. Anything that isn't a UUID is answered with 404. */
+                    share_id: components["parameters"]["ShareID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeckStats"];
+                    };
+                };
+                /** @description The deck's format isn't one Scryfall recognizes */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No deck has this share_id, or the deck is private. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                429: components["responses"]["SharedTooManyRequests"];
                 500: components["responses"]["InternalError"];
                 502: components["responses"]["BadGateway"];
             };
@@ -2536,6 +2730,14 @@ export interface components {
              */
             avatar_scryfall_id: string | null;
         };
+        /** @description What any signed-in user can see of another user; never the email. */
+        Profile: {
+            /** Format: uuid */
+            id: string;
+            display_name: string | null;
+            /** Format: uuid */
+            avatar_scryfall_id: string | null;
+        };
         UpdateMeRequest: {
             /** @description Trimmed; null or a blank string clears it. */
             display_name?: string | null;
@@ -2570,14 +2772,14 @@ export interface components {
             collector_number: string;
             foil: boolean;
             /** @description A printed stand-in rather than a real copy. */
-            proxy: boolean;
+            proxy?: boolean;
             storage_id?: number | null;
             /** @description Converted mana cost (CMC). */
             mana_value: number;
             /** @description The card's colors as WUBRG letters in that order ("WR" for a Boros card), empty for a colorless card, null when not known yet (see POST /cards/refresh-details). */
             colors?: string | null;
             /**
-             * @description Primary type, from the type line (lands first, then creatures, planeswalkers...). null when not known yet.
+             * @description Primary type, from the type line of the front face (lands first, then creatures, planeswalkers...). null when not known yet.
              * @enum {string|null}
              */
             card_type?: "Creature" | "Planeswalker" | "Battle" | "Instant" | "Sorcery" | "Artifact" | "Enchantment" | "Land" | "Other" | null;
@@ -2615,7 +2817,7 @@ export interface components {
             collector_number: string;
             foil?: boolean;
             /** @default 1 */
-            quantity?: number;
+            quantity: number;
             mana_value?: number;
             colors?: string | null;
             /** @enum {string|null} */
@@ -2658,7 +2860,7 @@ export interface components {
              * @description A printed stand-in rather than a real copy.
              * @default false
              */
-            proxy?: boolean;
+            proxy: boolean;
             storage_id?: number | null;
             /**
              * @description Converted mana cost (CMC). Not fetched automatically from Scryfall — supplied by the client, same as name or set_code.
@@ -2735,19 +2937,53 @@ export interface components {
              */
             readonly commander_scryfall_id?: string | null;
             visibility: components["schemas"]["DeckVisibility"];
+            /**
+             * Format: uuid
+             * @description Random identifier of the deck's share link (GET /shared/decks/{share_id}). Only resolves while the deck is public or unlisted.
+             */
+            readonly share_id: string;
             card_count: number;
             /** @description Copies waiting in the deck's pending list (not in the collection yet), not counted in card_count. */
             pending_count?: number;
             added: string;
             updated: string;
         };
-        /** @description What any signed-in user can see of another user; never the email. */
-        Profile: {
+        SharedDeckInfo: {
             /** Format: uuid */
-            id: string;
-            display_name: string | null;
+            share_id: string;
+            name: string;
+            format: string;
+            /** @enum {string} */
+            visibility: "public" | "unlisted";
             /** Format: uuid */
-            avatar_scryfall_id: string | null;
+            background_scryfall_id: string | null;
+            /** Format: uuid */
+            commander_scryfall_id: string | null;
+            /** @description Every card of the deck, owned or pending. */
+            card_count: number;
+            added: string;
+            updated: string;
+        };
+        /** @description One printing of a card in a shared deck, with how many copies the deck holds. */
+        SharedDeckCard: {
+            name: string;
+            /** Format: uuid */
+            scryfall_id: string;
+            set_code: string;
+            collector_number: string;
+            foil: boolean;
+            quantity: number;
+            mana_value: number;
+            colors: string | null;
+            card_type: string | null;
+            color_identity: string | null;
+            /** @description True for the deck's commander, which is always listed on its own. */
+            commander: boolean;
+        };
+        SharedDeck: {
+            deck: components["schemas"]["SharedDeckInfo"];
+            owner: components["schemas"]["Profile"];
+            cards: components["schemas"]["SharedDeckCard"][];
         };
         PaginatedDecks: {
             data: components["schemas"]["Deck"][];
@@ -2834,6 +3070,17 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
+        /** @description Too many requests from this client IP on the /shared/decks routes combined (SHARE_RATE_LIMIT_MAX per SHARE_RATE_LIMIT_WINDOW_SECONDS, 60 per 60s by default). A Retry-After header (seconds) indicates when to retry. */
+        SharedTooManyRequests: {
+            headers: {
+                /** @description Seconds until the rate limit window resets. */
+                "Retry-After"?: number;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         /** @description A bulk import couldn't reach or parse a response from the Scryfall API while resolving Moxfield rows. */
         BadGateway: {
             headers: {
@@ -2845,6 +3092,7 @@ export interface components {
         };
     };
     parameters: {
+        UserID: string;
         /** @description "cookie" for browser clients that keep the refresh token in the httpOnly cookie only: the response body then leaves refresh_token out, so a script injected in the page can't read it. */
         RefreshTokenTransport: "cookie";
         /** @description Refresh token set by /auth/register, /auth/login and /auth/refresh. Used when the request body carries no refresh_token. */
@@ -2853,6 +3101,8 @@ export interface components {
         CardID: number;
         /** @description Storage ID */
         StorageID: number;
+        /** @description A deck's share_id. Anything that isn't a UUID is answered with 404. */
+        ShareID: string;
         /** @description Deck ID */
         DeckID: number;
         /** @description Card ID */

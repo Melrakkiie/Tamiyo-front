@@ -3,6 +3,7 @@ import { createBrowserRouter } from 'react-router';
 import { GuestOnly, RequireAuth } from './auth/guards';
 import { AppLayout } from './layout/AppLayout';
 import { AuthLayout } from './layout/AuthLayout';
+import { SharedLayout } from './layout/SharedLayout';
 import { CollectionPage } from './pages/CollectionPage';
 import { ConfirmEmailPage } from './pages/ConfirmEmailPage';
 import { DeckPage } from './pages/DeckPage';
@@ -16,6 +17,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { SharedDeckPage } from './pages/SharedDeckPage';
 import { StoragePage } from './pages/StoragePage';
 import { StoragesPage } from './pages/StoragesPage';
 
@@ -58,6 +60,10 @@ export const router = createBrowserRouter([
         ],
       },
     ],
+  },
+  {
+    element: <SharedLayout />,
+    children: [{ path: '/shared/:shareId', element: <SharedDeckPage /> }],
   },
   { path: '*', element: <NotFoundPage /> },
 ]);

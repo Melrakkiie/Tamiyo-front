@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   Center,
-  Divider,
   Group,
   Loader,
   Paper,
@@ -15,7 +14,6 @@ import {
   Tabs,
   Text,
   Title,
-  Tooltip,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useQueryClient } from '@tanstack/react-query';
@@ -25,16 +23,17 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { ApiError, errorMessage } from '../api/errors';
 import type { Card, Deck, DeckCardSort } from '../api/types';
 import { useExportDeck } from '../bulk/api';
-import { copyCount, useCard } from '../cards/api';
+import { useCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
 import { CardSizeControl, useCardSize } from '../cards/CardSizeControl';
 import { CardTile } from '../cards/CardTile';
-import { groupCards, hasMissingDetails, sortIntoGroups, typeLabels } from '../cards/grouping';
+import { hasMissingDetails } from '../cards/grouping';
 import { MissingDetailsAlert } from '../cards/MissingDetailsAlert';
 import { AddToDeckModal } from '../decks/AddToDeckModal';
 import { artBackground, artCredit, deckArtId } from '../decks/art';
 import { ArtPickerModal } from '../decks/ArtPickerModal';
 import { isCommanderFormat, useDeck, useDeckCards, useDeleteDeck, usePendingCards, useUpdateDeck } from '../decks/api';
+import { DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
 import { DeckCardModal } from '../decks/DeckCardModal';
 import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckLegalityWarning } from '../decks/DeckLegalityWarning';
@@ -42,16 +41,11 @@ import { DeckStatsPanel } from '../decks/DeckStatsPanel';
 import { PendingCardModal } from '../decks/PendingCardModal';
 import { isPendingCard, pendingIdOf, pendingToCards, sortDeckCards, stackCards } from '../decks/pendingCards';
 import { PendingCardsSection } from '../decks/PendingCardsSection';
-import {
-  type DeckCardGrouping,
-  deckGroupingOptions,
-  groupByStorage,
-  parseDeckGrouping,
-} from '../decks/storageGrouping';
+import { ShareDeckButton } from '../decks/ShareDeckButton';
+import { type DeckCardGrouping, deckGroupingOptions, parseDeckGrouping } from '../decks/storageGrouping';
 import { visibilityOption } from '../decks/visibility';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
-import type { FaceTypes } from '../scryfall/classify';
-import { useCardArts, useCardBackImages, useCardFaceTypes, useCardImages, useManaCosts } from '../scryfall/hooks';
+import { useCardArts, useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
 
 const sortOptions: { value: DeckCardSort; label: string }[] = [
@@ -152,6 +146,7 @@ function DeckView({ id }: { id: number }) {
             </Group>
           </Stack>
           <Group gap="xs">
+            <ShareDeckButton deck={current} />
             <Button variant="default" onClick={() => setArtPickerOpened(true)}>
               Illustration
             </Button>
@@ -318,49 +313,6 @@ function CommanderSection({ deck }: { deck: Deck }) {
   );
 }
 
-interface BackFaceEntry {
-  name: string;
-  quantity: number;
-}
-
-function GroupCount({ label, cards, backFaces }: { label: string; cards: Card[]; backFaces: BackFaceEntry[] }) {
-  const count = cards.reduce((total, card) => total + copyCount(card), 0);
-  const others = backFaces.reduce((total, entry) => total + entry.quantity, 0);
-  if (others === 0) {
-    return <>({count})</>;
-  }
-  return (
-    <>
-      ({count}{' '}
-      <Tooltip
-        multiline
-        w={320}
-        withArrow
-        label={
-          <Stack gap={4}>
-            <Text size="sm" fw={700}>
-              Autres {label.toLowerCase()} (au verso)
-            </Text>
-            {backFaces.map((entry) => (
-              <Text key={entry.name} size="sm">
-                {entry.quantity} {entry.name}
-              </Text>
-            ))}
-            <Text size="sm" mt={4}>
-              Total {label.toLowerCase()} : <strong>{count + others}</strong>
-            </Text>
-          </Stack>
-        }
-      >
-        <Text span inherit style={{ textDecoration: 'underline dotted', cursor: 'help' }}>
-          + {others} autre{others > 1 ? 's' : ''}
-        </Text>
-      </Tooltip>
-      )
-    </>
-  );
-}
-
 function DeckCards({ deck }: { deck: Deck }) {
   const { pathname } = useLocation();
   const [sort, setSort] = useState<DeckCardSort>('name');
@@ -378,33 +330,8 @@ function DeckCards({ deck }: { deck: Deck }) {
   const manaCosts = useManaCosts(allCards.map((card) => card.scryfall_id));
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
-  const faceTypes = useCardFaceTypes(allCards.map((card) => card.scryfall_id));
   const stacks = stackCards(allCards, deck.commander_id);
-  const groupedStacks =
-    grouping === 'type'
-      ? stacks.map((card) => {
-          const types: FaceTypes | undefined = faceTypes.data?.[card.scryfall_id];
-          return types ? { ...card, card_type: types.front } : card;
-        })
-      : stacks;
-  const backFaces = new Map<string, Map<string, number>>();
-  if (grouping === 'type') {
-    for (const card of groupedStacks) {
-      const types: FaceTypes | undefined = faceTypes.data?.[card.scryfall_id];
-      if (types?.back && types.back !== types.front) {
-        const label = typeLabels[types.back];
-        const entries = backFaces.get(label) ?? new Map<string, number>();
-        entries.set(card.name, (entries.get(card.name) ?? 0) + copyCount(card));
-        backFaces.set(label, entries);
-      }
-    }
-  }
-  const groups =
-    grouping === 'storage'
-      ? groupByStorage(groupedStacks, storageNames)
-      : grouping
-        ? groupCards(sortIntoGroups(groupedStacks, grouping), grouping)
-        : [];
+  const grouped = useDeckCardGroups(stacks, grouping, storageNames);
   const [addOpened, setAddOpened] = useState(false);
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
   const [openedPending, setOpenedPending] = useState<Card | null>(null);
@@ -501,30 +428,7 @@ function DeckCards({ deck }: { deck: Deck }) {
           <Text c="dimmed">Ce deck est vide : ajoute des cartes de ta collection.</Text>
         </Center>
       ) : grouping ? (
-        <Stack gap="lg">
-          {groups.map((group, index) => (
-            <Stack key={`${index}-${group.label}`} gap="sm">
-              <Divider
-                labelPosition="left"
-                label={
-                  <Title order={4}>
-                    {group.label}{' '}
-                    <Text span size="sm" c="dimmed">
-                      <GroupCount
-                        label={group.label}
-                        cards={group.cards}
-                        backFaces={[...(backFaces.get(group.label) ?? new Map<string, number>())]
-                          .map(([name, quantity]) => ({ name, quantity }))
-                          .sort((a, b) => a.name.localeCompare(b.name))}
-                      />
-                    </Text>
-                  </Title>
-                }
-              />
-              <SimpleGrid {...gridProps}>{group.cards.map(renderTile)}</SimpleGrid>
-            </Stack>
-          ))}
-        </Stack>
+        <DeckCardGroups {...grouped} gridProps={gridProps} renderTile={renderTile} />
       ) : (
         <SimpleGrid {...gridProps}>{stacks.map(renderTile)}</SimpleGrid>
       )}

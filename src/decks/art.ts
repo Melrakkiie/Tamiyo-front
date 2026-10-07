@@ -1,6 +1,6 @@
 import type { Deck } from '../api/types';
 
-export function deckArtId(deck: Deck): string | null {
+export function deckArtId(deck: Pick<Deck, 'background_scryfall_id' | 'commander_scryfall_id'>): string | null {
   return deck.background_scryfall_id ?? deck.commander_scryfall_id ?? null;
 }
 

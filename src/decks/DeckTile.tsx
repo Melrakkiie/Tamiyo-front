@@ -13,11 +13,11 @@ function totalCards(deck: Deck) {
 interface DeckTileProps {
   deck: Deck;
   art: CardArt | null;
-  linked?: boolean;
+  to?: string;
   showVisibility?: boolean;
 }
 
-export function DeckTile({ deck, art, linked = true, showVisibility = true }: DeckTileProps) {
+export function DeckTile({ deck, art, to = `/decks/${deck.id}`, showVisibility = true }: DeckTileProps) {
   const style = art ? { ...artBackground(art.url), color: 'white' } : undefined;
   const content = (
     <Stack justify="space-between" h="100%" gap="xs">
@@ -52,12 +52,8 @@ export function DeckTile({ deck, art, linked = true, showVisibility = true }: De
     </Stack>
   );
 
-  return linked ? (
-    <Card withBorder component={Link} to={`/decks/${deck.id}`} mih={128} style={style}>
-      {content}
-    </Card>
-  ) : (
-    <Card withBorder mih={128} style={style}>
+  return (
+    <Card withBorder component={Link} to={to} mih={128} style={style}>
       {content}
     </Card>
   );

@@ -13,7 +13,7 @@ export const visibilityOptions: { value: DeckVisibility; label: string; descript
   {
     value: 'public',
     label: 'Public',
-    description: 'Visible par tout le monde, et listé parmi les decks à découvrir.',
+    description: 'Visible par toute personne qui a son lien, et listé sur ton profil.',
     color: 'green',
   },
 ];

@@ -2,7 +2,7 @@ import { Alert, Anchor, List, Modal, Stack, Text } from '@mantine/core';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import type { Deck } from '../api/types';
+import type { Deck, LegalityReport } from '../api/types';
 import { useDeckLegality } from './api';
 
 const REASONS: [RegExp, (...groups: string[]) => string][] = [
@@ -45,7 +45,10 @@ function translateReason(reason: string): string {
 }
 
 export function DeckLegalityWarning({ deck }: { deck: Deck }) {
-  const legality = useDeckLegality(deck.id, true);
+  return <LegalityWarning legality={useDeckLegality(deck.id, true)} />;
+}
+
+export function LegalityWarning({ legality }: { legality: { data: LegalityReport | undefined; error: Error | null } }) {
   const [opened, setOpened] = useState(false);
 
   if (legality.error) {

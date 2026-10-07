@@ -6,6 +6,7 @@ import { useAccount } from '../auth/account';
 import { ProfileAvatar, useAvatarArt } from '../auth/UserAvatar';
 import { artCredit, deckArtId } from '../decks/art';
 import { DeckTile } from '../decks/DeckTile';
+import { sharedDeckPath } from '../decks/shared';
 import { capitalize, groupByRecent } from '../layout/groupByRecent';
 import { useCardArts } from '../scryfall/hooks';
 import { usePublicDecks, useProfile } from '../users/api';
@@ -106,7 +107,7 @@ export function ProfilePage() {
                         key={deck.id}
                         deck={deck}
                         art={artId ? (deckArts.data?.[artId] ?? null) : null}
-                        linked={own}
+                        to={own ? `/decks/${deck.id}` : sharedDeckPath(deck.share_id)}
                         showVisibility={false}
                       />
                     );

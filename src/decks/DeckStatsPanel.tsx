@@ -1,6 +1,7 @@
 import { Alert, Card, Center, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 
 import { ApiError, errorMessage } from '../api/errors';
+import type { DeckStats } from '../api/types';
 import { useDeckStats } from './api';
 import { BarList, ColumnChart, type BarDatum } from './charts';
 
@@ -46,8 +47,18 @@ function StatTile({ label, value }: { label: string; value: string | number }) {
 }
 
 export function DeckStatsPanel({ deckId }: { deckId: number }) {
-  const stats = useDeckStats(deckId, true);
+  return <DeckStatsView stats={useDeckStats(deckId, true)} />;
+}
 
+interface DeckStatsViewProps {
+  stats: { data: DeckStats | undefined; error: Error | null; isLoading: boolean };
+  emptyMessage?: string;
+}
+
+export function DeckStatsView({
+  stats,
+  emptyMessage = 'Ajoute des cartes au deck pour voir ses statistiques.',
+}: DeckStatsViewProps) {
   if (stats.isLoading) {
     return (
       <Center p="xl">
@@ -68,7 +79,7 @@ export function DeckStatsPanel({ deckId }: { deckId: number }) {
 
   const data = stats.data;
   if (data.card_count === 0) {
-    return <Text c="dimmed">Ajoute des cartes au deck pour voir ses statistiques.</Text>;
+    return <Text c="dimmed">{emptyMessage}</Text>;
   }
 
   const colors = COLOR_LABELS.map(([key, label]) => ({ label, value: data.color_breakdown[key] ?? 0 })).filter(
