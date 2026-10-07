@@ -28,6 +28,10 @@ export interface ScryfallCard {
   mana_cost?: string;
   oracle_text?: string;
   flavor_text?: string;
+  lang?: string;
+  printed_name?: string;
+  printed_type_line?: string;
+  printed_text?: string;
   power?: string;
   toughness?: string;
   loyalty?: string;
@@ -47,6 +51,9 @@ export interface ScryfallCard {
     type_line?: string;
     oracle_text?: string;
     flavor_text?: string;
+    printed_name?: string;
+    printed_type_line?: string;
+    printed_text?: string;
     power?: string;
     toughness?: string;
     loyalty?: string;
@@ -125,6 +132,24 @@ export async function searchCardSuggestions(query: string): Promise<CardSuggesti
     name: card.name,
     typeLine: card.type_line ?? card.card_faces?.[0]?.type_line,
   }));
+}
+
+export async function fetchFrenchPrinting(card: ScryfallCard): Promise<ScryfallCard | null> {
+  const sameEdition = await scryfall<ScryfallCard>(
+    `/cards/${encodeURIComponent(card.set)}/${encodeURIComponent(card.collector_number)}/fr`,
+  );
+  if (sameEdition) {
+    return sameEdition;
+  }
+  if (!card.oracle_id) {
+    return null;
+  }
+  await delay(DELAY_BETWEEN_REQUESTS_MS);
+  const query = encodeURIComponent(`oracleid:${card.oracle_id} lang:fr`);
+  const other = await scryfall<ScryfallList<ScryfallCard>>(
+    `/cards/search?q=${query}&unique=prints&order=released&dir=desc`,
+  );
+  return other?.data[0] ?? null;
 }
 
 export async function autocompleteCardNames(query: string): Promise<string[]> {

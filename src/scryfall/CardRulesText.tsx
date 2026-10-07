@@ -1,8 +1,8 @@
-import { Divider, Group, Paper, Skeleton, Stack, Text } from '@mantine/core';
-import { Fragment } from 'react';
+import { Divider, Group, Paper, SegmentedControl, Skeleton, Stack, Text } from '@mantine/core';
+import { Fragment, useState } from 'react';
 
 import type { ScryfallCard } from './client';
-import { useScryfallCard } from './hooks';
+import { useFrenchPrinting, useScryfallCard } from './hooks';
 
 const SYMBOL_BASE = 'https://svgs.scryfall.io/card-symbols';
 
@@ -59,24 +59,27 @@ function stats(source: { power?: string; toughness?: string; loyalty?: string; d
   return undefined;
 }
 
-function facesOf(card: ScryfallCard): Face[] {
+function facesOf(card: ScryfallCard, french: ScryfallCard | null): Face[] {
   if (card.card_faces && card.card_faces.length > 1 && card.card_faces.some((face) => face.oracle_text !== undefined)) {
-    return card.card_faces.map((face) => ({
-      name: face.name ?? card.name,
-      manaCost: face.mana_cost,
-      typeLine: face.type_line,
-      oracleText: face.oracle_text,
-      flavorText: face.flavor_text,
-      stats: stats(face),
-    }));
+    return card.card_faces.map((face, index) => {
+      const translated = french?.card_faces?.[index];
+      return {
+        name: translated?.printed_name ?? face.name ?? card.name,
+        manaCost: face.mana_cost,
+        typeLine: translated?.printed_type_line ?? face.type_line,
+        oracleText: translated?.printed_text ?? face.oracle_text,
+        flavorText: french ? translated?.flavor_text : face.flavor_text,
+        stats: stats(face),
+      };
+    });
   }
   return [
     {
-      name: card.name,
+      name: french?.printed_name ?? card.name,
       manaCost: card.mana_cost,
-      typeLine: card.type_line,
-      oracleText: card.oracle_text,
-      flavorText: card.flavor_text,
+      typeLine: french?.printed_type_line ?? card.type_line,
+      oracleText: french?.printed_text ?? card.oracle_text,
+      flavorText: french ? french.flavor_text : card.flavor_text,
       stats: stats(card),
     },
   ];
@@ -93,6 +96,10 @@ const rarityLabels: Record<string, string> = {
 
 export function CardRulesText({ scryfallId }: { scryfallId: string }) {
   const card = useScryfallCard(scryfallId);
+  const french = useFrenchPrinting(card.data);
+  const [language, setLanguage] = useState<'fr' | 'en'>('fr');
+  const frenchAvailable = !!french.data;
+  const showFrench = frenchAvailable && language === 'fr';
 
   if (card.isLoading) {
     return (
@@ -112,11 +119,23 @@ export function CardRulesText({ scryfallId }: { scryfallId: string }) {
     );
   }
 
-  const faces = facesOf(card.data);
-  const showFaceNames = faces.length > 1;
+  const faces = facesOf(card.data, showFrench ? (french.data ?? null) : null);
+  const showFaceNames = faces.length > 1 || showFrench;
 
   return (
     <Stack gap="xs">
+      {frenchAvailable && (
+        <SegmentedControl
+          size="xs"
+          w={140}
+          value={language}
+          onChange={(value) => setLanguage(value as 'fr' | 'en')}
+          data={[
+            { value: 'fr', label: 'Français' },
+            { value: 'en', label: 'English' },
+          ]}
+        />
+      )}
       <Paper withBorder radius="md" p="sm">
         <Stack gap="sm">
           {faces.map((face, index) => (
@@ -154,6 +173,13 @@ export function CardRulesText({ scryfallId }: { scryfallId: string }) {
           ))}
         </Stack>
       </Paper>
+      {showFrench && (
+        <Text size="xs" c="dimmed">
+          Texte imprimé sur la carte française
+          {french.data?.set !== card.data.set ? ` (édition ${french.data?.set_name ?? ''})` : ''} : il peut différer du
+          texte de règles officiel à jour, en anglais.
+        </Text>
+      )}
       <Text size="xs" c="dimmed">
         {card.data.set_name}
         {card.data.rarity ? ` · ${rarityLabels[card.data.rarity] ?? card.data.rarity}` : ''}

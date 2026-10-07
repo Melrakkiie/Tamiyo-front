@@ -7,9 +7,11 @@ import {
   cardArt,
   type CardSuggestion,
   fetchCardsByIds,
+  fetchFrenchPrinting,
   imageUrl,
   isAdvancedQuery,
   searchCardSuggestions,
+  type ScryfallCard,
   searchPrintings,
 } from './client';
 
@@ -41,6 +43,17 @@ export function useScryfallCard(scryfallId: string | null | undefined) {
     enabled: !!scryfallId,
     staleTime: ONE_DAY,
     gcTime: ONE_DAY,
+  });
+}
+
+export function useFrenchPrinting(card: ScryfallCard | null | undefined) {
+  return useQuery({
+    queryKey: ['scryfall', 'french', card?.id],
+    queryFn: () => (card ? fetchFrenchPrinting(card) : null),
+    enabled: !!card,
+    staleTime: ONE_DAY,
+    gcTime: ONE_DAY,
+    retry: false,
   });
 }
 
