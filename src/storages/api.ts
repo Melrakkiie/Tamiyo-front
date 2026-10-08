@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, unwrap } from '../api/client';
 import type { Storage } from '../api/types';
 
-export const DEFAULT_STORAGE_TYPES = ['binder', 'box', 'deck'];
+export const DEFAULT_STORAGE_TYPES = ['binder', 'box', 'deckbox'];
 
 async function fetchAllStorages(): Promise<Storage[]> {
   const storages: Storage[] = [];

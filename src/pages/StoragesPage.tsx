@@ -11,7 +11,7 @@ import { useAllStorages, useCreateStorage } from '../storages/api';
 const storageTypeLabels: Record<string, string> = {
   binder: 'Classeurs',
   box: 'Boîtes',
-  deck: 'Decks',
+  deckbox: 'Deckbox',
 };
 
 function storageTypeLabel(type: string) {

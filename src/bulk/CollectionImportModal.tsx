@@ -156,7 +156,7 @@ function ManaBoxImport({ storage, onClose }: ImportFormProps) {
         Dans ManaBox : <b>Collection → Export → CSV</b>.{' '}
         {storage
           ? 'Toutes les cartes du fichier iront dans ce rangement : les classeurs de ManaBox sont ignorés.'
-          : 'Les classeurs deviennent des rangements, et les classeurs de type « deck » deviennent aussi des decks (au format commander par défaut, à corriger ensuite si besoin).'}
+          : 'Les classeurs deviennent des rangements, et les classeurs de type « deck » deviennent des deckbox ainsi que des decks (au format commander par défaut, à corriger ensuite si besoin).'}
       </Text>
       <FileInput
         label="Fichier ManaBox_Collection.csv"

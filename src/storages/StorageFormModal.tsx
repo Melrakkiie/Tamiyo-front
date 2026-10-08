@@ -56,7 +56,7 @@ function StorageForm({
         />
         <Autocomplete
           label="Type"
-          description="Choisis un type existant ou saisis-en un nouveau. Le type « deck » est repris tel quel à l'export ManaBox."
+          description="Choisis un type existant ou saisis-en un nouveau. Un « deckbox » devient un classeur de type « deck » à l'export ManaBox."
           data={types}
           key={form.key('type')}
           {...form.getInputProps('type')}

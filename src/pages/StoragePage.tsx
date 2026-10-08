@@ -125,7 +125,7 @@ function StorageView({ id }: { id: number }) {
 
       <CardBrowser
         storageId={current.id}
-        pageSize={current.type.trim().toLowerCase() === 'deck' ? DECK_PAGE_SIZE : undefined}
+        pageSize={current.type.trim().toLowerCase() === 'deckbox' ? DECK_PAGE_SIZE : undefined}
       />
 
       <CollectionImportModal
