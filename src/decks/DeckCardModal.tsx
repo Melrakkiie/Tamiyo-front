@@ -11,6 +11,7 @@ import { commanderEligibility } from '../scryfall/commander';
 import { useBackImage, useScryfallCard } from '../scryfall/hooks';
 import { useAllStorages, useStorageOptions } from '../storages/api';
 import { isCommanderFormat, useUpdateDeck } from './api';
+import { CardTagsInput } from './CardTagsInput';
 import { DeckQuantityControl } from './DeckQuantityControl';
 import { EditionSwitcher } from './EditionSwitcher';
 
@@ -167,6 +168,8 @@ function DeckCardDetail({
             )}
 
             <CardRulesText scryfallId={card.scryfall_id} />
+
+            <CardTagsInput deckId={deckId} cardName={card.name} />
 
             {error && <Alert color="red">{errorMessage(error)}</Alert>}
 

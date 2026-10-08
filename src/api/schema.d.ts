@@ -1765,6 +1765,233 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deck/{id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * List the deck's card tags
+         * @description Every tag used in the deck and the tagged cards (untagged ones are left out), sorted alphabetically ignoring case. A tag belongs to a card name within the deck: every copy shares it, pending ones included, whatever the printing. Tags of cards no longer in the deck are kept but not returned.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeckTags"];
+                    };
+                };
+                /** @description id is not a UUID. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found (or not owned by the authenticated user). */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        /**
+         * Remove a tag from every card of the deck
+         */
+        delete: {
+            parameters: {
+                query: {
+                    tag: string;
+                };
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Removed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Invalid id, or no tag given. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or the deck doesn't use this tag. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+            };
+        };
+        options?: never;
+        head?: never;
+        /**
+         * Rename a tag on every card of the deck
+         * @description Renaming into a tag the deck already uses (ignoring case) merges the two.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RenameTagRequest"];
+                };
+            };
+            responses: {
+                /** @description Renamed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Invalid id, a missing field, or a new name that's blank or over 40 characters. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or the deck doesn't use this tag. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+            };
+        };
+        trace?: never;
+    };
+    "/deck/{id}/tags/cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace a card's tags in the deck
+         * @description Tags are trimmed (inner spaces collapsed), must have 1 to 40 characters, at most 20 per card, and reuse the deck's spelling of a tag that matches ignoring case. An empty list removes every tag of the card. The card is matched by name, ignoring case and " / " versus " // ".
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SetCardTagsRequest"];
+                };
+            };
+            responses: {
+                /** @description The card's tags, sorted. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TaggedCard"];
+                    };
+                };
+                /** @description Invalid id, a missing field, a blank or too long tag, or more than 20 tags. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or no card of this name in the deck. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deck/{id}/pending": {
         parameters: {
             query?: never;
@@ -3229,6 +3456,8 @@ export interface components {
             color_identity: string | null;
             /** @description True for the deck's commander, which is always listed on its own. */
             commander: boolean;
+            /** @description The owner's tags for this card, shared by every printing. */
+            tags: string[];
         };
         SharedDeck: {
             deck: components["schemas"]["SharedDeckInfo"];
@@ -3262,6 +3491,10 @@ export interface components {
             other_quantity: number;
             commander: boolean;
             other_commander: boolean;
+            /** @description The card's tags in the first deck. */
+            tags: string[];
+            /** @description The card's tags in the other deck. */
+            other_tags: string[];
         };
         DeckComparison: {
             deck: components["schemas"]["ComparedDeck"];
@@ -3269,6 +3502,23 @@ export interface components {
             common: components["schemas"]["ComparedCard"][];
             only_in_deck: components["schemas"]["ComparedCard"][];
             only_in_other: components["schemas"]["ComparedCard"][];
+        };
+        TaggedCard: {
+            name: string;
+            tags: string[];
+        };
+        DeckTags: {
+            /** @description Every tag used in the deck. */
+            tags: string[];
+            cards: components["schemas"]["TaggedCard"][];
+        };
+        SetCardTagsRequest: {
+            name: string;
+            tags: string[];
+        };
+        RenameTagRequest: {
+            from: string;
+            to: string;
         };
         PaginatedDecks: {
             data: components["schemas"]["Deck"][];

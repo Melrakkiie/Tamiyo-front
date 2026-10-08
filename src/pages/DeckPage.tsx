@@ -38,6 +38,7 @@ import { DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
 import { CompareDeckModal } from '../decks/CompareDeckModal';
 import { DeckCardModal } from '../decks/DeckCardModal';
 import { DeckFormModal } from '../decks/DeckFormModal';
+import { DeckTagsModal } from '../decks/DeckTagsModal';
 import { DeckLegalityWarning } from '../decks/DeckLegalityWarning';
 import { DeckStatsPanel } from '../decks/DeckStatsPanel';
 import { ExportDeckModal } from '../decks/ExportDeckModal';
@@ -47,6 +48,7 @@ import { isPendingCard, pendingIdOf, pendingToCards, sortDeckCards, stackCards }
 import { PendingCardsSection } from '../decks/PendingCardsSection';
 import { ShareDeckModal } from '../decks/ShareDeckModal';
 import { type DeckCardGrouping, deckGroupingOptions, parseDeckGrouping } from '../decks/storageGrouping';
+import { tagsByName, tagsOf, useDeckTags } from '../decks/tags';
 import { visibilityOption } from '../decks/visibility';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import { SettingsMenu } from '../layout/SettingsMenu';
@@ -105,6 +107,7 @@ function DeckView({ id }: { id: string }) {
   const [exportOpened, setExportOpened] = useState(false);
   const [shareOpened, setShareOpened] = useState(false);
   const [compareOpened, setCompareOpened] = useState(false);
+  const [tagsOpened, setTagsOpened] = useState(false);
   const artId = deck.data ? deckArtId(deck.data) : null;
   const arts = useCardArts([artId]);
   const art = artId ? (arts.data?.[artId] ?? null) : null;
@@ -170,6 +173,7 @@ function DeckView({ id }: { id: string }) {
             <Menu.Item onClick={() => setArtPickerOpened(true)}>Illustration</Menu.Item>
             <Menu.Item onClick={() => setExportOpened(true)}>Exporter</Menu.Item>
             <Menu.Item onClick={() => setCompareOpened(true)}>Comparer avec un autre deck</Menu.Item>
+            <Menu.Item onClick={() => setTagsOpened(true)}>Gérer les tags</Menu.Item>
             <Menu.Item onClick={() => setEditOpened(true)}>Modifier</Menu.Item>
             <Menu.Divider />
             <Menu.Item color="red" onClick={() => setConfirmingDelete(true)}>
@@ -236,6 +240,7 @@ function DeckView({ id }: { id: string }) {
 
       <ShareDeckModal deck={current} opened={shareOpened} onClose={() => setShareOpened(false)} />
       <CompareDeckModal deck={current} opened={compareOpened} onClose={() => setCompareOpened(false)} />
+      <DeckTagsModal deckId={current.id} opened={tagsOpened} onClose={() => setTagsOpened(false)} />
       <ArtPickerModal deck={current} opened={artPickerOpened} onClose={() => setArtPickerOpened(false)} />
       <ExportDeckModal
         deckId={current.id}
@@ -362,7 +367,9 @@ function DeckCards({ deck }: { deck: Deck }) {
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
   const stacks = stackCards(allCards, deck.commander_id);
-  const grouped = useDeckCardGroups(stacks, grouping, storageNames);
+  const deckTags = useDeckTags(deck.id);
+  const cardTags = tagsByName(deckTags.data?.cards ?? []);
+  const grouped = useDeckCardGroups(stacks, grouping, storageNames, (card) => tagsOf(cardTags, card.name));
   const [addOpened, setAddOpened] = useState(false);
   const [importOpened, setImportOpened] = useState(false);
   const [openedCard, setOpenedCard] = useState<Card | null>(null);

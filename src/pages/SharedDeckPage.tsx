@@ -25,7 +25,6 @@ import { useSession } from '../auth/useSession';
 import { CardImage } from '../cards/CardImage';
 import { CardSizeControl, useCardSize } from '../cards/CardSizeControl';
 import { CardTile } from '../cards/CardTile';
-import { type CardGrouping, groupingOptions, parseGrouping } from '../cards/grouping';
 import { artBackground, artCredit, deckArtId } from '../decks/art';
 import { DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
 import { LegalityWarning } from '../decks/DeckLegalityWarning';
@@ -40,6 +39,8 @@ import {
   useSharedDeckStats,
 } from '../decks/shared';
 import { SharedCardModal } from '../decks/SharedCardModal';
+import { parseSharedGrouping, type SharedCardGrouping, sharedGroupingOptions } from '../decks/storageGrouping';
+import { tagsByName, tagsOf } from '../decks/tags';
 import { visibilityOption } from '../decks/visibility';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import { useCardArts, useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
@@ -196,7 +197,7 @@ function CommanderCard({ card, imageUrl, onOpen }: { card: Card; imageUrl: strin
 function SharedDeckCards({ shared }: { shared: SharedDeck }) {
   const { pathname } = useLocation();
   const [sort, setSort] = useState<SharedDeckSort>('mana_value');
-  const [grouping, setGrouping] = useState<CardGrouping | null>('type');
+  const [grouping, setGrouping] = useState<SharedCardGrouping | null>('type');
   const { size, setSize, textOnly, gridProps } = useCardSize();
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
   const all = sharedCardsToCards(shared.cards);
@@ -207,7 +208,8 @@ function SharedDeckCards({ shared }: { shared: SharedDeck }) {
   const images = useCardImages(ids);
   const backImages = useCardBackImages(ids);
   const manaCosts = useManaCosts(ids);
-  const grouped = useDeckCardGroups(cards, grouping);
+  const cardTags = tagsByName(shared.cards);
+  const grouped = useDeckCardGroups(cards, grouping, undefined, (card) => tagsOf(cardTags, card.name));
   const commanderImage = commander ? images.data?.[commander.scryfall_id] : undefined;
 
   useEffect(() => {
@@ -251,9 +253,9 @@ function SharedDeckCards({ shared }: { shared: SharedDeck }) {
           <Select
             label="Grouper par"
             placeholder="Aucun regroupement"
-            data={groupingOptions}
+            data={sharedGroupingOptions}
             value={grouping}
-            onChange={(value) => setGrouping(parseGrouping(value))}
+            onChange={(value) => setGrouping(parseSharedGrouping(value))}
             clearable
             w={200}
           />

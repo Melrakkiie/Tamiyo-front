@@ -7,7 +7,7 @@ import { useCardSize } from '../cards/CardSizeControl';
 import { type CardGroup, groupCards, sortIntoGroups, typeLabels } from '../cards/grouping';
 import type { FaceTypes } from '../scryfall/classify';
 import { useCardFaceTypes } from '../scryfall/hooks';
-import { type DeckCardGrouping, groupByStorage } from './storageGrouping';
+import { type DeckCardGrouping, groupByStorage, groupByTag } from './storageGrouping';
 
 interface BackFaceEntry {
   name: string;
@@ -61,6 +61,7 @@ export function useDeckCardGroups(
   stacks: Card[],
   grouping: DeckCardGrouping | null,
   storageNames: Map<number, string> = new Map(),
+  tagsOf: (card: Card) => string[] = () => [],
 ): DeckCardGrouped {
   const faceTypes = useCardFaceTypes(stacks.map((card) => card.scryfall_id));
   const groupedStacks =
@@ -85,9 +86,11 @@ export function useDeckCardGroups(
   const groups =
     grouping === 'storage'
       ? groupByStorage(groupedStacks, storageNames)
-      : grouping
-        ? groupCards(sortIntoGroups(groupedStacks, grouping), grouping)
-        : [];
+      : grouping === 'tag'
+        ? groupByTag(groupedStacks, tagsOf)
+        : grouping
+          ? groupCards(sortIntoGroups(groupedStacks, grouping), grouping)
+          : [];
   return { groups, backFaces };
 }
 

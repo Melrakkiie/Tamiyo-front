@@ -21,13 +21,13 @@ import { ApiError, errorMessage } from '../api/errors';
 import type { Card, ComparedCard, ComparedDeck } from '../api/types';
 import { CardSizeControl, useCardSize } from '../cards/CardSizeControl';
 import { CardTile } from '../cards/CardTile';
-import { type CardGrouping, groupingOptions, parseGrouping } from '../cards/grouping';
 import { useDeckComparison } from '../decks/api';
 import { DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
 import { compareUrl } from '../decks/CompareDeckModal';
 import { sortDeckCards } from '../decks/pendingCards';
 import { SharedCardModal } from '../decks/SharedCardModal';
 import { type SharedDeckSort, sharedDeckSortOptions } from '../decks/shared';
+import { parseSharedGrouping, type SharedCardGrouping, sharedGroupingOptions } from '../decks/storageGrouping';
 import { useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
 
 type Side = 'deck' | 'other' | 'both';
@@ -35,7 +35,7 @@ type Side = 'deck' | 'other' | 'both';
 const sideColors: Record<Side, string> = { deck: 'blue', both: 'teal', other: 'grape' };
 
 interface DisplayOptions {
-  grouping: CardGrouping | null;
+  grouping: SharedCardGrouping | null;
   sort: SharedDeckSort;
   textOnly: boolean;
   gridProps: ReturnType<typeof useCardSize>['gridProps'];
@@ -48,7 +48,7 @@ export function DeckComparePage() {
   const comparison = useDeckComparison(id, otherId);
   const [tab, setTab] = useState<string | null>('common');
   const [sort, setSort] = useState<SharedDeckSort>('mana_value');
-  const [grouping, setGrouping] = useState<CardGrouping | null>('type');
+  const [grouping, setGrouping] = useState<SharedCardGrouping | null>('type');
   const { size, setSize, textOnly, gridProps } = useCardSize();
 
   if (comparison.isLoading) {
@@ -102,9 +102,9 @@ export function DeckComparePage() {
           <Select
             label="Grouper par"
             placeholder="Aucun regroupement"
-            data={groupingOptions}
+            data={sharedGroupingOptions}
             value={grouping}
-            onChange={(value) => setGrouping(parseGrouping(value))}
+            onChange={(value) => setGrouping(parseSharedGrouping(value))}
             clearable
             w={200}
           />
@@ -195,6 +195,17 @@ interface TabLabelProps {
   active: boolean;
 }
 
+function sideTags(card: ComparedCard, side: Side) {
+  switch (side) {
+    case 'deck':
+      return card.tags;
+    case 'other':
+      return card.other_tags;
+    case 'both':
+      return [...new Set([...card.tags, ...card.other_tags])];
+  }
+}
+
 function TabLabel({ title, cards, side, active }: TabLabelProps) {
   const total = cards.reduce((sum, card) => sum + copies(card, side), 0);
   return (
@@ -246,7 +257,10 @@ function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps
   const images = useCardImages(ids);
   const backImages = useCardBackImages(ids);
   const manaCosts = useManaCosts(ids);
-  const grouped = useDeckCardGroups(sorted, options.grouping);
+  const grouped = useDeckCardGroups(sorted, options.grouping, undefined, (card) => {
+    const compared = byId.get(card.id);
+    return compared ? sideTags(compared, side) : [];
+  });
 
   function details(card: Card, long: boolean): ReactNode {
     const compared = byId.get(card.id);

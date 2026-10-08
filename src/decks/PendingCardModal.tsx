@@ -10,6 +10,7 @@ import { commanderEligibility } from '../scryfall/commander';
 import { useBackImage, useScryfallCard } from '../scryfall/hooks';
 import { useStorageOptions } from '../storages/api';
 import { isCommanderFormat, useCommitPendingCards, useUpdateDeck } from './api';
+import { CardTagsInput } from './CardTagsInput';
 import { DeckQuantityControl } from './DeckQuantityControl';
 import { EditionSwitcher } from './EditionSwitcher';
 
@@ -93,6 +94,7 @@ export function PendingCardModal({
                   </Text>
                 </div>
                 <CardRulesText scryfallId={shown.card.scryfall_id} />
+                <CardTagsInput deckId={deckId} cardName={shown.card.name} />
                 {isCommanderFormat(deckFormat) && shown.item && (
                   <PendingCommanderControl
                     deckId={deckId}
