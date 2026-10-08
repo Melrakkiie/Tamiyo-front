@@ -141,6 +141,19 @@ export function useRemoveCardFromDeck() {
   });
 }
 
+export function useRemoveCopiesFromDeck() {
+  const invalidate = useInvalidateDecks();
+
+  return useMutation({
+    mutationFn: async ({ deckId, cardIds }: { deckId: string; cardIds: number[] }) => {
+      for (const cardId of cardIds) {
+        unwrap(await api.DELETE('/deck/{id}/cards/{card_id}', { params: { path: { id: deckId, card_id: cardId } } }));
+      }
+    },
+    onSettled: invalidate,
+  });
+}
+
 export function useSwapDeckCard() {
   const invalidate = useInvalidateDecks();
 
@@ -214,6 +227,21 @@ export function useRemovePendingCard() {
   });
 }
 
+export function useSetPendingQuantity() {
+  const invalidate = useInvalidateDecks();
+
+  return useMutation({
+    mutationFn: async ({ deckId, pendingId, quantity }: { deckId: string; pendingId: number; quantity: number }) =>
+      unwrap(
+        await api.PATCH('/deck/{id}/pending/{pending_id}', {
+          params: { path: { id: deckId, pending_id: pendingId } },
+          body: { quantity },
+        }),
+      ),
+    onSettled: invalidate,
+  });
+}
+
 export function useCommitPendingCards() {
   const invalidate = useInvalidateDeckAndCollection();
 
@@ -222,15 +250,17 @@ export function useCommitPendingCards() {
       deckId,
       storageId,
       pendingId,
+      quantity,
     }: {
       deckId: string;
       storageId: number | null;
       pendingId?: number;
+      quantity?: number;
     }) =>
       unwrap(
         await api.POST('/deck/{id}/pending/commit', {
           params: { path: { id: deckId } },
-          body: { storage_id: storageId, pending_id: pendingId },
+          body: { storage_id: storageId, pending_id: pendingId, quantity },
         }),
       ),
     onSettled: invalidate,

@@ -1814,7 +1814,10 @@ export interface paths {
             };
         };
         put?: never;
-        /** Add a card to the deck's pending list */
+        /**
+         * Add a card to the deck's pending list
+         * @description When the deck already has a pending card of the same printing and finish (other than its pending commander), its quantity is raised instead, and that item is returned.
+         */
         post: {
             parameters: {
                 query?: never;
@@ -1919,7 +1922,57 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        patch?: never;
+        /** Change how many copies a pending card stands for */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                    /** @description Pending card ID */
+                    pending_id: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        quantity: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PendingCard"];
+                    };
+                };
+                /** @description Invalid id, pending_id or quantity */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck or pending card not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/deck/{id}/pending/commit": {
@@ -1954,6 +2007,8 @@ export interface paths {
                         storage_id?: number | null;
                         /** @description Only add this pending card (all its copies) instead of the whole list. */
                         pending_id?: number;
+                        /** @description With pending_id, only add this many copies; the pending card keeps the rest. More than it holds adds them all. */
+                        quantity?: number;
                     };
                 };
             };

@@ -4,13 +4,14 @@ import { useRef, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Card } from '../api/types';
-import { useUpdateCard } from '../cards/api';
+import { copyIds, useUpdateCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
 import { CardRulesText } from '../scryfall/CardRulesText';
 import { commanderEligibility } from '../scryfall/commander';
 import { useBackImage, useScryfallCard } from '../scryfall/hooks';
 import { useAllStorages, useStorageOptions } from '../storages/api';
-import { isCommanderFormat, useRemoveCardFromDeck, useUpdateDeck } from './api';
+import { isCommanderFormat, useUpdateDeck } from './api';
+import { DeckQuantityControl } from './DeckQuantityControl';
 import { EditionSwitcher } from './EditionSwitcher';
 
 interface DeckCardModalProps {
@@ -81,8 +82,8 @@ function DeckCardDetail({
   imageUrl,
   onClose,
 }: DeckCardDetailProps) {
-  const remove = useRemoveCardFromDeck();
   const update = useUpdateDeck();
+  const ids = copyIds(card);
   const scryfallCard = useScryfallCard(commanderFormat ? card.scryfall_id : null);
   const backImage = useBackImage(card.scryfall_id);
   const eligibility = scryfallCard.data ? commanderEligibility(scryfallCard.data) : null;
@@ -125,18 +126,6 @@ function DeckCardDetail({
     );
   }
 
-  function removeFromDeck() {
-    remove.mutate(
-      { deckId, cardId: card.id, isCommander },
-      {
-        onSuccess: () => {
-          notifications.show({ color: 'green', message: `${card.name} a été retirée du deck.` });
-          onClose();
-        },
-      },
-    );
-  }
-
   function makeCommander() {
     update.mutate(
       { id: deckId, changes: { commander_id: card.id } },
@@ -149,7 +138,7 @@ function DeckCardDetail({
     );
   }
 
-  const error = remove.error ?? update.error ?? updateCard.error;
+  const error = update.error ?? updateCard.error;
 
   return (
     <Stack gap="lg">
@@ -172,8 +161,8 @@ function DeckCardDetail({
 
             {(card.quantity ?? 1) > 1 && (
               <Text size="sm" c="dimmed">
-                {card.quantity} exemplaires identiques dans ce deck (même édition, même rangement) : les actions
-                ci-dessous ne portent que sur l'un d'eux.
+                {card.quantity} exemplaires identiques dans ce deck (même édition, même rangement) : le rangement et le
+                proxy ne changent que pour l'un d'eux.
               </Text>
             )}
 
@@ -229,12 +218,13 @@ function DeckCardDetail({
               onChange={(event) => toggleProxy(event.currentTarget.checked)}
               disabled={updateCard.isPending}
             />
-            <Button color="red" variant="subtle" onClick={removeFromDeck} loading={remove.isPending}>
-              Retirer du deck
-            </Button>
-            <Text size="xs" c="dimmed">
-              Retirer une carte du deck ne la supprime pas de ta collection.
-            </Text>
+            <Divider />
+            <DeckQuantityControl
+              deckId={deckId}
+              card={card}
+              source={{ kind: 'owned', copyIds: ids, isCommander }}
+              onChanged={onClose}
+            />
           </Stack>
         </Grid.Col>
       </Grid>
