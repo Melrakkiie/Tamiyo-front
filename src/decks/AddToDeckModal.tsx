@@ -24,6 +24,7 @@ import { MissingDetailsAlert } from '../cards/MissingDetailsAlert';
 import { colorCode } from '../scryfall/classify';
 import { useScryfallCard } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
+import { StorageLabel } from '../storages/StorageLabel';
 import { isCommanderFormat, useAddCardToDeck } from './api';
 import { ScryfallFallback } from './ScryfallFallback';
 
@@ -139,10 +140,12 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
                         </Badge>
                       )}
                     </Group>
-                    <Text size="xs" c="dimmed" lineClamp={1}>
-                      {card.set_code.toUpperCase()} · #{card.collector_number}
-                      {storageName ? ` · ${storageName}` : ''}
-                    </Text>
+                    <Group gap={8} wrap="nowrap">
+                      <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>
+                        {card.set_code.toUpperCase()} · #{card.collector_number}
+                      </Text>
+                      {storageName && <StorageLabel name={storageName} />}
+                    </Group>
                   </div>
                   {inDeck ? (
                     <Badge variant="light" color="gray">

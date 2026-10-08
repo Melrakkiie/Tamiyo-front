@@ -5,6 +5,7 @@ import { type ReactNode, useState } from 'react';
 import type { Card } from '../api/types';
 import { showCardPreview } from '../layout/cardPreview';
 import { withSymbols } from '../scryfall/manaSymbols';
+import { StorageLabel } from '../storages/StorageLabel';
 import { CardImage } from './CardImage';
 import { PendingBadge, type PendingStatus } from './PendingBadge';
 
@@ -198,11 +199,7 @@ export function CardTile({
               En attente
             </Text>
           ) : (
-            storageName !== undefined && (
-              <Text size="xs" c="dimmed" fs={storageName ? undefined : 'italic'} lineClamp={1}>
-                {storageName ?? 'Sans rangement'}
-              </Text>
-            )
+            storageName !== undefined && <StorageLabel name={storageName} />
           )}
         </div>
       </Stack>

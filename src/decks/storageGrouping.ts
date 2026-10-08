@@ -63,13 +63,17 @@ export function groupByStorage(cards: Card[], storageNames: Map<number, string>)
     }
   }
   const groups: CardGroup[] = [...byStorage.entries()]
-    .map(([storageId, storageCards]) => ({ label: storageNames.get(storageId) ?? '', cards: storageCards }))
+    .map(([storageId, storageCards]) => ({
+      label: storageNames.get(storageId) ?? '',
+      cards: storageCards,
+      storage: true,
+    }))
     .sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }));
   if (unknownStorage.length > 0) {
-    groups.push({ label: 'Rangement inconnu', cards: unknownStorage });
+    groups.push({ label: 'Rangement inconnu', cards: unknownStorage, storage: true });
   }
   if (withoutStorage.length > 0) {
-    groups.push({ label: 'Sans rangement', cards: withoutStorage });
+    groups.push({ label: 'Sans rangement', cards: withoutStorage, storage: true });
   }
   if (notOwned.length > 0) {
     groups.push({ label: 'Pas encore dans ta collection', cards: notOwned });

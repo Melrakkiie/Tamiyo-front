@@ -7,6 +7,7 @@ import { useCardSize } from '../cards/CardSizeControl';
 import { type CardGroup, groupCards, sortIntoGroups, typeLabels } from '../cards/grouping';
 import type { FaceTypes } from '../scryfall/classify';
 import { useCardFaceTypes } from '../scryfall/hooks';
+import { StorageIcon } from '../storages/StorageLabel';
 import { type DeckCardGrouping, groupByStorage, groupByTag } from './storageGrouping';
 
 interface BackFaceEntry {
@@ -108,6 +109,11 @@ export function DeckCardGroups({ groups, backFaces, gridProps, renderTile }: Dec
             labelPosition="left"
             label={
               <Title order={4}>
+                {group.storage && (
+                  <Text span c="dimmed" mr={6} style={{ display: 'inline-block', verticalAlign: '-0.1em' }}>
+                    <StorageIcon size={16} />
+                  </Text>
+                )}
                 {group.label}{' '}
                 <Text span size="sm" c="dimmed">
                   <GroupCount

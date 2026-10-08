@@ -22,6 +22,7 @@ import { foilFor, printingDetails } from '../scryfall/printing';
 import { PrintingGrid } from '../scryfall/PrintingGrid';
 import { SetIcon } from '../scryfall/SetIcon';
 import { useAllStorages } from '../storages/api';
+import { StorageLabel } from '../storages/StorageLabel';
 import {
   useReplaceDeckCardWithPending,
   useReplacePendingCard,
@@ -141,11 +142,10 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
                       )}
                     </Group>
                     <Group gap={4} justify="space-between" align="center" wrap="nowrap">
-                      <Text size="xs" c="dimmed" lineClamp={1}>
-                        {copy.storage_id
-                          ? (storageNames.get(copy.storage_id) ?? 'Rangement inconnu')
-                          : 'Sans rangement'}
-                      </Text>
+                      <StorageLabel
+                        name={copy.storage_id ? (storageNames.get(copy.storage_id) ?? null) : null}
+                        unknown={copy.storage_id !== null && !storageNames.has(copy.storage_id)}
+                      />
                       <SetIcon setCode={copy.set_code} size={22} />
                     </Group>
                   </Paper>

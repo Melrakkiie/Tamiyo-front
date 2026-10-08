@@ -69,6 +69,7 @@ export function groupLabel(card: Card, grouping: CardGrouping): string {
 export interface CardGroup {
   label: string;
   cards: Card[];
+  storage?: boolean;
 }
 
 export function groupCards(cards: Card[], grouping: CardGrouping): CardGroup[] {
