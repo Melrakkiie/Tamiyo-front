@@ -40,8 +40,8 @@ import { useCardArts, useCardBackImages, useCardImages, useManaCosts } from '../
 type SharedSort = 'name' | 'mana_value' | '-mana_value';
 
 const sortOptions: { value: SharedSort; label: string }[] = [
-  { value: 'name', label: 'Nom (A → Z)' },
   { value: 'mana_value', label: 'Coût de mana croissant' },
+  { value: 'name', label: 'Nom (A → Z)' },
   { value: '-mana_value', label: 'Coût de mana décroissant' },
 ];
 
@@ -196,7 +196,7 @@ function CommanderCard({ card, imageUrl, onOpen }: { card: Card; imageUrl: strin
 
 function SharedDeckCards({ shared }: { shared: SharedDeck }) {
   const { pathname } = useLocation();
-  const [sort, setSort] = useState<SharedSort>('name');
+  const [sort, setSort] = useState<SharedSort>('mana_value');
   const [grouping, setGrouping] = useState<CardGrouping | null>('type');
   const { size, setSize, textOnly, gridProps } = useCardSize();
   const [openedCard, setOpenedCard] = useState<Card | null>(null);

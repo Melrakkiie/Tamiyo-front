@@ -51,8 +51,8 @@ import { useAllStorages } from '../storages/api';
 import { SharedDeckView } from './SharedDeckPage';
 
 const sortOptions: { value: DeckCardSort; label: string }[] = [
-  { value: 'name', label: 'Nom (A → Z)' },
   { value: 'mana_value', label: 'Coût de mana croissant' },
+  { value: 'name', label: 'Nom (A → Z)' },
   { value: '-mana_value', label: 'Coût de mana décroissant' },
   { value: '-added', label: 'Ajoutées récemment' },
 ];
@@ -343,15 +343,14 @@ function CommanderSection({ deck }: { deck: Deck }) {
 
 function DeckCards({ deck }: { deck: Deck }) {
   const { pathname } = useLocation();
-  const [sort, setSort] = useState<DeckCardSort>('name');
+  const [sort, setSort] = useState<DeckCardSort>('mana_value');
   const [grouping, setGrouping] = useState<DeckCardGrouping | null>('type');
   const { size, setSize, textOnly, gridProps } = useCardSize();
   const cards = useDeckCards(deck.id, sort);
   const deckCards = cards.data ?? [];
   const pending = usePendingCards(deck.id);
   const pendingItems = pending.data ?? [];
-  const allCards =
-    pendingItems.length > 0 ? sortDeckCards([...deckCards, ...pendingToCards(pendingItems)], sort) : deckCards;
+  const allCards = sortDeckCards([...deckCards, ...pendingToCards(pendingItems)], sort);
   const showMissingDetails = (grouping === 'type' || grouping === 'color') && hasMissingDetails(deckCards);
   const images = useCardImages(allCards.map((card) => card.scryfall_id));
   const backImages = useCardBackImages(allCards.map((card) => card.scryfall_id));

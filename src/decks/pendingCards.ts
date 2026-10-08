@@ -42,7 +42,7 @@ function compare(a: Card, b: Card, sort: DeckCardSort) {
   } else {
     result = (field === 'added' ? a.added : a.updated).localeCompare(field === 'added' ? b.added : b.updated);
   }
-  return descending ? -result : result;
+  return (descending ? -result : result) || (field === 'name' ? 0 : a.name.localeCompare(b.name));
 }
 
 export function sortDeckCards(cards: Card[], sort: DeckCardSort) {
