@@ -1,8 +1,11 @@
 import {
+  ActionIcon,
   Alert,
   Center,
+  Collapse,
   Divider,
   Group,
+  Indicator,
   Loader,
   Pagination,
   Select,
@@ -22,8 +25,18 @@ import { useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hook
 import { DropOverlay } from '../scryfall/DropOverlay';
 import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
 import { useScryfallDrop } from '../scryfall/useScryfallDrop';
-import { useAllStorages, useStorageOptions } from '../storages/api';
+import { GearIcon } from '../layout/SettingsMenu';
+import { useAllStorages } from '../storages/api';
 import { AddCardModal, type CardToAdd } from './AddCardModal';
+import { AdvancedSearch } from './AdvancedSearch';
+import {
+  activeFilterCount,
+  type AdvancedFilters,
+  advancedFilterKeys,
+  advancedFilterParams,
+  cardsQueryFilters,
+  parseAdvancedFilters,
+} from './advancedFilters';
 import { copyCount, useCards } from './api';
 import { CardDetailModal } from './CardDetailModal';
 import { CardSizeControl, useCardSize } from './CardSizeControl';
@@ -76,7 +89,12 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const { chosen: chosenPageSize, setChosen: setChosenPageSize } = usePageSize();
   const pageSize = chosenPageSize ?? fixedPageSize ?? (grouping ? GROUPED_PAGE_SIZE : PAGE_SIZE);
   const name = params.get('q') ?? '';
-  const storageId = fixedStorageId ?? (Number(params.get('storage')) || undefined);
+  const parsedFilters = parseAdvancedFilters(params);
+  const advanced = fixedStorageId ? { ...parsedFilters, storageType: null, storageId: null } : parsedFilters;
+  const storageId = fixedStorageId ?? advanced.storageId ?? undefined;
+  const activeFilters = activeFilterCount(advanced, !fixedStorageId);
+  const queryFilters = cardsQueryFilters(advanced);
+  const [advancedOpen, setAdvancedOpen] = useState(activeFilters > 0);
 
   const [search, setSearch] = useState(name);
   const [debouncedSearch] = useDebouncedValue(search.trim(), 300);
@@ -85,12 +103,20 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const [searchKey, setSearchKey] = useState(0);
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
 
-  const storageOptions = useStorageOptions();
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
   const showStorage = !storageId;
-  const cards = useCards({ page, limit: pageSize, sort, group: grouping ?? undefined, name, storageId, stack: true });
-  const copies = useCards({ page: 1, limit: 1, sort: '-updated', name, storageId });
+  const cards = useCards({
+    page,
+    limit: pageSize,
+    sort,
+    group: grouping ?? undefined,
+    name,
+    storageId,
+    stack: true,
+    advanced: queryFilters,
+  });
+  const copies = useCards({ page: 1, limit: 1, sort: '-updated', name, storageId, advanced: queryFilters });
   const copiesTotal = copies.data?.total;
   const pageCards = cards.data?.data ?? [];
   const images = useCardImages(pageCards.map((card) => card.scryfall_id));
@@ -150,7 +176,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
     !fixedStorageId && !!storageId && !!storages.data && !storages.data.some((storage) => storage.id === storageId);
   useEffect(() => {
     if (filteredStorageMissing) {
-      updateParams({ storage: null, page: null });
+      changeFilters({ storageId: null });
     }
   }, [filteredStorageMissing]);
 
@@ -161,7 +187,15 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
     }
   }, [page, totalPages, cards.isPlaceholderData]);
 
-  const filtered = !!name || (!!storageId && !fixedStorageId);
+  const filtered = !!name || activeFilters > 0;
+
+  function changeFilters(changes: Partial<AdvancedFilters>) {
+    updateParams({ ...advancedFilterParams(changes), page: null });
+  }
+
+  function resetFilters() {
+    updateParams({ ...Object.fromEntries(advancedFilterKeys.map((key) => [key, null])), page: null });
+  }
 
   return (
     <Stack>
@@ -201,23 +235,27 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
       </Group>
 
       <Group grow align="flex-end">
-        <TextInput
-          label="Filtrer par nom"
-          placeholder="Nom d'une carte de ta collection"
-          value={search}
-          onChange={(event) => setSearch(event.currentTarget.value)}
-        />
-        {!fixedStorageId && (
-          <Select
-            label="Rangement"
-            placeholder="Tous les rangements"
-            data={storageOptions}
-            value={storageId ? String(storageId) : null}
-            onChange={(value) => updateParams({ storage: value, page: null })}
-            clearable
-            searchable
+        <Group gap="xs" wrap="nowrap" align="flex-end">
+          <TextInput
+            label="Filtrer par nom"
+            placeholder="Nom d'une carte de ta collection"
+            value={search}
+            onChange={(event) => setSearch(event.currentTarget.value)}
+            style={{ flex: 1 }}
           />
-        )}
+          <Indicator label={activeFilters} size={16} disabled={activeFilters === 0} offset={4}>
+            <ActionIcon
+              variant={advancedOpen ? 'filled' : 'default'}
+              size={36}
+              onClick={() => setAdvancedOpen((open) => !open)}
+              aria-label="Recherche avancée"
+              aria-expanded={advancedOpen}
+              title="Recherche avancée"
+            >
+              <GearIcon />
+            </ActionIcon>
+          </Indicator>
+        </Group>
         <Select
           label="Grouper par"
           placeholder="Aucun regroupement"
@@ -234,6 +272,15 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
           allowDeselect={false}
         />
       </Group>
+
+      <Collapse in={advancedOpen}>
+        <AdvancedSearch
+          filters={advanced}
+          showStorage={!fixedStorageId}
+          onChange={changeFilters}
+          onReset={resetFilters}
+        />
+      </Collapse>
 
       {cards.error && <Alert color="red">{errorMessage(cards.error)}</Alert>}
 

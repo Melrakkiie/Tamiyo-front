@@ -750,6 +750,22 @@ export interface paths {
                     sort?: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "color" | "-color" | "type" | "-type";
                     /** @description Order the cards by group first (primary type, color group as for sort=color, or mana value rounded down), then by sort within each group, so a client can show grouped pages sorted its way. */
                     group?: "type" | "color" | "mana";
+                    /** @description WUBRG letters, read with color_mode. Cards whose colors aren't known are left out. */
+                    colors?: string;
+                    /** @description exact (exactly these colors; an empty colors keeps colorless cards), include (at least these colors) or within (only colors among these, colorless included). */
+                    color_mode?: "exact" | "include" | "within";
+                    mana_value?: number;
+                    mana_value_op?: "eq" | "lt" | "lte" | "gt" | "gte";
+                    /** @description Matches the primary type and any type of the card's type line (fetched from Scryfall in the background). */
+                    type?: "Creature" | "Planeswalker" | "Battle" | "Instant" | "Sorcery" | "Artifact" | "Enchantment" | "Land";
+                    /** @description Part of the subtypes, after the dash of the type line, case-insensitive. */
+                    subtype?: string;
+                    /** @description A Scryfall format (commander, modern, pioneer…): only cards legal or restricted in it. Legalities are refreshed daily. */
+                    legal_in?: string;
+                    color_count?: number;
+                    foil?: boolean;
+                    /** @description Only cards in a storage of this type, case-insensitive. */
+                    storage_type?: string;
                     /** @description Return one entry per stack of identical copies (same printing, foil, proxy and storage) instead of one per card. Each entry is the stack's lowest-id copy with quantity and copy_ids set; total, page and limit then count stacks. added is the oldest copy's, updated the most recent one's. */
                     stack?: boolean;
                 };

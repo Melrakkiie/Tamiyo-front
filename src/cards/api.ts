@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 
 import { api, unwrap } from '../api/client';
 import type { Card, CardSort, CreateCardInput, DetailsRefreshSummary, UpdateCardInput } from '../api/types';
+import type { cardsQueryFilters } from './advancedFilters';
 import type { CardGrouping } from './grouping';
 
 export interface CardFilters {
@@ -13,6 +14,7 @@ export interface CardFilters {
   storageId: number | undefined;
   colorIdentity?: string;
   stack?: boolean;
+  advanced?: ReturnType<typeof cardsQueryFilters>;
 }
 
 export function copyIds(card: Card): number[] {
@@ -39,6 +41,7 @@ export function useCards(filters: CardFilters) {
               storage_id: filters.storageId,
               color_identity: filters.colorIdentity,
               stack: filters.stack,
+              ...filters.advanced,
             },
           },
         }),

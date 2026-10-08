@@ -1,7 +1,7 @@
 import { ActionIcon, Menu } from '@mantine/core';
 import type { ReactNode } from 'react';
 
-function GearIcon() {
+export function GearIcon() {
   return (
     <svg
       width={20}
