@@ -25,8 +25,9 @@ import { useBackImage, useBackImageOf, usePrintings } from '../scryfall/hooks';
 import { canBeFoil, canBeNonFoil, foilFor, printingDetails } from '../scryfall/printing';
 import { PrintingGrid } from '../scryfall/PrintingGrid';
 import { useStorageOptions } from '../storages/api';
-import { copyIds, useDeleteCopies, useUpdateCopies } from './api';
+import { copyIds, useUpdateCopies } from './api';
 import { CardImage } from './CardImage';
+import { CollectionQuantityControl } from './CollectionQuantityControl';
 
 interface CardDetailModalProps {
   card: Card | null;
@@ -63,7 +64,6 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
   const printings = usePrintings(card.name);
   const otherPrintings = (printings.data ?? []).filter((candidate) => candidate.id !== card.scryfall_id);
   const [storageId, setStorageId] = useState<string | null>(card.storage_id ? String(card.storage_id) : null);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const ids = copyIds(card);
   const [count, setCount] = useState<number | string>(1);
   const selectedCount = Math.min(ids.length, Math.max(1, Math.floor(Number(count)) || 1));
@@ -71,7 +71,6 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
   const several = selectedCount > 1;
 
   const update = useUpdateCopies();
-  const remove = useDeleteCopies();
 
   const storageChanged = storageId !== (card.storage_id ? String(card.storage_id) : null);
   const changed = foil !== card.foil || proxy !== card.proxy || storageChanged || printing !== null;
@@ -113,21 +112,7 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
     );
   }
 
-  function deleteCard() {
-    remove.mutate(selectedIds, {
-      onSuccess: () => {
-        notifications.show({
-          color: 'green',
-          message: several
-            ? `${selectedCount} exemplaires de ${card.name} ont été supprimés de ta collection.`
-            : `${card.name} a été supprimée de ta collection.`,
-        });
-        onClose();
-      },
-    });
-  }
-
-  const error = update.error ?? remove.error;
+  const error = update.error;
 
   return (
     <Stack gap="lg">
@@ -161,7 +146,7 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
             {ids.length > 1 && (
               <NumberInput
                 label={`Exemplaires concernés, sur ${ids.length}`}
-                description="Les changements et la suppression ne portent que sur ce nombre d'exemplaires."
+                description="Les changements enregistrés ne portent que sur ce nombre d'exemplaires."
                 min={1}
                 max={ids.length}
                 allowDecimal={false}
@@ -194,31 +179,14 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
               searchable
             />
 
-            <Group justify="space-between" mt="sm">
-              {confirmingDelete ? (
-                <Group gap="xs">
-                  <Button color="red" onClick={deleteCard} loading={remove.isPending}>
-                    {several ? `Supprimer ${selectedCount} exemplaires` : 'Confirmer la suppression'}
-                  </Button>
-                  <Button variant="default" onClick={() => setConfirmingDelete(false)}>
-                    Annuler
-                  </Button>
-                </Group>
-              ) : (
-                <Button color="red" variant="subtle" onClick={() => setConfirmingDelete(true)}>
-                  Supprimer
-                </Button>
-              )}
+            <Group justify="flex-end" mt="sm">
               <Button onClick={save} disabled={!changed} loading={update.isPending}>
                 Enregistrer
               </Button>
             </Group>
-            {confirmingDelete && (
-              <Text size="xs" c="dimmed">
-                Si cette carte est dans un deck, elle y restera entourée en orange, à rajouter à ta collection plus
-                tard.
-              </Text>
-            )}
+
+            <Divider />
+            <CollectionQuantityControl card={card} onChanged={onClose} />
           </Stack>
         </Grid.Col>
       </Grid>
