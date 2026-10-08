@@ -1,4 +1,5 @@
 import type { Card, DeckCardSort, PendingCard } from '../api/types';
+import type { PendingStatus } from '../cards/PendingBadge';
 
 const COPIES_PER_ITEM = 100;
 
@@ -21,6 +22,16 @@ export function pendingToCards(pending: PendingCard[]): Card[] {
       updated: item.added,
     })),
   );
+}
+
+export function pendingStatus(item: PendingCard): PendingStatus {
+  if (item.owned_same_printing > 0) {
+    return { kind: 'owned', owned: item.owned_same_printing };
+  }
+  if (item.owned_copies > 0) {
+    return { kind: 'other-printing', owned: item.owned_copies };
+  }
+  return { kind: 'missing' };
 }
 
 export function isPendingCard(card: Card) {

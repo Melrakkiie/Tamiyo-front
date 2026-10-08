@@ -6,6 +6,7 @@ import type { Card } from '../api/types';
 import { showCardPreview } from '../layout/cardPreview';
 import { withSymbols } from '../scryfall/manaSymbols';
 import { CardImage } from './CardImage';
+import { PendingBadge, type PendingStatus } from './PendingBadge';
 
 interface CardTileProps {
   card: Card;
@@ -13,7 +14,8 @@ interface CardTileProps {
   backImageUrl?: string;
   imageLoading: boolean;
   storageName?: string | null;
-  notOwned?: boolean;
+  pendingStatus?: PendingStatus;
+  compact?: boolean;
   textOnly?: boolean;
   manaCost?: string | null;
   details?: ReactNode;
@@ -44,12 +46,12 @@ function ManaCost({ card, manaCost }: { card: Card; manaCost: string | null | un
 
 function CardRow({
   card,
-  notOwned,
+  pendingStatus,
   manaCost,
   details,
   onOpen,
   onPreview,
-}: Pick<CardTileProps, 'card' | 'notOwned' | 'manaCost' | 'details' | 'onOpen'> & { onPreview: () => void }) {
+}: Pick<CardTileProps, 'card' | 'pendingStatus' | 'manaCost' | 'details' | 'onOpen'> & { onPreview: () => void }) {
   const quantity = card.quantity ?? 1;
   return (
     <UnstyledButton
@@ -58,17 +60,11 @@ function CardRow({
       onFocus={onPreview}
       aria-label={quantity > 1 ? `${card.name}, ${quantity} exemplaires` : card.name}
     >
-      <Paper
-        withBorder
-        px="sm"
-        py={6}
-        radius="md"
-        style={notOwned ? { borderColor: 'var(--mantine-color-orange-6)', borderWidth: 2 } : undefined}
-      >
+      <Paper withBorder px="sm" py={6} radius="md">
         <Group gap="xs" wrap="nowrap" justify="space-between">
           <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
             {quantity > 1 && (
-              <Text size="sm" fw={600} c={notOwned ? 'orange' : 'dimmed'}>
+              <Text size="sm" fw={600} c={pendingStatus ? 'orange' : 'dimmed'}>
                 {quantity}×
               </Text>
             )}
@@ -85,6 +81,7 @@ function CardRow({
                 Proxy
               </Badge>
             )}
+            {pendingStatus && <PendingBadge status={pendingStatus} size="xs" />}
           </Group>
           <Group gap="xs" wrap="nowrap" style={{ flexShrink: 0 }}>
             {details}
@@ -102,7 +99,8 @@ export function CardTile({
   backImageUrl,
   imageLoading,
   storageName,
-  notOwned,
+  pendingStatus,
+  compact,
   textOnly,
   manaCost,
   details,
@@ -120,7 +118,7 @@ export function CardTile({
     return (
       <CardRow
         card={card}
-        notOwned={notOwned}
+        pendingStatus={pendingStatus}
         manaCost={manaCost}
         details={details}
         onOpen={onOpen}
@@ -137,18 +135,7 @@ export function CardTile({
       aria-label={quantity > 1 ? `${card.name}, ${quantity} exemplaires` : card.name}
     >
       <Stack gap={6}>
-        <Box
-          pos="relative"
-          style={
-            notOwned
-              ? {
-                  outline: '3px solid var(--mantine-color-orange-6)',
-                  outlineOffset: 2,
-                  borderRadius: 'var(--mantine-radius-md)',
-                }
-              : undefined
-          }
-        >
+        <Box pos="relative">
           <CardImage
             name={card.name}
             url={imageUrl}
@@ -171,11 +158,16 @@ export function CardTile({
               right={8}
               size="lg"
               variant="filled"
-              color={notOwned ? 'orange' : 'dark'}
+              color={pendingStatus ? 'orange' : 'dark'}
               style={{ boxShadow: 'var(--mantine-shadow-sm)' }}
             >
               ×{quantity}
             </Badge>
+          )}
+          {pendingStatus && (
+            <Box pos="absolute" bottom={8} left={8}>
+              <PendingBadge status={pendingStatus} compact={compact} />
+            </Box>
           )}
         </Box>
         <div>
@@ -201,9 +193,9 @@ export function CardTile({
               )}
             </Group>
           )}
-          {notOwned ? (
-            <Text size="xs" c="orange" lineClamp={1}>
-              Pas dans ta collection
+          {pendingStatus ? (
+            <Text size="xs" c="dimmed" fs="italic" lineClamp={1}>
+              En attente
             </Text>
           ) : (
             storageName !== undefined && (

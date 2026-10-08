@@ -28,6 +28,7 @@ import { useCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
 import { CardSizeControl, useCardSize } from '../cards/CardSizeControl';
 import { CardTile } from '../cards/CardTile';
+import { PendingBadge, type PendingStatus } from '../cards/PendingBadge';
 import { hasMissingDetails } from '../cards/grouping';
 import { MissingDetailsAlert } from '../cards/MissingDetailsAlert';
 import { AddToDeckModal } from '../decks/AddToDeckModal';
@@ -44,7 +45,14 @@ import { DeckStatsPanel } from '../decks/DeckStatsPanel';
 import { ExportDeckModal } from '../decks/ExportDeckModal';
 import { ImportListModal } from '../decks/ImportListModal';
 import { PendingCardModal } from '../decks/PendingCardModal';
-import { isPendingCard, pendingIdOf, pendingToCards, sortDeckCards, stackCards } from '../decks/pendingCards';
+import {
+  isPendingCard,
+  pendingIdOf,
+  pendingStatus,
+  pendingToCards,
+  sortDeckCards,
+  stackCards,
+} from '../decks/pendingCards';
 import { PendingCardsSection } from '../decks/PendingCardsSection';
 import { ShareDeckModal } from '../decks/ShareDeckModal';
 import { type DeckCardGrouping, deckGroupingOptions, parseDeckGrouping } from '../decks/storageGrouping';
@@ -300,19 +308,7 @@ function CommanderSection({ deck }: { deck: Deck }) {
   return (
     <Paper withBorder p="sm" maw={420} onMouseEnter={previewCommander}>
       <Group wrap="nowrap" align="center">
-        <Box
-          w={72}
-          style={{
-            flexShrink: 0,
-            ...(pendingCommander
-              ? {
-                  outline: '3px solid var(--mantine-color-orange-6)',
-                  outlineOffset: 2,
-                  borderRadius: 'var(--mantine-radius-md)',
-                }
-              : {}),
-          }}
-        >
+        <Box w={72} style={{ flexShrink: 0 }}>
           <CardImage
             name={commanderName ?? ''}
             url={commanderScryfallId ? image.data?.[commanderScryfallId] : undefined}
@@ -327,9 +323,9 @@ function CommanderSection({ deck }: { deck: Deck }) {
             {commanderName ?? '…'}
           </Text>
           {pendingCommander && (
-            <Text size="xs" c="orange">
-              Pas encore dans ta collection
-            </Text>
+            <Group>
+              <PendingBadge status={pendingStatus(pendingCommander)} size="xs" />
+            </Group>
           )}
           {update.error && (
             <Text size="xs" c="red">
@@ -402,6 +398,8 @@ function DeckCards({ deck }: { deck: Deck }) {
   });
   useEffect(() => () => setDefaultCardPreview(null), []);
 
+  const pendingStatuses = new Map<number, PendingStatus>(pendingItems.map((item) => [item.id, pendingStatus(item)]));
+
   function renderTile(card: Card) {
     const notOwned = isPendingCard(card);
     return (
@@ -414,7 +412,8 @@ function DeckCards({ deck }: { deck: Deck }) {
         textOnly={textOnly}
         manaCost={manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)}
         storageName={card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null}
-        notOwned={notOwned}
+        pendingStatus={notOwned ? (pendingStatuses.get(pendingIdOf(card)) ?? { kind: 'missing' }) : undefined}
+        compact={size === 'small'}
         onOpen={notOwned ? setOpenedPending : setOpenedCard}
       />
     );

@@ -38,7 +38,8 @@ export function PendingCardsSection({ deckId, pending }: { deckId: string; pendi
           {total > 1
             ? `${total} cartes de ce deck ne sont pas encore dans ta collection`
             : "Une carte de ce deck n'est pas encore dans ta collection"}{' '}
-          (entourée{total > 1 ? 's' : ''} en orange). Quand tu les as, ajoute-les toutes d'un coup.
+          (marquée{total > 1 ? 's' : ''} « Manquante », ou « Autre édition » quand tu en as une autre version). Quand tu
+          les as, ajoute-les toutes d'un coup.
         </Text>
         {commit.error && (
           <Alert color="red">

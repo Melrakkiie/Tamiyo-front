@@ -3286,6 +3286,10 @@ export interface components {
             card_type?: "Creature" | "Planeswalker" | "Battle" | "Instant" | "Sorcery" | "Artifact" | "Enchantment" | "Land" | "Other" | null;
             color_identity?: string | null;
             added: string;
+            /** @description Cards of the same name in the collection, any printing, outside this deck (copies in other decks count). Only computed by GET /deck/{id}/pending, 0 elsewhere. */
+            owned_copies: number;
+            /** @description Among them, the copies of this exact printing. Only computed by GET /deck/{id}/pending, 0 elsewhere. */
+            owned_same_printing: number;
         };
         AddPendingCardRequest: {
             name: string;

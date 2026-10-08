@@ -5,12 +5,14 @@ import { useRef, useState } from 'react';
 import { errorMessage } from '../api/errors';
 import type { Card, PendingCard } from '../api/types';
 import { CardImage } from '../cards/CardImage';
+import { PendingBadge, pendingStatusDescription } from '../cards/PendingBadge';
 import { CardRulesText } from '../scryfall/CardRulesText';
 import { commanderEligibility } from '../scryfall/commander';
 import { useBackImage, useScryfallCard } from '../scryfall/hooks';
 import { useStorageOptions } from '../storages/api';
 import { isCommanderFormat, useCommitPendingCards, useUpdateDeck } from './api';
 import { CardTagsInput } from './CardTagsInput';
+import { pendingStatus } from './pendingCards';
 import { DeckQuantityControl } from './DeckQuantityControl';
 import { EditionSwitcher } from './EditionSwitcher';
 
@@ -45,6 +47,7 @@ export function PendingCardModal({
   const [storageId, setStorageId] = useState<string | null>(null);
   const [count, setCount] = useState<number | string>('');
   const total = shown?.item?.quantity ?? 1;
+  const status = shown?.item ? pendingStatus(shown.item) : null;
   const selected = count === '' ? total : Math.min(total, Math.max(1, Math.floor(Number(count)) || 1));
 
   function copies(n: number, name: string) {
@@ -92,6 +95,11 @@ export function PendingCardModal({
                     {shown.card.set_code.toUpperCase()} · #{shown.card.collector_number}
                     {shown.card.foil ? ' · foil' : ''}
                   </Text>
+                  {status && (
+                    <Group mt={6}>
+                      <PendingBadge status={status} />
+                    </Group>
+                  )}
                 </div>
                 <CardRulesText scryfallId={shown.card.scryfall_id} />
                 <CardTagsInput deckId={deckId} cardName={shown.card.name} />
@@ -119,6 +127,12 @@ export function PendingCardModal({
                     ? `Ces ${total} exemplaires ne sont pas encore dans ta collection.`
                     : "Cette carte n'est pas encore dans ta collection."}
                 </Text>
+                {status && status.kind !== 'missing' && (
+                  <Text size="sm" c="teal">
+                    {pendingStatusDescription(status)} : choisis-en un dans « Changer d'édition » ci-dessous pour
+                    l'utiliser à la place.
+                  </Text>
+                )}
                 <Group align="flex-end" grow>
                   {total > 1 && (
                     <NumberInput
