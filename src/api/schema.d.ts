@@ -2449,7 +2449,7 @@ export interface paths {
         put?: never;
         /**
          * Bulk import a Moxfield deck export
-         * @description Imports a Moxfield deck's plain-text export (deck page -> More -> Export -> Plain Text). Creates one new deck and one card per physical copy listed, linked to it. Each line is resolved by (set, collector number) against Scryfall, same as the collection route. The plain-text format has no section headers, so by convention the first line is treated as the commander unless commander_from_first_line is set to false; an unresolvable commander is skipped (counted in cards_skipped) and the deck is still created without one.
+         * @description Imports a Moxfield deck's plain-text export (deck page -> More -> Export -> Plain Text) as one new deck, without ever creating cards in the collection. Each line is resolved by (set, collector number) against Scryfall. Copies of that exact printing already in the collection are put in the deck (cards_linked), copies in no deck and of the same finish first, each copy used once; copies the collection lacks are added to the deck's pending cards (cards_pending). The plain-text format has no section headers, so by convention the first line is treated as the commander unless commander_from_first_line is set to false. An owned commander becomes commander_id, a missing one the pending commander; an unresolvable commander is skipped (counted in cards_skipped) and the deck is still created without one.
          */
         post: {
             parameters: {
@@ -2463,7 +2463,7 @@ export interface paths {
                     "multipart/form-data": {
                         /**
                          * Format: binary
-                         * @description The deck's plain-text export. Each line looks like "1 Sol Ring (SLD) 1011 *F*".
+                         * @description The deck's plain-text export. Each line looks like "1 Sol Ring (SLD) 1011 *F*", or just "1 Sol Ring": a line without a printing is resolved by name, may use any owned printing, and missing copies are added as pending in Scryfall's default printing.
                          */
                         file: string;
                         /** @description The new deck's name — the file itself doesn't carry one. */
@@ -2475,8 +2475,6 @@ export interface paths {
                          * @default true
                          */
                         commander_from_first_line?: boolean;
-                        /** @description Must reference an existing storage for this account if provided. Left unset, imported cards have no storage. */
-                        storage_id?: number;
                     };
                 };
             };
@@ -2490,7 +2488,7 @@ export interface paths {
                         "application/json": components["schemas"]["ImportSummary"];
                     };
                 };
-                /** @description Missing file/name/format, the file couldn't be parsed, commander_from_first_line or storage_id is invalid, or storage_id does not reference an existing storage. */
+                /** @description Missing file/name/format, the file couldn't be parsed, or commander_from_first_line is invalid. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -3024,6 +3022,10 @@ export interface components {
         /** @description Result of a bulk import. A malformed or unresolvable row never aborts the whole import — it's recorded as a skipped card with a warning instead. */
         ImportSummary: {
             cards_created?: number;
+            /** @description Deck import only — copies from the collection put in the new deck. */
+            cards_linked?: number;
+            /** @description Deck import only — copies added to the new deck's pending cards. */
+            cards_pending?: number;
             cards_skipped?: number;
             storages_created?: number;
             decks_created?: number;

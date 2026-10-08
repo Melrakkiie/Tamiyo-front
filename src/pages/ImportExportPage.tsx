@@ -19,7 +19,7 @@ import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 import { Link } from 'react-router';
 
-import { errorMessage } from '../api/errors';
+import { ApiError, errorMessage } from '../api/errors';
 import type { ImportSummary } from '../api/types';
 import {
   type CollectionExport,
@@ -37,13 +37,18 @@ type Source = 'manabox' | 'moxfield-collection' | 'moxfield-deck';
 const sources: { value: Source; label: string }[] = [
   { value: 'manabox', label: 'Collection ManaBox' },
   { value: 'moxfield-collection', label: 'Collection Moxfield' },
-  { value: 'moxfield-deck', label: 'Deck Moxfield' },
+  { value: 'moxfield-deck', label: 'Deck' },
 ];
 
 const longImportNote =
   "Un gros fichier peut prendre une à deux minutes : Tamiyo interroge Scryfall pour chaque lot de 75 cartes, à son rythme. Reste sur la page jusqu'à la fin.";
 
 function importErrorMessage(err: unknown, expected: string) {
+  const unreadLine =
+    err instanceof ApiError && err.status === 400 ? /line (\d+): unrecognized format "(.*)"/.exec(err.message) : null;
+  if (unreadLine) {
+    return `La ligne ${unreadLine[1]} n'a pas pu être lue : « ${unreadLine[2]} ». Vérifie qu'il s'agit bien ${expected}.`;
+  }
   return errorMessage(err, {
     400: `Le fichier n'a pas pu être lu. Vérifie qu'il s'agit bien ${expected}.`,
     502: "Scryfall n'a pas répondu, l'import n'a pas eu lieu. Réessaie dans un moment.",
@@ -197,10 +202,8 @@ function MoxfieldDeckImport() {
   const [name, setName] = useState('');
   const [format, setFormat] = useState('commander');
   const [commanderFromFirstLine, setCommanderFromFirstLine] = useState(true);
-  const [storageId, setStorageId] = useState<string | null>(null);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const formats = useDeckFormats();
-  const storageOptions = useStorageOptions();
   const mutation = useImportMoxfieldDeck();
   const ready = !!file && name.trim() !== '' && format.trim() !== '';
 
@@ -215,7 +218,6 @@ function MoxfieldDeckImport() {
         name: name.trim(),
         format: format.trim().toLowerCase(),
         commanderFromFirstLine,
-        storageId: storageId ? Number(storageId) : null,
       },
       {
         onSuccess: (result) => {
@@ -230,8 +232,10 @@ function MoxfieldDeckImport() {
   return (
     <Stack>
       <Text size="sm">
-        Sur la page du deck dans Moxfield : <b>More → Export → Plain Text</b>, puis enregistre le texte dans un fichier
-        .txt. Les cartes sont ajoutées à ta collection et rangées dans un nouveau deck.
+        Un fichier .txt avec une carte par ligne : l'export d'un deck Moxfield (sur la page du deck :{' '}
+        <b>More → Export → Plain Text</b>) ou une simple liste comme « 4 Lightning Bolt ». Un nouveau deck est créé sans
+        rien ajouter à ta collection : les cartes que tu possèdes y sont mises (dans l'édition du fichier quand il la
+        précise), les autres y apparaissent en orange, à ajouter à ta collection plus tard.
       </Text>
       <FileInput
         label="Fichier texte du deck"
@@ -250,26 +254,19 @@ function MoxfieldDeckImport() {
         />
         <Autocomplete label="Format" data={formats} value={format} onChange={setFormat} />
       </Group>
-      <Select
-        label="Rangement (facultatif)"
-        placeholder="Aucun rangement"
-        data={storageOptions}
-        value={storageId}
-        onChange={setStorageId}
-        clearable
-        searchable
-      />
       <Switch
         label="La première ligne du fichier est le commandant"
         checked={commanderFromFirstLine}
         onChange={(event) => setCommanderFromFirstLine(event.currentTarget.checked)}
       />
       {mutation.error && (
-        <Alert color="red">{importErrorMessage(mutation.error, "de l'export texte d'un deck Moxfield")}</Alert>
+        <Alert color="red">
+          {importErrorMessage(mutation.error, "d'un export Moxfield ou d'une liste « 4 Lightning Bolt »")}
+        </Alert>
       )}
       {summary && (
         <>
-          <ImportResult summary={summary} />
+          <ImportResult summary={summary} kind="deck" />
           <Anchor component={Link} to="/decks" size="sm">
             Voir mes decks
           </Anchor>

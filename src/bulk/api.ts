@@ -59,7 +59,6 @@ export interface MoxfieldDeckImport {
   name: string;
   format: string;
   commanderFromFirstLine: boolean;
-  storageId: number | null;
 }
 
 export function useImportMoxfieldDeck() {
@@ -69,7 +68,6 @@ export function useImportMoxfieldDeck() {
       name: input.name,
       format: input.format,
       commander_from_first_line: String(input.commanderFromFirstLine),
-      storage_id: input.storageId ? String(input.storageId) : undefined,
     }),
   );
 }
