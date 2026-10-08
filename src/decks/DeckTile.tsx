@@ -23,10 +23,10 @@ export function DeckTile({ deck, art, to = `/decks/${deck.id}`, showVisibility =
     <Stack justify="space-between" h="100%" gap="xs">
       <div>
         <Group justify="space-between" align="flex-start" wrap="nowrap">
-          <Text fw={600} lineClamp={1}>
+          <Text fw={600} lineClamp={1} style={{ minWidth: 0 }}>
             {deck.name}
           </Text>
-          <Stack gap={4} align="flex-end">
+          <Stack gap={4} align="flex-end" style={{ flexShrink: 0 }}>
             <Badge variant={art ? 'white' : 'light'}>{deck.format}</Badge>
             {showVisibility && (
               <Badge

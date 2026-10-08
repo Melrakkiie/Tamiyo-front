@@ -67,10 +67,12 @@ export function StoragesPage() {
                 {group.items.map((storage) => (
                   <Card key={storage.id} withBorder component={Link} to={`/storages/${storage.id}`}>
                     <Group justify="space-between" wrap="nowrap">
-                      <Text fw={600} lineClamp={1}>
+                      <Text fw={600} lineClamp={1} style={{ minWidth: 0 }}>
                         {storage.name}
                       </Text>
-                      <Badge variant="light">{storage.type}</Badge>
+                      <Badge variant="light" style={{ flexShrink: 0 }}>
+                        {storage.type}
+                      </Badge>
                     </Group>
                     <Text size="sm" c="dimmed">
                       {storage.card_count} carte{storage.card_count > 1 ? 's' : ''}
