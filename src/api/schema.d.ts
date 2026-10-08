@@ -2064,7 +2064,7 @@ export interface paths {
         put?: never;
         /**
          * Add a list of cards to an existing deck
-         * @description Same list format and rules as POST /import/moxfield/deck (a Moxfield plain-text export or a plain "4 Lightning Bolt" list), but adds to this deck instead of creating one. Never creates cards: owned copies go in the deck (cards_linked), copies already in this deck are never used twice, and missing copies become pending cards (cards_pending). With commander_from_first_line, the first line becomes the commander only if the deck has none yet.
+         * @description Adds a decklist to this deck, without ever creating cards in the collection. Accepts a Moxfield plain-text export ("1 Sol Ring (SLD) 1011 *F*", resolved by set and collector number against Scryfall), a plain "4 Lightning Bolt" list (resolved by name, any owned printing can be used, missing copies are added in Scryfall's default printing), or a mix of both; section headers such as Commander or Deck are skipped. Owned copies go in the deck (cards_linked), copies in no deck and of the same finish first, each copy used once and copies already in this deck never used twice; missing copies become pending cards (cards_pending). With commander_from_first_line, the first card line becomes the commander only if the deck has none yet: an owned one becomes commander_id, a missing one the pending commander.
          */
         post: {
             parameters: {
@@ -2125,6 +2125,74 @@ export interface paths {
                 502: components["responses"]["BadGateway"];
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deck/{id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Export one deck as text, in a chosen format
+         * @description Exports the deck's cards, pending ones included, as plain text. moxfield: one line per printing, "1 Sol Ring (SLD) 1011 *F*", the commander first. plain: one line per card name, "4 Lightning Bolt", the commander first. arena: MTG Arena's format, a "Commander" section (when the deck has one) then a "Deck" section, one line per card name, split cards written with " // ".
+         */
+        get: {
+            parameters: {
+                query?: {
+                    format?: "moxfield" | "plain" | "arena";
+                };
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The deck as text, served as a download (Deck_moxfield.txt, Deck_list.txt or Deck_arena.txt). */
+                200: {
+                    headers: {
+                        "Content-Disposition"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": string;
+                    };
+                };
+                /** @description id is not a UUID, or format is unknown */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or not owned by the authenticated user */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2574,76 +2642,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/import/moxfield/deck": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bulk import a Moxfield deck export
-         * @description Imports a Moxfield deck's plain-text export (deck page -> More -> Export -> Plain Text) as one new deck, without ever creating cards in the collection. Each line is resolved by (set, collector number) against Scryfall. Copies of that exact printing already in the collection are put in the deck (cards_linked), copies in no deck and of the same finish first, each copy used once; copies the collection lacks are added to the deck's pending cards (cards_pending). The plain-text format has no section headers, so by convention the first line is treated as the commander unless commander_from_first_line is set to false. An owned commander becomes commander_id, a missing one the pending commander; an unresolvable commander is skipped (counted in cards_skipped) and the deck is still created without one.
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "multipart/form-data": {
-                        /**
-                         * Format: binary
-                         * @description The deck's plain-text export. Each line looks like "1 Sol Ring (SLD) 1011 *F*", or just "1 Sol Ring": a line without a printing is resolved by name, may use any owned printing, and missing copies are added as pending in Scryfall's default printing.
-                         */
-                        file: string;
-                        /** @description The new deck's name — the file itself doesn't carry one. */
-                        name: string;
-                        /** @description The new deck's format (e.g. commander, modern). */
-                        format: string;
-                        /**
-                         * @description Treat the first card line as the deck's commander.
-                         * @default true
-                         */
-                        commander_from_first_line?: boolean;
-                    };
-                };
-            };
-            responses: {
-                /** @description Import finished (possibly with some rows skipped — see ImportSummary.warnings). */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ImportSummary"];
-                    };
-                };
-                /** @description Missing file/name/format, the file couldn't be parsed, or commander_from_first_line is invalid. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-                500: components["responses"]["InternalError"];
-                502: components["responses"]["BadGateway"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/export/manabox": {
         parameters: {
             query?: never;
@@ -2717,64 +2715,6 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["Unauthorized"];
-                500: components["responses"]["InternalError"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/export/moxfield/deck/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Deck ID (a UUID) */
-                id: components["parameters"]["DeckID"];
-            };
-            cookie?: never;
-        };
-        /**
-         * Export one deck as a Moxfield deck plain-text export
-         * @description Exports one deck (not the whole collection) as a Moxfield deck plain-text export, matching the format POST /import/moxfield/deck reads: one line per distinct printing. If the deck has a commander, that printing's line (with its full quantity in the deck) is written first, so re-importing the file reconstructs the same commander via the usual "first line" convention. A deck with no commander has no special first line — every line is sorted alphabetically.
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Deck ID (a UUID) */
-                    id: components["parameters"]["DeckID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The deck's plain-text export, served as a download. */
-                200: {
-                    headers: {
-                        "Content-Disposition"?: string;
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": string;
-                    };
-                };
-                400: components["responses"]["InvalidID"];
-                401: components["responses"]["Unauthorized"];
-                /** @description Deck not found, or not owned by the authenticated user */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
                 500: components["responses"]["InternalError"];
             };
         };
@@ -3158,9 +3098,9 @@ export interface components {
         /** @description Result of a bulk import. A malformed or unresolvable row never aborts the whole import — it's recorded as a skipped card with a warning instead. */
         ImportSummary: {
             cards_created?: number;
-            /** @description Deck import only — copies from the collection put in the new deck. */
+            /** @description Deck import only — copies from the collection put in the deck. */
             cards_linked?: number;
-            /** @description Deck import only — copies added to the new deck's pending cards. */
+            /** @description Deck import only — copies added to the deck's pending cards. */
             cards_pending?: number;
             cards_skipped?: number;
             storages_created?: number;

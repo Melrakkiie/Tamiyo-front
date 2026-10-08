@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { authFetch } from '../api/client';
 import { ApiError } from '../api/errors';
@@ -95,8 +95,30 @@ export function useExportCollection() {
   });
 }
 
-export function useExportDeck() {
-  return useMutation({
-    mutationFn: (deckId: string) => download(`/export/moxfield/deck/${deckId}`, 'Moxfield_Deck_export.txt'),
+export type DeckExportFormat = 'moxfield' | 'plain' | 'arena';
+
+export const deckExportFilenames: Record<DeckExportFormat, string> = {
+  moxfield: 'Deck_moxfield.txt',
+  plain: 'Deck_list.txt',
+  arena: 'Deck_arena.txt',
+};
+
+export function useDeckExport(deckId: string, format: DeckExportFormat, enabled: boolean) {
+  return useQuery({
+    queryKey: ['decks', 'export', deckId, format],
+    queryFn: async () => (await send(`/deck/${deckId}/export?format=${format}`, { method: 'GET' })).text(),
+    enabled,
+    staleTime: 0,
   });
+}
+
+export function saveText(text: string, filename: string) {
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

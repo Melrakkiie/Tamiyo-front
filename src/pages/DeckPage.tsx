@@ -23,7 +23,6 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'reac
 import { ApiError, errorMessage } from '../api/errors';
 import type { Card, Deck, DeckCardSort } from '../api/types';
 import { useSession } from '../auth/useSession';
-import { useExportDeck } from '../bulk/api';
 import { useCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
 import { CardSizeControl, useCardSize } from '../cards/CardSizeControl';
@@ -39,6 +38,7 @@ import { DeckCardModal } from '../decks/DeckCardModal';
 import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckLegalityWarning } from '../decks/DeckLegalityWarning';
 import { DeckStatsPanel } from '../decks/DeckStatsPanel';
+import { ExportDeckModal } from '../decks/ExportDeckModal';
 import { ImportListModal } from '../decks/ImportListModal';
 import { PendingCardModal } from '../decks/PendingCardModal';
 import { isPendingCard, pendingIdOf, pendingToCards, sortDeckCards, stackCards } from '../decks/pendingCards';
@@ -99,7 +99,7 @@ function DeckView({ id }: { id: string }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [tab, setTab] = useState<string | null>('cards');
   const [artPickerOpened, setArtPickerOpened] = useState(false);
-  const exportDeck = useExportDeck();
+  const [exportOpened, setExportOpened] = useState(false);
   const artId = deck.data ? deckArtId(deck.data) : null;
   const arts = useCardArts([artId]);
   const art = artId ? (arts.data?.[artId] ?? null) : null;
@@ -179,15 +179,7 @@ function DeckView({ id }: { id: string }) {
             <Button variant="default" onClick={() => setArtPickerOpened(true)}>
               Illustration
             </Button>
-            <Button
-              variant="default"
-              loading={exportDeck.isPending}
-              onClick={() =>
-                exportDeck.mutate(id, {
-                  onError: (err) => notifications.show({ color: 'red', message: errorMessage(err) }),
-                })
-              }
-            >
+            <Button variant="default" onClick={() => setExportOpened(true)}>
               Exporter
             </Button>
             <Button variant="default" onClick={() => setEditOpened(true)}>
@@ -240,6 +232,12 @@ function DeckView({ id }: { id: string }) {
       </Tabs>
 
       <ArtPickerModal deck={current} opened={artPickerOpened} onClose={() => setArtPickerOpened(false)} />
+      <ExportDeckModal
+        deckId={current.id}
+        deckName={current.name}
+        opened={exportOpened}
+        onClose={() => setExportOpened(false)}
+      />
       <DeckFormModal
         opened={editOpened}
         onClose={closeEdit}
