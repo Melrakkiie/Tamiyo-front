@@ -1,5 +1,5 @@
 import { FileInput, SegmentedControl, Stack, Text, Textarea } from '@mantine/core';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
 import { ApiError, errorMessage } from '../api/errors';
 import type { ImportSummary } from '../api/types';
@@ -25,13 +25,25 @@ export function useDeckList() {
   return { mode, setMode, text, setText, file, setFile, source, reset };
 }
 
-export function DeckListInput({ list, minRows = 8 }: { list: ReturnType<typeof useDeckList>; minRows?: number }) {
+const deckHint = (
+  <>
+    Une carte par ligne : l'export d'un deck Moxfield (<b>More → Export → Plain Text</b>) ou une simple liste comme « 4
+    Lightning Bolt ». Rien n'est ajouté à ta collection : les cartes que tu possèdes vont dans le deck (dans l'édition
+    indiquée quand la ligne la précise), les autres y apparaissent en orange.
+  </>
+);
+
+interface DeckListInputProps {
+  list: ReturnType<typeof useDeckList>;
+  minRows?: number;
+  hint?: ReactNode;
+}
+
+export function DeckListInput({ list, minRows = 8, hint = deckHint }: DeckListInputProps) {
   return (
     <Stack gap="xs">
       <Text size="xs" c="dimmed">
-        Une carte par ligne : l'export d'un deck Moxfield (<b>More → Export → Plain Text</b>) ou une simple liste comme
-        « 4 Lightning Bolt ». Rien n'est ajouté à ta collection : les cartes que tu possèdes vont dans le deck (dans
-        l'édition indiquée quand la ligne la précise), les autres y apparaissent en orange.
+        {hint}
       </Text>
       <SegmentedControl
         data={modes}

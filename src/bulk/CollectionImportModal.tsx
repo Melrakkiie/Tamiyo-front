@@ -4,13 +4,15 @@ import { Link } from 'react-router';
 
 import { errorMessage } from '../api/errors';
 import type { ImportSummary } from '../api/types';
+import { DeckListInput, deckListErrorMessage, useDeckList } from '../decks/DeckListInput';
 import { useStorageOptions } from '../storages/api';
-import { useImportManaBox, useImportMoxfieldCollection } from './api';
+import { useImportCardList, useImportManaBox, useImportMoxfieldCollection } from './api';
 import { ImportResult } from './ImportResult';
 
-type Source = 'manabox' | 'moxfield';
+type Source = 'list' | 'manabox' | 'moxfield';
 
 const sources: { value: Source; label: string }[] = [
+  { value: 'list', label: 'Liste de cartes' },
   { value: 'manabox', label: 'ManaBox' },
   { value: 'moxfield', label: 'Moxfield' },
 ];
@@ -50,16 +52,14 @@ export function CollectionImportModal({ opened, onClose, storage }: CollectionIm
 }
 
 function ImportForm({ storage, onClose }: { storage?: ImportTarget; onClose: () => void }) {
-  const [source, setSource] = useState<Source>('manabox');
+  const [source, setSource] = useState<Source>('list');
 
   return (
     <Stack>
       <SegmentedControl data={sources} value={source} onChange={(value) => setSource(value as Source)} fullWidth />
-      {source === 'manabox' ? (
-        <ManaBoxImport key="manabox" storage={storage} onClose={onClose} />
-      ) : (
-        <MoxfieldImport key="moxfield" storage={storage} onClose={onClose} />
-      )}
+      {source === 'list' && <ListImport key="list" storage={storage} onClose={onClose} />}
+      {source === 'manabox' && <ManaBoxImport key="manabox" storage={storage} onClose={onClose} />}
+      {source === 'moxfield' && <MoxfieldImport key="moxfield" storage={storage} onClose={onClose} />}
     </Stack>
   );
 }
@@ -67,6 +67,66 @@ function ImportForm({ storage, onClose }: { storage?: ImportTarget; onClose: () 
 interface ImportFormProps {
   storage?: ImportTarget;
   onClose: () => void;
+}
+
+function ListImport({ storage, onClose }: ImportFormProps) {
+  const list = useDeckList();
+  const [chosenStorageId, setChosenStorageId] = useState<string | null>(null);
+  const [summary, setSummary] = useState<ImportSummary | null>(null);
+  const storageOptions = useStorageOptions();
+  const mutation = useImportCardList();
+  const storageId = storage ? storage.id : chosenStorageId ? Number(chosenStorageId) : undefined;
+
+  function submit() {
+    if (!list.source) {
+      return;
+    }
+    setSummary(null);
+    mutation.mutate(
+      { file: list.source, storageId },
+      {
+        onSuccess: (result) => {
+          setSummary(result);
+          list.reset();
+        },
+      },
+    );
+  }
+
+  return (
+    <Stack>
+      <DeckListInput
+        list={list}
+        hint={
+          <>
+            Une carte par ligne, ajoutée à ta collection{storage ? ' dans ce rangement' : ''} : « 4 Lightning Bolt »
+            prend l'édition par défaut de Scryfall, « 1 Sol Ring (SLD) 1011 *F* » cette édition précise, en foil.
+          </>
+        }
+      />
+      {!storage && (
+        <Select
+          label="Rangement"
+          placeholder="Aucun rangement"
+          data={storageOptions}
+          value={chosenStorageId}
+          onChange={setChosenStorageId}
+          searchable
+          clearable
+        />
+      )}
+      {mutation.error && <Alert color="red">{deckListErrorMessage(mutation.error)}</Alert>}
+      {summary && <ImportResult summary={summary} />}
+      <Group justify="flex-end">
+        <Button variant="default" onClick={onClose}>
+          Fermer
+        </Button>
+        <Button onClick={submit} disabled={!list.source} loading={mutation.isPending}>
+          Importer
+        </Button>
+      </Group>
+    </Stack>
+  );
 }
 
 function ManaBoxImport({ storage, onClose }: ImportFormProps) {

@@ -56,6 +56,12 @@ export function useImportMoxfieldCollection() {
   );
 }
 
+export function useImportCardList() {
+  return useImport(({ file, storageId }: { file: File; storageId?: number }) =>
+    postForm('/import/list', { file, storage_id: storageId === undefined ? undefined : String(storageId) }),
+  );
+}
+
 export interface DeckListImport {
   deckId: string;
   file: File;

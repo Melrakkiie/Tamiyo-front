@@ -2644,6 +2644,69 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/import/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk import a plain card list
+         * @description Creates one card per copy from a card list, in the storage given by storage_id or in no storage. Same line format as POST /deck/{id}/import: "1 Sol Ring (SLD) 1011 *F*" creates that printing (resolved by set and collector number against Scryfall), "4 Lightning Bolt" creates the printing Scryfall returns by default for that name; section headers are skipped. Lines that can't be resolved are skipped and reported in ImportSummary.warnings.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /**
+                         * Format: binary
+                         * @description The list, one card per line.
+                         */
+                        file: string;
+                        /** @description An existing storage for this account. */
+                        storage_id?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Import finished (possibly with some lines skipped — see ImportSummary.warnings). */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportSummary"];
+                    };
+                };
+                /** @description No file field, the list couldn't be parsed, or storage_id is invalid or does not reference an existing storage. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                500: components["responses"]["InternalError"];
+                502: components["responses"]["BadGateway"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/export/manabox": {
         parameters: {
             query?: never;
