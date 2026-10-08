@@ -16,6 +16,7 @@ export type DeckComparison = components['schemas']['DeckComparison'];
 export type ComparedCard = components['schemas']['ComparedCard'];
 export type ComparedDeck = components['schemas']['ComparedDeck'];
 export type DeckTags = components['schemas']['DeckTags'];
+export type DeckView = components['schemas']['DeckView'];
 export type DeckStats = components['schemas']['DeckStats'];
 export type LegalityReport = components['schemas']['LegalityReport'];
 export type UpdateDeckInput = components['schemas']['UpdateDeckRequest'];

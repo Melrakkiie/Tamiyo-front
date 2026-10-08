@@ -57,6 +57,7 @@ import { PendingCardsSection } from '../decks/PendingCardsSection';
 import { ShareDeckModal } from '../decks/ShareDeckModal';
 import { type DeckCardGrouping, deckGroupingOptions, parseDeckGrouping } from '../decks/storageGrouping';
 import { tagsByName, tagsOf, useDeckTags } from '../decks/tags';
+import { useDeckView, useSaveDeckView } from '../decks/view';
 import { visibilityOption } from '../decks/visibility';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import { SettingsMenu } from '../layout/SettingsMenu';
@@ -239,7 +240,7 @@ function DeckView({ id }: { id: string }) {
         </Tabs.List>
 
         <Tabs.Panel value="cards" pt="md">
-          <DeckCards deck={current} />
+          <DeckCardsWithView deck={current} />
         </Tabs.Panel>
         <Tabs.Panel value="stats" pt="md">
           {tab === 'stats' && <DeckStatsPanel deckId={current.id} />}
@@ -346,10 +347,40 @@ function CommanderSection({ deck }: { deck: Deck }) {
   );
 }
 
-function DeckCards({ deck }: { deck: Deck }) {
+function DeckCardsWithView({ deck }: { deck: Deck }) {
+  const view = useDeckView(deck.id);
+
+  if (view.isLoading) {
+    return (
+      <Center p="xl">
+        <Loader />
+      </Center>
+    );
+  }
+
+  const saved = view.data;
+  const initialSort = saved && sortOptions.some((option) => option.value === saved.sort) ? saved.sort : 'mana_value';
+  const initialGrouping = saved ? parseDeckGrouping(saved.grouping) : 'type';
+  return <DeckCards deck={deck} initialSort={initialSort} initialGrouping={initialGrouping} />;
+}
+
+interface DeckCardsProps {
+  deck: Deck;
+  initialSort: DeckCardSort;
+  initialGrouping: DeckCardGrouping | null;
+}
+
+function DeckCards({ deck, initialSort, initialGrouping }: DeckCardsProps) {
   const { pathname } = useLocation();
-  const [sort, setSort] = useState<DeckCardSort>('mana_value');
-  const [grouping, setGrouping] = useState<DeckCardGrouping | null>('type');
+  const [sort, setSort] = useState<DeckCardSort>(initialSort);
+  const [grouping, setGrouping] = useState<DeckCardGrouping | null>(initialGrouping);
+  const saveView = useSaveDeckView();
+
+  function changeView(nextGrouping: DeckCardGrouping | null, nextSort: DeckCardSort) {
+    setGrouping(nextGrouping);
+    setSort(nextSort);
+    saveView.mutate({ deckId: deck.id, view: { grouping: nextGrouping, sort: nextSort } });
+  }
   const { size, setSize, textOnly, gridProps } = useCardSize();
   const cards = useDeckCards(deck.id, sort);
   const deckCards = cards.data ?? [];
@@ -435,7 +466,7 @@ function DeckCards({ deck }: { deck: Deck }) {
             placeholder="Aucun regroupement"
             data={deckGroupingOptions}
             value={grouping}
-            onChange={(value) => setGrouping(parseDeckGrouping(value))}
+            onChange={(value) => changeView(parseDeckGrouping(value), sort)}
             clearable
             w={200}
           />
@@ -443,7 +474,7 @@ function DeckCards({ deck }: { deck: Deck }) {
             label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
             data={sortOptions}
             value={sort}
-            onChange={(value) => value && setSort(value as DeckCardSort)}
+            onChange={(value) => value && changeView(grouping, value as DeckCardSort)}
             allowDeselect={false}
             w={240}
           />

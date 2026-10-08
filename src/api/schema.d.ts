@@ -1767,6 +1767,121 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deck/{id}/view": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * The owner's display settings for the deck page
+         * @description Grouping and sort the owner last used to display the deck's cards. Defaults to grouping by type, sorted by mana value, until saved.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeckView"];
+                    };
+                };
+                /** @description id is not a UUID. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found (or not owned by the authenticated user). */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+            };
+        };
+        /**
+         * Save the owner's display settings for the deck page
+         * @description Doesn't change the deck's updated date.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DeckView"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeckView"];
+                    };
+                };
+                /** @description Invalid id, missing sort, or unknown grouping or sort. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found (or not owned by the authenticated user). */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deck/{id}/tags": {
         parameters: {
             query?: never;
@@ -3508,6 +3623,15 @@ export interface components {
             common: components["schemas"]["ComparedCard"][];
             only_in_deck: components["schemas"]["ComparedCard"][];
             only_in_other: components["schemas"]["ComparedCard"][];
+        };
+        DeckView: {
+            /**
+             * @description null for no grouping.
+             * @enum {string|null}
+             */
+            grouping: "type" | "color" | "mana" | "storage" | "tag" | null;
+            /** @enum {string} */
+            sort: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value";
         };
         TaggedCard: {
             name: string;
