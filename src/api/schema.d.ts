@@ -748,6 +748,8 @@ export interface paths {
                     limit?: number;
                     /** @description Sort field, with an optional "-" prefix for descending order. id is always used as a secondary tie-breaker for a stable order. "color" groups cards as white, blue, black, red, green, multicolor, colorless, lands, then cards whose colors aren't known yet; "type" by primary type (creature, planeswalker, battle, instant, sorcery, artifact, enchantment, land, other, unknown). Both sort by name within a group. */
                     sort?: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "color" | "-color" | "type" | "-type";
+                    /** @description Order the cards by group first (primary type, color group as for sort=color, or mana value rounded down), then by sort within each group, so a client can show grouped pages sorted its way. */
+                    group?: "type" | "color" | "mana";
                     /** @description Return one entry per stack of identical copies (same printing, foil, proxy and storage) instead of one per card. Each entry is the stack's lowest-id copy with quantity and copy_ids set; total, page and limit then count stacks. added is the oldest copy's, updated the most recent one's. */
                     stack?: boolean;
                 };

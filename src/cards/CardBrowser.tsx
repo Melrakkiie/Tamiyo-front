@@ -29,7 +29,7 @@ import { CardDetailModal } from './CardDetailModal';
 import { CardSizeControl, useCardSize } from './CardSizeControl';
 import { CardTile } from './CardTile';
 import { MissingDetailsAlert } from './MissingDetailsAlert';
-import { groupCards, groupingOptions, hasMissingDetails, parseGrouping, sortForGrouping } from './grouping';
+import { groupCards, groupingOptions, hasMissingDetails, parseGrouping } from './grouping';
 
 const PAGE_SIZE = 24;
 const GROUPED_PAGE_SIZE = 48;
@@ -60,9 +60,8 @@ interface CardBrowserProps {
 export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize }: CardBrowserProps) {
   const [params, setParams] = useSearchParams();
   const page = Math.max(1, Number(params.get('page')) || 1);
-  const chosenSort = parseSort(params.get('sort'));
+  const sort = parseSort(params.get('sort'));
   const grouping = parseGrouping(params.get('group'));
-  const sort = grouping ? sortForGrouping[grouping] : chosenSort;
   const pageSize = fixedPageSize ?? (grouping ? GROUPED_PAGE_SIZE : PAGE_SIZE);
   const name = params.get('q') ?? '';
   const storageId = fixedStorageId ?? (Number(params.get('storage')) || undefined);
@@ -78,7 +77,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
   const showStorage = !storageId;
-  const cards = useCards({ page, limit: pageSize, sort, name, storageId, stack: true });
+  const cards = useCards({ page, limit: pageSize, sort, group: grouping ?? undefined, name, storageId, stack: true });
   const copies = useCards({ page: 1, limit: 1, sort: '-updated', name, storageId });
   const copiesTotal = copies.data?.total;
   const pageCards = cards.data?.data ?? [];
@@ -201,13 +200,11 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
           clearable
         />
         <Select
-          label="Tri"
+          label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
           data={sortOptions}
-          value={grouping ? null : sort}
-          placeholder={grouping ? 'Selon le regroupement' : undefined}
+          value={sort}
           onChange={(value) => updateParams({ sort: value === '-updated' ? null : value, page: null })}
           allowDeselect={false}
-          disabled={!!grouping}
         />
       </Group>
 

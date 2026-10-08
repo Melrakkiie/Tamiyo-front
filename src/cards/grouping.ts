@@ -1,4 +1,4 @@
-import type { Card, CardSort } from '../api/types';
+import type { Card } from '../api/types';
 import type { CardType } from '../scryfall/classify';
 
 export type CardGrouping = 'type' | 'color' | 'mana';
@@ -12,12 +12,6 @@ export const groupingOptions: { value: CardGrouping; label: string }[] = [
 export function parseGrouping(raw: string | null): CardGrouping | null {
   return groupingOptions.find((option) => option.value === raw)?.value ?? null;
 }
-
-export const sortForGrouping: Record<CardGrouping, CardSort> = {
-  type: 'type',
-  color: 'color',
-  mana: 'mana_value',
-};
 
 export const typeLabels: Record<CardType, string> = {
   Creature: 'Créatures',

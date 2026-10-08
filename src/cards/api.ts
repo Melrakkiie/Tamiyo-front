@@ -2,11 +2,13 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 
 import { api, unwrap } from '../api/client';
 import type { Card, CardSort, CreateCardInput, DetailsRefreshSummary, UpdateCardInput } from '../api/types';
+import type { CardGrouping } from './grouping';
 
 export interface CardFilters {
   page: number;
   limit: number;
   sort: CardSort;
+  group?: CardGrouping;
   name: string;
   storageId: number | undefined;
   colorIdentity?: string;
@@ -32,6 +34,7 @@ export function useCards(filters: CardFilters) {
               page: filters.page,
               limit: filters.limit,
               sort: filters.sort,
+              group: filters.group,
               name: filters.name || undefined,
               storage_id: filters.storageId,
               color_identity: filters.colorIdentity,
