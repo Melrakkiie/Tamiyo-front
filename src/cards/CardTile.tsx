@@ -1,6 +1,6 @@
 import { Badge, Box, Group, Paper, Stack, Text, UnstyledButton } from '@mantine/core';
 
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
 import type { Card } from '../api/types';
 import { showCardPreview } from '../layout/cardPreview';
@@ -16,6 +16,7 @@ interface CardTileProps {
   notOwned?: boolean;
   textOnly?: boolean;
   manaCost?: string | null;
+  details?: ReactNode;
   onOpen: (card: Card) => void;
 }
 
@@ -45,9 +46,10 @@ function CardRow({
   card,
   notOwned,
   manaCost,
+  details,
   onOpen,
   onPreview,
-}: Pick<CardTileProps, 'card' | 'notOwned' | 'manaCost' | 'onOpen'> & { onPreview: () => void }) {
+}: Pick<CardTileProps, 'card' | 'notOwned' | 'manaCost' | 'details' | 'onOpen'> & { onPreview: () => void }) {
   const quantity = card.quantity ?? 1;
   return (
     <UnstyledButton
@@ -84,7 +86,10 @@ function CardRow({
               </Badge>
             )}
           </Group>
-          <ManaCost card={card} manaCost={manaCost} />
+          <Group gap="xs" wrap="nowrap" style={{ flexShrink: 0 }}>
+            {details}
+            <ManaCost card={card} manaCost={manaCost} />
+          </Group>
         </Group>
       </Paper>
     </UnstyledButton>
@@ -100,6 +105,7 @@ export function CardTile({
   notOwned,
   textOnly,
   manaCost,
+  details,
   onOpen,
 }: CardTileProps) {
   const [shownUrl, setShownUrl] = useState<string | undefined>(undefined);
@@ -111,7 +117,16 @@ export function CardTile({
       open: () => onOpen(card),
     });
   if (textOnly) {
-    return <CardRow card={card} notOwned={notOwned} manaCost={manaCost} onOpen={onOpen} onPreview={onPreview} />;
+    return (
+      <CardRow
+        card={card}
+        notOwned={notOwned}
+        manaCost={manaCost}
+        details={details}
+        onOpen={onOpen}
+        onPreview={onPreview}
+      />
+    );
   }
   const quantity = card.quantity ?? 1;
   return (
@@ -167,21 +182,25 @@ export function CardTile({
           <Text size="sm" fw={500} lineClamp={1}>
             {card.name}
           </Text>
-          <Group gap={6} wrap="nowrap">
-            <Text size="xs" c="dimmed">
-              {card.set_code.toUpperCase()} · #{card.collector_number}
-            </Text>
-            {card.foil && (
-              <Badge size="xs" variant="light">
-                Foil
-              </Badge>
-            )}
-            {card.proxy && (
-              <Badge size="xs" variant="light" color="gray">
-                Proxy
-              </Badge>
-            )}
-          </Group>
+          {details !== undefined ? (
+            details
+          ) : (
+            <Group gap={6} wrap="nowrap">
+              <Text size="xs" c="dimmed">
+                {card.set_code.toUpperCase()} · #{card.collector_number}
+              </Text>
+              {card.foil && (
+                <Badge size="xs" variant="light">
+                  Foil
+                </Badge>
+              )}
+              {card.proxy && (
+                <Badge size="xs" variant="light" color="gray">
+                  Proxy
+                </Badge>
+              )}
+            </Group>
+          )}
           {notOwned ? (
             <Text size="xs" c="orange" lineClamp={1}>
               Pas dans ta collection

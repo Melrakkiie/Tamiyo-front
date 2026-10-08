@@ -44,6 +44,14 @@ export function useDeck(id: string) {
   });
 }
 
+export function useDeckComparison(id: string, otherId: string) {
+  return useQuery({
+    queryKey: ['decks', 'compare', id, otherId],
+    queryFn: async () =>
+      unwrap(await api.GET('/deck/{id}/compare/{other_id}', { params: { path: { id, other_id: otherId } } })),
+  });
+}
+
 export function useDeckCards(id: string, sort: DeckCardSort) {
   return useQuery({
     queryKey: ['decks', 'cards', id, sort],

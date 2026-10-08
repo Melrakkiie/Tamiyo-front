@@ -35,6 +35,7 @@ import { artBackground, artCredit, deckArtId } from '../decks/art';
 import { ArtPickerModal } from '../decks/ArtPickerModal';
 import { isCommanderFormat, useDeck, useDeckCards, useDeleteDeck, usePendingCards, useUpdateDeck } from '../decks/api';
 import { DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
+import { CompareDeckModal } from '../decks/CompareDeckModal';
 import { DeckCardModal } from '../decks/DeckCardModal';
 import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckLegalityWarning } from '../decks/DeckLegalityWarning';
@@ -103,6 +104,7 @@ function DeckView({ id }: { id: string }) {
   const [artPickerOpened, setArtPickerOpened] = useState(false);
   const [exportOpened, setExportOpened] = useState(false);
   const [shareOpened, setShareOpened] = useState(false);
+  const [compareOpened, setCompareOpened] = useState(false);
   const artId = deck.data ? deckArtId(deck.data) : null;
   const arts = useCardArts([artId]);
   const art = artId ? (arts.data?.[artId] ?? null) : null;
@@ -167,6 +169,7 @@ function DeckView({ id }: { id: string }) {
             <Menu.Item onClick={() => setShareOpened(true)}>Partager</Menu.Item>
             <Menu.Item onClick={() => setArtPickerOpened(true)}>Illustration</Menu.Item>
             <Menu.Item onClick={() => setExportOpened(true)}>Exporter</Menu.Item>
+            <Menu.Item onClick={() => setCompareOpened(true)}>Comparer avec un autre deck</Menu.Item>
             <Menu.Item onClick={() => setEditOpened(true)}>Modifier</Menu.Item>
             <Menu.Divider />
             <Menu.Item color="red" onClick={() => setConfirmingDelete(true)}>
@@ -232,6 +235,7 @@ function DeckView({ id }: { id: string }) {
       </Tabs>
 
       <ShareDeckModal deck={current} opened={shareOpened} onClose={() => setShareOpened(false)} />
+      <CompareDeckModal deck={current} opened={compareOpened} onClose={() => setCompareOpened(false)} />
       <ArtPickerModal deck={current} opened={artPickerOpened} onClose={() => setArtPickerOpened(false)} />
       <ExportDeckModal
         deckId={current.id}

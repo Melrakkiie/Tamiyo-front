@@ -1,5 +1,5 @@
 import { Badge, Grid, Group, Modal, Stack, Text, Title } from '@mantine/core';
-import { useRef } from 'react';
+import { type ReactNode, useRef } from 'react';
 
 import type { Card } from '../api/types';
 import { CardImage } from '../cards/CardImage';
@@ -9,24 +9,33 @@ import { useBackImage } from '../scryfall/hooks';
 interface SharedCardModalProps {
   card: Card | null;
   imageUrl: string | undefined;
+  details?: ReactNode;
   onClose: () => void;
 }
 
-export function SharedCardModal({ card, imageUrl, onClose }: SharedCardModalProps) {
-  const lastShown = useRef<{ card: Card; imageUrl: string | undefined } | null>(null);
+export function SharedCardModal({ card, imageUrl, details, onClose }: SharedCardModalProps) {
+  const lastShown = useRef<{ card: Card; imageUrl: string | undefined; details: ReactNode } | null>(null);
   if (card) {
-    lastShown.current = { card, imageUrl };
+    lastShown.current = { card, imageUrl, details };
   }
   const shown = lastShown.current;
 
   return (
     <Modal opened={card !== null} onClose={onClose} title={shown?.card.name} size="xl">
-      {shown && <SharedCardDetail key={shown.card.id} card={shown.card} imageUrl={shown.imageUrl} />}
+      {shown && (
+        <SharedCardDetail key={shown.card.id} card={shown.card} imageUrl={shown.imageUrl} details={shown.details} />
+      )}
     </Modal>
   );
 }
 
-function SharedCardDetail({ card, imageUrl }: { card: Card; imageUrl: string | undefined }) {
+interface SharedCardDetailProps {
+  card: Card;
+  imageUrl: string | undefined;
+  details: ReactNode;
+}
+
+function SharedCardDetail({ card, imageUrl, details }: SharedCardDetailProps) {
   const backImage = useBackImage(card.scryfall_id);
   const quantity = card.quantity ?? 1;
 
@@ -41,17 +50,21 @@ function SharedCardDetail({ card, imageUrl }: { card: Card; imageUrl: string | u
             <Title order={3} size="h4">
               {card.name}
             </Title>
-            <Group gap={6}>
-              <Text size="sm" c="dimmed">
-                {card.set_code.toUpperCase()} · #{card.collector_number}
-                {quantity > 1 ? ` · ${quantity} exemplaires` : ''}
-              </Text>
-              {card.foil && (
-                <Badge size="xs" variant="light">
-                  Foil
-                </Badge>
-              )}
-            </Group>
+            {details !== undefined ? (
+              details
+            ) : (
+              <Group gap={6}>
+                <Text size="sm" c="dimmed">
+                  {card.set_code.toUpperCase()} · #{card.collector_number}
+                  {quantity > 1 ? ` · ${quantity} exemplaires` : ''}
+                </Text>
+                {card.foil && (
+                  <Badge size="xs" variant="light">
+                    Foil
+                  </Badge>
+                )}
+              </Group>
+            )}
           </div>
           <CardRulesText scryfallId={card.scryfall_id} />
         </Stack>

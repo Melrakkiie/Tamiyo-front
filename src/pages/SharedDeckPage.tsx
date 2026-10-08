@@ -31,19 +31,18 @@ import { DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
 import { LegalityWarning } from '../decks/DeckLegalityWarning';
 import { DeckStatsView } from '../decks/DeckStatsPanel';
 import { sortDeckCards } from '../decks/pendingCards';
-import { sharedCardsToCards, useSharedDeck, useSharedDeckLegality, useSharedDeckStats } from '../decks/shared';
+import {
+  type SharedDeckSort,
+  sharedCardsToCards,
+  sharedDeckSortOptions,
+  useSharedDeck,
+  useSharedDeckLegality,
+  useSharedDeckStats,
+} from '../decks/shared';
 import { SharedCardModal } from '../decks/SharedCardModal';
 import { visibilityOption } from '../decks/visibility';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import { useCardArts, useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
-
-type SharedSort = 'name' | 'mana_value' | '-mana_value';
-
-const sortOptions: { value: SharedSort; label: string }[] = [
-  { value: 'mana_value', label: 'Coût de mana croissant' },
-  { value: 'name', label: 'Nom (A → Z)' },
-  { value: '-mana_value', label: 'Coût de mana décroissant' },
-];
 
 export function SharedDeckRedirect() {
   const { id = '' } = useParams();
@@ -196,7 +195,7 @@ function CommanderCard({ card, imageUrl, onOpen }: { card: Card; imageUrl: strin
 
 function SharedDeckCards({ shared }: { shared: SharedDeck }) {
   const { pathname } = useLocation();
-  const [sort, setSort] = useState<SharedSort>('mana_value');
+  const [sort, setSort] = useState<SharedDeckSort>('mana_value');
   const [grouping, setGrouping] = useState<CardGrouping | null>('type');
   const { size, setSize, textOnly, gridProps } = useCardSize();
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
@@ -260,9 +259,9 @@ function SharedDeckCards({ shared }: { shared: SharedDeck }) {
           />
           <Select
             label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
-            data={sortOptions}
+            data={sharedDeckSortOptions}
             value={sort}
-            onChange={(value) => value && setSort(value as SharedSort)}
+            onChange={(value) => value && setSort(value as SharedDeckSort)}
             allowDeselect={false}
             w={240}
           />

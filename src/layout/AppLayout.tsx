@@ -34,7 +34,7 @@ const navItems: NavItem[] = [
   { label: 'Decks', to: '/decks' },
 ];
 
-const pagesWithCards = /^\/(cards|storages\/[^/]+|decks\/[^/]+)\/?$/;
+const pagesWithCards = /^\/(cards|storages\/[^/]+|decks\/[^/]+(\/comparer\/[^/]+)?)\/?$/;
 
 function isActive(item: NavItem, pathname: string) {
   return item.to === '/' ? pathname === '/' : pathname.startsWith(item.to);

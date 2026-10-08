@@ -2131,6 +2131,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deck/{id}/compare/{other_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+                /** @description The deck to compare with. */
+                other_id: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Compare two decks by card name
+         * @description Compares two decks card by card, matching cards by name only (printings and finishes are ignored; " / " and " // " in split or double-faced card names are equivalent). Owned copies and pending cards both count. Each deck can be one of the caller's, whatever its visibility, or anyone's public or unlisted deck. Every list is sorted by name.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                    /** @description The deck to compare with. */
+                    other_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeckComparison"];
+                    };
+                };
+                /** @description An id is not a UUID. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description A deck doesn't exist, or is someone else's private deck. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deck/{id}/export": {
         parameters: {
             query?: never;
@@ -3165,6 +3234,41 @@ export interface components {
             deck: components["schemas"]["SharedDeckInfo"];
             owner: components["schemas"]["Profile"];
             cards: components["schemas"]["SharedDeckCard"][];
+        };
+        ComparedDeck: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            format: string;
+            /** @enum {string} */
+            visibility: "private" | "unlisted" | "public";
+            owner: components["schemas"]["Profile"];
+            /** @description Whether the deck belongs to the caller. */
+            mine: boolean;
+            /** @description Every card in the deck, pending ones included. */
+            card_count: number;
+        };
+        ComparedCard: {
+            name: string;
+            /** @description One of the matching printings, preferring the first deck's. */
+            scryfall_id: string;
+            mana_value: number;
+            colors: string | null;
+            card_type: string | null;
+            color_identity: string | null;
+            /** @description Copies in the first deck (0 when only in the other). */
+            quantity: number;
+            /** @description Copies in the other deck (0 when only in the first). */
+            other_quantity: number;
+            commander: boolean;
+            other_commander: boolean;
+        };
+        DeckComparison: {
+            deck: components["schemas"]["ComparedDeck"];
+            other: components["schemas"]["ComparedDeck"];
+            common: components["schemas"]["ComparedCard"][];
+            only_in_deck: components["schemas"]["ComparedCard"][];
+            only_in_other: components["schemas"]["ComparedCard"][];
         };
         PaginatedDecks: {
             data: components["schemas"]["Deck"][];

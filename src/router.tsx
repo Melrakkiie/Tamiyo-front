@@ -6,6 +6,7 @@ import { AuthLayout } from './layout/AuthLayout';
 import { SharedLayout } from './layout/SharedLayout';
 import { CollectionPage } from './pages/CollectionPage';
 import { ConfirmEmailPage } from './pages/ConfirmEmailPage';
+import { DeckComparePage } from './pages/DeckComparePage';
 import { DeckPage } from './pages/DeckPage';
 import { DecksPage } from './pages/DecksPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
@@ -52,6 +53,7 @@ export const router = createBrowserRouter([
           { path: '/storages', element: <StoragesPage /> },
           { path: '/storages/:id', element: <StoragePage /> },
           { path: '/decks', element: <DecksPage /> },
+          { path: '/decks/:id/comparer/:otherId', element: <DeckComparePage /> },
           { path: '/settings', element: <SettingsPage /> },
           { path: '/users/:id', element: <ProfilePage /> },
         ],
