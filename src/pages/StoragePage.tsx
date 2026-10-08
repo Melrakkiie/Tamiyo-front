@@ -11,7 +11,7 @@ import { SettingsMenu } from '../layout/SettingsMenu';
 import { StorageFormModal } from '../storages/StorageFormModal';
 import { useDeleteStorage, useStorage, useUpdateStorage } from '../storages/api';
 
-const DECK_PAGE_SIZE = 100;
+const DECK_PAGE_SIZE = 96;
 
 export function StoragePage() {
   const id = Number(useParams().id);

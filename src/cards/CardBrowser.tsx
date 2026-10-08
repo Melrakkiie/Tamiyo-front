@@ -12,7 +12,7 @@ import {
   TextInput,
   Title,
 } from '@mantine/core';
-import { useDebouncedValue } from '@mantine/hooks';
+import { useDebouncedValue, useLocalStorage } from '@mantine/hooks';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
@@ -33,6 +33,17 @@ import { groupCards, groupingOptions, hasMissingDetails, parseGrouping } from '.
 
 const PAGE_SIZE = 24;
 const GROUPED_PAGE_SIZE = 48;
+const PAGE_SIZE_OPTIONS = ['24', '48', '96'];
+
+function usePageSize() {
+  const [chosen, setChosen] = useLocalStorage<string>({
+    key: 'tamiyo-page-size',
+    defaultValue: '',
+    deserialize: (value) => (value && PAGE_SIZE_OPTIONS.includes(value) ? value : ''),
+    serialize: (value) => value,
+  });
+  return { chosen: chosen ? Number(chosen) : null, setChosen };
+}
 
 const sortOptions: { value: CardSort; label: string }[] = [
   { value: '-updated', label: 'Modifiées récemment' },
@@ -62,7 +73,8 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const page = Math.max(1, Number(params.get('page')) || 1);
   const sort = parseSort(params.get('sort'));
   const grouping = parseGrouping(params.get('group'));
-  const pageSize = fixedPageSize ?? (grouping ? GROUPED_PAGE_SIZE : PAGE_SIZE);
+  const { chosen: chosenPageSize, setChosen: setChosenPageSize } = usePageSize();
+  const pageSize = chosenPageSize ?? fixedPageSize ?? (grouping ? GROUPED_PAGE_SIZE : PAGE_SIZE);
   const name = params.get('q') ?? '';
   const storageId = fixedStorageId ?? (Number(params.get('storage')) || undefined);
 
@@ -170,7 +182,22 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
             ? `${copiesTotal} carte${copiesTotal > 1 ? 's' : ''}${filtered ? ' correspondant aux filtres' : ''}`
             : ' '}
         </Text>
-        <CardSizeControl value={size} onChange={setSize} />
+        <Group gap="md" align="flex-end">
+          <Select
+            label="Cartes par page"
+            data={PAGE_SIZE_OPTIONS}
+            value={String(pageSize)}
+            onChange={(value) => {
+              if (value) {
+                setChosenPageSize(value);
+                updateParams({ page: null });
+              }
+            }}
+            allowDeselect={false}
+            w={130}
+          />
+          <CardSizeControl value={size} onChange={setSize} />
+        </Group>
       </Group>
 
       <Group grow align="flex-end">
