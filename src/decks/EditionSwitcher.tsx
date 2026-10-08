@@ -144,7 +144,7 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
                     <Group gap={4} justify="space-between" align="center" wrap="nowrap">
                       <StorageLabel
                         name={copy.storage_id ? (storageNames.get(copy.storage_id) ?? null) : null}
-                        unknown={copy.storage_id !== null && !storageNames.has(copy.storage_id)}
+                        unknown={copy.storage_id != null && !storageNames.has(copy.storage_id)}
                       />
                       <SetIcon setCode={copy.set_code} size={22} />
                     </Group>
