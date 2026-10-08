@@ -59,8 +59,8 @@ function usePageSize() {
 }
 
 const sortOptions: { value: CardSort; label: string }[] = [
-  { value: '-updated', label: 'Modifiées récemment' },
   { value: '-added', label: 'Ajoutées récemment' },
+  { value: '-updated', label: 'Modifiées récemment' },
   { value: 'name', label: 'Nom (A → Z)' },
   { value: '-name', label: 'Nom (Z → A)' },
   { value: 'mana_value', label: 'Coût de mana croissant' },
@@ -72,8 +72,10 @@ const sortOptions: { value: CardSort; label: string }[] = [
 
 const sortsNeedingDetails: CardSort[] = ['color', '-color', 'type', '-type'];
 
+const DEFAULT_SORT: CardSort = '-added';
+
 function parseSort(raw: string | null): CardSort {
-  return sortOptions.find((option) => option.value === raw)?.value ?? '-updated';
+  return sortOptions.find((option) => option.value === raw)?.value ?? DEFAULT_SORT;
 }
 
 interface CardBrowserProps {
@@ -268,7 +270,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
           label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
           data={sortOptions}
           value={sort}
-          onChange={(value) => updateParams({ sort: value === '-updated' ? null : value, page: null })}
+          onChange={(value) => updateParams({ sort: value === DEFAULT_SORT ? null : value, page: null })}
           allowDeselect={false}
         />
       </Group>
