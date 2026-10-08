@@ -45,7 +45,9 @@ function useImport<T>(toRequest: (input: T) => Promise<ImportSummary>) {
 }
 
 export function useImportManaBox() {
-  return useImport((file: File) => postForm('/import/manabox', { file }));
+  return useImport(({ file, storageId }: { file: File; storageId?: number }) =>
+    postForm('/import/manabox', { file, storage_id: storageId === undefined ? undefined : String(storageId) }),
+  );
 }
 
 export function useImportMoxfieldCollection() {
@@ -86,12 +88,17 @@ async function download(path: string, fallbackName: string) {
 
 export type CollectionExport = 'manabox' | 'moxfield';
 
-export function useExportCollection() {
+const collectionExports: Record<CollectionExport, { path: string; filename: string }> = {
+  manabox: { path: '/export/manabox', filename: 'ManaBox_Collection_export.csv' },
+  moxfield: { path: '/export/moxfield/collection', filename: 'Moxfield_Collection_export.csv' },
+};
+
+export function useExportCollection(storageId?: number) {
   return useMutation({
-    mutationFn: (kind: CollectionExport) =>
-      kind === 'manabox'
-        ? download('/export/manabox', 'ManaBox_Collection_export.csv')
-        : download('/export/moxfield/collection', 'Moxfield_Collection_export.csv'),
+    mutationFn: (kind: CollectionExport) => {
+      const { path, filename } = collectionExports[kind];
+      return download(storageId === undefined ? path : `${path}?storage_id=${storageId}`, filename);
+    },
   });
 }
 

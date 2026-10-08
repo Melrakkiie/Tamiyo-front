@@ -11,7 +11,7 @@ export function ImportResult({
   kind = 'collection',
 }: {
   summary: ImportSummary;
-  kind?: 'collection' | 'deck' | 'deck-add';
+  kind?: 'collection' | 'deck-add';
 }) {
   const created = summary.cards_created ?? 0;
   const linked = summary.cards_linked ?? 0;
@@ -22,8 +22,8 @@ export function ImportResult({
   const warnings = summary.warnings ?? [];
 
   const details = [
-    kind !== 'collection' && linked > 0 ? `${linked} de ta collection` : null,
-    kind !== 'collection' && pending > 0 ? `${pending} pas encore dans ta collection` : null,
+    kind === 'deck-add' && linked > 0 ? `${linked} de ta collection` : null,
+    kind === 'deck-add' && pending > 0 ? `${pending} pas encore dans ta collection` : null,
     storages > 0 ? plural(storages, 'rangement créé', 'rangements créés') : null,
     decks > 0 ? plural(decks, 'deck créé', 'decks créés') : null,
     skipped > 0 ? plural(skipped, 'carte ignorée', 'cartes ignorées') : null,
@@ -33,11 +33,9 @@ export function ImportResult({
     <Alert
       color={skipped > 0 ? 'yellow' : 'green'}
       title={
-        kind === 'deck'
-          ? `${plural(linked + pending, 'carte dans le deck', 'cartes dans le deck')}`
-          : kind === 'deck-add'
-            ? `${plural(linked + pending, 'carte ajoutée au deck', 'cartes ajoutées au deck')}`
-            : `${plural(created, 'carte importée', 'cartes importées')}`
+        kind === 'deck-add'
+          ? plural(linked + pending, 'carte ajoutée au deck', 'cartes ajoutées au deck')
+          : plural(created, 'carte importée', 'cartes importées')
       }
     >
       <Stack gap="xs">

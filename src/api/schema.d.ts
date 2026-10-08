@@ -2547,6 +2547,8 @@ export interface paths {
                          * @description The ManaBox_Collection.csv file. Required columns: Binder Name, Binder Type, Name, Set code, Scryfall ID, Collector number, Foil, Quantity (order doesn't matter).
                          */
                         file: string;
+                        /** @description Put every card in this existing storage instead: Binder Name and Binder Type are then ignored, and no storage or deck is created. */
+                        storage_id?: number;
                     };
                 };
             };
@@ -2560,7 +2562,7 @@ export interface paths {
                         "application/json": components["schemas"]["ImportSummary"];
                     };
                 };
-                /** @description No file field, or the file couldn't be parsed. */
+                /** @description No file field, the file couldn't be parsed, or storage_id is invalid or does not reference an existing storage. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -2651,11 +2653,14 @@ export interface paths {
         };
         /**
          * Export the collection as a ManaBox CSV
-         * @description Exports the account's entire collection as a ManaBox-compatible CSV (ManaBox_Collection_export.csv), matching the columns POST /import/manabox reads. Identical physical copies within the same storage collapse into one row with a Quantity. Cards are grouped by storage (ManaBox's only organizing concept); a card with no storage is grouped under a synthetic "Unsorted" binder rather than dropped. A card's deck membership is tracked independently of storage in Tamiyo and isn't reflected here — only a storage whose own type is "deck" is exported as Binder Type "deck".
+         * @description Exports the account's collection, or only one storage with storage_id, as a ManaBox-compatible CSV (ManaBox_Collection_export.csv), matching the columns POST /import/manabox reads. Identical physical copies within the same storage collapse into one row with a Quantity. Cards are grouped by storage (ManaBox's only organizing concept); a card with no storage is grouped under a synthetic "Unsorted" binder rather than dropped. A card's deck membership is tracked independently of storage in Tamiyo and isn't reflected here — only a storage whose own type is "deck" is exported as Binder Type "deck".
          */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Only export the cards in this storage. */
+                    storage_id?: number;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -2672,7 +2677,25 @@ export interface paths {
                         "text/csv": string;
                     };
                 };
+                /** @description storage_id is not a positive integer. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
                 401: components["responses"]["Unauthorized"];
+                /** @description storage_id does not reference an existing storage. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
                 500: components["responses"]["InternalError"];
             };
         };
@@ -2693,11 +2716,14 @@ export interface paths {
         };
         /**
          * Export the collection as a Moxfield collection CSV
-         * @description Exports the account's entire collection as a Moxfield-compatible "Export Collection" CSV, matching the columns POST /import/moxfield/collection reads. Identical physical copies collapse into one row with a Count. Moxfield's format has no storage concept, so — unlike the ManaBox export — cards are grouped across every storage (and unsorted cards) without distinction.
+         * @description Exports the account's collection, or only one storage with storage_id, as a Moxfield-compatible "Export Collection" CSV, matching the columns POST /import/moxfield/collection reads. Identical physical copies collapse into one row with a Count. Moxfield's format has no storage concept, so — unlike the ManaBox export — cards are grouped across every storage (and unsorted cards) without distinction.
          */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Only export the cards in this storage. */
+                    storage_id?: number;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -2714,7 +2740,25 @@ export interface paths {
                         "text/csv": string;
                     };
                 };
+                /** @description storage_id is not a positive integer. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
                 401: components["responses"]["Unauthorized"];
+                /** @description storage_id does not reference an existing storage. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
                 500: components["responses"]["InternalError"];
             };
         };

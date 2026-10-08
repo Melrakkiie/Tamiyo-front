@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
+import { CollectionExportMenu } from '../bulk/CollectionExportMenu';
+import { CollectionImportModal } from '../bulk/CollectionImportModal';
 import { CardBrowser } from '../cards/CardBrowser';
 import { StorageFormModal } from '../storages/StorageFormModal';
 import { useDeleteStorage, useStorage, useUpdateStorage } from '../storages/api';
@@ -22,6 +24,7 @@ function StorageView({ id }: { id: number }) {
   const remove = useDeleteStorage();
   const [editOpened, setEditOpened] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [importOpened, setImportOpened] = useState(false);
 
   function closeEdit() {
     setEditOpened(false);
@@ -79,6 +82,10 @@ function StorageView({ id }: { id: number }) {
           </Group>
         </div>
         <Group gap="xs">
+          <Button variant="default" onClick={() => setImportOpened(true)}>
+            Importer
+          </Button>
+          <CollectionExportMenu storageId={current.id} />
           <Button variant="default" onClick={() => setEditOpened(true)}>
             Modifier
           </Button>
@@ -109,6 +116,12 @@ function StorageView({ id }: { id: number }) {
       <CardBrowser
         storageId={current.id}
         pageSize={current.type.trim().toLowerCase() === 'deck' ? DECK_PAGE_SIZE : undefined}
+      />
+
+      <CollectionImportModal
+        opened={importOpened}
+        onClose={() => setImportOpened(false)}
+        storage={{ id: current.id, name: current.name }}
       />
 
       <StorageFormModal

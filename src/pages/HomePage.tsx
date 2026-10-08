@@ -13,7 +13,6 @@ const sections: Section[] = [
   { title: 'Collection', text: 'Tes cartes, avec leurs images, triées et filtrées.', to: '/cards' },
   { title: 'Rangements', text: 'Classeurs, boîtes et deckboxes, et ce qu’ils contiennent.', to: '/storages' },
   { title: 'Decks', text: 'Tes decks, leur légalité par format et leurs statistiques.', to: '/decks' },
-  { title: 'Import / export', text: 'Depuis et vers ManaBox et Moxfield.', to: '/import-export' },
 ];
 
 function SectionContent({ section }: { section: Section }) {
