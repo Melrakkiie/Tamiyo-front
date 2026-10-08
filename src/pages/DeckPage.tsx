@@ -7,6 +7,7 @@ import {
   Center,
   Group,
   Loader,
+  Menu,
   Paper,
   Select,
   SimpleGrid,
@@ -43,10 +44,11 @@ import { ImportListModal } from '../decks/ImportListModal';
 import { PendingCardModal } from '../decks/PendingCardModal';
 import { isPendingCard, pendingIdOf, pendingToCards, sortDeckCards, stackCards } from '../decks/pendingCards';
 import { PendingCardsSection } from '../decks/PendingCardsSection';
-import { ShareDeckButton } from '../decks/ShareDeckButton';
+import { ShareDeckModal } from '../decks/ShareDeckModal';
 import { type DeckCardGrouping, deckGroupingOptions, parseDeckGrouping } from '../decks/storageGrouping';
 import { visibilityOption } from '../decks/visibility';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
+import { SettingsMenu } from '../layout/SettingsMenu';
 import { useCardArts, useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
 import { SharedDeckView } from './SharedDeckPage';
@@ -100,6 +102,7 @@ function DeckView({ id }: { id: string }) {
   const [tab, setTab] = useState<string | null>('cards');
   const [artPickerOpened, setArtPickerOpened] = useState(false);
   const [exportOpened, setExportOpened] = useState(false);
+  const [shareOpened, setShareOpened] = useState(false);
   const artId = deck.data ? deckArtId(deck.data) : null;
   const arts = useCardArts([artId]);
   const art = artId ? (arts.data?.[artId] ?? null) : null;
@@ -156,51 +159,36 @@ function DeckView({ id }: { id: string }) {
         radius="md"
         p={art ? 'lg' : 0}
         mih={art ? 200 : undefined}
+        pos="relative"
         style={art ? { ...artBackground(art.url, 'light'), display: 'flex', flexDirection: 'column' } : undefined}
       >
-        <Group justify="space-between" align="flex-end" style={art ? { marginTop: 'auto' } : undefined}>
-          <Stack gap={6}>
-            <Title order={2} c={art ? 'white' : undefined}>
-              {current.name}
-            </Title>
-            <Group gap="xs">
-              <Badge variant={art ? 'white' : 'light'}>{current.format}</Badge>
-              <Badge
-                variant={art ? 'white' : 'light'}
-                color={visibilityOption(current.visibility).color}
-                title={visibilityOption(current.visibility).description}
-              >
-                {visibilityOption(current.visibility).label}
-              </Badge>
-            </Group>
-          </Stack>
+        <Box pos="absolute" top={art ? 'var(--mantine-spacing-lg)' : 0} right={art ? 'var(--mantine-spacing-lg)' : 0}>
+          <SettingsMenu label="Actions sur le deck" onImage={art !== null}>
+            <Menu.Item onClick={() => setShareOpened(true)}>Partager</Menu.Item>
+            <Menu.Item onClick={() => setArtPickerOpened(true)}>Illustration</Menu.Item>
+            <Menu.Item onClick={() => setExportOpened(true)}>Exporter</Menu.Item>
+            <Menu.Item onClick={() => setEditOpened(true)}>Modifier</Menu.Item>
+            <Menu.Divider />
+            <Menu.Item color="red" onClick={() => setConfirmingDelete(true)}>
+              Supprimer
+            </Menu.Item>
+          </SettingsMenu>
+        </Box>
+        <Stack gap={6} pr={48} style={art ? { marginTop: 'auto' } : undefined}>
+          <Title order={2} c={art ? 'white' : undefined}>
+            {current.name}
+          </Title>
           <Group gap="xs">
-            <ShareDeckButton deck={current} />
-            <Button variant="default" onClick={() => setArtPickerOpened(true)}>
-              Illustration
-            </Button>
-            <Button variant="default" onClick={() => setExportOpened(true)}>
-              Exporter
-            </Button>
-            <Button variant="default" onClick={() => setEditOpened(true)}>
-              Modifier
-            </Button>
-            {confirmingDelete ? (
-              <>
-                <Button color="red" onClick={deleteDeck} loading={remove.isPending}>
-                  Confirmer la suppression
-                </Button>
-                <Button variant="default" onClick={() => setConfirmingDelete(false)}>
-                  Annuler
-                </Button>
-              </>
-            ) : (
-              <Button color="red" variant={art ? 'filled' : 'subtle'} onClick={() => setConfirmingDelete(true)}>
-                Supprimer
-              </Button>
-            )}
+            <Badge variant={art ? 'white' : 'light'}>{current.format}</Badge>
+            <Badge
+              variant={art ? 'white' : 'light'}
+              color={visibilityOption(current.visibility).color}
+              title={visibilityOption(current.visibility).description}
+            >
+              {visibilityOption(current.visibility).label}
+            </Badge>
           </Group>
-        </Group>
+        </Stack>
         {art && (
           <Text size="xs" c="gray.4" ta="right" mt="xs">
             {artCredit(art.artist)}
@@ -211,7 +199,19 @@ function DeckView({ id }: { id: string }) {
       <DeckLegalityWarning deck={current} />
 
       {confirmingDelete && (
-        <Alert color="orange">Supprimer ce deck ne supprime pas ses cartes : elles restent dans ta collection.</Alert>
+        <Alert color="orange" title="Supprimer ce deck ?">
+          <Stack gap="sm">
+            <Text size="sm">Ses cartes ne sont pas supprimées : elles restent dans ta collection.</Text>
+            <Group gap="xs">
+              <Button color="red" onClick={deleteDeck} loading={remove.isPending}>
+                Confirmer la suppression
+              </Button>
+              <Button variant="default" onClick={() => setConfirmingDelete(false)}>
+                Annuler
+              </Button>
+            </Group>
+          </Stack>
+        </Alert>
       )}
       {remove.error && <Alert color="red">{errorMessage(remove.error)}</Alert>}
 
@@ -231,6 +231,7 @@ function DeckView({ id }: { id: string }) {
         </Tabs.Panel>
       </Tabs>
 
+      <ShareDeckModal deck={current} opened={shareOpened} onClose={() => setShareOpened(false)} />
       <ArtPickerModal deck={current} opened={artPickerOpened} onClose={() => setArtPickerOpened(false)} />
       <ExportDeckModal
         deckId={current.id}

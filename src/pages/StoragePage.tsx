@@ -1,12 +1,13 @@
-import { Alert, Anchor, Badge, Button, Center, Group, Loader, Stack, Title } from '@mantine/core';
+import { Alert, Anchor, Badge, Button, Center, Group, Loader, Menu, Stack, Text, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
-import { CollectionExportMenu } from '../bulk/CollectionExportMenu';
+import { type CollectionExport, useExportCollection } from '../bulk/api';
 import { CollectionImportModal } from '../bulk/CollectionImportModal';
 import { CardBrowser } from '../cards/CardBrowser';
+import { SettingsMenu } from '../layout/SettingsMenu';
 import { StorageFormModal } from '../storages/StorageFormModal';
 import { useDeleteStorage, useStorage, useUpdateStorage } from '../storages/api';
 
@@ -25,10 +26,17 @@ function StorageView({ id }: { id: number }) {
   const [editOpened, setEditOpened] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [importOpened, setImportOpened] = useState(false);
+  const exportStorage = useExportCollection(id);
 
   function closeEdit() {
     setEditOpened(false);
     update.reset();
+  }
+
+  function runExport(kind: CollectionExport) {
+    exportStorage.mutate(kind, {
+      onError: (err) => notifications.show({ color: 'red', message: errorMessage(err) }),
+    });
   }
 
   function deleteStorage() {
@@ -74,41 +82,43 @@ function StorageView({ id }: { id: number }) {
         ← Rangements
       </Anchor>
 
-      <Group justify="space-between" align="flex-start">
-        <div>
+      <Group justify="space-between" align="flex-start" wrap="nowrap">
+        <div style={{ minWidth: 0 }}>
           <Group gap="sm">
             <Title order={2}>{current.name}</Title>
             <Badge variant="light">{current.type}</Badge>
           </Group>
         </div>
-        <Group gap="xs">
-          <Button variant="default" onClick={() => setImportOpened(true)}>
-            Importer
-          </Button>
-          <CollectionExportMenu storageId={current.id} />
-          <Button variant="default" onClick={() => setEditOpened(true)}>
-            Modifier
-          </Button>
-          {confirmingDelete ? (
-            <>
+        <SettingsMenu label="Actions sur le rangement">
+          <Menu.Item onClick={() => setImportOpened(true)}>Importer des cartes</Menu.Item>
+          <Menu.Label>Exporter ce rangement (CSV)</Menu.Label>
+          <Menu.Item onClick={() => runExport('manabox')} disabled={exportStorage.isPending}>
+            Pour ManaBox
+          </Menu.Item>
+          <Menu.Item onClick={() => runExport('moxfield')} disabled={exportStorage.isPending}>
+            Pour Moxfield
+          </Menu.Item>
+          <Menu.Divider />
+          <Menu.Item onClick={() => setEditOpened(true)}>Modifier</Menu.Item>
+          <Menu.Item color="red" onClick={() => setConfirmingDelete(true)}>
+            Supprimer
+          </Menu.Item>
+        </SettingsMenu>
+      </Group>
+
+      {confirmingDelete && (
+        <Alert color="orange" title="Supprimer ce rangement ?">
+          <Stack gap="sm">
+            <Text size="sm">Ses cartes ne sont pas supprimées : elles restent dans ta collection, sans rangement.</Text>
+            <Group gap="xs">
               <Button color="red" onClick={deleteStorage} loading={remove.isPending}>
                 Confirmer la suppression
               </Button>
               <Button variant="default" onClick={() => setConfirmingDelete(false)}>
                 Annuler
               </Button>
-            </>
-          ) : (
-            <Button color="red" variant="subtle" onClick={() => setConfirmingDelete(true)}>
-              Supprimer
-            </Button>
-          )}
-        </Group>
-      </Group>
-
-      {confirmingDelete && (
-        <Alert color="orange">
-          Supprimer ce rangement ne supprime pas ses cartes : elles restent dans ta collection, sans rangement.
+            </Group>
+          </Stack>
         </Alert>
       )}
       {remove.error && <Alert color="red">{errorMessage(remove.error)}</Alert>}

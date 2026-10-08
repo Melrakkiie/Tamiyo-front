@@ -4,13 +4,8 @@ import { notifications } from '@mantine/notifications';
 import { errorMessage } from '../api/errors';
 import { type CollectionExport, useExportCollection } from './api';
 
-interface CollectionExportMenuProps {
-  storageId?: number;
-}
-
-export function CollectionExportMenu({ storageId }: CollectionExportMenuProps) {
-  const exportCollection = useExportCollection(storageId);
-  const scope = storageId === undefined ? 'Toute ta collection' : 'Les cartes de ce rangement';
+export function CollectionExportMenu() {
+  const exportCollection = useExportCollection();
 
   function run(kind: CollectionExport) {
     exportCollection.mutate(kind, {
@@ -26,22 +21,18 @@ export function CollectionExportMenu({ storageId }: CollectionExportMenuProps) {
         </Button>
       </Menu.Target>
       <Menu.Dropdown>
-        <Menu.Label>{scope}, en CSV</Menu.Label>
+        <Menu.Label>Toute ta collection, en CSV</Menu.Label>
         <Menu.Item onClick={() => run('manabox')}>
           <Text size="sm">Pour ManaBox</Text>
           <Text size="xs" c="dimmed">
-            {storageId === undefined
-              ? 'Garde les rangements (les cartes sans rangement vont dans « Unsorted »).'
-              : 'Le rangement devient un classeur ManaBox.'}
+            Garde les rangements (les cartes sans rangement vont dans « Unsorted »).
           </Text>
         </Menu.Item>
         <Menu.Item onClick={() => run('moxfield')}>
           <Text size="sm">Pour Moxfield</Text>
-          {storageId === undefined && (
-            <Text size="xs" c="dimmed">
-              Tout regroupé, Moxfield ne connaissant pas les rangements.
-            </Text>
-          )}
+          <Text size="xs" c="dimmed">
+            Tout regroupé, Moxfield ne connaissant pas les rangements.
+          </Text>
         </Menu.Item>
       </Menu.Dropdown>
     </Menu>
