@@ -171,13 +171,15 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
             value={quantity}
             onChange={setQuantity}
           />
-          <Switch
-            label="Foil"
-            checked={foil}
-            onChange={(event) => setFoil(event.currentTarget.checked)}
-            disabled={!canBeFoil(printing) || !canBeNonFoil(printing)}
-            mb={8}
-          />
+          {canBeFoil(printing) && (
+            <Switch
+              label="Foil"
+              checked={foil}
+              onChange={(event) => setFoil(event.currentTarget.checked)}
+              disabled={!canBeNonFoil(printing)}
+              mb={8}
+            />
+          )}
           {!pending && (
             <Switch label="Proxy" checked={proxy} onChange={(event) => setProxy(event.currentTarget.checked)} mb={8} />
           )}

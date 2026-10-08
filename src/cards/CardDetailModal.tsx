@@ -63,6 +63,8 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
   const printingBackImage = useBackImageOf(printing);
   const printings = usePrintings(card.name);
   const otherPrintings = (printings.data ?? []).filter((candidate) => candidate.id !== card.scryfall_id);
+  const shownPrinting = printing ?? (printings.data ?? []).find((candidate) => candidate.id === card.scryfall_id);
+  const foilAvailable = foil || !shownPrinting || canBeFoil(shownPrinting);
   const [storageId, setStorageId] = useState<string | null>(card.storage_id ? String(card.storage_id) : null);
   const ids = copyIds(card);
   const [count, setCount] = useState<number | string>(1);
@@ -156,12 +158,14 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
               />
             )}
 
-            <Switch
-              label="Foil"
-              checked={foil}
-              onChange={(event) => setFoil(event.currentTarget.checked)}
-              disabled={printing !== null && (!canBeFoil(printing) || !canBeNonFoil(printing))}
-            />
+            {foilAvailable && (
+              <Switch
+                label="Foil"
+                checked={foil}
+                onChange={(event) => setFoil(event.currentTarget.checked)}
+                disabled={printing !== null && (!canBeFoil(printing) || !canBeNonFoil(printing))}
+              />
+            )}
             <Switch
               label="Proxy"
               description="Une impression de remplacement, pas une vraie carte."
