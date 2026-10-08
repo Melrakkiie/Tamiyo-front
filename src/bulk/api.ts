@@ -54,21 +54,15 @@ export function useImportMoxfieldCollection() {
   );
 }
 
-export interface MoxfieldDeckImport {
+export interface DeckListImport {
+  deckId: string;
   file: File;
-  name: string;
-  format: string;
   commanderFromFirstLine: boolean;
 }
 
-export function useImportMoxfieldDeck() {
-  return useImport((input: MoxfieldDeckImport) =>
-    postForm('/import/moxfield/deck', {
-      file: input.file,
-      name: input.name,
-      format: input.format,
-      commander_from_first_line: String(input.commanderFromFirstLine),
-    }),
+export function useImportIntoDeck() {
+  return useImport(({ deckId, file, commanderFromFirstLine }: DeckListImport) =>
+    postForm(`/deck/${deckId}/import`, { file, commander_from_first_line: String(commanderFromFirstLine) }),
   );
 }
 

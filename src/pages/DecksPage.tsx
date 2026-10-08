@@ -6,8 +6,10 @@ import { useNavigate } from 'react-router';
 import { errorMessage } from '../api/errors';
 import { deckArtId } from '../decks/art';
 import { capitalize, groupByRecent } from '../layout/groupByRecent';
-import { useAllDecks, useCreateDeck } from '../decks/api';
-import { DeckFormModal } from '../decks/DeckFormModal';
+import { useImportIntoDeck } from '../bulk/api';
+import { type DeckInput, useAllDecks, useCreateDeck, useDeleteDeck } from '../decks/api';
+import { DeckFormModal, type DeckListSubmission } from '../decks/DeckFormModal';
+import { deckListSummary } from '../decks/DeckListInput';
 import { DeckTile } from '../decks/DeckTile';
 import { useCardArts } from '../scryfall/hooks';
 
@@ -16,11 +18,50 @@ export function DecksPage() {
   const decks = useAllDecks();
   const arts = useCardArts((decks.data ?? []).map(deckArtId));
   const create = useCreateDeck();
+  const importList = useImportIntoDeck();
+  const remove = useDeleteDeck();
   const [createOpened, setCreateOpened] = useState(false);
+  const [listError, setListError] = useState<unknown>(null);
 
   function closeCreate() {
     setCreateOpened(false);
+    setListError(null);
     create.reset();
+    importList.reset();
+  }
+
+  function createDeck(values: DeckInput, list?: DeckListSubmission) {
+    setListError(null);
+    create.mutate(values, {
+      onSuccess: (created) => {
+        if (!list) {
+          notifications.show({ color: 'green', message: `${created.name} a été créé.` });
+          closeCreate();
+          navigate(`/decks/${created.id}`);
+          return;
+        }
+        importList.mutate(
+          { deckId: created.id, ...list },
+          {
+            onSuccess: (summary) => {
+              const skipped = (summary.cards_skipped ?? 0) > 0;
+              notifications.show({
+                color: skipped ? 'yellow' : 'green',
+                autoClose: skipped ? false : undefined,
+                title: `${created.name} a été créé`,
+                message: `Cartes : ${deckListSummary(summary)}.`,
+              });
+              closeCreate();
+              navigate(`/decks/${created.id}`);
+            },
+            onError: (err) => {
+              setListError(err);
+              remove.mutate(created.id);
+            },
+          },
+        );
+      },
+    });
   }
 
   return (
@@ -73,17 +114,11 @@ export function DecksPage() {
         onClose={closeCreate}
         title="Nouveau deck"
         submitLabel="Créer"
-        pending={create.isPending}
+        pending={create.isPending || importList.isPending}
         error={create.error}
-        onSubmit={(values) =>
-          create.mutate(values, {
-            onSuccess: (created) => {
-              notifications.show({ color: 'green', message: `${created.name} a été créé.` });
-              closeCreate();
-              navigate(`/decks/${created.id}`);
-            },
-          })
-        }
+        withList
+        listError={listError}
+        onSubmit={createDeck}
       />
     </Stack>
   );

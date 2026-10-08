@@ -39,6 +39,7 @@ import { DeckCardModal } from '../decks/DeckCardModal';
 import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckLegalityWarning } from '../decks/DeckLegalityWarning';
 import { DeckStatsPanel } from '../decks/DeckStatsPanel';
+import { ImportListModal } from '../decks/ImportListModal';
 import { PendingCardModal } from '../decks/PendingCardModal';
 import { isPendingCard, pendingIdOf, pendingToCards, sortDeckCards, stackCards } from '../decks/pendingCards';
 import { PendingCardsSection } from '../decks/PendingCardsSection';
@@ -360,6 +361,7 @@ function DeckCards({ deck }: { deck: Deck }) {
   const stacks = stackCards(allCards, deck.commander_id);
   const grouped = useDeckCardGroups(stacks, grouping, storageNames);
   const [addOpened, setAddOpened] = useState(false);
+  const [importOpened, setImportOpened] = useState(false);
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
   const [openedPending, setOpenedPending] = useState<Card | null>(null);
 
@@ -437,7 +439,12 @@ function DeckCards({ deck }: { deck: Deck }) {
             w={240}
           />
         </Group>
-        <Button onClick={() => setAddOpened(true)}>Ajouter des cartes</Button>
+        <Group gap="xs">
+          <Button variant="default" onClick={() => setImportOpened(true)}>
+            Importer une liste
+          </Button>
+          <Button onClick={() => setAddOpened(true)}>Ajouter des cartes</Button>
+        </Group>
       </Group>
 
       {cards.error && <Alert color="red">{errorMessage(cards.error)}</Alert>}
@@ -460,6 +467,7 @@ function DeckCards({ deck }: { deck: Deck }) {
         <SimpleGrid {...gridProps}>{stacks.map(renderTile)}</SimpleGrid>
       )}
 
+      <ImportListModal deck={deck} opened={importOpened} onClose={() => setImportOpened(false)} />
       <AddToDeckModal
         deck={deck}
         deckCardIds={new Set(deckCards.map((card) => card.id))}

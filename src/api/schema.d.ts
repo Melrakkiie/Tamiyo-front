@@ -1995,6 +1995,87 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deck/{id}/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a list of cards to an existing deck
+         * @description Same list format and rules as POST /import/moxfield/deck (a Moxfield plain-text export or a plain "4 Lightning Bolt" list), but adds to this deck instead of creating one. Never creates cards: owned copies go in the deck (cards_linked), copies already in this deck are never used twice, and missing copies become pending cards (cards_pending). With commander_from_first_line, the first line becomes the commander only if the deck has none yet.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /**
+                         * Format: binary
+                         * @description The list, one card per line.
+                         */
+                        file: string;
+                        /**
+                         * @description Treat the first line as the commander when the deck has none.
+                         * @default false
+                         */
+                        commander_from_first_line?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Cards added (possibly with some lines skipped — see ImportSummary.warnings). */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportSummary"];
+                    };
+                };
+                /** @description id is not a UUID, the file is missing or can't be parsed, or commander_from_first_line is invalid. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or not owned by the authenticated user */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+                502: components["responses"]["BadGateway"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deck/{id}/legality": {
         parameters: {
             query?: never;
