@@ -12,6 +12,7 @@ import {
   Stack,
   Switch,
   Text,
+  Textarea,
   TextInput,
   Title,
 } from '@mantine/core';
@@ -197,7 +198,16 @@ function MoxfieldCollectionImport() {
   );
 }
 
+type DeckInput = 'text' | 'file';
+
+const deckInputs: { value: DeckInput; label: string }[] = [
+  { value: 'text', label: 'Coller la liste' },
+  { value: 'file', label: 'Fichier texte' },
+];
+
 function MoxfieldDeckImport() {
+  const [input, setInput] = useState<DeckInput>('text');
+  const [text, setText] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState('');
   const [format, setFormat] = useState('commander');
@@ -205,16 +215,17 @@ function MoxfieldDeckImport() {
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const formats = useDeckFormats();
   const mutation = useImportMoxfieldDeck();
-  const ready = !!file && name.trim() !== '' && format.trim() !== '';
+  const source = input === 'file' ? file : text.trim() ? new File([text], 'deck.txt', { type: 'text/plain' }) : null;
+  const ready = !!source && name.trim() !== '' && format.trim() !== '';
 
   function submit() {
-    if (!file || !ready) {
+    if (!source || !ready) {
       return;
     }
     setSummary(null);
     mutation.mutate(
       {
-        file,
+        file: source,
         name: name.trim(),
         format: format.trim().toLowerCase(),
         commanderFromFirstLine,
@@ -223,6 +234,7 @@ function MoxfieldDeckImport() {
         onSuccess: (result) => {
           setSummary(result);
           setFile(null);
+          setText('');
           setName('');
         },
       },
@@ -232,19 +244,38 @@ function MoxfieldDeckImport() {
   return (
     <Stack>
       <Text size="sm">
-        Un fichier .txt avec une carte par ligne : l'export d'un deck Moxfield (sur la page du deck :{' '}
-        <b>More → Export → Plain Text</b>) ou une simple liste comme « 4 Lightning Bolt ». Un nouveau deck est créé sans
-        rien ajouter à ta collection : les cartes que tu possèdes y sont mises (dans l'édition du fichier quand il la
-        précise), les autres y apparaissent en orange, à ajouter à ta collection plus tard.
+        Une carte par ligne : l'export d'un deck Moxfield (sur la page du deck : <b>More → Export → Plain Text</b>) ou
+        une simple liste comme « 4 Lightning Bolt ». Un nouveau deck est créé sans rien ajouter à ta collection : les
+        cartes que tu possèdes y sont mises (dans l'édition indiquée quand la ligne la précise), les autres y
+        apparaissent en orange, à ajouter à ta collection plus tard.
       </Text>
-      <FileInput
-        label="Fichier texte du deck"
-        placeholder="Choisis le fichier"
-        accept=".txt,text/plain"
-        value={file}
-        onChange={setFile}
-        clearable
+      <SegmentedControl
+        data={deckInputs}
+        value={input}
+        onChange={(value) => setInput(value as DeckInput)}
+        w="fit-content"
       />
+      {input === 'text' ? (
+        <Textarea
+          label="Liste du deck"
+          placeholder={"1 Atraxa, Praetors' Voice\n4 Lightning Bolt\n1 Sol Ring (SLD) 1011"}
+          value={text}
+          onChange={(event) => setText(event.currentTarget.value)}
+          autosize
+          minRows={8}
+          maxRows={20}
+          styles={{ input: { fontFamily: 'var(--mantine-font-family-monospace)' } }}
+        />
+      ) : (
+        <FileInput
+          label="Fichier texte du deck"
+          placeholder="Choisis le fichier"
+          accept=".txt,text/plain"
+          value={file}
+          onChange={setFile}
+          clearable
+        />
+      )}
       <Group grow align="flex-start">
         <TextInput
           label="Nom du deck"
@@ -255,7 +286,7 @@ function MoxfieldDeckImport() {
         <Autocomplete label="Format" data={formats} value={format} onChange={setFormat} />
       </Group>
       <Switch
-        label="La première ligne du fichier est le commandant"
+        label="La première ligne est le commandant"
         checked={commanderFromFirstLine}
         onChange={(event) => setCommanderFromFirstLine(event.currentTarget.checked)}
       />
