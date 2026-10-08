@@ -10,7 +10,10 @@ import { CardRulesText } from '../scryfall/CardRulesText';
 import { commanderEligibility } from '../scryfall/commander';
 import { useBackImage, useScryfallCard } from '../scryfall/hooks';
 import { useStorageOptions } from '../storages/api';
-import { isCommanderFormat, useCommitPendingCards, useUpdateDeck } from './api';
+import type { DeckBoard } from '../api/types';
+import { isCommanderFormat, useCommitPendingCards, useMovePendingCard, useUpdateDeck } from './api';
+import { movedMessage } from './boards';
+import { BoardPicker } from './BoardSection';
 import { CardTagsInput } from './CardTagsInput';
 import { pendingStatus } from './pendingCards';
 import { DeckQuantityControl } from './DeckQuantityControl';
@@ -103,6 +106,14 @@ export function PendingCardModal({
                 </div>
                 <CardRulesText scryfallId={shown.card.scryfall_id} />
                 <CardTagsInput deckId={deckId} cardName={shown.card.name} />
+                {shown.item && (
+                  <PendingBoardPicker
+                    deckId={deckId}
+                    item={shown.item}
+                    isCommander={commanderPendingId === shown.item.id}
+                    onMoved={onClose}
+                  />
+                )}
                 {isCommanderFormat(deckFormat) && shown.item && (
                   <PendingCommanderControl
                     deckId={deckId}
@@ -117,6 +128,7 @@ export function PendingCardModal({
                     key={`${shown.item.id}-${shown.item.quantity}`}
                     deckId={deckId}
                     card={shown.card}
+                    board={shown.item.board}
                     source={{ kind: 'pending', item: shown.item }}
                     onChanged={(removedAll) => removedAll && onClose()}
                   />
@@ -181,6 +193,45 @@ export function PendingCardModal({
         </Stack>
       )}
     </Modal>
+  );
+}
+
+interface PendingBoardPickerProps {
+  deckId: string;
+  item: PendingCard;
+  isCommander: boolean;
+  onMoved: () => void;
+}
+
+function PendingBoardPicker({ deckId, item, isCommander, onMoved }: PendingBoardPickerProps) {
+  const move = useMovePendingCard();
+
+  function moveTo(board: DeckBoard) {
+    move.mutate(
+      { deckId, pendingId: item.id, board },
+      {
+        onSuccess: () => {
+          notifications.show({ color: 'green', message: movedMessage(item.name, item.quantity, board) });
+          onMoved();
+        },
+      },
+    );
+  }
+
+  return (
+    <Stack gap={4}>
+      <BoardPicker
+        value={item.board}
+        onChange={moveTo}
+        disabled={isCommander || move.isPending}
+        description={isCommander ? 'Le commandant reste dans le deck principal.' : undefined}
+      />
+      {move.error && (
+        <Text size="xs" c="red">
+          {errorMessage(move.error)}
+        </Text>
+      )}
+    </Stack>
   );
 }
 

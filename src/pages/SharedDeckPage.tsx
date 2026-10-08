@@ -18,7 +18,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
-import type { Card, SharedDeck } from '../api/types';
+import type { Card, DeckCard, SharedDeck } from '../api/types';
 import { useAccount } from '../auth/account';
 import { ProfileAvatar } from '../auth/UserAvatar';
 import { useSession } from '../auth/useSession';
@@ -26,7 +26,9 @@ import { CardImage } from '../cards/CardImage';
 import { CardSizeControl, useCardSize } from '../cards/CardSizeControl';
 import { CardTile } from '../cards/CardTile';
 import { artBackground, artCredit, deckArtId } from '../decks/art';
-import { DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
+import { type CollapsibleBoard, DEFAULT_COLLAPSED_BOARDS, inBoard } from '../decks/boards';
+import { BoardSection } from '../decks/BoardSection';
+import { type DeckCardGrouped, DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
 import { LegalityWarning } from '../decks/DeckLegalityWarning';
 import { DeckStatsView } from '../decks/DeckStatsPanel';
 import { sortDeckCards } from '../decks/pendingCards';
@@ -200,16 +202,33 @@ function SharedDeckCards({ shared }: { shared: SharedDeck }) {
   const [grouping, setGrouping] = useState<SharedCardGrouping | null>('type');
   const { size, setSize, textOnly, gridProps } = useCardSize();
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
+  const [collapsed, setCollapsed] = useState<CollapsibleBoard[]>(DEFAULT_COLLAPSED_BOARDS);
   const all = sharedCardsToCards(shared.cards);
   const commanderIndex = shared.cards.findIndex((card) => card.commander);
   const commander = commanderIndex >= 0 ? all[commanderIndex] : undefined;
-  const cards = sortDeckCards(all, sort);
+  const cards = sortDeckCards<DeckCard>(all, sort);
+  const mainCards = inBoard(cards, 'main');
+  const sideboardCards = inBoard(cards, 'sideboard');
+  const consideringCards = inBoard(cards, 'considering');
   const ids = cards.map((card) => card.scryfall_id);
   const images = useCardImages(ids);
   const backImages = useCardBackImages(ids);
   const manaCosts = useManaCosts(ids);
   const cardTags = tagsByName(shared.cards);
-  const grouped = useDeckCardGroups(cards, grouping, undefined, (card) => tagsOf(cardTags, card.name));
+  const cardTagsOf = (card: Card) => tagsOf(cardTags, card.name);
+  const groupedMain = useDeckCardGroups(mainCards, grouping, undefined, cardTagsOf);
+  const groupedSideboard = useDeckCardGroups(sideboardCards, grouping, undefined, cardTagsOf);
+  const groupedConsidering = useDeckCardGroups(consideringCards, grouping, undefined, cardTagsOf);
+
+  function toggleBoard(board: CollapsibleBoard) {
+    setCollapsed((current) =>
+      current.includes(board) ? current.filter((other) => other !== board) : [...current, board],
+    );
+  }
+
+  function count(boardCards: Card[]) {
+    return boardCards.reduce((total, card) => total + (card.quantity ?? 1), 0);
+  }
   const commanderImage = commander ? images.data?.[commander.scryfall_id] : undefined;
 
   useEffect(() => {
@@ -239,6 +258,14 @@ function SharedDeckCards({ shared }: { shared: SharedDeck }) {
         manaCost={manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)}
         onOpen={setOpenedCard}
       />
+    );
+  }
+
+  function renderBoard(boardCards: Card[], grouped: DeckCardGrouped) {
+    return grouping ? (
+      <DeckCardGroups {...grouped} gridProps={gridProps} renderTile={renderTile} />
+    ) : (
+      <SimpleGrid {...gridProps}>{boardCards.map(renderTile)}</SimpleGrid>
     );
   }
 
@@ -275,10 +302,34 @@ function SharedDeckCards({ shared }: { shared: SharedDeck }) {
         <Center p="xl">
           <Text c="dimmed">Ce deck est vide.</Text>
         </Center>
-      ) : grouping ? (
-        <DeckCardGroups {...grouped} gridProps={gridProps} renderTile={renderTile} />
+      ) : mainCards.length === 0 ? (
+        <Text size="sm" c="dimmed">
+          Aucune carte dans le deck principal.
+        </Text>
       ) : (
-        <SimpleGrid {...gridProps}>{cards.map(renderTile)}</SimpleGrid>
+        renderBoard(mainCards, groupedMain)
+      )}
+      {sideboardCards.length > 0 && (
+        <BoardSection
+          board="sideboard"
+          count={count(sideboardCards)}
+          collapsed={collapsed.includes('sideboard')}
+          onToggle={() => toggleBoard('sideboard')}
+          emptyMessage=""
+        >
+          {renderBoard(sideboardCards, groupedSideboard)}
+        </BoardSection>
+      )}
+      {consideringCards.length > 0 && (
+        <BoardSection
+          board="considering"
+          count={count(consideringCards)}
+          collapsed={collapsed.includes('considering')}
+          onToggle={() => toggleBoard('considering')}
+          emptyMessage=""
+        >
+          {renderBoard(consideringCards, groupedConsidering)}
+        </BoardSection>
       )}
 
       <SharedCardModal

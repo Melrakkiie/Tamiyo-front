@@ -1649,13 +1649,13 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description OK (empty array if the deck has no cards) */
+                /** @description OK (empty array if the deck has no cards). Every board is returned. */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["Card"][];
+                        "application/json": components["schemas"]["DeckCard"][];
                     };
                 };
                 400: components["responses"]["InvalidID"];
@@ -1693,8 +1693,8 @@ export interface paths {
         };
         get?: never;
         /**
-         * Add a card to a deck
-         * @description Idempotent: calling this again with the same id/card_id succeeds silently if the card is already in the deck.
+         * Add a card to a deck, or move it to another board
+         * @description Idempotent: calling this again with the same id/card_id and board succeeds silently. A card already in the deck is moved to the given board. The deck's commander can't leave the main board.
          */
         put: {
             parameters: {
@@ -1708,7 +1708,13 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        board?: components["schemas"]["DeckBoard"];
+                    };
+                };
+            };
             responses: {
                 /** @description No Content */
                 204: {
@@ -1717,7 +1723,7 @@ export interface paths {
                     };
                     content?: never;
                 };
-                /** @description id is not a UUID, or card_id is not a valid integer */
+                /** @description id is not a UUID, card_id is not a valid integer, or board is unknown */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1729,6 +1735,15 @@ export interface paths {
                 401: components["responses"]["Unauthorized"];
                 /** @description Deck not found or card not found */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The card is the deck's commander and board isn't main */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -2176,7 +2191,7 @@ export interface paths {
         put?: never;
         /**
          * Add a card to the deck's pending list
-         * @description When the deck already has a pending card of the same printing and finish (other than its pending commander), its quantity is raised instead, and that item is returned.
+         * @description When the deck already has a pending card of the same printing, finish and board (other than its pending commander), its quantity is raised instead, and that item is returned.
          */
         post: {
             parameters: {
@@ -2282,7 +2297,10 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        /** Change how many copies a pending card stands for */
+        /**
+         * Change how many copies a pending card stands for, or its board
+         * @description At least one of quantity and board is required. Moved onto a board that already has a pending card of the same printing and finish, the two are merged and the remaining item is returned. The pending commander can't leave the main board.
+         */
         patch: {
             parameters: {
                 query?: never;
@@ -2298,7 +2316,8 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        quantity: number;
+                        quantity?: number;
+                        board?: components["schemas"]["DeckBoard"];
                     };
                 };
             };
@@ -2312,7 +2331,7 @@ export interface paths {
                         "application/json": components["schemas"]["PendingCard"];
                     };
                 };
-                /** @description Invalid id, pending_id or quantity */
+                /** @description Invalid id, pending_id, quantity or board, or neither quantity nor board */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -2324,6 +2343,15 @@ export interface paths {
                 401: components["responses"]["Unauthorized"];
                 /** @description Deck or pending card not found */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The pending card is the deck's commander and board isn't main */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -2349,7 +2377,7 @@ export interface paths {
         put?: never;
         /**
          * Create the pending cards in the collection and put them in the deck
-         * @description Creates one card per copy of every pending card (or only the one given as pending_id), in the given storage (or without storage), adds each one to the deck, and removes it from the pending list. Items are handled one at a time: if something fails, the items already handled stay done and the rest stay pending.
+         * @description Creates one card per copy of every pending card (or only the one given as pending_id), in the given storage (or without storage), adds each one to the deck on the board it was pending on, and removes it from the pending list. Without pending_id, pending cards on the considering board are left out. Items are handled one at a time: if something fails, the items already handled stay done and the rest stay pending.
          */
         post: {
             parameters: {
@@ -2424,7 +2452,7 @@ export interface paths {
         put?: never;
         /**
          * Add a list of cards to an existing deck
-         * @description Adds a decklist to this deck, without ever creating cards in the collection. Accepts a Moxfield plain-text export ("1 Sol Ring (SLD) 1011 *F*", resolved by set and collector number against Scryfall), a plain "4 Lightning Bolt" list (resolved by name, any owned printing can be used, missing copies are added in Scryfall's default printing), or a mix of both; section headers such as Commander or Deck are skipped. Owned copies go in the deck (cards_linked), copies in no deck and of the same finish first, each copy used once and copies already in this deck never used twice; missing copies become pending cards (cards_pending). With commander_from_first_line, the first card line becomes the commander only if the deck has none yet: an owned one becomes commander_id, a missing one the pending commander.
+         * @description Adds a decklist to this deck, without ever creating cards in the collection. Accepts a Moxfield plain-text export ("1 Sol Ring (SLD) 1011 *F*", resolved by set and collector number against Scryfall), a plain "4 Lightning Bolt" list (resolved by name, any owned printing can be used, missing copies are added in Scryfall's default printing), or a mix of both. Owned copies go in the deck (cards_linked), copies in no deck and of the same finish first, each copy used once and copies already in this deck never used twice; missing copies become pending cards (cards_pending). Section headers choose the board of the lines below them: Sideboard for sideboard, Maybeboard or Considering for considering, main otherwise. With commander_from_first_line, the first card line of the main board becomes the commander only if the deck has none yet: an owned one becomes commander_id, a missing one the pending commander.
          */
         post: {
             parameters: {
@@ -2572,7 +2600,7 @@ export interface paths {
         };
         /**
          * Export one deck as text, in a chosen format
-         * @description Exports the deck's cards, pending ones included, as plain text. moxfield: one line per printing, "1 Sol Ring (SLD) 1011 *F*", the commander first. plain: one line per card name, "4 Lightning Bolt", the commander first. arena: MTG Arena's format, a "Commander" section (when the deck has one) then a "Deck" section, one line per card name, split cards written with " // ".
+         * @description Exports the deck's cards, pending ones included, as plain text. moxfield: one line per printing, "1 Sol Ring (SLD) 1011 *F*", the commander first. plain: one line per card name, "4 Lightning Bolt", the commander first. arena: MTG Arena's format, a "Commander" section (when the deck has one) then a "Deck" section, one line per card name, split cards written with " // ". The sideboard follows in a section of its own ("SIDEBOARD:" in moxfield, "Sideboard" otherwise), then the considered cards ("MAYBEBOARD:" in moxfield, "Maybeboard" in plain, left out of arena), each section only when it has cards.
          */
         get: {
             parameters: {
@@ -3266,10 +3294,20 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * @description Where a card sits in its deck: the deck itself, its sideboard, or the cards being considered for it. Only main counts in card counts, statistics, the deck size and comparisons.
+         * @default main
+         * @enum {string}
+         */
+        DeckBoard: "main" | "sideboard" | "considering";
+        DeckCard: components["schemas"]["Card"] & {
+            board: components["schemas"]["DeckBoard"];
+        };
         LegalityIssue: {
             card_id?: number;
             /** @description Empty for an issue about the whole deck, such as its size. */
             card_name: string;
+            board?: components["schemas"]["DeckBoard"];
             reason: string;
         };
         LegalityReport: {
@@ -3418,6 +3456,7 @@ export interface components {
             /** @enum {string|null} */
             card_type?: "Creature" | "Planeswalker" | "Battle" | "Instant" | "Sorcery" | "Artifact" | "Enchantment" | "Land" | "Other" | null;
             color_identity?: string | null;
+            board: components["schemas"]["DeckBoard"];
             added: string;
             /** @description Cards of the same name in the collection, any printing, outside this deck (copies in other decks count). Only computed by GET /deck/{id}/pending, 0 elsewhere. */
             owned_copies: number;
@@ -3438,6 +3477,7 @@ export interface components {
             /** @enum {string|null} */
             card_type?: "Creature" | "Planeswalker" | "Battle" | "Instant" | "Sorcery" | "Artifact" | "Enchantment" | "Land" | "Other" | null;
             color_identity?: string | null;
+            board?: components["schemas"]["DeckBoard"];
         };
         PendingCommitSummary: {
             cards_created: number;
@@ -3556,8 +3596,9 @@ export interface components {
              */
             readonly commander_scryfall_id?: string | null;
             visibility: components["schemas"]["DeckVisibility"];
+            /** @description Cards of the main board. */
             card_count: number;
-            /** @description Copies waiting in the deck's pending list (not in the collection yet), not counted in card_count. */
+            /** @description Copies waiting in the main board's pending list (not in the collection yet), not counted in card_count. */
             pending_count?: number;
             added: string;
             updated: string;
@@ -3573,7 +3614,7 @@ export interface components {
             background_scryfall_id: string | null;
             /** Format: uuid */
             commander_scryfall_id: string | null;
-            /** @description Every card of the deck, owned or pending. */
+            /** @description Every card of the main board, owned or pending. */
             card_count: number;
             added: string;
             updated: string;
@@ -3593,6 +3634,7 @@ export interface components {
             color_identity: string | null;
             /** @description True for the deck's commander, which is always listed on its own. */
             commander: boolean;
+            board: components["schemas"]["DeckBoard"];
             /** @description The owner's tags for this card, shared by every printing. */
             tags: string[];
         };
@@ -3611,7 +3653,7 @@ export interface components {
             owner: components["schemas"]["Profile"];
             /** @description Whether the deck belongs to the caller. */
             mine: boolean;
-            /** @description Every card in the deck, pending ones included. */
+            /** @description Every card of the main board, pending ones included. */
             card_count: number;
         };
         ComparedCard: {
@@ -3648,6 +3690,8 @@ export interface components {
             grouping: "type" | "color" | "mana" | "storage" | "tag" | null;
             /** @enum {string} */
             sort: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value";
+            /** @description The boards folded on the deck page, among sideboard and considering. Always returned; optional when saving, where leaving it out means [considering]. */
+            collapsed_boards?: ("sideboard" | "considering")[];
         };
         TaggedCard: {
             name: string;

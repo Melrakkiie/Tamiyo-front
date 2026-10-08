@@ -3,6 +3,7 @@ import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
+import type { DeckBoard } from '../api/types';
 import { useAddPendingCard } from '../decks/api';
 import type { ScryfallCard } from '../scryfall/client';
 import { usePrintings } from '../scryfall/hooks';
@@ -16,7 +17,7 @@ export interface CardToAdd {
   printing?: ScryfallCard;
 }
 
-export type AddTarget = { kind: 'collection' } | { kind: 'pending'; deckId: string };
+export type AddTarget = { kind: 'collection' } | { kind: 'pending'; deckId: string; board: DeckBoard };
 
 interface AddCardModalProps {
   card: CardToAdd | null;
@@ -93,7 +94,7 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
 
     if (target.kind === 'pending') {
       addPending.mutate(
-        { deckId: target.deckId, card: { ...details, quantity: copies } },
+        { deckId: target.deckId, card: { ...details, quantity: copies, board: target.board } },
         {
           onSuccess: () => {
             notifications.show({

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { api, unwrap } from '../api/client';
-import type { Card, SharedDeckCard } from '../api/types';
+import type { Card, DeckCard, SharedDeckCard } from '../api/types';
 
 export type SharedDeckSort = 'name' | 'mana_value' | '-mana_value';
 
@@ -39,7 +39,7 @@ export function useSharedDeckLegality(deckId: string) {
   });
 }
 
-export function sharedCardsToCards(cards: SharedDeckCard[]): Card[] {
+export function sharedCardsToCards(cards: SharedDeckCard[]): DeckCard[] {
   return cards.map((card, index) => ({
     id: index + 1,
     name: card.name,
@@ -56,5 +56,6 @@ export function sharedCardsToCards(cards: SharedDeckCard[]): Card[] {
     added: '',
     updated: '',
     quantity: card.quantity,
+    board: card.board,
   }));
 }

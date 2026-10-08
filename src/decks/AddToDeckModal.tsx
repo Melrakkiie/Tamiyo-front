@@ -16,7 +16,7 @@ import { useDebouncedValue } from '@mantine/hooks';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import type { Deck } from '../api/types';
+import type { Deck, DeckBoard } from '../api/types';
 import { AddCardModal } from '../cards/AddCardModal';
 import { useCards } from '../cards/api';
 import { hasMissingDetails } from '../cards/grouping';
@@ -26,6 +26,7 @@ import { useScryfallCard } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
 import { StorageLabel } from '../storages/StorageLabel';
 import { isCommanderFormat, useAddCardToDeck } from './api';
+import { BoardPicker } from './BoardSection';
 import { ScryfallFallback } from './ScryfallFallback';
 
 interface AddToDeckModalProps {
@@ -75,18 +76,20 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
   const add = useAddCardToDeck();
+  const [board, setBoard] = useState<DeckBoard>('main');
   const [pendingCardId, setPendingCardId] = useState<number | null>(null);
   const [scryfallPick, setScryfallPick] = useState<string | null>(null);
 
   function addCard(cardId: number) {
     setPendingCardId(cardId);
-    add.mutate({ deckId, cardId }, { onSettled: () => setPendingCardId(null) });
+    add.mutate({ deckId, cardId, board }, { onSettled: () => setPendingCardId(null) });
   }
 
   const results = cards.data?.data ?? [];
 
   return (
     <Stack>
+      <BoardPicker label="Ajouter dans" value={board} onChange={setBoard} />
       <TextInput
         placeholder="Rechercher dans ta collection"
         value={search}
@@ -177,7 +180,7 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
         card={scryfallPick ? { name: scryfallPick } : null}
         onClose={() => setScryfallPick(null)}
         defaultStorageId={undefined}
-        target={{ kind: 'pending', deckId }}
+        target={{ kind: 'pending', deckId, board }}
       />
     </Stack>
   );

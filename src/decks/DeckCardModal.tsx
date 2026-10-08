@@ -3,14 +3,16 @@ import { notifications } from '@mantine/notifications';
 import { useRef, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import type { Card } from '../api/types';
+import type { Card, DeckBoard } from '../api/types';
 import { copyIds, useUpdateCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
 import { CardRulesText } from '../scryfall/CardRulesText';
 import { commanderEligibility } from '../scryfall/commander';
 import { useBackImage, useScryfallCard } from '../scryfall/hooks';
 import { useAllStorages, useStorageOptions } from '../storages/api';
-import { isCommanderFormat, useUpdateDeck } from './api';
+import { isCommanderFormat, useMoveDeckCards, useUpdateDeck } from './api';
+import { movedMessage } from './boards';
+import { BoardPicker } from './BoardSection';
 import { CardTagsInput } from './CardTagsInput';
 import { DeckQuantityControl } from './DeckQuantityControl';
 import { EditionSwitcher } from './EditionSwitcher';
@@ -21,6 +23,7 @@ interface DeckCardModalProps {
   commanderId: number | null | undefined;
   deckCardIds: Set<number>;
   card: Card | null;
+  board: DeckBoard;
   imageUrl: string | undefined;
   onClose: () => void;
 }
@@ -31,12 +34,13 @@ export function DeckCardModal({
   commanderId,
   deckCardIds,
   card,
+  board,
   imageUrl,
   onClose,
 }: DeckCardModalProps) {
-  const lastShown = useRef<{ card: Card; imageUrl: string | undefined } | null>(null);
+  const lastShown = useRef<{ card: Card; board: DeckBoard; imageUrl: string | undefined } | null>(null);
   if (card) {
-    lastShown.current = { card, imageUrl };
+    lastShown.current = { card, board, imageUrl };
   }
   const shown = lastShown.current;
 
@@ -50,6 +54,7 @@ export function DeckCardModal({
           isCommander={commanderId === shown.card.id}
           deckCardIds={deckCardIds}
           card={shown.card}
+          board={shown.board}
           imageUrl={shown.imageUrl}
           onClose={onClose}
         />
@@ -70,6 +75,7 @@ interface DeckCardDetailProps {
   isCommander: boolean;
   deckCardIds: Set<number>;
   card: Card;
+  board: DeckBoard;
   imageUrl: string | undefined;
   onClose: () => void;
 }
@@ -80,10 +86,12 @@ function DeckCardDetail({
   isCommander,
   deckCardIds,
   card,
+  board,
   imageUrl,
   onClose,
 }: DeckCardDetailProps) {
   const update = useUpdateDeck();
+  const move = useMoveDeckCards();
   const ids = copyIds(card);
   const scryfallCard = useScryfallCard(commanderFormat ? card.scryfall_id : null);
   const backImage = useBackImage(card.scryfall_id);
@@ -127,6 +135,18 @@ function DeckCardDetail({
     );
   }
 
+  function moveToBoard(next: DeckBoard) {
+    move.mutate(
+      { deckId, cardIds: ids, board: next },
+      {
+        onSuccess: () => {
+          notifications.show({ color: 'green', message: movedMessage(card.name, ids.length, next) });
+          onClose();
+        },
+      },
+    );
+  }
+
   function makeCommander() {
     update.mutate(
       { id: deckId, changes: { commander_id: card.id } },
@@ -139,7 +159,7 @@ function DeckCardDetail({
     );
   }
 
-  const error = update.error ?? updateCard.error;
+  const error = update.error ?? updateCard.error ?? move.error;
 
   return (
     <Stack gap="lg">
@@ -172,6 +192,19 @@ function DeckCardDetail({
             <CardTagsInput deckId={deckId} cardName={card.name} />
 
             {error && <Alert color="red">{errorMessage(error)}</Alert>}
+
+            <BoardPicker
+              value={board}
+              onChange={moveToBoard}
+              disabled={isCommander || move.isPending}
+              description={
+                isCommander
+                  ? 'Le commandant reste dans le deck principal.'
+                  : (card.quantity ?? 1) > 1
+                    ? `Les ${card.quantity} exemplaires identiques changent de section ensemble.`
+                    : undefined
+              }
+            />
 
             {isCommander ? (
               <Stack gap={4}>
@@ -225,6 +258,7 @@ function DeckCardDetail({
             <DeckQuantityControl
               deckId={deckId}
               card={card}
+              board={board}
               source={{ kind: 'owned', copyIds: ids, isCommander }}
               onChanged={onClose}
             />
@@ -234,7 +268,7 @@ function DeckCardDetail({
       <Divider />
       <EditionSwitcher
         deckId={deckId}
-        source={{ kind: 'card', card }}
+        source={{ kind: 'card', card, board }}
         deckCardIds={deckCardIds}
         isCommander={isCommander}
         onSwapped={onClose}

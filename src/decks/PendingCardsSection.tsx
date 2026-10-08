@@ -12,7 +12,8 @@ export function PendingCardsSection({ deckId, pending }: { deckId: string; pendi
   const commit = useCommitPendingCards();
   const [storageId, setStorageId] = useState<string | null>(null);
 
-  const total = pending.reduce((sum, item) => sum + item.quantity, 0);
+  const total = pending.filter((item) => item.board !== 'considering').reduce((sum, item) => sum + item.quantity, 0);
+  const considering = pending.some((item) => item.board === 'considering');
   if (total === 0) {
     return null;
   }
@@ -40,6 +41,7 @@ export function PendingCardsSection({ deckId, pending }: { deckId: string; pendi
             : "Une carte de ce deck n'est pas encore dans ta collection"}{' '}
           (marquée{total > 1 ? 's' : ''} « Manquante », ou « Autre édition » quand tu en as une autre version). Quand tu
           les as, ajoute-les toutes d'un coup.
+          {considering && ' Celles de la section Considering restent de côté : ajoute-les une par une.'}
         </Text>
         {commit.error && (
           <Alert color="red">

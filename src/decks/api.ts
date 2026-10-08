@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api, unwrap } from '../api/client';
-import type { AddPendingCardInput, Deck, DeckCardSort, PendingCard, UpdateDeckInput } from '../api/types';
+import type { AddPendingCardInput, Deck, DeckBoard, DeckCardSort, PendingCard, UpdateDeckInput } from '../api/types';
 import type { DeckVisibility } from './visibility';
 
 export const COMMON_FORMATS = [
@@ -128,8 +128,31 @@ export function useAddCardToDeck() {
   const invalidate = useInvalidateDecks();
 
   return useMutation({
-    mutationFn: async ({ deckId, cardId }: { deckId: string; cardId: number }) => {
-      unwrap(await api.PUT('/deck/{id}/cards/{card_id}', { params: { path: { id: deckId, card_id: cardId } } }));
+    mutationFn: async ({ deckId, cardId, board }: { deckId: string; cardId: number; board: DeckBoard }) => {
+      unwrap(
+        await api.PUT('/deck/{id}/cards/{card_id}', {
+          params: { path: { id: deckId, card_id: cardId } },
+          body: { board },
+        }),
+      );
+    },
+    onSettled: invalidate,
+  });
+}
+
+export function useMoveDeckCards() {
+  const invalidate = useInvalidateDecks();
+
+  return useMutation({
+    mutationFn: async ({ deckId, cardIds, board }: { deckId: string; cardIds: number[]; board: DeckBoard }) => {
+      for (const cardId of cardIds) {
+        unwrap(
+          await api.PUT('/deck/{id}/cards/{card_id}', {
+            params: { path: { id: deckId, card_id: cardId } },
+            body: { board },
+          }),
+        );
+      }
     },
     onSettled: invalidate,
   });
@@ -170,14 +193,21 @@ export function useSwapDeckCard() {
       deckId,
       fromCardId,
       toCardId,
+      board,
       isCommander,
     }: {
       deckId: string;
       fromCardId: number;
       toCardId: number;
+      board: DeckBoard;
       isCommander: boolean;
     }) => {
-      unwrap(await api.PUT('/deck/{id}/cards/{card_id}', { params: { path: { id: deckId, card_id: toCardId } } }));
+      unwrap(
+        await api.PUT('/deck/{id}/cards/{card_id}', {
+          params: { path: { id: deckId, card_id: toCardId } },
+          body: { board },
+        }),
+      );
       if (isCommander) {
         unwrap(await api.PATCH('/deck/{id}', { params: { path: { id: deckId } }, body: { commander_id: toCardId } }));
       }
@@ -250,6 +280,21 @@ export function useSetPendingQuantity() {
   });
 }
 
+export function useMovePendingCard() {
+  const invalidate = useInvalidateDecks();
+
+  return useMutation({
+    mutationFn: async ({ deckId, pendingId, board }: { deckId: string; pendingId: number; board: DeckBoard }) =>
+      unwrap(
+        await api.PATCH('/deck/{id}/pending/{pending_id}', {
+          params: { path: { id: deckId, pending_id: pendingId } },
+          body: { board },
+        }),
+      ),
+    onSettled: invalidate,
+  });
+}
+
 export function useCommitPendingCards() {
   const invalidate = useInvalidateDeckAndCollection();
 
@@ -287,6 +332,7 @@ function pendingInput(item: PendingCard, quantity: number): AddPendingCardInput 
     colors: item.colors,
     card_type: item.card_type,
     color_identity: item.color_identity,
+    board: item.board,
   };
 }
 
@@ -338,7 +384,7 @@ export function useReplacePendingCard() {
       const added = unwrap(
         await api.POST('/deck/{id}/pending', {
           params: { path: { id: deckId } },
-          body: { ...card, quantity: from.quantity },
+          body: { ...card, quantity: from.quantity, board: from.board },
         }),
       );
       if (isCommander) {
@@ -374,7 +420,12 @@ export function useReplacePendingWithOwned() {
       toCardId: number;
       isCommander: boolean;
     }) => {
-      unwrap(await api.PUT('/deck/{id}/cards/{card_id}', { params: { path: { id: deckId, card_id: toCardId } } }));
+      unwrap(
+        await api.PUT('/deck/{id}/cards/{card_id}', {
+          params: { path: { id: deckId, card_id: toCardId } },
+          body: { board: from.board },
+        }),
+      );
       if (isCommander) {
         unwrap(await api.PATCH('/deck/{id}', { params: { path: { id: deckId } }, body: { commander_id: toCardId } }));
       }

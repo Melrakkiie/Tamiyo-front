@@ -22,7 +22,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
-import type { Card, Deck, DeckCardSort } from '../api/types';
+import type { Card, Deck, DeckBoard, DeckCard, DeckCardSort } from '../api/types';
 import { useSession } from '../auth/useSession';
 import { useCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
@@ -35,7 +35,9 @@ import { AddToDeckModal } from '../decks/AddToDeckModal';
 import { artBackground, artCredit, deckArtId } from '../decks/art';
 import { ArtPickerModal } from '../decks/ArtPickerModal';
 import { isCommanderFormat, useDeck, useDeckCards, useDeleteDeck, usePendingCards, useUpdateDeck } from '../decks/api';
-import { DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
+import { type CollapsibleBoard, COLLAPSIBLE_BOARDS, DEFAULT_COLLAPSED_BOARDS, inBoard } from '../decks/boards';
+import { BoardSection } from '../decks/BoardSection';
+import { type DeckCardGrouped, DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
 import { CompareDeckModal } from '../decks/CompareDeckModal';
 import { DeckCardModal } from '../decks/DeckCardModal';
 import { DeckFormModal } from '../decks/DeckFormModal';
@@ -361,53 +363,104 @@ function DeckCardsWithView({ deck }: { deck: Deck }) {
   const saved = view.data;
   const initialSort = saved && sortOptions.some((option) => option.value === saved.sort) ? saved.sort : 'mana_value';
   const initialGrouping = saved ? parseDeckGrouping(saved.grouping) : 'type';
-  return <DeckCards deck={deck} initialSort={initialSort} initialGrouping={initialGrouping} />;
+  const initialCollapsed = saved?.collapsed_boards ?? DEFAULT_COLLAPSED_BOARDS;
+  return (
+    <DeckCards
+      deck={deck}
+      initialSort={initialSort}
+      initialGrouping={initialGrouping}
+      initialCollapsed={initialCollapsed}
+    />
+  );
 }
 
 interface DeckCardsProps {
   deck: Deck;
   initialSort: DeckCardSort;
   initialGrouping: DeckCardGrouping | null;
+  initialCollapsed: CollapsibleBoard[];
 }
 
-function DeckCards({ deck, initialSort, initialGrouping }: DeckCardsProps) {
+interface DeckViewChange {
+  grouping?: DeckCardGrouping | null;
+  sort?: DeckCardSort;
+  collapsed?: CollapsibleBoard[];
+}
+
+interface OpenedCard {
+  card: Card;
+  board: DeckBoard;
+}
+
+const emptyBoardMessages: Record<CollapsibleBoard, string> = {
+  sideboard:
+    "Aucune carte dans le sideboard : ouvre une carte du deck pour l'y déplacer, ou choisis cette section en ajoutant des cartes.",
+  considering:
+    "Aucune carte envisagée pour ce deck : ouvre une carte pour l'y déplacer, ou choisis cette section en ajoutant des cartes.",
+};
+
+function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: DeckCardsProps) {
   const { pathname } = useLocation();
   const [sort, setSort] = useState<DeckCardSort>(initialSort);
   const [grouping, setGrouping] = useState<DeckCardGrouping | null>(initialGrouping);
+  const [collapsed, setCollapsed] = useState<CollapsibleBoard[]>(initialCollapsed);
   const saveView = useSaveDeckView();
 
-  function changeView(nextGrouping: DeckCardGrouping | null, nextSort: DeckCardSort) {
-    setGrouping(nextGrouping);
-    setSort(nextSort);
-    saveView.mutate({ deckId: deck.id, view: { grouping: nextGrouping, sort: nextSort } });
+  function changeView(change: DeckViewChange) {
+    const next = {
+      grouping: change.grouping !== undefined ? change.grouping : grouping,
+      sort: change.sort ?? sort,
+      collapsed: change.collapsed ?? collapsed,
+    };
+    setGrouping(next.grouping);
+    setSort(next.sort);
+    setCollapsed(next.collapsed);
+    saveView.mutate({
+      deckId: deck.id,
+      view: { grouping: next.grouping, sort: next.sort, collapsed_boards: next.collapsed },
+    });
   }
+
+  function toggleBoard(board: CollapsibleBoard) {
+    const folded = collapsed.includes(board) ? collapsed.filter((other) => other !== board) : [...collapsed, board];
+    changeView({ collapsed: COLLAPSIBLE_BOARDS.filter((candidate) => folded.includes(candidate)) });
+  }
+
   const { size, setSize, textOnly, gridProps } = useCardSize();
   const cards = useDeckCards(deck.id, sort);
   const deckCards = cards.data ?? [];
   const pending = usePendingCards(deck.id);
   const pendingItems = pending.data ?? [];
-  const allCards = sortDeckCards([...deckCards, ...pendingToCards(pendingItems)], sort);
+  const allCards = sortDeckCards<DeckCard>([...deckCards, ...pendingToCards(pendingItems)], sort);
+  const mainCards = inBoard(allCards, 'main');
+  const sideboardCards = inBoard(allCards, 'sideboard');
+  const consideringCards = inBoard(allCards, 'considering');
   const showMissingDetails = (grouping === 'type' || grouping === 'color') && hasMissingDetails(deckCards);
   const images = useCardImages(allCards.map((card) => card.scryfall_id));
   const backImages = useCardBackImages(allCards.map((card) => card.scryfall_id));
   const manaCosts = useManaCosts(allCards.map((card) => card.scryfall_id));
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
-  const stacks = stackCards(allCards, deck.commander_id);
+  const mainStacks = stackCards(mainCards, deck.commander_id);
+  const sideboardStacks = stackCards(sideboardCards, deck.commander_id);
+  const consideringStacks = stackCards(consideringCards, deck.commander_id);
   const deckTags = useDeckTags(deck.id);
   const cardTags = tagsByName(deckTags.data?.cards ?? []);
-  const grouped = useDeckCardGroups(stacks, grouping, storageNames, (card) => tagsOf(cardTags, card.name));
+  const cardTagsOf = (card: Card) => tagsOf(cardTags, card.name);
+  const groupedMain = useDeckCardGroups(mainStacks, grouping, storageNames, cardTagsOf);
+  const groupedSideboard = useDeckCardGroups(sideboardStacks, grouping, storageNames, cardTagsOf);
+  const groupedConsidering = useDeckCardGroups(consideringStacks, grouping, storageNames, cardTagsOf);
   const [addOpened, setAddOpened] = useState(false);
   const [importOpened, setImportOpened] = useState(false);
-  const [openedCard, setOpenedCard] = useState<Card | null>(null);
+  const [openedCard, setOpenedCard] = useState<OpenedCard | null>(null);
   const [openedPending, setOpenedPending] = useState<Card | null>(null);
 
   const commanderScryfallId = isCommanderFormat(deck.format) ? deck.commander_scryfall_id : null;
   const commanderName = commanderScryfallId
-    ? allCards.find((card) => card.scryfall_id === commanderScryfallId)?.name
+    ? mainCards.find((card) => card.scryfall_id === commanderScryfallId)?.name
     : undefined;
   const commanderImage = commanderScryfallId ? images.data?.[commanderScryfallId] : undefined;
-  const commanderCard = allCards.find((card) =>
+  const commanderCard = mainCards.find((card) =>
     deck.commander_id
       ? card.id === deck.commander_id
       : isPendingCard(card) && pendingIdOf(card) === deck.commander_pending_id,
@@ -420,7 +473,10 @@ function DeckCards({ deck, initialSort, initialGrouping }: DeckCardsProps) {
             scryfallId: commanderScryfallId,
             imageUrl: commanderImage,
             open: commanderCard
-              ? () => (isPendingCard(commanderCard) ? setOpenedPending : setOpenedCard)(commanderCard)
+              ? () =>
+                  isPendingCard(commanderCard)
+                    ? setOpenedPending(commanderCard)
+                    : setOpenedCard({ card: commanderCard, board: 'main' })
               : undefined,
           }
         : null,
@@ -431,7 +487,7 @@ function DeckCards({ deck, initialSort, initialGrouping }: DeckCardsProps) {
 
   const pendingStatuses = new Map<number, PendingStatus>(pendingItems.map((item) => [item.id, pendingStatus(item)]));
 
-  function renderTile(card: Card) {
+  const renderTile = (board: DeckBoard) => (card: Card) => {
     const notOwned = isPendingCard(card);
     return (
       <CardTile
@@ -445,8 +501,16 @@ function DeckCards({ deck, initialSort, initialGrouping }: DeckCardsProps) {
         storageName={card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null}
         pendingStatus={notOwned ? (pendingStatuses.get(pendingIdOf(card)) ?? { kind: 'missing' }) : undefined}
         compact={size === 'small'}
-        onOpen={notOwned ? setOpenedPending : setOpenedCard}
+        onOpen={notOwned ? setOpenedPending : (opened) => setOpenedCard({ card: opened, board })}
       />
+    );
+  };
+
+  function renderBoard(board: DeckBoard, stacks: Card[], grouped: DeckCardGrouped) {
+    return grouping ? (
+      <DeckCardGroups {...grouped} gridProps={gridProps} renderTile={renderTile(board)} />
+    ) : (
+      <SimpleGrid {...gridProps}>{stacks.map(renderTile(board))}</SimpleGrid>
     );
   }
 
@@ -454,7 +518,7 @@ function DeckCards({ deck, initialSort, initialGrouping }: DeckCardsProps) {
     <Stack>
       <Group justify="space-between" align="flex-end">
         <Text size="sm" c="dimmed">
-          {cards.data ? `${allCards.length} carte${allCards.length > 1 ? 's' : ''}` : ' '}
+          {cards.data ? `${mainCards.length} carte${mainCards.length > 1 ? 's' : ''}` : ' '}
         </Text>
         <CardSizeControl value={size} onChange={setSize} />
       </Group>
@@ -466,7 +530,7 @@ function DeckCards({ deck, initialSort, initialGrouping }: DeckCardsProps) {
             placeholder="Aucun regroupement"
             data={deckGroupingOptions}
             value={grouping}
-            onChange={(value) => changeView(parseDeckGrouping(value), sort)}
+            onChange={(value) => changeView({ grouping: parseDeckGrouping(value) })}
             clearable
             w={200}
           />
@@ -474,7 +538,7 @@ function DeckCards({ deck, initialSort, initialGrouping }: DeckCardsProps) {
             label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
             data={sortOptions}
             value={sort}
-            onChange={(value) => value && changeView(grouping, value as DeckCardSort)}
+            onChange={(value) => value && changeView({ sort: value as DeckCardSort })}
             allowDeselect={false}
             w={240}
           />
@@ -497,14 +561,38 @@ function DeckCards({ deck, initialSort, initialGrouping }: DeckCardsProps) {
         <Center p="xl">
           <Loader />
         </Center>
-      ) : allCards.length === 0 ? (
-        <Center p="xl">
-          <Text c="dimmed">Ce deck est vide : ajoute des cartes de ta collection.</Text>
-        </Center>
-      ) : grouping ? (
-        <DeckCardGroups {...grouped} gridProps={gridProps} renderTile={renderTile} />
       ) : (
-        <SimpleGrid {...gridProps}>{stacks.map(renderTile)}</SimpleGrid>
+        <>
+          {allCards.length === 0 ? (
+            <Center p="xl">
+              <Text c="dimmed">Ce deck est vide : ajoute des cartes de ta collection.</Text>
+            </Center>
+          ) : mainCards.length === 0 ? (
+            <Text size="sm" c="dimmed">
+              Aucune carte dans le deck principal.
+            </Text>
+          ) : (
+            renderBoard('main', mainStacks, groupedMain)
+          )}
+          <BoardSection
+            board="sideboard"
+            count={sideboardCards.length}
+            collapsed={collapsed.includes('sideboard')}
+            onToggle={() => toggleBoard('sideboard')}
+            emptyMessage={emptyBoardMessages.sideboard}
+          >
+            {renderBoard('sideboard', sideboardStacks, groupedSideboard)}
+          </BoardSection>
+          <BoardSection
+            board="considering"
+            count={consideringCards.length}
+            collapsed={collapsed.includes('considering')}
+            onToggle={() => toggleBoard('considering')}
+            emptyMessage={emptyBoardMessages.considering}
+          >
+            {renderBoard('considering', consideringStacks, groupedConsidering)}
+          </BoardSection>
+        </>
       )}
 
       <ImportListModal deck={deck} opened={importOpened} onClose={() => setImportOpened(false)} />
@@ -519,8 +607,9 @@ function DeckCards({ deck, initialSort, initialGrouping }: DeckCardsProps) {
         deckFormat={deck.format}
         commanderId={deck.commander_id}
         deckCardIds={new Set(deckCards.map((card) => card.id))}
-        card={openedCard}
-        imageUrl={openedCard ? images.data?.[openedCard.scryfall_id] : undefined}
+        card={openedCard?.card ?? null}
+        board={openedCard?.board ?? 'main'}
+        imageUrl={openedCard ? images.data?.[openedCard.card.scryfall_id] : undefined}
         onClose={() => setOpenedCard(null)}
       />
       <PendingCardModal

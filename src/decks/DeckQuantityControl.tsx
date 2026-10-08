@@ -3,9 +3,10 @@ import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import type { Card, PendingCard } from '../api/types';
+import type { Card, DeckBoard, PendingCard } from '../api/types';
 import { useImportIntoDeck } from '../bulk/api';
 import { useRemoveCardFromDeck, useRemoveCopiesFromDeck, useRemovePendingCard, useSetPendingQuantity } from './api';
+import { withBoardHeader } from './boards';
 import { deckListErrorMessage, deckListSummary } from './DeckListInput';
 
 export type QuantitySource =
@@ -15,6 +16,7 @@ export type QuantitySource =
 interface DeckQuantityControlProps {
   deckId: string;
   card: Card;
+  board: DeckBoard;
   source: QuantitySource;
   onChanged: (removedAll: boolean) => void;
 }
@@ -23,7 +25,7 @@ function copies(count: number) {
   return `${count} exemplaire${count > 1 ? 's' : ''}`;
 }
 
-export function DeckQuantityControl({ deckId, card, source, onChanged }: DeckQuantityControlProps) {
+export function DeckQuantityControl({ deckId, card, board, source, onChanged }: DeckQuantityControlProps) {
   const current = source.kind === 'owned' ? source.copyIds.length : source.item.quantity;
   const [value, setValue] = useState<number | string>(current);
   const target = Math.max(0, Math.floor(Number(value)) || 0);
@@ -43,7 +45,10 @@ export function DeckQuantityControl({ deckId, card, source, onChanged }: DeckQua
   const removeError = removeOne.error ?? removeCopies.error ?? removePending.error ?? setPendingQuantity.error;
 
   function add(count: number) {
-    const line = `${count} ${card.name} (${card.set_code}) ${card.collector_number}${card.foil ? ' *F*' : ''}\n`;
+    const line = withBoardHeader(
+      `${count} ${card.name} (${card.set_code}) ${card.collector_number}${card.foil ? ' *F*' : ''}\n`,
+      board,
+    );
     addCopies.mutate(
       { deckId, file: new File([line], 'deck.txt', { type: 'text/plain' }), commanderFromFirstLine: false },
       {

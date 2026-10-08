@@ -46,7 +46,10 @@ export function ExportDeckModal({ deckId, deckName, opened, onClose }: ExportDec
           fullWidth
         />
         <Text size="xs" c="dimmed">
-          {option.description} Les cartes pas encore dans ta collection sont incluses.
+          {option.description} Les cartes pas encore dans ta collection sont incluses.{' '}
+          {format === 'arena'
+            ? "Le sideboard suit dans sa propre section ; la section Considering n'est pas exportée."
+            : 'Le sideboard et la section Considering suivent, chacun dans sa propre section.'}
         </Text>
         {exported.error ? (
           <Alert color="red">{errorMessage(exported.error)}</Alert>

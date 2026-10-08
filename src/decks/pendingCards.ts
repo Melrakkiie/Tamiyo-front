@@ -1,9 +1,9 @@
-import type { Card, DeckCardSort, PendingCard } from '../api/types';
+import type { Card, DeckCard, DeckCardSort, PendingCard } from '../api/types';
 import type { PendingStatus } from '../cards/PendingBadge';
 
 const COPIES_PER_ITEM = 100;
 
-export function pendingToCards(pending: PendingCard[]): Card[] {
+export function pendingToCards(pending: PendingCard[]): DeckCard[] {
   return pending.flatMap((item) =>
     Array.from({ length: item.quantity }, (_, copy) => ({
       id: -(item.id * COPIES_PER_ITEM + copy + 1),
@@ -20,6 +20,7 @@ export function pendingToCards(pending: PendingCard[]): Card[] {
       color_identity: item.color_identity,
       added: item.added,
       updated: item.added,
+      board: item.board,
     })),
   );
 }
@@ -56,7 +57,7 @@ function compare(a: Card, b: Card, sort: DeckCardSort) {
   return (descending ? -result : result) || (field === 'name' ? 0 : a.name.localeCompare(b.name));
 }
 
-export function sortDeckCards(cards: Card[], sort: DeckCardSort) {
+export function sortDeckCards<T extends Card>(cards: T[], sort: DeckCardSort): T[] {
   return cards
     .map((card, index) => ({ card, index }))
     .sort((a, b) => compare(a.card, b.card, sort) || a.index - b.index)
@@ -73,8 +74,8 @@ function stackKey(card: Card, commanderId: number | null | undefined) {
   return `${card.scryfall_id}-${card.foil}-${card.proxy}-${card.storage_id ?? ''}`;
 }
 
-export function stackCards(cards: Card[], commanderId: number | null | undefined): Card[] {
-  const stacks = new Map<string, Card>();
+export function stackCards<T extends Card>(cards: T[], commanderId: number | null | undefined): T[] {
+  const stacks = new Map<string, T>();
   for (const card of cards) {
     const key = stackKey(card, commanderId);
     const stack = stacks.get(key);

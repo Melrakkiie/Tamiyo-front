@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { errorMessage } from '../api/errors';
 import type { Deck, LegalityReport } from '../api/types';
 import { useDeckLegality } from './api';
+import { boardLabels } from './boards';
 
 const REASONS: [RegExp, (...groups: string[]) => string][] = [
   [
@@ -85,7 +86,13 @@ export function LegalityWarning({ legality }: { legality: { data: LegalityReport
                   <>
                     <Text span fw={500}>
                       {issue.card_name}
-                    </Text>{' '}
+                    </Text>
+                    {issue.board && issue.board !== 'main' && (
+                      <Text span size="sm" c="dimmed">
+                        {' '}
+                        ({boardLabels[issue.board]})
+                      </Text>
+                    )}{' '}
                     <Text span c="dimmed">
                       : {translateReason(issue.reason)}
                     </Text>

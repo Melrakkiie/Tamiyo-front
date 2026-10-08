@@ -14,7 +14,7 @@ import {
 import { notifications } from '@mantine/notifications';
 
 import { errorMessage } from '../api/errors';
-import type { Card, PendingCard } from '../api/types';
+import type { Card, DeckBoard, PendingCard } from '../api/types';
 import { useCollectionCopies } from '../cards/api';
 import type { ScryfallCard } from '../scryfall/client';
 import { useCardImages, usePrintings } from '../scryfall/hooks';
@@ -30,7 +30,7 @@ import {
   useSwapDeckCard,
 } from './api';
 
-export type EditionSource = { kind: 'card'; card: Card } | { kind: 'pending'; item: PendingCard };
+export type EditionSource = { kind: 'card'; card: Card; board: DeckBoard } | { kind: 'pending'; item: PendingCard };
 
 interface EditionSwitcherProps {
   deckId: string;
@@ -78,7 +78,7 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
     const message = `${current.name} : l'exemplaire ${copy.set_code.toUpperCase()} #${copy.collector_number}${copy.foil ? ' foil' : ''} de ta collection est maintenant dans le deck.`;
     if (source.kind === 'card') {
       swap.mutate(
-        { deckId, fromCardId: source.card.id, toCardId: copy.id, isCommander },
+        { deckId, fromCardId: source.card.id, toCardId: copy.id, board: source.board, isCommander },
         { onSuccess: () => done(message) },
       );
     } else {
@@ -93,7 +93,10 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
     const card = { ...printingDetails(printing), foil: foilFor(printing, current.foil), quantity: 1 };
     const message = `${current.name} : l'édition ${printing.set.toUpperCase()} #${printing.collector_number} est dans le deck, en attendant d'être dans ta collection.`;
     if (source.kind === 'card') {
-      toPending.mutate({ deckId, fromCardId: source.card.id, isCommander, card }, { onSuccess: () => done(message) });
+      toPending.mutate(
+        { deckId, fromCardId: source.card.id, isCommander, card: { ...card, board: source.board } },
+        { onSuccess: () => done(message) },
+      );
     } else {
       replacePending.mutate({ deckId, from: source.item, isCommander, card }, { onSuccess: () => done(message) });
     }

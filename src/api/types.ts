@@ -10,6 +10,8 @@ export type DeckCardSort = NonNullable<
   NonNullable<paths['/deck/{id}/cards']['get']['parameters']['query']>['sort']
 >;
 export type Deck = components['schemas']['Deck'];
+export type DeckBoard = components['schemas']['DeckBoard'];
+export type DeckCard = components['schemas']['DeckCard'];
 export type SharedDeck = components['schemas']['SharedDeck'];
 export type SharedDeckCard = components['schemas']['SharedDeckCard'];
 export type DeckComparison = components['schemas']['DeckComparison'];
