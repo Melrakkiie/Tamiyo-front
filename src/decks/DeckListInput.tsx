@@ -77,8 +77,9 @@ const deckHint = (
     Une carte par ligne : l'export d'un deck Moxfield (<b>More → Export → Plain Text</b>) ou une simple liste comme « 4
     Lightning Bolt ». Rien n'est ajouté à ta collection : les cartes que tu possèdes vont dans le deck (dans l'édition
     indiquée quand la ligne la précise), les autres y apparaissent en orange. Les lignes sous « Sideboard » vont dans le
-    sideboard, celles sous « Maybeboard » ou « Considering » dans la section Considering. Un fichier exporté au format
-    Tamiyo (.json) marche aussi : il garde les éditions, les sections, le commandant et les tags.
+    sideboard, celles sous « Maybeboard » ou « Considering » dans la section Considering. Les tags en fin de ligne,
+    comme « #ramp #food generator », sont ajoutés aux cartes. Un fichier exporté au format Tamiyo (.json) marche aussi :
+    il garde les éditions, les sections, le commandant et les tags.
   </>
 );
 
