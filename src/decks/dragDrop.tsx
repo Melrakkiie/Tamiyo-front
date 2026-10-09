@@ -100,15 +100,18 @@ export function DeckDragProvider({ children }: { children: ReactNode }) {
     };
 
     const updateScroll = () => {
-      const bar = document.querySelector('[data-no-autoscroll]');
-      const barRect = bar?.getBoundingClientRect();
-      const overBar =
-        barRect !== undefined &&
-        position.x >= barRect.left &&
-        position.x <= barRect.right &&
-        position.y >= barRect.top &&
-        position.y <= barRect.bottom;
-      const topEdge = barRect && position.x >= barRect.left && position.x <= barRect.right ? barRect.bottom : 0;
+      let overBar = false;
+      let topEdge = 0;
+      document.querySelectorAll('[data-no-autoscroll]').forEach((panel) => {
+        const rect = panel.getBoundingClientRect();
+        const inColumn = position.x >= rect.left && position.x <= rect.right;
+        if (inColumn && position.y >= rect.top && position.y <= rect.bottom) {
+          overBar = true;
+        }
+        if (inColumn && panel.getAttribute('data-no-autoscroll') === 'top') {
+          topEdge = Math.max(topEdge, rect.bottom);
+        }
+      });
       const fromTop = position.y - topEdge;
       const fromBottom = window.innerHeight - position.y;
       scrollSpeed = overBar

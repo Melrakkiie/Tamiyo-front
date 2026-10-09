@@ -1,4 +1,4 @@
-import { Box, Group, Paper, Portal, Stack, Text, UnstyledButton } from '@mantine/core';
+import { Box, Group, Paper, Portal, ScrollArea, Stack, Text, UnstyledButton } from '@mantine/core';
 import type { ReactNode } from 'react';
 
 import type { Card } from '../api/types';
@@ -33,11 +33,12 @@ interface DropZoneProps {
   accepts: (item: DragItem) => boolean;
   onDrop: (item: DragItem) => void;
   danger?: boolean;
+  fullWidth?: boolean;
   label: string;
   children: ReactNode;
 }
 
-function DropZone({ id, accepts, onDrop, danger = false, label, children }: DropZoneProps) {
+function DropZone({ id, accepts, onDrop, danger = false, fullWidth = false, label, children }: DropZoneProps) {
   const { active, over, targetProps } = useDropTarget(id, { accepts, onDrop });
   if (!active) {
     return null;
@@ -62,6 +63,8 @@ function DropZone({ id, accepts, onDrop, danger = false, label, children }: Drop
         transform: over ? 'scale(1.05)' : undefined,
         transition: 'transform 100ms ease, background 100ms ease',
         cursor: 'grabbing',
+        width: fullWidth ? '100%' : undefined,
+        textAlign: fullWidth ? 'center' : undefined,
       }}
     >
       {children}
@@ -69,17 +72,106 @@ function DropZone({ id, accepts, onDrop, danger = false, label, children }: Drop
   );
 }
 
+function AppliedTag({ tag }: { tag: string }) {
+  return (
+    <Box
+      px="lg"
+      py="sm"
+      w="100%"
+      ta="center"
+      style={{
+        border: '2px solid transparent',
+        borderRadius: 'var(--mantine-radius-md)',
+        background: 'rgba(255, 255, 255, 0.03)',
+        color: 'var(--mantine-color-gray-6)',
+      }}
+    >
+      <Text size="md" td="line-through" title="Cette carte a déjà ce tag">
+        #{tag}
+      </Text>
+    </Box>
+  );
+}
+
+interface QuickTagsPanelProps {
+  tags: string[];
+  dragged: DragItem;
+  actions: DeckCardActions;
+  tagsOf: (card: Card) => string[];
+}
+
+function QuickTagsPanel({ tags, dragged, actions, tagsOf }: QuickTagsPanelProps) {
+  const applied = new Set(tagsOf(dragged.card));
+  return (
+    <Portal>
+      <Box
+        pos="fixed"
+        left={16}
+        top="50%"
+        w={220}
+        style={{ zIndex: 900, transform: 'translateY(-50%)', pointerEvents: 'none' }}
+      >
+        <Paper
+          data-no-autoscroll="side"
+          radius="md"
+          p="md"
+          shadow="xl"
+          style={{ pointerEvents: 'auto', background: 'rgba(37, 38, 43, 0.95)' }}
+        >
+          <Text size="sm" fw={600} c="gray.0" ta="center" mb="sm">
+            Tags rapides
+          </Text>
+          <ScrollArea.Autosize mah="70vh" type="auto" offsetScrollbars>
+            <Stack gap="xs">
+              {tags.map((tag) =>
+                applied.has(tag) ? (
+                  <AppliedTag key={tag} tag={tag} />
+                ) : (
+                  <DropZone
+                    key={tag}
+                    id={`quick-tag:${tag}`}
+                    label={`Ajouter le tag ${tag}`}
+                    fullWidth
+                    accepts={(item) => !tagsOf(item.card).includes(tag)}
+                    onDrop={(item) => actions.addTag(item, tag)}
+                  >
+                    <Text size="md" lineClamp={1}>
+                      #{tag}
+                    </Text>
+                  </DropZone>
+                ),
+              )}
+            </Stack>
+          </ScrollArea.Autosize>
+        </Paper>
+      </Box>
+    </Portal>
+  );
+}
+
 interface DeckDropBarProps {
   actions: DeckCardActions;
   tagMode: boolean;
   tagsOf: (card: Card) => string[];
+  deckTags: string[];
 }
 
-export function DeckDropBar({ actions, tagMode, tagsOf }: DeckDropBarProps) {
+export function DeckDropBar({ actions, tagMode, tagsOf, deckTags }: DeckDropBarProps) {
   const dragged = useDraggedCard();
   if (!dragged) {
     return null;
   }
+  return (
+    <>
+      {tagMode && deckTags.length > 0 && (
+        <QuickTagsPanel tags={deckTags} dragged={dragged} actions={actions} tagsOf={tagsOf} />
+      )}
+      <DropBar dragged={dragged} actions={actions} tagMode={tagMode} tagsOf={tagsOf} />
+    </>
+  );
+}
+
+function DropBar({ dragged, actions, tagMode, tagsOf }: Omit<DeckDropBarProps, 'deckTags'> & { dragged: DragItem }) {
   return (
     <Portal>
       <Box
@@ -91,7 +183,7 @@ export function DeckDropBar({ actions, tagMode, tagsOf }: DeckDropBarProps) {
         style={{ zIndex: 900, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}
       >
         <Paper
-          data-no-autoscroll
+          data-no-autoscroll="top"
           radius="md"
           p="md"
           shadow="xl"

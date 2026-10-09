@@ -573,7 +573,12 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
   return (
     <DeckDragProvider>
       <Stack>
-        <DeckDropBar actions={actions} tagMode={grouping === 'tag'} tagsOf={cardTagsOf} />
+        <DeckDropBar
+          actions={actions}
+          tagMode={grouping === 'tag'}
+          tagsOf={cardTagsOf}
+          deckTags={deckTags.data?.tags ?? []}
+        />
         <Group justify="flex-end">
           <Group gap="lg" align="stretch">
             <CollectionToggle description="Les cartes en attente et le rangement de chaque exemplaire" />
