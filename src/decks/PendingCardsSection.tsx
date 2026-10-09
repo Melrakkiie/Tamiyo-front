@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { errorMessage } from '../api/errors';
 import type { PendingCard } from '../api/types';
 import { useStorageOptions } from '../storages/api';
+import { StorageFieldLabel } from '../storages/StorageLabel';
 import { useCommitPendingCards } from './api';
 
 export function PendingCardsSection({ deckId, pending }: { deckId: string; pending: PendingCard[] }) {
@@ -50,7 +51,7 @@ export function PendingCardsSection({ deckId, pending }: { deckId: string; pendi
         )}
         <Group align="flex-end" justify="space-between">
           <Select
-            label="Rangement des nouvelles cartes"
+            label={<StorageFieldLabel>Rangement des nouvelles cartes</StorageFieldLabel>}
             placeholder="Aucun rangement"
             data={storageOptions}
             value={storageId}

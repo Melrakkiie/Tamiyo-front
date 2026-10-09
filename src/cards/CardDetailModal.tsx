@@ -25,6 +25,7 @@ import { useBackImage, useBackImageOf, usePrintings } from '../scryfall/hooks';
 import { canBeFoil, canBeNonFoil, foilFor, printingDetails } from '../scryfall/printing';
 import { PrintingGrid } from '../scryfall/PrintingGrid';
 import { useStorageOptions } from '../storages/api';
+import { StorageFieldLabel } from '../storages/StorageLabel';
 import { copyIds, useUpdateCopies } from './api';
 import { CardImage } from './CardImage';
 import { CollectionQuantityControl } from './CollectionQuantityControl';
@@ -174,7 +175,7 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
             />
 
             <Select
-              label="Rangement"
+              label={<StorageFieldLabel>Rangement</StorageFieldLabel>}
               placeholder="Aucun rangement"
               data={storageOptions}
               value={storageId}

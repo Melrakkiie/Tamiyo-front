@@ -18,6 +18,7 @@ import { useEffect, useState } from 'react';
 import { COMMON_FORMATS } from '../decks/api';
 import { withSymbols } from '../scryfall/manaSymbols';
 import { useStorageOptions, useStorageTypes } from '../storages/api';
+import { StorageFieldLabel } from '../storages/StorageLabel';
 import { type AdvancedFilters, COLORLESS, type ColorMode, type ManaValueOp, type TypeFilter } from './advancedFilters';
 import { typeLabels } from './grouping';
 
@@ -229,7 +230,7 @@ export function AdvancedSearch({ filters, showStorage, onChange, onReset }: Adva
 
           {showStorage && (
             <Select
-              label="Rangement"
+              label={<StorageFieldLabel>Rangement</StorageFieldLabel>}
               placeholder="Tous les rangements"
               data={storageOptions}
               value={filters.storageId === null ? null : String(filters.storageId)}

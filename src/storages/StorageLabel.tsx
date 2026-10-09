@@ -1,4 +1,5 @@
 import { Group, Text } from '@mantine/core';
+import type { ReactNode } from 'react';
 
 export function StorageIcon({ size = 12 }: { size?: number }) {
   return (
@@ -35,5 +36,14 @@ export function StorageLabel({ name, unknown = false }: StorageLabelProps) {
         {name ?? (unknown ? 'Rangement inconnu' : 'Sans rangement')}
       </Text>
     </Group>
+  );
+}
+
+export function StorageFieldLabel({ children }: { children: ReactNode }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+      <StorageIcon size={14} />
+      {children}
+    </span>
   );
 }

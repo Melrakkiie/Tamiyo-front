@@ -6,6 +6,7 @@ import { errorMessage } from '../api/errors';
 import type { ImportSummary } from '../api/types';
 import { DeckListInput, deckListErrorMessage, tamiyoFileErrorMessage, useDeckList } from '../decks/DeckListInput';
 import { useStorageOptions } from '../storages/api';
+import { StorageFieldLabel } from '../storages/StorageLabel';
 import { useImportCardList, useImportManaBox, useImportMoxfieldCollection, useImportTamiyo } from './api';
 import { ImportResult } from './ImportResult';
 
@@ -108,7 +109,7 @@ function ListImport({ storage, onClose }: ImportFormProps) {
       />
       {!storage && (
         <Select
-          label="Rangement"
+          label={<StorageFieldLabel>Rangement</StorageFieldLabel>}
           placeholder="Aucun rangement"
           data={storageOptions}
           value={chosenStorageId}
@@ -228,7 +229,7 @@ function MoxfieldImport({ storage, onClose }: ImportFormProps) {
       {!storage && (
         <>
           <Select
-            label="Rangement de destination"
+            label={<StorageFieldLabel>Rangement de destination</StorageFieldLabel>}
             placeholder={storageOptions.length === 0 ? "Crée d'abord un rangement" : 'Choisis un rangement'}
             data={storageOptions}
             value={chosenStorageId}
@@ -308,7 +309,7 @@ function TamiyoImport({ storage, onClose }: ImportFormProps) {
       />
       {!storage && (
         <Select
-          label="Tout mettre dans un rangement"
+          label={<StorageFieldLabel>Tout mettre dans un rangement</StorageFieldLabel>}
           placeholder="Garder les rangements du fichier"
           data={storageOptions}
           value={chosenStorageId}

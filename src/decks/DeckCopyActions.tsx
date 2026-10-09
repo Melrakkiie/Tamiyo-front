@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router';
 import { errorMessage } from '../api/errors';
 import type { DeckBoard } from '../api/types';
 import { useStorageOptions } from '../storages/api';
+import { StorageFieldLabel } from '../storages/StorageLabel';
 import { type CollectMode, useCollectDeck, useDuplicateDeck } from './api';
 import { BOARDS, boardLabels } from './boards';
 
@@ -112,7 +113,7 @@ function CollectDeckModal({ deckId, mine, opened, onClose }: CollectDeckModalPro
           </Group>
         </Checkbox.Group>
         <Select
-          label="Rangement des nouvelles cartes"
+          label={<StorageFieldLabel>Rangement des nouvelles cartes</StorageFieldLabel>}
           placeholder="Aucun rangement"
           data={storageOptions}
           value={storageId}

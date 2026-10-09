@@ -10,6 +10,7 @@ import { CardRulesText } from '../scryfall/CardRulesText';
 import { commanderEligibility } from '../scryfall/commander';
 import { useBackImage, useScryfallCard } from '../scryfall/hooks';
 import { useStorageOptions } from '../storages/api';
+import { StorageFieldLabel } from '../storages/StorageLabel';
 import type { DeckBoard } from '../api/types';
 import { isCommanderFormat, useCommitPendingCards, useMovePendingCard, useUpdateDeck } from './api';
 import { movedMessage } from './boards';
@@ -157,7 +158,7 @@ export function PendingCardModal({
                     />
                   )}
                   <Select
-                    label="Rangement"
+                    label={<StorageFieldLabel>Rangement</StorageFieldLabel>}
                     placeholder="Aucun rangement"
                     data={storageOptions}
                     value={storageId}

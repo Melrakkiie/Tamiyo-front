@@ -10,6 +10,7 @@ import { CardRulesText } from '../scryfall/CardRulesText';
 import { commanderEligibility } from '../scryfall/commander';
 import { useBackImage, useScryfallCard } from '../scryfall/hooks';
 import { useAllStorages, useStorageOptions } from '../storages/api';
+import { StorageFieldLabel } from '../storages/StorageLabel';
 import { isCommanderFormat, useMoveDeckCards, useUpdateDeck } from './api';
 import { movedMessage } from './boards';
 import { BoardPicker } from './BoardSection';
@@ -238,7 +239,7 @@ function DeckCardDetail({
               ))
             )}
             <Select
-              label="Rangement"
+              label={<StorageFieldLabel>Rangement</StorageFieldLabel>}
               placeholder="Aucun rangement"
               data={storageOptions}
               value={storageId}

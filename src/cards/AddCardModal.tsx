@@ -10,6 +10,7 @@ import { usePrintings } from '../scryfall/hooks';
 import { canBeFoil, canBeNonFoil, printingDetails } from '../scryfall/printing';
 import { PrintingGrid } from '../scryfall/PrintingGrid';
 import { useStorageOptions } from '../storages/api';
+import { StorageFieldLabel } from '../storages/StorageLabel';
 import { PartialCreationError, useCreateCards } from './api';
 
 export interface CardToAdd {
@@ -155,7 +156,7 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
         <Group align="flex-end" grow>
           {!pending && (
             <Select
-              label="Rangement"
+              label={<StorageFieldLabel>Rangement</StorageFieldLabel>}
               placeholder="Aucun rangement"
               data={storageOptions}
               value={storageId}
