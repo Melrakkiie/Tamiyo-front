@@ -32,6 +32,7 @@ import { BoardSection } from '../decks/BoardSection';
 import { type DeckCardGrouped, DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
 import { LegalityWarning } from '../decks/DeckLegalityWarning';
 import { CollectionToggle } from '../decks/CollectionToggle';
+import { useDeckCopyActions } from '../decks/DeckCopyActions';
 import { DeckStatsView } from '../decks/DeckStatsPanel';
 import { sortDeckCards } from '../decks/pendingCards';
 import {
@@ -48,6 +49,7 @@ import { parseSharedGrouping, type SharedCardGrouping, sharedGroupingOptions } f
 import { cardNameKey, tagsByName, tagsOf } from '../decks/tags';
 import { visibilityOption } from '../decks/visibility';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
+import { SettingsMenu } from '../layout/SettingsMenu';
 import { useCardArts, useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
 
 export function SharedDeckRedirect() {
@@ -103,9 +105,11 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
         radius="md"
         p={art ? 'lg' : 0}
         mih={art ? 200 : undefined}
+        pos="relative"
         style={art ? { ...artBackground(art.url, 'light'), display: 'flex', flexDirection: 'column' } : undefined}
       >
-        <Stack gap={6} style={art ? { marginTop: 'auto' } : undefined}>
+        {signedIn && <DeckCopyMenu deckId={deck.id} ownerId={owner.id} onImage={art !== null} />}
+        <Stack gap={6} pr={signedIn ? 48 : undefined} style={art ? { marginTop: 'auto' } : undefined}>
           <Title order={2} c={art ? 'white' : undefined}>
             {deck.name}
           </Title>
@@ -160,6 +164,26 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
         </Tabs.Panel>
       </Tabs>
     </Stack>
+  );
+}
+
+function DeckCopyMenu({ deckId, ownerId, onImage }: { deckId: string; ownerId: string; onImage: boolean }) {
+  const account = useAccount();
+  const copyActions = useDeckCopyActions(deckId, account.data?.id === ownerId);
+
+  return (
+    <>
+      <Box
+        pos="absolute"
+        top={onImage ? 'var(--mantine-spacing-lg)' : 0}
+        right={onImage ? 'var(--mantine-spacing-lg)' : 0}
+      >
+        <SettingsMenu label="Actions sur le deck" onImage={onImage}>
+          {copyActions.menuItems}
+        </SettingsMenu>
+      </Box>
+      {copyActions.modal}
+    </>
   );
 }
 

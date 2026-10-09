@@ -45,6 +45,7 @@ import { useDeckCardActions } from '../decks/useDeckCardActions';
 import { CollectionToggle } from '../decks/CollectionToggle';
 import { CompareDeckModal } from '../decks/CompareDeckModal';
 import { DeckCardModal } from '../decks/DeckCardModal';
+import { useDeckCopyActions } from '../decks/DeckCopyActions';
 import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckTagsModal } from '../decks/DeckTagsModal';
 import { DeckLegalityWarning } from '../decks/DeckLegalityWarning';
@@ -124,6 +125,7 @@ function DeckView({ id }: { id: string }) {
   const [shareOpened, setShareOpened] = useState(false);
   const [compareOpened, setCompareOpened] = useState(false);
   const [tagsOpened, setTagsOpened] = useState(false);
+  const copyActions = useDeckCopyActions(id, true);
   const artId = deck.data ? deckArtId(deck.data) : null;
   const arts = useCardArts([artId]);
   const art = artId ? (arts.data?.[artId] ?? null) : null;
@@ -192,6 +194,8 @@ function DeckView({ id }: { id: string }) {
             <Menu.Item onClick={() => setTagsOpened(true)}>Gérer les tags</Menu.Item>
             <Menu.Item onClick={() => setEditOpened(true)}>Modifier</Menu.Item>
             <Menu.Divider />
+            {copyActions.menuItems}
+            <Menu.Divider />
             <Menu.Item color="red" onClick={() => setConfirmingDelete(true)}>
               Supprimer
             </Menu.Item>
@@ -254,6 +258,7 @@ function DeckView({ id }: { id: string }) {
         </Tabs.Panel>
       </Tabs>
 
+      {copyActions.modal}
       <ShareDeckModal deck={current} opened={shareOpened} onClose={() => setShareOpened(false)} />
       <CompareDeckModal deck={current} opened={compareOpened} onClose={() => setCompareOpened(false)} />
       <DeckTagsModal deckId={current.id} opened={tagsOpened} onClose={() => setTagsOpened(false)} />

@@ -320,6 +320,43 @@ export function useCommitPendingCards() {
   });
 }
 
+export type CollectMode = 'all' | 'missing' | 'pending';
+
+export function useCollectDeck() {
+  const invalidate = useInvalidateDeckAndCollection();
+
+  return useMutation({
+    mutationFn: async ({
+      deckId,
+      mode,
+      boards,
+      storageId,
+    }: {
+      deckId: string;
+      mode: CollectMode;
+      boards: DeckBoard[];
+      storageId: number | null;
+    }) =>
+      unwrap(
+        await api.POST('/deck/{id}/collect', {
+          params: { path: { id: deckId } },
+          body: { mode, boards, storage_id: storageId },
+        }),
+      ),
+    onSettled: invalidate,
+  });
+}
+
+export function useDuplicateDeck() {
+  const invalidate = useInvalidateDecks();
+
+  return useMutation({
+    mutationFn: async (deckId: string) =>
+      unwrap(await api.POST('/deck/{id}/duplicate', { params: { path: { id: deckId } } })),
+    onSettled: invalidate,
+  });
+}
+
 function pendingInput(item: PendingCard, quantity: number): AddPendingCardInput {
   return {
     name: item.name,

@@ -2438,6 +2438,150 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deck/{id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Copy a deck into the authenticated user's decks
+         * @description Copies one of the user's decks, or someone else's public or unlisted deck, into a new private deck named "<name> (copie)", with the same format and background. Its cards, boards, commander and tags are added as POST /deck/{id}/import does with a Tamiyo deck file: owned copies go in the copy, missing ones become pending cards. If adding the cards fails, the copy is removed.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The copy was created. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            deck_id: string;
+                            summary: components["schemas"]["ImportSummary"];
+                        };
+                    };
+                };
+                /** @description id is not a UUID */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or someone else's private deck */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+                502: components["responses"]["BadGateway"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deck/{id}/collect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a deck's cards to the authenticated user's collection
+         * @description Creates cards in the user's collection from the cards of the chosen boards of a deck, owned and pending alike, in their exact printing and finish, in storage_id when given. On one of the user's own decks, mode "pending" adds the pending cards and puts them in the deck, like POST /deck/{id}/pending/commit; "all" does the same and also adds one more copy of every card already in the deck, which stays out of any deck. On someone else's public or unlisted deck, "all" adds every copy and "missing" only the copies the user lacks, counted by card name whatever the printing, every copy of the collection counting. Cards are handled one at a time: on a failure, those already added stay added.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        mode: "all" | "missing" | "pending";
+                        boards: ("main" | "sideboard" | "considering")[];
+                        storage_id?: number | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Cards added; cards_linked counts those also put in the deck. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportSummary"];
+                    };
+                };
+                /** @description Invalid id or body, unknown mode or board, a mode not available for this deck, or storage_id doesn't reference an existing storage */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or someone else's private deck */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deck/{id}/import": {
         parameters: {
             query?: never;
