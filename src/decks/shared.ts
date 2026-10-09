@@ -39,6 +39,15 @@ export function useSharedDeckLegality(deckId: string) {
   });
 }
 
+export function useDeckOwnership(deckId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['decks', 'ownership', deckId],
+    queryFn: async () => unwrap(await api.GET('/deck/{id}/ownership', { params: { path: { id: deckId } } })),
+    enabled,
+    staleTime: 60_000,
+  });
+}
+
 export function sharedCardsToCards(cards: SharedDeckCard[]): DeckCard[] {
   return cards.map((card, index) => ({
     id: index + 1,

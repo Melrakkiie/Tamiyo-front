@@ -16,7 +16,7 @@ function authRoute(url: string): 'none' | 'password' | 'other' {
   if (path === `${API_BASE_PATH}/auth/password` || path === `${API_BASE_PATH}/auth/email`) {
     return 'password';
   }
-  if (path === `${API_BASE_PATH}/auth/me`) {
+  if (path === `${API_BASE_PATH}/auth/me` || path.startsWith(`${API_BASE_PATH}/auth/me/`)) {
     return 'none';
   }
   return path.startsWith(`${API_BASE_PATH}/auth/`) ? 'other' : 'none';

@@ -11,6 +11,7 @@ export type DeckCardSort = NonNullable<
 >;
 export type Deck = components['schemas']['Deck'];
 export type DeckBoard = components['schemas']['DeckBoard'];
+export type Preferences = components['schemas']['Preferences'];
 export type DeckCard = components['schemas']['DeckCard'];
 export type SharedDeck = components['schemas']['SharedDeck'];
 export type SharedDeckCard = components['schemas']['SharedDeckCard'];

@@ -80,3 +80,27 @@ export function PendingBadge({ status, compact = false, size = 'sm' }: PendingBa
     </Badge>
   );
 }
+
+interface CollectionBadgeProps {
+  owned: number;
+  compact?: boolean;
+  size?: 'xs' | 'sm';
+}
+
+export function CollectionBadge({ owned, compact = false, size = 'sm' }: CollectionBadgeProps) {
+  const description = `Tu en as ${copies(owned)} dans ta collection, toutes éditions confondues`;
+  return (
+    <Badge
+      size={size}
+      variant="filled"
+      color="teal"
+      leftSection={<StatusIcon status={{ kind: 'owned', owned }} />}
+      title={description}
+      aria-label={description}
+      style={{ textTransform: 'none', boxShadow: 'var(--mantine-shadow-sm)', flexShrink: 0 }}
+      px={compact ? 4 : undefined}
+    >
+      {compact ? null : owned > 1 ? `${owned} dans ta collection` : 'Dans ta collection'}
+    </Badge>
+  );
+}

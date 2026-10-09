@@ -7,7 +7,7 @@ import { showCardPreview } from '../layout/cardPreview';
 import { withSymbols } from '../scryfall/manaSymbols';
 import { StorageLabel } from '../storages/StorageLabel';
 import { CardImage } from './CardImage';
-import { PendingBadge, type PendingStatus } from './PendingBadge';
+import { CollectionBadge, PendingBadge, type PendingStatus } from './PendingBadge';
 
 interface CardTileProps {
   card: Card;
@@ -16,6 +16,7 @@ interface CardTileProps {
   imageLoading: boolean;
   storageName?: string | null;
   pendingStatus?: PendingStatus;
+  collectionCount?: number;
   compact?: boolean;
   textOnly?: boolean;
   manaCost?: string | null;
@@ -48,11 +49,14 @@ function ManaCost({ card, manaCost }: { card: Card; manaCost: string | null | un
 function CardRow({
   card,
   pendingStatus,
+  collectionCount,
   manaCost,
   details,
   onOpen,
   onPreview,
-}: Pick<CardTileProps, 'card' | 'pendingStatus' | 'manaCost' | 'details' | 'onOpen'> & { onPreview: () => void }) {
+}: Pick<CardTileProps, 'card' | 'pendingStatus' | 'collectionCount' | 'manaCost' | 'details' | 'onOpen'> & {
+  onPreview: () => void;
+}) {
   const quantity = card.quantity ?? 1;
   return (
     <UnstyledButton
@@ -83,6 +87,9 @@ function CardRow({
               </Badge>
             )}
             {pendingStatus && <PendingBadge status={pendingStatus} size="xs" />}
+            {!pendingStatus && collectionCount !== undefined && collectionCount > 0 && (
+              <CollectionBadge owned={collectionCount} size="xs" compact />
+            )}
           </Group>
           <Group gap="xs" wrap="nowrap" style={{ flexShrink: 0 }}>
             {details}
@@ -101,6 +108,7 @@ export function CardTile({
   imageLoading,
   storageName,
   pendingStatus,
+  collectionCount,
   compact,
   textOnly,
   manaCost,
@@ -121,6 +129,7 @@ export function CardTile({
       <CardRow
         card={card}
         pendingStatus={pendingStatus}
+        collectionCount={collectionCount}
         manaCost={manaCost}
         details={details}
         onOpen={onOpen}
@@ -169,6 +178,11 @@ export function CardTile({
           {pendingStatus && (
             <Box pos="absolute" bottom={8} left={8}>
               <PendingBadge status={pendingStatus} compact={compact} />
+            </Box>
+          )}
+          {!pendingStatus && collectionCount !== undefined && collectionCount > 0 && (
+            <Box pos="absolute" bottom={8} left={8}>
+              <CollectionBadge owned={collectionCount} compact={compact} />
             </Box>
           )}
         </Box>

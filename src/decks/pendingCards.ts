@@ -64,20 +64,26 @@ export function sortDeckCards<T extends Card>(cards: T[], sort: DeckCardSort): T
     .map(({ card }) => card);
 }
 
-function stackKey(card: Card, commanderId: number | null | undefined) {
+function stackKey(card: Card, commanderId: number | null | undefined, byPrinting: boolean) {
   if (isPendingCard(card)) {
     return `pending-${pendingIdOf(card)}`;
   }
   if (card.id === commanderId) {
     return 'commander';
   }
-  return `${card.scryfall_id}-${card.foil}-${card.proxy}-${card.storage_id ?? ''}`;
+  return byPrinting
+    ? `${card.scryfall_id}-${card.foil}`
+    : `${card.scryfall_id}-${card.foil}-${card.proxy}-${card.storage_id ?? ''}`;
 }
 
-export function stackCards<T extends Card>(cards: T[], commanderId: number | null | undefined): T[] {
+export function stackCards<T extends Card>(
+  cards: T[],
+  commanderId: number | null | undefined,
+  byPrinting = false,
+): T[] {
   const stacks = new Map<string, T>();
   for (const card of cards) {
-    const key = stackKey(card, commanderId);
+    const key = stackKey(card, commanderId, byPrinting);
     const stack = stacks.get(key);
     if (stack) {
       stack.quantity = (stack.quantity ?? 1) + 1;

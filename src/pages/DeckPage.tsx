@@ -23,6 +23,7 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'reac
 
 import { ApiError, errorMessage } from '../api/errors';
 import type { Card, Deck, DeckBoard, DeckCard, DeckCardSort } from '../api/types';
+import { useShowCollectionInDecks } from '../auth/preferences';
 import { useSession } from '../auth/useSession';
 import { useCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
@@ -41,6 +42,7 @@ import { type DeckCardGrouped, DeckCardGroups, type GroupDrop, useDeckCardGroups
 import { DeckDropBar } from '../decks/DeckDropBar';
 import { DeckDragProvider, DraggableCard } from '../decks/dragDrop';
 import { useDeckCardActions } from '../decks/useDeckCardActions';
+import { CollectionToggle } from '../decks/CollectionToggle';
 import { CompareDeckModal } from '../decks/CompareDeckModal';
 import { DeckCardModal } from '../decks/DeckCardModal';
 import { DeckFormModal } from '../decks/DeckFormModal';
@@ -287,6 +289,7 @@ function DeckView({ id }: { id: string }) {
 }
 
 function CommanderSection({ deck }: { deck: Deck }) {
+  const showCollection = useShowCollectionInDecks();
   const commander = useCard(deck.commander_id);
   const pending = usePendingCards(deck.id);
   const pendingCommander = deck.commander_pending_id
@@ -328,7 +331,7 @@ function CommanderSection({ deck }: { deck: Deck }) {
           <Text fw={600} lineClamp={1}>
             {commanderName ?? '…'}
           </Text>
-          {pendingCommander && (
+          {showCollection && pendingCommander && (
             <Group>
               <PendingBadge status={pendingStatus(pendingCommander)} size="xs" />
             </Group>
@@ -430,6 +433,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
   }
 
   const { size, setSize, textOnly, gridProps } = useCardSize();
+  const showCollection = useShowCollectionInDecks();
   const cards = useDeckCards(deck.id, sort);
   const deckCards = cards.data ?? [];
   const pending = usePendingCards(deck.id);
@@ -444,9 +448,9 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
   const manaCosts = useManaCosts(allCards.map((card) => card.scryfall_id));
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
-  const mainStacks = stackCards(mainCards, deck.commander_id);
-  const sideboardStacks = stackCards(sideboardCards, deck.commander_id);
-  const consideringStacks = stackCards(consideringCards, deck.commander_id);
+  const mainStacks = stackCards(mainCards, deck.commander_id, !showCollection);
+  const sideboardStacks = stackCards(sideboardCards, deck.commander_id, !showCollection);
+  const consideringStacks = stackCards(consideringCards, deck.commander_id, !showCollection);
   const deckTags = useDeckTags(deck.id);
   const cardTags = tagsByName(deckTags.data?.cards ?? []);
   const cardTagsOf = (card: Card) => tagsOf(cardTags, card.name);
@@ -503,8 +507,12 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
           imageLoading={images.isLoading}
           textOnly={textOnly}
           manaCost={manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)}
-          storageName={card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null}
-          pendingStatus={notOwned ? (pendingStatuses.get(pendingIdOf(card)) ?? { kind: 'missing' }) : undefined}
+          storageName={
+            showCollection ? (card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null) : undefined
+          }
+          pendingStatus={
+            showCollection && notOwned ? (pendingStatuses.get(pendingIdOf(card)) ?? { kind: 'missing' }) : undefined
+          }
           compact={size === 'small'}
           onOpen={notOwned ? setOpenedPending : (opened) => setOpenedCard({ card: opened, board })}
         />
@@ -560,7 +568,10 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
           <Text size="sm" c="dimmed">
             {cards.data ? `${mainCards.length} carte${mainCards.length > 1 ? 's' : ''}` : ' '}
           </Text>
-          <CardSizeControl value={size} onChange={setSize} />
+          <Group gap="lg" align="stretch">
+            <CollectionToggle description="Les cartes en attente et le rangement de chaque exemplaire" />
+            <CardSizeControl value={size} onChange={setSize} />
+          </Group>
         </Group>
 
         <Group justify="space-between" align="flex-end">
@@ -593,7 +604,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
 
         {cards.error && <Alert color="red">{errorMessage(cards.error)}</Alert>}
 
-        <PendingCardsSection deckId={deck.id} pending={pendingItems} />
+        {showCollection && <PendingCardsSection deckId={deck.id} pending={pendingItems} />}
 
         {showMissingDetails && <MissingDetailsAlert />}
 

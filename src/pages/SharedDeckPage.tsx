@@ -21,6 +21,7 @@ import { ApiError, errorMessage } from '../api/errors';
 import type { Card, DeckCard, SharedDeck } from '../api/types';
 import { useAccount } from '../auth/account';
 import { ProfileAvatar } from '../auth/UserAvatar';
+import { useShowCollectionInDecks } from '../auth/preferences';
 import { useSession } from '../auth/useSession';
 import { CardImage } from '../cards/CardImage';
 import { CardSizeControl, useCardSize } from '../cards/CardSizeControl';
@@ -30,19 +31,21 @@ import { type CollapsibleBoard, DEFAULT_COLLAPSED_BOARDS, inBoard } from '../dec
 import { BoardSection } from '../decks/BoardSection';
 import { type DeckCardGrouped, DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
 import { LegalityWarning } from '../decks/DeckLegalityWarning';
+import { CollectionToggle } from '../decks/CollectionToggle';
 import { DeckStatsView } from '../decks/DeckStatsPanel';
 import { sortDeckCards } from '../decks/pendingCards';
 import {
   type SharedDeckSort,
   sharedCardsToCards,
   sharedDeckSortOptions,
+  useDeckOwnership,
   useSharedDeck,
   useSharedDeckLegality,
   useSharedDeckStats,
 } from '../decks/shared';
 import { SharedCardModal } from '../decks/SharedCardModal';
 import { parseSharedGrouping, type SharedCardGrouping, sharedGroupingOptions } from '../decks/storageGrouping';
-import { tagsByName, tagsOf } from '../decks/tags';
+import { cardNameKey, tagsByName, tagsOf } from '../decks/tags';
 import { visibilityOption } from '../decks/visibility';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import { useCardArts, useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
@@ -150,7 +153,7 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
         </Tabs.List>
 
         <Tabs.Panel value="cards" pt="md">
-          <SharedDeckCards shared={shared.data} />
+          <SharedDeckCards shared={shared.data} signedIn={signedIn} />
         </Tabs.Panel>
         <Tabs.Panel value="stats" pt="md">
           {tab === 'stats' && <DeckStatsView stats={stats} emptyMessage="Ce deck est vide." />}
@@ -196,8 +199,11 @@ function CommanderCard({ card, imageUrl, onOpen }: { card: Card; imageUrl: strin
   );
 }
 
-function SharedDeckCards({ shared }: { shared: SharedDeck }) {
+function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: boolean }) {
   const { pathname } = useLocation();
+  const showCollection = useShowCollectionInDecks(signedIn) && signedIn;
+  const ownership = useDeckOwnership(shared.deck.id, showCollection);
+  const ownedByName = new Map((ownership.data?.cards ?? []).map((entry) => [cardNameKey(entry.name), entry.owned]));
   const [sort, setSort] = useState<SharedDeckSort>('mana_value');
   const [grouping, setGrouping] = useState<SharedCardGrouping | null>('type');
   const { size, setSize, textOnly, gridProps } = useCardSize();
@@ -256,6 +262,8 @@ function SharedDeckCards({ shared }: { shared: SharedDeck }) {
         imageLoading={images.isLoading}
         textOnly={textOnly}
         manaCost={manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)}
+        collectionCount={showCollection ? ownedByName.get(cardNameKey(card.name)) : undefined}
+        compact={size === 'small'}
         onOpen={setOpenedCard}
       />
     );
@@ -295,7 +303,10 @@ function SharedDeckCards({ shared }: { shared: SharedDeck }) {
             w={240}
           />
         </Group>
-        <CardSizeControl value={size} onChange={setSize} />
+        <Group gap="lg" align="stretch">
+          {signedIn && <CollectionToggle description="Les cartes de ce deck que tu as dans ta collection" />}
+          <CardSizeControl value={size} onChange={setSize} />
+        </Group>
       </Group>
 
       {cards.length === 0 ? (

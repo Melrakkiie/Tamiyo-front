@@ -2519,6 +2519,138 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/me/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The account's display preferences
+         * @description The defaults until something is saved.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Preferences"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change the account's display preferences
+         * @description Only the fields present in the body change.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["Preferences"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Preferences"];
+                    };
+                };
+                /** @description No known field, or a field of the wrong type */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+            };
+        };
+        trace?: never;
+    };
+    "/deck/{id}/ownership": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * How many copies of each card of a deck the caller owns
+         * @description The deck can be one of the caller's or someone else's public or unlisted deck. Every card of the deck is listed once, every board included, matched by name only (any printing or finish, " / " and " // " alike), counting every copy of the caller's collection.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK, sorted by name */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeckOwnership"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Unknown or malformed id, or someone else's private deck */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deck/{id}/compare/{other_id}": {
         parameters: {
             query?: never;
@@ -3367,6 +3499,19 @@ export interface components {
          * @enum {string}
          */
         DeckBoard: "main" | "sideboard" | "considering";
+        Preferences: {
+            /**
+             * @description Whether deck pages show what the collection holds: pending cards and storages in the user's own decks, owned cards in other people's decks.
+             * @default true
+             */
+            show_collection_in_decks: boolean;
+        };
+        DeckOwnership: {
+            cards: {
+                name: string;
+                owned: number;
+            }[];
+        };
         DeckCard: components["schemas"]["Card"] & {
             board: components["schemas"]["DeckBoard"];
         };
