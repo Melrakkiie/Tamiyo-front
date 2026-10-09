@@ -574,10 +574,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
     <DeckDragProvider>
       <Stack>
         <DeckDropBar actions={actions} tagMode={grouping === 'tag'} tagsOf={cardTagsOf} />
-        <Group justify="space-between" align="flex-end">
-          <Text size="sm" c="dimmed">
-            {cards.data ? `${mainCards.length} carte${mainCards.length > 1 ? 's' : ''}` : ' '}
-          </Text>
+        <Group justify="flex-end">
           <Group gap="lg" align="stretch">
             <CollectionToggle description="Les cartes en attente et le rangement de chaque exemplaire" />
             <CardSizeControl value={size} onChange={setSize} />
