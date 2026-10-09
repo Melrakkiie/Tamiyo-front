@@ -62,6 +62,12 @@ export function useImportCardList() {
   );
 }
 
+export function useImportTamiyo() {
+  return useImport(({ file, storageId }: { file: File; storageId?: number }) =>
+    postForm('/import/tamiyo', { file, storage_id: storageId === undefined ? undefined : String(storageId) }),
+  );
+}
+
 export interface DeckListImport {
   deckId: string;
   file: File;
@@ -92,11 +98,12 @@ async function download(path: string, fallbackName: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export type CollectionExport = 'manabox' | 'moxfield';
+export type CollectionExport = 'manabox' | 'moxfield' | 'tamiyo';
 
 const collectionExports: Record<CollectionExport, { path: string; filename: string }> = {
   manabox: { path: '/export/manabox', filename: 'ManaBox_Collection_export.csv' },
   moxfield: { path: '/export/moxfield/collection', filename: 'Moxfield_Collection_export.csv' },
+  tamiyo: { path: '/export/tamiyo', filename: 'Tamiyo_Collection.json' },
 };
 
 export function useExportCollection(storageId?: number) {
@@ -108,25 +115,29 @@ export function useExportCollection(storageId?: number) {
   });
 }
 
-export type DeckExportFormat = 'moxfield' | 'plain' | 'arena';
+export type DeckExportFormat = 'moxfield' | 'plain' | 'arena' | 'tamiyo';
 
 export const deckExportFilenames: Record<DeckExportFormat, string> = {
   moxfield: 'Deck_moxfield.txt',
   plain: 'Deck_list.txt',
   arena: 'Deck_arena.txt',
+  tamiyo: 'Deck_tamiyo.json',
 };
 
-export function useDeckExport(deckId: string, format: DeckExportFormat, enabled: boolean) {
+export function useDeckExport(deckId: string, format: DeckExportFormat, withTags: boolean, enabled: boolean) {
+  const tags = format === 'tamiyo' && withTags;
   return useQuery({
-    queryKey: ['decks', 'export', deckId, format],
-    queryFn: async () => (await send(`/deck/${deckId}/export?format=${format}`, { method: 'GET' })).text(),
+    queryKey: ['decks', 'export', deckId, format, tags],
+    queryFn: async () =>
+      (await send(`/deck/${deckId}/export?format=${format}${tags ? '&tags=true' : ''}`, { method: 'GET' })).text(),
     enabled,
     staleTime: 0,
   });
 }
 
 export function saveText(text: string, filename: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+  const type = filename.endsWith('.json') ? 'application/json;charset=utf-8' : 'text/plain;charset=utf-8';
+  const url = URL.createObjectURL(new Blob([text], { type }));
   const link = document.createElement('a');
   link.href = url;
   link.download = filename;

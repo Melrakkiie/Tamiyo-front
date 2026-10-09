@@ -9,15 +9,16 @@ import {
   Select,
   Stack,
   Switch,
+  Text,
   TextInput,
 } from '@mantine/core';
 import { isNotEmpty, useForm } from '@mantine/form';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Deck } from '../api/types';
 import { useDeckFormats, type DeckInput } from './api';
-import { DeckListInput, deckListErrorMessage, useDeckList } from './DeckListInput';
+import { DeckListInput, deckListErrorMessage, useDeckList, useTamiyoDeckFile } from './DeckListInput';
 import { visibilityOption, visibilityOptions } from './visibility';
 
 interface DeckFormModalProps {
@@ -79,6 +80,19 @@ function DeckForm({
   });
   const [visibility, setVisibility] = useState(form.getValues().visibility);
   form.watch('visibility', ({ value }) => setVisibility(value));
+  const tamiyoFile = useTamiyoDeckFile(withList ? list.source : null);
+
+  useEffect(() => {
+    if (!tamiyoFile) {
+      return;
+    }
+    if (tamiyoFile.name && form.getValues().name.trim() === '') {
+      form.setFieldValue('name', tamiyoFile.name);
+    }
+    if (tamiyoFile.format) {
+      form.setFieldValue('format', tamiyoFile.format);
+    }
+  }, [tamiyoFile]);
 
   return (
     <form
@@ -112,11 +126,17 @@ function DeckForm({
             <Collapse in={listOpened}>
               <Stack gap="xs">
                 <DeckListInput list={list} minRows={6} />
-                <Switch
-                  label="La première ligne est le commandant"
-                  checked={commanderFromFirstLine}
-                  onChange={(event) => setCommanderFromFirstLine(event.currentTarget.checked)}
-                />
+                {tamiyoFile ? (
+                  <Text size="xs" c="dimmed">
+                    Fichier Tamiyo : le deck reprend ses éditions, ses sections, son commandant et ses tags.
+                  </Text>
+                ) : (
+                  <Switch
+                    label="La première ligne est le commandant"
+                    checked={commanderFromFirstLine}
+                    onChange={(event) => setCommanderFromFirstLine(event.currentTarget.checked)}
+                  />
+                )}
                 {listError !== null && listError !== undefined && (
                   <Alert color="red">{deckListErrorMessage(listError)}</Alert>
                 )}

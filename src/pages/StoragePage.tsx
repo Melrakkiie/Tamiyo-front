@@ -98,6 +98,10 @@ function StorageView({ id }: { id: number }) {
           <Menu.Item onClick={() => runExport('moxfield')} disabled={exportStorage.isPending}>
             Pour Moxfield
           </Menu.Item>
+          <Menu.Label>Exporter ce rangement (JSON)</Menu.Label>
+          <Menu.Item onClick={() => runExport('tamiyo')} disabled={exportStorage.isPending}>
+            Pour Tamiyo
+          </Menu.Item>
           <Menu.Divider />
           <Menu.Item onClick={() => setEditOpened(true)}>Modifier</Menu.Item>
           <Menu.Item color="red" onClick={() => setConfirmingDelete(true)}>

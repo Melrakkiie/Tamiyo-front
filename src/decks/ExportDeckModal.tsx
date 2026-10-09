@@ -1,4 +1,15 @@
-import { Alert, Button, CopyButton, Group, Modal, SegmentedControl, Stack, Text, Textarea } from '@mantine/core';
+import {
+  Alert,
+  Button,
+  CopyButton,
+  Group,
+  Modal,
+  SegmentedControl,
+  Stack,
+  Switch,
+  Text,
+  Textarea,
+} from '@mantine/core';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
@@ -21,6 +32,12 @@ const formats: { value: DeckExportFormat; label: string; description: string }[]
     label: 'MTG Arena',
     description: 'Sections « Commander » et « Deck », une ligne par carte, à coller dans MTG Arena.',
   },
+  {
+    value: 'tamiyo',
+    label: 'Tamiyo',
+    description:
+      'Le deck complet, à réimporter dans Tamiyo : éditions exactes, foil, sections, commandant, et tags si tu veux.',
+  },
 ];
 
 interface ExportDeckModalProps {
@@ -32,7 +49,8 @@ interface ExportDeckModalProps {
 
 export function ExportDeckModal({ deckId, deckName, opened, onClose }: ExportDeckModalProps) {
   const [format, setFormat] = useState<DeckExportFormat>('plain');
-  const exported = useDeckExport(deckId, format, opened);
+  const [withTags, setWithTags] = useState(true);
+  const exported = useDeckExport(deckId, format, withTags, opened);
   const text = exported.data ?? '';
   const option = formats.find((candidate) => candidate.value === format) ?? formats[0];
 
@@ -49,8 +67,17 @@ export function ExportDeckModal({ deckId, deckName, opened, onClose }: ExportDec
           {option.description} Les cartes pas encore dans ta collection sont incluses.{' '}
           {format === 'arena'
             ? "Le sideboard suit dans sa propre section ; la section Considering n'est pas exportée."
-            : 'Le sideboard et la section Considering suivent, chacun dans sa propre section.'}
+            : format === 'tamiyo'
+              ? 'Le sideboard et la section Considering aussi.'
+              : 'Le sideboard et la section Considering suivent, chacun dans sa propre section.'}
         </Text>
+        {format === 'tamiyo' && (
+          <Switch
+            label="Inclure les tags"
+            checked={withTags}
+            onChange={(event) => setWithTags(event.currentTarget.checked)}
+          />
+        )}
         {exported.error ? (
           <Alert color="red">{errorMessage(exported.error)}</Alert>
         ) : (

@@ -34,6 +34,13 @@ export function CollectionExportMenu() {
             Tout regroupé, Moxfield ne connaissant pas les rangements.
           </Text>
         </Menu.Item>
+        <Menu.Label>Format Tamiyo (JSON)</Menu.Label>
+        <Menu.Item onClick={() => run('tamiyo')}>
+          <Text size="sm">Pour Tamiyo</Text>
+          <Text size="xs" c="dimmed">
+            Tout ce que Tamiyo sait de tes cartes : rangements, éditions exactes, foil et proxys, à réimporter tel quel.
+          </Text>
+        </Menu.Item>
       </Menu.Dropdown>
     </Menu>
   );
