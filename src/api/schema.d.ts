@@ -2788,6 +2788,73 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/shared/decks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Browse public decks
+         * @description Works without authentication. Lists every public deck, of every user; unlisted and private decks are never listed. A deck's color identity is its commander's, or the union of its main board's cards' identities without one.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Part of the deck's name, case-insensitive. */
+                    q?: string;
+                    format?: string;
+                    /** @description Part of the commander's name. */
+                    commander?: string;
+                    /** @description Part of the name of a card on the main board, owned or pending. */
+                    card?: string;
+                    /** @description Part of the owner's display name. */
+                    owner?: string;
+                    /** @description Color identity letters, or C for colorless decks. */
+                    colors?: string;
+                    color_mode?: "exact" | "include" | "within";
+                    color_count?: number;
+                    sort?: "updated" | "-updated" | "name" | "-name" | "added" | "-added" | "card_count" | "-card_count";
+                    page?: number;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PaginatedPublicDecks"];
+                    };
+                };
+                /** @description Invalid parameter */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                429: components["responses"]["SharedTooManyRequests"];
+                500: components["responses"]["InternalError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/shared/decks/{id}": {
         parameters: {
             query?: never;
@@ -3379,6 +3446,31 @@ export interface components {
             avatar_scryfall_id: string | null;
         };
         /** @description What any signed-in user can see of another user; never the email. */
+        PublicDeck: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            format: string;
+            /** Format: uuid */
+            background_scryfall_id: string | null;
+            /** Format: uuid */
+            commander_scryfall_id: string | null;
+            commander_name: string | null;
+            /** @description In WUBRG order, empty for a colorless deck. */
+            color_identity: string;
+            /** @description Cards of the main board, pending ones included. */
+            card_count: number;
+            owner: components["schemas"]["Profile"];
+            added: string;
+            updated: string;
+        };
+        PaginatedPublicDecks: {
+            data: components["schemas"]["PublicDeck"][];
+            page: number;
+            limit: number;
+            total: number;
+            total_pages: number;
+        };
         Profile: {
             /** Format: uuid */
             id: string;

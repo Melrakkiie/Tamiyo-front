@@ -64,7 +64,7 @@ interface AdvancedSearchProps {
   onReset: () => void;
 }
 
-function ColorChips({
+export function ColorChips({
   value,
   onChange,
   withColorless,

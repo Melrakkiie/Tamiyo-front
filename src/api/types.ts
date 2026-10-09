@@ -14,6 +14,7 @@ export type DeckBoard = components['schemas']['DeckBoard'];
 export type DeckCard = components['schemas']['DeckCard'];
 export type SharedDeck = components['schemas']['SharedDeck'];
 export type SharedDeckCard = components['schemas']['SharedDeckCard'];
+export type PublicDeck = components['schemas']['PublicDeck'];
 export type DeckComparison = components['schemas']['DeckComparison'];
 export type ComparedCard = components['schemas']['ComparedCard'];
 export type ComparedDeck = components['schemas']['ComparedDeck'];

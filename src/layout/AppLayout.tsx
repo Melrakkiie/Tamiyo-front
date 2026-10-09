@@ -32,6 +32,7 @@ const navItems: NavItem[] = [
   { label: 'Collection', to: '/cards' },
   { label: 'Rangements', to: '/storages' },
   { label: 'Decks', to: '/decks' },
+  { label: 'Explorer', to: '/explorer' },
 ];
 
 const pagesWithCards = /^\/(cards|storages\/[^/]+|decks\/[^/]+(\/comparer\/[^/]+)?)\/?$/;
