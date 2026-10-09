@@ -260,7 +260,12 @@ function DeckView({ id }: { id: string }) {
 
       {copyActions.modal}
       <ShareDeckModal deck={current} opened={shareOpened} onClose={() => setShareOpened(false)} />
-      <CompareDeckModal deck={current} opened={compareOpened} onClose={() => setCompareOpened(false)} />
+      <CompareDeckModal
+        deckId={current.id}
+        deckName={current.name}
+        opened={compareOpened}
+        onClose={() => setCompareOpened(false)}
+      />
       <DeckTagsModal deckId={current.id} opened={tagsOpened} onClose={() => setTagsOpened(false)} />
       <ArtPickerModal deck={current} opened={artPickerOpened} onClose={() => setArtPickerOpened(false)} />
       <ExportDeckModal

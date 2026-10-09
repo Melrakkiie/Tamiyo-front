@@ -3253,6 +3253,137 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/shared/decks/{id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Export a shared deck
+         * @description Same export as GET /deck/{id}/export, for a public or unlisted deck. Works without authentication.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    format?: "moxfield" | "plain" | "arena" | "tamiyo";
+                    /** @description With format=tamiyo, include the deck's tags. */
+                    tags?: boolean;
+                };
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The deck as text, served as a download (Deck_moxfield.txt, Deck_list.txt, Deck_arena.txt, or Deck_tamiyo.json as application/json). */
+                200: {
+                    headers: {
+                        "Content-Disposition"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": string;
+                        "application/json": Record<string, unknown>;
+                    };
+                };
+                /** @description format is unknown, or tags isn't a boolean */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No deck has this id, the id isn't a UUID, or the deck is private. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                429: components["responses"]["SharedTooManyRequests"];
+                500: components["responses"]["InternalError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shared/decks/{id}/compare/{other_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+                /** @description The deck to compare with. */
+                other_id: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Compare two shared decks by card name
+         * @description Same comparison as GET /deck/{id}/compare/{other_id}, for two public or unlisted decks. Works without authentication; mine is always false.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                    /** @description The deck to compare with. */
+                    other_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeckComparison"];
+                    };
+                };
+                /** @description A deck doesn't exist, an id isn't a UUID, or a deck is private. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                429: components["responses"]["SharedTooManyRequests"];
+                500: components["responses"]["InternalError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/shared/decks/{id}/stats": {
         parameters: {
             query?: never;

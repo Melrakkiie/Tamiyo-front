@@ -19,6 +19,7 @@ import { Link, useParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
 import type { Card, ComparedCard, ComparedDeck } from '../api/types';
+import { useSession } from '../auth/useSession';
 import { CardSizeControl, useCardSize } from '../cards/CardSizeControl';
 import { CardTile } from '../cards/CardTile';
 import { useDeckComparison } from '../decks/api';
@@ -45,7 +46,8 @@ export function DeckComparePage() {
   const params = useParams();
   const id = params.id ?? '';
   const otherId = params.otherId ?? '';
-  const comparison = useDeckComparison(id, otherId);
+  const signedIn = useSession().status === 'authenticated';
+  const comparison = useDeckComparison(id, otherId, signedIn);
   const [tab, setTab] = useState<string | null>('common');
   const [sort, setSort] = useState<SharedDeckSort>('mana_value');
   const [grouping, setGrouping] = useState<SharedCardGrouping | null>('type');
@@ -66,7 +68,9 @@ export function DeckComparePage() {
       <Stack align="flex-start">
         <Alert color="red">
           {notFound
-            ? "Un des deux decks n'existe pas, ou c'est le deck privé de quelqu'un d'autre."
+            ? signedIn
+              ? "Un des deux decks n'existe pas, ou c'est le deck privé de quelqu'un d'autre."
+              : "Un des deux decks n'existe pas, ou il est privé."
             : errorMessage(comparison.error)}
         </Alert>
         <Anchor component={Link} to={`/decks/${id}`}>

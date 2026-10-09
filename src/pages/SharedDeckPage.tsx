@@ -6,6 +6,7 @@ import {
   Center,
   Group,
   Loader,
+  Menu,
   Paper,
   Select,
   SimpleGrid,
@@ -14,7 +15,7 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
@@ -32,8 +33,10 @@ import { BoardSection } from '../decks/BoardSection';
 import { type DeckCardGrouped, DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
 import { LegalityWarning } from '../decks/DeckLegalityWarning';
 import { CollectionToggle } from '../decks/CollectionToggle';
+import { CompareDeckModal } from '../decks/CompareDeckModal';
 import { useDeckCopyActions } from '../decks/DeckCopyActions';
 import { DeckStatsView } from '../decks/DeckStatsPanel';
+import { ExportDeckModal } from '../decks/ExportDeckModal';
 import { sortDeckCards } from '../decks/pendingCards';
 import {
   type SharedDeckSort,
@@ -108,8 +111,12 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
         pos="relative"
         style={art ? { ...artBackground(art.url, 'light'), display: 'flex', flexDirection: 'column' } : undefined}
       >
-        {signedIn && <DeckCopyMenu deckId={deck.id} ownerId={owner.id} onImage={art !== null} />}
-        <Stack gap={6} pr={signedIn ? 48 : undefined} style={art ? { marginTop: 'auto' } : undefined}>
+        {signedIn ? (
+          <SignedInDeckMenu deckId={deck.id} deckName={deck.name} ownerId={owner.id} onImage={art !== null} />
+        ) : (
+          <SharedDeckMenu deckId={deck.id} deckName={deck.name} onImage={art !== null} />
+        )}
+        <Stack gap={6} pr={48} style={art ? { marginTop: 'auto' } : undefined}>
           <Title order={2} c={art ? 'white' : undefined}>
             {deck.name}
           </Title>
@@ -167,9 +174,17 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
   );
 }
 
-function DeckCopyMenu({ deckId, ownerId, onImage }: { deckId: string; ownerId: string; onImage: boolean }) {
-  const account = useAccount();
-  const copyActions = useDeckCopyActions(deckId, account.data?.id === ownerId);
+interface SharedDeckMenuProps {
+  deckId: string;
+  deckName: string;
+  onImage: boolean;
+  extraItems?: ReactNode;
+  extraModals?: ReactNode;
+}
+
+function SharedDeckMenu({ deckId, deckName, onImage, extraItems, extraModals }: SharedDeckMenuProps) {
+  const [exportOpened, setExportOpened] = useState(false);
+  const [compareOpened, setCompareOpened] = useState(false);
 
   return (
     <>
@@ -179,11 +194,44 @@ function DeckCopyMenu({ deckId, ownerId, onImage }: { deckId: string; ownerId: s
         right={onImage ? 'var(--mantine-spacing-lg)' : 0}
       >
         <SettingsMenu label="Actions sur le deck" onImage={onImage}>
-          {copyActions.menuItems}
+          <Menu.Item onClick={() => setExportOpened(true)}>Exporter</Menu.Item>
+          <Menu.Item onClick={() => setCompareOpened(true)}>Comparer avec un autre deck</Menu.Item>
+          {extraItems}
         </SettingsMenu>
       </Box>
-      {copyActions.modal}
+      <ExportDeckModal
+        deckId={deckId}
+        deckName={deckName}
+        opened={exportOpened}
+        onClose={() => setExportOpened(false)}
+        shared
+      />
+      <CompareDeckModal
+        deckId={deckId}
+        deckName={deckName}
+        opened={compareOpened}
+        onClose={() => setCompareOpened(false)}
+      />
+      {extraModals}
     </>
+  );
+}
+
+function SignedInDeckMenu({ ownerId, ...props }: SharedDeckMenuProps & { ownerId: string }) {
+  const account = useAccount();
+  const copyActions = useDeckCopyActions(props.deckId, account.data?.id === ownerId);
+
+  return (
+    <SharedDeckMenu
+      {...props}
+      extraItems={
+        <>
+          <Menu.Divider />
+          {copyActions.menuItems}
+        </>
+      }
+      extraModals={copyActions.modal}
+    />
   );
 }
 

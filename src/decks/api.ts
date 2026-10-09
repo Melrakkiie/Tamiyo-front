@@ -28,8 +28,8 @@ async function fetchAllDecks(): Promise<Deck[]> {
   }
 }
 
-export function useAllDecks() {
-  return useQuery({ queryKey: ['decks', 'all'], queryFn: fetchAllDecks, staleTime: 60_000 });
+export function useAllDecks(enabled = true) {
+  return useQuery({ queryKey: ['decks', 'all'], queryFn: fetchAllDecks, staleTime: 60_000, enabled });
 }
 
 export function useDeckFormats() {
@@ -44,11 +44,17 @@ export function useDeck(id: string) {
   });
 }
 
-export function useDeckComparison(id: string, otherId: string) {
+export function useDeckComparison(id: string, otherId: string, signedIn: boolean) {
   return useQuery({
-    queryKey: ['decks', 'compare', id, otherId],
-    queryFn: async () =>
-      unwrap(await api.GET('/deck/{id}/compare/{other_id}', { params: { path: { id, other_id: otherId } } })),
+    queryKey: [signedIn ? 'decks' : 'shared', 'compare', id, otherId],
+    queryFn: async () => {
+      const params = { path: { id, other_id: otherId } };
+      return unwrap(
+        signedIn
+          ? await api.GET('/deck/{id}/compare/{other_id}', { params })
+          : await api.GET('/shared/decks/{id}/compare/{other_id}', { params }),
+      );
+    },
   });
 }
 

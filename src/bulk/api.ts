@@ -124,12 +124,18 @@ export const deckExportFilenames: Record<DeckExportFormat, string> = {
   tamiyo: 'Deck_tamiyo.json',
 };
 
-export function useDeckExport(deckId: string, format: DeckExportFormat, withTags: boolean, enabled: boolean) {
+export function useDeckExport(
+  deckId: string,
+  format: DeckExportFormat,
+  withTags: boolean,
+  enabled: boolean,
+  shared = false,
+) {
   const tags = format === 'tamiyo' && withTags;
+  const path = shared ? `/shared/decks/${deckId}/export` : `/deck/${deckId}/export`;
   return useQuery({
-    queryKey: ['decks', 'export', deckId, format, tags],
-    queryFn: async () =>
-      (await send(`/deck/${deckId}/export?format=${format}${tags ? '&tags=true' : ''}`, { method: 'GET' })).text(),
+    queryKey: [shared ? 'shared' : 'decks', 'export', deckId, format, tags],
+    queryFn: async () => (await send(`${path}?format=${format}${tags ? '&tags=true' : ''}`, { method: 'GET' })).text(),
     enabled,
     staleTime: 0,
   });

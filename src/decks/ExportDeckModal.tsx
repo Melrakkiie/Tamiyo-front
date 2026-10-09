@@ -45,12 +45,13 @@ interface ExportDeckModalProps {
   deckName: string;
   opened: boolean;
   onClose: () => void;
+  shared?: boolean;
 }
 
-export function ExportDeckModal({ deckId, deckName, opened, onClose }: ExportDeckModalProps) {
+export function ExportDeckModal({ deckId, deckName, opened, onClose, shared = false }: ExportDeckModalProps) {
   const [format, setFormat] = useState<DeckExportFormat>('plain');
   const [withTags, setWithTags] = useState(true);
-  const exported = useDeckExport(deckId, format, withTags, opened);
+  const exported = useDeckExport(deckId, format, withTags, opened, shared);
   const text = exported.data ?? '';
   const option = formats.find((candidate) => candidate.value === format) ?? formats[0];
 
@@ -64,7 +65,8 @@ export function ExportDeckModal({ deckId, deckName, opened, onClose }: ExportDec
           fullWidth
         />
         <Text size="xs" c="dimmed">
-          {option.description} Les cartes pas encore dans ta collection sont incluses.{' '}
+          {option.description}{' '}
+          {shared ? 'Les cartes en attente sont incluses.' : 'Les cartes pas encore dans ta collection sont incluses.'}{' '}
           {format === 'arena'
             ? "Le sideboard suit dans sa propre section ; la section Considering n'est pas exportée."
             : format === 'tamiyo'

@@ -55,7 +55,6 @@ export const router = createBrowserRouter([
           { path: '/storages/:id', element: <StoragePage /> },
           { path: '/decks', element: <DecksPage /> },
           { path: '/explorer', element: <ExplorePage /> },
-          { path: '/decks/:id/comparer/:otherId', element: <DeckComparePage /> },
           { path: '/settings', element: <SettingsPage /> },
           { path: '/users/:id', element: <ProfilePage /> },
         ],
@@ -66,6 +65,7 @@ export const router = createBrowserRouter([
     element: <SharedLayout />,
     children: [
       { path: '/decks/:id', element: <DeckPage /> },
+      { path: '/decks/:id/comparer/:otherId', element: <DeckComparePage /> },
       { path: '/shared/:id', element: <SharedDeckRedirect /> },
     ],
   },

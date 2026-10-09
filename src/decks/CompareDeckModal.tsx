@@ -1,16 +1,23 @@
 import { Button, Group, Modal, SegmentedControl, Select, Stack, Text, TextInput } from '@mantine/core';
+import { useDebouncedValue } from '@mantine/hooks';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
+import { api, unwrap } from '../api/client';
 import type { Deck } from '../api/types';
+import { useSession } from '../auth/useSession';
 import { useAllDecks } from './api';
 
-type Source = 'mine' | 'link';
+type Source = 'mine' | 'public' | 'link';
 
 const sources: { value: Source; label: string }[] = [
   { value: 'mine', label: 'Un de mes decks' },
+  { value: 'public', label: 'Un deck public' },
   { value: 'link', label: "Le lien d'un deck" },
 ];
+
+const PUBLIC_SEARCH_LIMIT = 20;
 
 const deckIdPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 
@@ -41,39 +48,74 @@ function deckOptionGroups(decks: Deck[], excludedId: string) {
     }));
 }
 
+interface DeckOption {
+  value: string;
+  label: string;
+}
+
+function usePublicDeckSearch(search: string, excludedId: string, selected: DeckOption | null) {
+  const [query] = useDebouncedValue(selected && search === selected.label ? '' : search.trim(), 300);
+  const result = useQuery({
+    queryKey: ['shared', 'browse', 'search', query],
+    queryFn: async () =>
+      unwrap(
+        await api.GET('/shared/decks', {
+          params: { query: { q: query || undefined, sort: query ? 'name' : '-updated', limit: PUBLIC_SEARCH_LIMIT } },
+        }),
+      ),
+    placeholderData: keepPreviousData,
+  });
+  const options: DeckOption[] = (result.data?.data ?? [])
+    .filter((deck) => deck.id !== excludedId)
+    .map((deck) => ({
+      value: deck.id,
+      label: `${deck.name} · ${deck.owner.display_name || 'Sans pseudo'} (${deck.format})`,
+    }));
+  if (selected && !options.some((option) => option.value === selected.value)) {
+    options.unshift(selected);
+  }
+  return { options, loading: result.isFetching };
+}
+
 interface CompareDeckModalProps {
-  deck: Deck;
+  deckId: string;
+  deckName: string;
   opened: boolean;
   onClose: () => void;
 }
 
-export function CompareDeckModal({ deck, opened, onClose }: CompareDeckModalProps) {
+export function CompareDeckModal({ deckId, deckName, opened, onClose }: CompareDeckModalProps) {
   return (
-    <Modal opened={opened} onClose={onClose} title={`Comparer « ${deck.name} »`}>
-      {opened && <CompareForm deck={deck} />}
+    <Modal opened={opened} onClose={onClose} title={`Comparer « ${deckName} »`}>
+      {opened && <CompareForm deckId={deckId} />}
     </Modal>
   );
 }
 
-function CompareForm({ deck }: { deck: Deck }) {
+function CompareForm({ deckId }: { deckId: string }) {
   const navigate = useNavigate();
-  const decks = useAllDecks();
-  const [source, setSource] = useState<Source>('mine');
+  const signedIn = useSession().status === 'authenticated';
+  const available = signedIn ? sources : sources.filter((option) => option.value !== 'mine');
+  const decks = useAllDecks(signedIn);
+  const [source, setSource] = useState<Source>(available[0].value);
   const [chosenId, setChosenId] = useState<string | null>(null);
+  const [publicDeck, setPublicDeck] = useState<DeckOption | null>(null);
+  const [search, setSearch] = useState('');
   const [link, setLink] = useState('');
+  const publicDecks = usePublicDeckSearch(search, deckId, publicDeck);
   const linkedId = deckIdFromLink(link);
-  const otherId = source === 'mine' ? chosenId : linkedId;
-  const groups = deckOptionGroups(decks.data ?? [], deck.id);
+  const otherId = { mine: chosenId, public: publicDeck?.value ?? null, link: linkedId }[source];
+  const groups = deckOptionGroups(decks.data ?? [], deckId);
 
   function submit() {
     if (otherId) {
-      navigate(compareUrl(deck.id, otherId));
+      navigate(compareUrl(deckId, otherId));
     }
   }
 
   return (
     <Stack>
-      <SegmentedControl data={sources} value={source} onChange={(value) => setSource(value as Source)} fullWidth />
+      <SegmentedControl data={available} value={source} onChange={(value) => setSource(value as Source)} fullWidth />
       {source === 'mine' ? (
         <Select
           label="Deck à comparer"
@@ -83,6 +125,20 @@ function CompareForm({ deck }: { deck: Deck }) {
           onChange={setChosenId}
           searchable
           nothingFoundMessage="Aucun deck"
+          maxDropdownHeight={320}
+        />
+      ) : source === 'public' ? (
+        <Select
+          label="Deck à comparer"
+          placeholder="Cherche par nom"
+          data={publicDecks.options}
+          value={publicDeck?.value ?? null}
+          onChange={(_value, option) => setPublicDeck(option ?? null)}
+          searchable
+          searchValue={search}
+          onSearchChange={setSearch}
+          filter={({ options }) => options}
+          nothingFoundMessage={publicDecks.loading ? 'Recherche…' : 'Aucun deck public'}
           maxDropdownHeight={320}
         />
       ) : (
