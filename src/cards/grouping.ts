@@ -64,6 +64,7 @@ export interface CardGroup {
   label: string;
   cards: Card[];
   storage?: boolean;
+  tag?: string | null;
 }
 
 export function groupCards(cards: Card[], grouping: CardGrouping): CardGroup[] {

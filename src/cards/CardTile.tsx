@@ -109,6 +109,7 @@ export function CardTile({
 }: CardTileProps) {
   const [shownUrl, setShownUrl] = useState<string | undefined>(undefined);
   const onPreview = () =>
+    !document.body.dataset.cardDragging &&
     showCardPreview({
       name: card.name,
       scryfallId: card.scryfall_id,

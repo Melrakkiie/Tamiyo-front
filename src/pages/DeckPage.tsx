@@ -29,7 +29,7 @@ import { CardImage } from '../cards/CardImage';
 import { CardSizeControl, useCardSize } from '../cards/CardSizeControl';
 import { CardTile } from '../cards/CardTile';
 import { PendingBadge, type PendingStatus } from '../cards/PendingBadge';
-import { hasMissingDetails } from '../cards/grouping';
+import { type CardGroup, hasMissingDetails } from '../cards/grouping';
 import { MissingDetailsAlert } from '../cards/MissingDetailsAlert';
 import { AddToDeckModal } from '../decks/AddToDeckModal';
 import { artBackground, artCredit, deckArtId } from '../decks/art';
@@ -37,7 +37,10 @@ import { ArtPickerModal } from '../decks/ArtPickerModal';
 import { isCommanderFormat, useDeck, useDeckCards, useDeleteDeck, usePendingCards, useUpdateDeck } from '../decks/api';
 import { type CollapsibleBoard, COLLAPSIBLE_BOARDS, DEFAULT_COLLAPSED_BOARDS, inBoard } from '../decks/boards';
 import { BoardSection } from '../decks/BoardSection';
-import { type DeckCardGrouped, DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
+import { type DeckCardGrouped, DeckCardGroups, type GroupDrop, useDeckCardGroups } from '../decks/DeckCardGroups';
+import { DeckDropBar } from '../decks/DeckDropBar';
+import { DeckDragProvider, DraggableCard } from '../decks/dragDrop';
+import { useDeckCardActions } from '../decks/useDeckCardActions';
 import { CompareDeckModal } from '../decks/CompareDeckModal';
 import { DeckCardModal } from '../decks/DeckCardModal';
 import { DeckFormModal } from '../decks/DeckFormModal';
@@ -450,6 +453,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
   const groupedMain = useDeckCardGroups(mainStacks, grouping, storageNames, cardTagsOf);
   const groupedSideboard = useDeckCardGroups(sideboardStacks, grouping, storageNames, cardTagsOf);
   const groupedConsidering = useDeckCardGroups(consideringStacks, grouping, storageNames, cardTagsOf);
+  const actions = useDeckCardActions(deck, cardTagsOf);
   const [addOpened, setAddOpened] = useState(false);
   const [importOpened, setImportOpened] = useState(false);
   const [openedCard, setOpenedCard] = useState<OpenedCard | null>(null);
@@ -487,141 +491,178 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
 
   const pendingStatuses = new Map<number, PendingStatus>(pendingItems.map((item) => [item.id, pendingStatus(item)]));
 
-  const renderTile = (board: DeckBoard) => (card: Card) => {
+  const renderTile = (board: DeckBoard) => (card: Card, group?: CardGroup) => {
     const notOwned = isPendingCard(card);
+    const item = { card, board, tag: group?.tag ?? null, imageUrl: images.data?.[card.scryfall_id] };
     return (
-      <CardTile
-        key={card.id}
-        card={card}
-        imageUrl={images.data?.[card.scryfall_id]}
-        backImageUrl={backImages.data?.[card.scryfall_id]}
-        imageLoading={images.isLoading}
-        textOnly={textOnly}
-        manaCost={manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)}
-        storageName={card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null}
-        pendingStatus={notOwned ? (pendingStatuses.get(pendingIdOf(card)) ?? { kind: 'missing' }) : undefined}
-        compact={size === 'small'}
-        onOpen={notOwned ? setOpenedPending : (opened) => setOpenedCard({ card: opened, board })}
-      />
+      <DraggableCard key={card.id} item={item}>
+        <CardTile
+          card={card}
+          imageUrl={images.data?.[card.scryfall_id]}
+          backImageUrl={backImages.data?.[card.scryfall_id]}
+          imageLoading={images.isLoading}
+          textOnly={textOnly}
+          manaCost={manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)}
+          storageName={card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null}
+          pendingStatus={notOwned ? (pendingStatuses.get(pendingIdOf(card)) ?? { kind: 'missing' }) : undefined}
+          compact={size === 'small'}
+          onOpen={notOwned ? setOpenedPending : (opened) => setOpenedCard({ card: opened, board })}
+        />
+      </DraggableCard>
     );
   };
 
+  function tagDrop(board: DeckBoard): GroupDrop | undefined {
+    if (grouping !== 'tag') {
+      return undefined;
+    }
+    const changesTags = (group: CardGroup, card: Card) => {
+      const tags = cardTagsOf(card);
+      return group.tag === null ? tags.length > 0 : group.tag !== undefined && !tags.includes(group.tag);
+    };
+    return {
+      id: (group) =>
+        group.tag === undefined
+          ? null
+          : group.tag === null
+            ? `group:${board}:untagged`
+            : `group:${board}:tag:${group.tag}`,
+      accepts: (group, item) => changesTags(group, item.card) || actions.canMoveTo(item, board),
+      onDrop: (group, item) => {
+        if (changesTags(group, item.card)) {
+          if (group.tag === null) {
+            actions.removeAllTags(item);
+          } else if (group.tag !== undefined) {
+            actions.addTag(item, group.tag);
+          }
+        }
+        if (actions.canMoveTo(item, board)) {
+          actions.moveToBoard(item, board);
+        }
+      },
+    };
+  }
+
   function renderBoard(board: DeckBoard, stacks: Card[], grouped: DeckCardGrouped) {
+    const tile = renderTile(board);
     return grouping ? (
-      <DeckCardGroups {...grouped} gridProps={gridProps} renderTile={renderTile(board)} />
+      <DeckCardGroups {...grouped} gridProps={gridProps} renderTile={tile} drop={tagDrop(board)} />
     ) : (
-      <SimpleGrid {...gridProps}>{stacks.map(renderTile(board))}</SimpleGrid>
+      <SimpleGrid {...gridProps}>{stacks.map((card) => tile(card))}</SimpleGrid>
     );
   }
 
   return (
-    <Stack>
-      <Group justify="space-between" align="flex-end">
-        <Text size="sm" c="dimmed">
-          {cards.data ? `${mainCards.length} carte${mainCards.length > 1 ? 's' : ''}` : ' '}
-        </Text>
-        <CardSizeControl value={size} onChange={setSize} />
-      </Group>
-
-      <Group justify="space-between" align="flex-end">
-        <Group align="flex-end">
-          <Select
-            label="Grouper par"
-            placeholder="Aucun regroupement"
-            data={deckGroupingOptions}
-            value={grouping}
-            onChange={(value) => changeView({ grouping: parseDeckGrouping(value) })}
-            clearable
-            w={200}
-          />
-          <Select
-            label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
-            data={sortOptions}
-            value={sort}
-            onChange={(value) => value && changeView({ sort: value as DeckCardSort })}
-            allowDeselect={false}
-            w={240}
-          />
+    <DeckDragProvider>
+      <Stack>
+        <DeckDropBar actions={actions} tagMode={grouping === 'tag'} tagsOf={cardTagsOf} />
+        <Group justify="space-between" align="flex-end">
+          <Text size="sm" c="dimmed">
+            {cards.data ? `${mainCards.length} carte${mainCards.length > 1 ? 's' : ''}` : ' '}
+          </Text>
+          <CardSizeControl value={size} onChange={setSize} />
         </Group>
-        <Group gap="xs">
-          <Button variant="default" onClick={() => setImportOpened(true)}>
-            Importer une liste
-          </Button>
-          <Button onClick={() => setAddOpened(true)}>Ajouter des cartes</Button>
+
+        <Group justify="space-between" align="flex-end">
+          <Group align="flex-end">
+            <Select
+              label="Grouper par"
+              placeholder="Aucun regroupement"
+              data={deckGroupingOptions}
+              value={grouping}
+              onChange={(value) => changeView({ grouping: parseDeckGrouping(value) })}
+              clearable
+              w={200}
+            />
+            <Select
+              label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
+              data={sortOptions}
+              value={sort}
+              onChange={(value) => value && changeView({ sort: value as DeckCardSort })}
+              allowDeselect={false}
+              w={240}
+            />
+          </Group>
+          <Group gap="xs">
+            <Button variant="default" onClick={() => setImportOpened(true)}>
+              Importer une liste
+            </Button>
+            <Button onClick={() => setAddOpened(true)}>Ajouter des cartes</Button>
+          </Group>
         </Group>
-      </Group>
 
-      {cards.error && <Alert color="red">{errorMessage(cards.error)}</Alert>}
+        {cards.error && <Alert color="red">{errorMessage(cards.error)}</Alert>}
 
-      <PendingCardsSection deckId={deck.id} pending={pendingItems} />
+        <PendingCardsSection deckId={deck.id} pending={pendingItems} />
 
-      {showMissingDetails && <MissingDetailsAlert />}
+        {showMissingDetails && <MissingDetailsAlert />}
 
-      {cards.isLoading ? (
-        <Center p="xl">
-          <Loader />
-        </Center>
-      ) : (
-        <>
-          {allCards.length === 0 ? (
-            <Center p="xl">
-              <Text c="dimmed">Ce deck est vide : ajoute des cartes de ta collection.</Text>
-            </Center>
-          ) : mainCards.length === 0 ? (
-            <Text size="sm" c="dimmed">
-              Aucune carte dans le deck principal.
-            </Text>
-          ) : (
-            renderBoard('main', mainStacks, groupedMain)
-          )}
-          <BoardSection
-            board="sideboard"
-            count={sideboardCards.length}
-            collapsed={collapsed.includes('sideboard')}
-            onToggle={() => toggleBoard('sideboard')}
-            emptyMessage={emptyBoardMessages.sideboard}
-          >
-            {renderBoard('sideboard', sideboardStacks, groupedSideboard)}
-          </BoardSection>
-          <BoardSection
-            board="considering"
-            count={consideringCards.length}
-            collapsed={collapsed.includes('considering')}
-            onToggle={() => toggleBoard('considering')}
-            emptyMessage={emptyBoardMessages.considering}
-          >
-            {renderBoard('considering', consideringStacks, groupedConsidering)}
-          </BoardSection>
-        </>
-      )}
+        {cards.isLoading ? (
+          <Center p="xl">
+            <Loader />
+          </Center>
+        ) : (
+          <>
+            {allCards.length === 0 ? (
+              <Center p="xl">
+                <Text c="dimmed">Ce deck est vide : ajoute des cartes de ta collection.</Text>
+              </Center>
+            ) : mainCards.length === 0 ? (
+              <Text size="sm" c="dimmed">
+                Aucune carte dans le deck principal.
+              </Text>
+            ) : (
+              renderBoard('main', mainStacks, groupedMain)
+            )}
+            <BoardSection
+              board="sideboard"
+              count={sideboardCards.length}
+              collapsed={collapsed.includes('sideboard')}
+              onToggle={() => toggleBoard('sideboard')}
+              emptyMessage={emptyBoardMessages.sideboard}
+            >
+              {renderBoard('sideboard', sideboardStacks, groupedSideboard)}
+            </BoardSection>
+            <BoardSection
+              board="considering"
+              count={consideringCards.length}
+              collapsed={collapsed.includes('considering')}
+              onToggle={() => toggleBoard('considering')}
+              emptyMessage={emptyBoardMessages.considering}
+            >
+              {renderBoard('considering', consideringStacks, groupedConsidering)}
+            </BoardSection>
+          </>
+        )}
 
-      <ImportListModal deck={deck} opened={importOpened} onClose={() => setImportOpened(false)} />
-      <AddToDeckModal
-        deck={deck}
-        deckCardIds={new Set(deckCards.map((card) => card.id))}
-        opened={addOpened}
-        onClose={() => setAddOpened(false)}
-      />
-      <DeckCardModal
-        deckId={deck.id}
-        deckFormat={deck.format}
-        commanderId={deck.commander_id}
-        deckCardIds={new Set(deckCards.map((card) => card.id))}
-        card={openedCard?.card ?? null}
-        board={openedCard?.board ?? 'main'}
-        imageUrl={openedCard ? images.data?.[openedCard.card.scryfall_id] : undefined}
-        onClose={() => setOpenedCard(null)}
-      />
-      <PendingCardModal
-        deckId={deck.id}
-        deckFormat={deck.format}
-        commanderPendingId={deck.commander_pending_id}
-        deckCardIds={new Set(deckCards.map((card) => card.id))}
-        card={openedPending}
-        item={openedPending ? pendingItems.find((item) => item.id === pendingIdOf(openedPending)) : undefined}
-        imageUrl={openedPending ? images.data?.[openedPending.scryfall_id] : undefined}
-        onClose={() => setOpenedPending(null)}
-      />
-    </Stack>
+        <ImportListModal deck={deck} opened={importOpened} onClose={() => setImportOpened(false)} />
+        <AddToDeckModal
+          deck={deck}
+          deckCardIds={new Set(deckCards.map((card) => card.id))}
+          opened={addOpened}
+          onClose={() => setAddOpened(false)}
+        />
+        <DeckCardModal
+          deckId={deck.id}
+          deckFormat={deck.format}
+          commanderId={deck.commander_id}
+          deckCardIds={new Set(deckCards.map((card) => card.id))}
+          card={openedCard?.card ?? null}
+          board={openedCard?.board ?? 'main'}
+          imageUrl={openedCard ? images.data?.[openedCard.card.scryfall_id] : undefined}
+          onClose={() => setOpenedCard(null)}
+        />
+        <PendingCardModal
+          deckId={deck.id}
+          deckFormat={deck.format}
+          commanderPendingId={deck.commander_pending_id}
+          deckCardIds={new Set(deckCards.map((card) => card.id))}
+          card={openedPending}
+          item={openedPending ? pendingItems.find((item) => item.id === pendingIdOf(openedPending)) : undefined}
+          imageUrl={openedPending ? images.data?.[openedPending.scryfall_id] : undefined}
+          onClose={() => setOpenedPending(null)}
+        />
+      </Stack>
+    </DeckDragProvider>
   );
 }

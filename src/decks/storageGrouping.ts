@@ -38,10 +38,10 @@ export function groupByTag(cards: Card[], tagsOf: (card: Card) => string[]): Car
     }
   }
   const groups: CardGroup[] = [...byTag.entries()]
-    .map(([label, tagCards]) => ({ label, cards: tagCards }))
+    .map(([label, tagCards]) => ({ label, cards: tagCards, tag: label }))
     .sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }));
   if (untagged.length > 0) {
-    groups.push({ label: 'Sans tag', cards: untagged });
+    groups.push({ label: 'Sans tag', cards: untagged, tag: null });
   }
   return groups;
 }
