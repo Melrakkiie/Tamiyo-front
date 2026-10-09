@@ -28,6 +28,7 @@ import { useSession } from '../auth/useSession';
 import { useCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
 import { CardSizeControl, useCardSize } from '../cards/CardSizeControl';
+import { useCardContextMenu } from '../cards/CardContextMenu';
 import { CardTile } from '../cards/CardTile';
 import { PendingBadge, type PendingStatus } from '../cards/PendingBadge';
 import { type CardGroup, hasMissingDetails } from '../cards/grouping';
@@ -42,6 +43,7 @@ import { type DeckCardGrouped, DeckCardGroups, type GroupDrop, useDeckCardGroups
 import { DeckDropBar } from '../decks/DeckDropBar';
 import { DeckDragProvider, DraggableCard } from '../decks/dragDrop';
 import { useDeckCardActions } from '../decks/useDeckCardActions';
+import { useDeckCardMenu } from '../decks/useDeckCardMenu';
 import { CollectionToggle } from '../decks/CollectionToggle';
 import { CompareDeckModal } from '../decks/CompareDeckModal';
 import { DeckCardModal } from '../decks/DeckCardModal';
@@ -468,6 +470,8 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
   const groupedSideboard = useDeckCardGroups(sideboardStacks, grouping, storageNames, cardTagsOf);
   const groupedConsidering = useDeckCardGroups(consideringStacks, grouping, storageNames, cardTagsOf);
   const actions = useDeckCardActions(deck, cardTagsOf);
+  const contextMenu = useCardContextMenu();
+  const cardMenu = useDeckCardMenu(deck, pendingItems, actions);
   const [addOpened, setAddOpened] = useState(false);
   const [importOpened, setImportOpened] = useState(false);
   const [openedCard, setOpenedCard] = useState<OpenedCard | null>(null);
@@ -525,6 +529,9 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
           }
           compact={size === 'small'}
           onOpen={notOwned ? setOpenedPending : (opened) => setOpenedCard({ card: opened, board })}
+          onContextMenu={(event, clicked) =>
+            contextMenu.open(event, cardMenu.menuFor(clicked, board, images.data?.[clicked.scryfall_id]))
+          }
         />
       </DraggableCard>
     );
@@ -658,6 +665,8 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
           </>
         )}
 
+        {contextMenu.element}
+        {cardMenu.modals}
         <ImportListModal deck={deck} opened={importOpened} onClose={() => setImportOpened(false)} />
         <AddToDeckModal
           deck={deck}

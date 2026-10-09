@@ -24,6 +24,7 @@ import { useAccount } from '../auth/account';
 import { ProfileAvatar } from '../auth/UserAvatar';
 import { useShowCollectionInDecks } from '../auth/preferences';
 import { useSession } from '../auth/useSession';
+import { useCardContextMenu } from '../cards/CardContextMenu';
 import { CardImage } from '../cards/CardImage';
 import { CardSizeControl, useCardSize } from '../cards/CardSizeControl';
 import { CardTile } from '../cards/CardTile';
@@ -48,6 +49,7 @@ import {
   useSharedDeckStats,
 } from '../decks/shared';
 import { SharedCardModal } from '../decks/SharedCardModal';
+import { useSharedCardMenu } from '../decks/useSharedCardMenu';
 import { parseSharedGrouping, type SharedCardGrouping, sharedGroupingOptions } from '../decks/storageGrouping';
 import { cardNameKey, tagsByName, tagsOf } from '../decks/tags';
 import { visibilityOption } from '../decks/visibility';
@@ -298,6 +300,9 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
   const groupedSideboard = useDeckCardGroups(sideboardCards, grouping, undefined, cardTagsOf);
   const groupedConsidering = useDeckCardGroups(consideringCards, grouping, undefined, cardTagsOf);
 
+  const contextMenu = useCardContextMenu();
+  const cardMenu = useSharedCardMenu(signedIn);
+
   function toggleBoard(board: CollapsibleBoard) {
     setCollapsed((current) =>
       current.includes(board) ? current.filter((other) => other !== board) : [...current, board],
@@ -337,6 +342,9 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
         collectionCount={showCollection ? ownedByName.get(cardNameKey(card.name)) : undefined}
         compact={size === 'small'}
         onOpen={setOpenedCard}
+        onContextMenu={(event, clicked) =>
+          contextMenu.open(event, cardMenu.menuFor(clicked, images.data?.[clicked.scryfall_id]))
+        }
       />
     );
   }
@@ -415,6 +423,8 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
         </BoardSection>
       )}
 
+      {contextMenu.element}
+      {cardMenu.modals}
       <SharedCardModal
         card={openedCard}
         imageUrl={openedCard ? images.data?.[openedCard.scryfall_id] : undefined}

@@ -6,7 +6,7 @@ import { errorMessage } from '../api/errors';
 import type { Card, DeckBoard, PendingCard } from '../api/types';
 import { useImportIntoDeck } from '../bulk/api';
 import { useRemoveCardFromDeck, useRemoveCopiesFromDeck, useRemovePendingCard, useSetPendingQuantity } from './api';
-import { withBoardHeader } from './boards';
+import { deckLineFile } from './AddCopiesToDeckModal';
 import { deckListErrorMessage, deckListSummary } from './DeckListInput';
 
 export type QuantitySource =
@@ -45,12 +45,8 @@ export function DeckQuantityControl({ deckId, card, board, source, onChanged }: 
   const removeError = removeOne.error ?? removeCopies.error ?? removePending.error ?? setPendingQuantity.error;
 
   function add(count: number) {
-    const line = withBoardHeader(
-      `${count} ${card.name} (${card.set_code}) ${card.collector_number}${card.foil ? ' *F*' : ''}\n`,
-      board,
-    );
     addCopies.mutate(
-      { deckId, file: new File([line], 'deck.txt', { type: 'text/plain' }), commanderFromFirstLine: false },
+      { deckId, file: deckLineFile(card, count, board), commanderFromFirstLine: false },
       {
         onSuccess: (summary) => {
           setValue(current);

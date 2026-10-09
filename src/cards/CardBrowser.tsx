@@ -38,11 +38,13 @@ import {
   parseAdvancedFilters,
 } from './advancedFilters';
 import { copyCount, useCards } from './api';
+import { useCardContextMenu } from './CardContextMenu';
 import { CardDetailModal } from './CardDetailModal';
 import { CardSizeControl, useCardSize } from './CardSizeControl';
 import { CardTile } from './CardTile';
 import { MissingDetailsAlert } from './MissingDetailsAlert';
 import { groupCards, groupingOptions, hasMissingDetails, parseGrouping } from './grouping';
+import { useCollectionCardMenu } from './useCollectionCardMenu';
 
 const PAGE_SIZE = 24;
 const GROUPED_PAGE_SIZE = 48;
@@ -104,6 +106,8 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const drop = useScryfallDrop((printing) => setCardToAdd({ name: printing.name, printing }));
   const [searchKey, setSearchKey] = useState(0);
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
+  const contextMenu = useCardContextMenu();
+  const cardMenu = useCollectionCardMenu();
 
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
@@ -141,6 +145,9 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
           showStorage ? (card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null) : undefined
         }
         onOpen={setOpenedCard}
+        onContextMenu={(event, clicked) =>
+          contextMenu.open(event, cardMenu.menuFor(clicked, images.data?.[clicked.scryfall_id]))
+        }
       />
     );
   }
@@ -357,6 +364,8 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
         }}
         defaultStorageId={storageId}
       />
+      {contextMenu.element}
+      {cardMenu.modals}
       <CardDetailModal
         card={openedCard}
         imageUrl={openedCard ? images.data?.[openedCard.scryfall_id] : undefined}

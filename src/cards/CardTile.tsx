@@ -6,6 +6,7 @@ import type { Card } from '../api/types';
 import { showCardPreview } from '../layout/cardPreview';
 import { withSymbols } from '../scryfall/manaSymbols';
 import { StorageLabel } from '../storages/StorageLabel';
+import type { ContextMenuEvent } from './CardContextMenu';
 import { CardImage } from './CardImage';
 import { CollectionBadge, PendingBadge, type PendingStatus } from './PendingBadge';
 
@@ -22,6 +23,7 @@ interface CardTileProps {
   manaCost?: string | null;
   details?: ReactNode;
   onOpen: (card: Card) => void;
+  onContextMenu?: (event: ContextMenuEvent, card: Card) => void;
 }
 
 function ManaCost({ card, manaCost }: { card: Card; manaCost: string | null | undefined }) {
@@ -54,13 +56,18 @@ function CardRow({
   details,
   onOpen,
   onPreview,
-}: Pick<CardTileProps, 'card' | 'pendingStatus' | 'collectionCount' | 'manaCost' | 'details' | 'onOpen'> & {
+  onContextMenu,
+}: Pick<
+  CardTileProps,
+  'card' | 'pendingStatus' | 'collectionCount' | 'manaCost' | 'details' | 'onOpen' | 'onContextMenu'
+> & {
   onPreview: () => void;
 }) {
   const quantity = card.quantity ?? 1;
   return (
     <UnstyledButton
       onClick={() => onOpen(card)}
+      onContextMenu={onContextMenu && ((event) => onContextMenu(event, card))}
       onMouseEnter={onPreview}
       onFocus={onPreview}
       aria-label={quantity > 1 ? `${card.name}, ${quantity} exemplaires` : card.name}
@@ -114,6 +121,7 @@ export function CardTile({
   manaCost,
   details,
   onOpen,
+  onContextMenu,
 }: CardTileProps) {
   const [shownUrl, setShownUrl] = useState<string | undefined>(undefined);
   const onPreview = () =>
@@ -134,6 +142,7 @@ export function CardTile({
         details={details}
         onOpen={onOpen}
         onPreview={onPreview}
+        onContextMenu={onContextMenu}
       />
     );
   }
@@ -141,6 +150,7 @@ export function CardTile({
   return (
     <UnstyledButton
       onClick={() => onOpen(card)}
+      onContextMenu={onContextMenu && ((event) => onContextMenu(event, card))}
       onMouseEnter={onPreview}
       onFocus={onPreview}
       aria-label={quantity > 1 ? `${card.name}, ${quantity} exemplaires` : card.name}
