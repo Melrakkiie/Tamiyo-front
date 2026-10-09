@@ -2881,7 +2881,15 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    format?: "moxfield" | "plain" | "arena";
+                    format?: "moxfield" | "plain" | "arena" | "tamiyo" | "cardmarket";
+                    /** @description With format=tamiyo, include the deck's tags. */
+                    tags?: boolean;
+                    /** @description With format=cardmarket, the boards to list, comma-separated (main, sideboard, considering). */
+                    boards?: string;
+                    /** @description With format=cardmarket, only list the pending cards. */
+                    pending?: boolean;
+                    /** @description With format=cardmarket, add each card's expansion name (Scryfall's), one line per card and expansion. */
+                    printings?: boolean;
                 };
                 header?: never;
                 path: {
@@ -3270,9 +3278,15 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    format?: "moxfield" | "plain" | "arena" | "tamiyo";
+                    format?: "moxfield" | "plain" | "arena" | "tamiyo" | "cardmarket";
                     /** @description With format=tamiyo, include the deck's tags. */
                     tags?: boolean;
+                    /** @description With format=cardmarket, the boards to list, comma-separated (main, sideboard, considering). */
+                    boards?: string;
+                    /** @description With format=cardmarket, only list the pending cards. */
+                    pending?: boolean;
+                    /** @description With format=cardmarket, add each card's expansion name (Scryfall's), one line per card and expansion. */
+                    printings?: boolean;
                 };
                 header?: never;
                 path: {

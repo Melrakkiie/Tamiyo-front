@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { authFetch } from '../api/client';
 import { ApiError } from '../api/errors';
-import type { ImportSummary } from '../api/types';
+import type { DeckBoard, ImportSummary } from '../api/types';
 import { API_BASE_URL } from '../config';
 
 async function send(path: string, init: RequestInit): Promise<Response> {
@@ -115,27 +115,47 @@ export function useExportCollection(storageId?: number) {
   });
 }
 
-export type DeckExportFormat = 'moxfield' | 'plain' | 'arena' | 'tamiyo';
+export type DeckExportFormat = 'moxfield' | 'plain' | 'arena' | 'tamiyo' | 'cardmarket';
 
 export const deckExportFilenames: Record<DeckExportFormat, string> = {
   moxfield: 'Deck_moxfield.txt',
   plain: 'Deck_list.txt',
   arena: 'Deck_arena.txt',
   tamiyo: 'Deck_tamiyo.json',
+  cardmarket: 'Deck_cardmarket.txt',
 };
 
-export function useDeckExport(
-  deckId: string,
-  format: DeckExportFormat,
-  withTags: boolean,
-  enabled: boolean,
-  shared = false,
-) {
-  const tags = format === 'tamiyo' && withTags;
+export interface DeckExportOptions {
+  format: DeckExportFormat;
+  withTags: boolean;
+  onlyPending: boolean;
+  printings: boolean;
+  boards: DeckBoard[];
+}
+
+function deckExportQuery({ format, withTags, onlyPending, printings, boards }: DeckExportOptions) {
+  const params = new URLSearchParams({ format });
+  if (format === 'tamiyo' && withTags) {
+    params.set('tags', 'true');
+  }
+  if (format === 'cardmarket' && onlyPending) {
+    params.set('pending', 'true');
+  }
+  if (format === 'cardmarket' && printings) {
+    params.set('printings', 'true');
+  }
+  if (format === 'cardmarket') {
+    params.set('boards', boards.join(','));
+  }
+  return params.toString();
+}
+
+export function useDeckExport(deckId: string, options: DeckExportOptions, enabled: boolean, shared = false) {
+  const query = deckExportQuery(options);
   const path = shared ? `/shared/decks/${deckId}/export` : `/deck/${deckId}/export`;
   return useQuery({
-    queryKey: [shared ? 'shared' : 'decks', 'export', deckId, format, tags],
-    queryFn: async () => (await send(`${path}?format=${format}${tags ? '&tags=true' : ''}`, { method: 'GET' })).text(),
+    queryKey: [shared ? 'shared' : 'decks', 'export', deckId, query],
+    queryFn: async () => (await send(`${path}?${query}`, { method: 'GET' })).text(),
     enabled,
     staleTime: 0,
   });

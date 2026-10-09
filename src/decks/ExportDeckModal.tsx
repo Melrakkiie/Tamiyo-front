@@ -1,6 +1,7 @@
 import {
   Alert,
   Button,
+  Checkbox,
   CopyButton,
   Group,
   Modal,
@@ -13,7 +14,9 @@ import {
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
+import type { DeckBoard } from '../api/types';
 import { type DeckExportFormat, deckExportFilenames, saveText, useDeckExport } from '../bulk/api';
+import { BOARDS, boardLabels } from './boards';
 
 const formats: { value: DeckExportFormat; label: string; description: string }[] = [
   {
@@ -38,7 +41,45 @@ const formats: { value: DeckExportFormat; label: string; description: string }[]
     description:
       'Le deck complet, à réimporter dans Tamiyo : éditions exactes, foil, sections, commandant, et tags si tu veux.',
   },
+  {
+    value: 'cardmarket',
+    label: 'Cardmarket',
+    description: 'Une ligne par carte, à coller dans une liste de souhaits Cardmarket.',
+  },
 ];
+
+type CardmarketCards = 'all' | 'pending';
+type CardmarketPrintings = 'name' | 'printings';
+
+const cardmarketCardsOptions: { value: CardmarketCards; label: string }[] = [
+  { value: 'all', label: 'Tout le deck' },
+  { value: 'pending', label: 'Seulement les cartes en attente' },
+];
+
+const cardmarketPrintingsOptions: { value: CardmarketPrintings; label: string }[] = [
+  { value: 'name', label: 'Nom de la carte' },
+  { value: 'printings', label: 'Éditions précises' },
+];
+
+const DEFAULT_CARDMARKET_BOARDS: DeckBoard[] = ['main', 'sideboard'];
+
+function exportNotes(format: DeckExportFormat, shared: boolean, printings: boolean) {
+  if (format === 'cardmarket') {
+    return printings
+      ? "Le nom d'extension vient de Scryfall : si Cardmarket l'écrit autrement, il ignore la ligne. Le foil et les versions (V.1) ne sont pas indiqués."
+      : "Cardmarket accepte n'importe quelle édition.";
+  }
+  const pending = shared
+    ? 'Les cartes en attente sont incluses.'
+    : 'Les cartes pas encore dans ta collection sont incluses.';
+  const boards =
+    format === 'arena'
+      ? "Le sideboard suit dans sa propre section ; la section Considering n'est pas exportée."
+      : format === 'tamiyo'
+        ? 'Le sideboard et la section Considering aussi.'
+        : 'Le sideboard et la section Considering suivent, chacun dans sa propre section.';
+  return `${pending} ${boards}`;
+}
 
 interface ExportDeckModalProps {
   deckId: string;
@@ -51,7 +92,17 @@ interface ExportDeckModalProps {
 export function ExportDeckModal({ deckId, deckName, opened, onClose, shared = false }: ExportDeckModalProps) {
   const [format, setFormat] = useState<DeckExportFormat>('plain');
   const [withTags, setWithTags] = useState(true);
-  const exported = useDeckExport(deckId, format, withTags, opened, shared);
+  const [cardmarketCards, setCardmarketCards] = useState<CardmarketCards>('all');
+  const [cardmarketPrintings, setCardmarketPrintings] = useState<CardmarketPrintings>('name');
+  const [cardmarketBoards, setCardmarketBoards] = useState<DeckBoard[]>(DEFAULT_CARDMARKET_BOARDS);
+  const noBoards = format === 'cardmarket' && cardmarketBoards.length === 0;
+  const printings = cardmarketPrintings === 'printings';
+  const exported = useDeckExport(
+    deckId,
+    { format, withTags, onlyPending: cardmarketCards === 'pending', printings, boards: cardmarketBoards },
+    opened && !noBoards,
+    shared,
+  );
   const text = exported.data ?? '';
   const option = formats.find((candidate) => candidate.value === format) ?? formats[0];
 
@@ -65,14 +116,38 @@ export function ExportDeckModal({ deckId, deckName, opened, onClose, shared = fa
           fullWidth
         />
         <Text size="xs" c="dimmed">
-          {option.description}{' '}
-          {shared ? 'Les cartes en attente sont incluses.' : 'Les cartes pas encore dans ta collection sont incluses.'}{' '}
-          {format === 'arena'
-            ? "Le sideboard suit dans sa propre section ; la section Considering n'est pas exportée."
-            : format === 'tamiyo'
-              ? 'Le sideboard et la section Considering aussi.'
-              : 'Le sideboard et la section Considering suivent, chacun dans sa propre section.'}
+          {option.description} {exportNotes(format, shared, printings)}
         </Text>
+        {format === 'cardmarket' && (
+          <Stack gap="xs">
+            <SegmentedControl
+              fullWidth
+              aria-label="Cartes exportées"
+              data={cardmarketCardsOptions}
+              value={cardmarketCards}
+              onChange={(value) => setCardmarketCards(value as CardmarketCards)}
+            />
+            <SegmentedControl
+              fullWidth
+              aria-label="Éditions"
+              data={cardmarketPrintingsOptions}
+              value={cardmarketPrintings}
+              onChange={(value) => setCardmarketPrintings(value as CardmarketPrintings)}
+            />
+            <Checkbox.Group
+              value={cardmarketBoards}
+              onChange={(value) => setCardmarketBoards(value as DeckBoard[])}
+              label="Sections exportées"
+              error={noBoards ? 'Choisis au moins une section.' : undefined}
+            >
+              <Group gap="md" mt={4}>
+                {BOARDS.map((board) => (
+                  <Checkbox key={board} value={board} label={boardLabels[board]} />
+                ))}
+              </Group>
+            </Checkbox.Group>
+          </Stack>
+        )}
         {format === 'tamiyo' && (
           <Switch
             label="Inclure les tags"
@@ -81,11 +156,16 @@ export function ExportDeckModal({ deckId, deckName, opened, onClose, shared = fa
           />
         )}
         {exported.error ? (
-          <Alert color="red">{errorMessage(exported.error)}</Alert>
+          <Alert color="red">
+            {errorMessage(exported.error, {
+              502: "Scryfall ne répond pas, les noms d'extension sont indisponibles : réessaie, ou exporte seulement les noms.",
+            })}
+          </Alert>
         ) : (
           <Textarea
             aria-label="Texte exporté"
-            value={exported.isLoading ? 'Chargement…' : text}
+            value={noBoards ? '' : exported.isLoading ? 'Chargement…' : text}
+            placeholder="Aucune carte à exporter."
             readOnly
             autosize
             minRows={10}
