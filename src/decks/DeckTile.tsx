@@ -12,6 +12,8 @@ import { FavoriteToggle } from './FavoriteStar';
 import { LikeCount } from './LikeButton';
 import { visibilityOption } from './visibility';
 
+const TILE_HEIGHT = 152;
+
 function totalCards(deck: Deck) {
   return deck.card_count + (deck.pending_count ?? 0);
 }
@@ -80,7 +82,7 @@ export function DeckTile({
   );
 
   return (
-    <Card withBorder component={Link} to={to} mih={128} style={style} onContextMenu={onContextMenu}>
+    <Card withBorder component={Link} to={to} h={TILE_HEIGHT} style={style} onContextMenu={onContextMenu}>
       {content}
     </Card>
   );
