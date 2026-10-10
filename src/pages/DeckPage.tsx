@@ -53,6 +53,8 @@ import { DeckTagsModal } from '../decks/DeckTagsModal';
 import { DeckLegalityWarning } from '../decks/DeckLegalityWarning';
 import { BracketBadge } from '../decks/bracket';
 import { BulkEditModal } from '../decks/BulkEditModal';
+import { MoveDeckToFolderModal } from '../decks/FolderModals';
+import { useSetFavorite } from '../decks/folders';
 import { LikeButton } from '../decks/LikeButton';
 import { DeckStatsPanel } from '../decks/DeckStatsPanel';
 import { ExportDeckModal } from '../decks/ExportDeckModal';
@@ -131,6 +133,8 @@ function DeckView({ id }: { id: string }) {
   const [shareOpened, setShareOpened] = useState(false);
   const [compareOpened, setCompareOpened] = useState(false);
   const [tagsOpened, setTagsOpened] = useState(false);
+  const [folderOpened, setFolderOpened] = useState(false);
+  const setFavorite = useSetFavorite();
   const copyActions = useDeckCopyActions(id, true);
   const artId = deck.data ? deckArtId(deck.data) : null;
   const arts = useCardArts([artId]);
@@ -193,6 +197,10 @@ function DeckView({ id }: { id: string }) {
       >
         <Box pos="absolute" top={art ? 'var(--mantine-spacing-lg)' : 0} right={art ? 'var(--mantine-spacing-lg)' : 0}>
           <SettingsMenu label="Actions sur le deck" onImage={art !== null}>
+            <Menu.Item onClick={() => setFavorite.mutate({ deckId: current.id, favorite: !current.favorite })}>
+              {current.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+            </Menu.Item>
+            <Menu.Item onClick={() => setFolderOpened(true)}>Ranger dans un dossier</Menu.Item>
             <Menu.Item onClick={() => setShareOpened(true)}>Partager</Menu.Item>
             <Menu.Item onClick={() => setArtPickerOpened(true)}>Illustration</Menu.Item>
             <Menu.Item onClick={() => setExportOpened(true)}>Exporter</Menu.Item>
@@ -278,6 +286,7 @@ function DeckView({ id }: { id: string }) {
         onClose={() => setCompareOpened(false)}
       />
       <DeckTagsModal deckId={current.id} opened={tagsOpened} onClose={() => setTagsOpened(false)} />
+      <MoveDeckToFolderModal deck={current} opened={folderOpened} onClose={() => setFolderOpened(false)} />
       <ArtPickerModal deck={current} opened={artPickerOpened} onClose={() => setArtPickerOpened(false)} />
       <BulkEditModal
         deckId={current.id}

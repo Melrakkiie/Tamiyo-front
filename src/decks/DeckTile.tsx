@@ -7,6 +7,7 @@ import { isCommanderFormat } from './api';
 import { artBackground } from './art';
 import { BracketBadge } from './bracket';
 import { ColorIdentity } from './ColorIdentity';
+import { FavoriteToggle } from './FavoriteStar';
 import { LikeCount } from './LikeButton';
 import { visibilityOption } from './visibility';
 
@@ -19,18 +20,30 @@ interface DeckTileProps {
   art: CardArt | null;
   to?: string;
   showVisibility?: boolean;
+  onToggleFavorite?: () => void;
 }
 
-export function DeckTile({ deck, art, to = `/decks/${deck.id}`, showVisibility = true }: DeckTileProps) {
+export function DeckTile({
+  deck,
+  art,
+  to = `/decks/${deck.id}`,
+  showVisibility = true,
+  onToggleFavorite,
+}: DeckTileProps) {
   const style = art ? { ...artBackground(art.url), color: 'white' } : undefined;
   const content = (
     <Stack justify="space-between" h="100%" gap="xs">
       <div>
         <Group justify="space-between" align="flex-start" wrap="nowrap">
           <Stack gap={4} style={{ minWidth: 0 }}>
-            <Text fw={600} lineClamp={1}>
-              {deck.name}
-            </Text>
+            <Group gap={4} wrap="nowrap">
+              {onToggleFavorite && (
+                <FavoriteToggle favorite={!!deck.favorite} onToggle={onToggleFavorite} onImage={art !== null} />
+              )}
+              <Text fw={600} lineClamp={1}>
+                {deck.name}
+              </Text>
+            </Group>
             {deck.color_identity != null && <ColorIdentity identity={deck.color_identity} />}
           </Stack>
           <Stack gap={4} align="flex-end" style={{ flexShrink: 0 }}>

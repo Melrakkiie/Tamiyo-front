@@ -1,12 +1,15 @@
-import { Alert, Anchor, Badge, Center, Group, Loader, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { Alert, Anchor, Badge, Center, Group, Loader, Paper, Stack, Text, Title } from '@mantine/core';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 
 import { errorMessage } from '../api/errors';
 import { useAccount } from '../auth/account';
 import { ProfileAvatar, useAvatarArt } from '../auth/UserAvatar';
 import { artCredit, deckArtId } from '../decks/art';
+import type { Deck } from '../api/types';
+import { DeckFormatGroups, FolderTreeView } from '../decks/DeckFolderTree';
 import { DeckTile } from '../decks/DeckTile';
-import { capitalize, groupByRecent } from '../layout/groupByRecent';
+import { buildFolderTree, usePublicFolders } from '../decks/folders';
 import { useCardArts } from '../scryfall/hooks';
 import { connectionsUrl, useFollowStatus, usePublicDecks, useProfile } from '../users/api';
 import { FollowButton } from '../users/FollowButton';
@@ -16,6 +19,8 @@ export function ProfilePage() {
   const account = useAccount();
   const profile = useProfile(id);
   const decks = usePublicDecks(id);
+  const folders = usePublicFolders(id);
+  const [collapsedFolders, setCollapsedFolders] = useState<ReadonlySet<number>>(new Set());
   const deckArts = useCardArts((decks.data ?? []).map(deckArtId));
   const avatarArt = useAvatarArt(profile.data?.avatar_scryfall_id);
   const follow = useFollowStatus(id);
@@ -42,6 +47,30 @@ export function ProfilePage() {
 
   const name = profile.data.display_name || 'Sans pseudo';
   const publicDecks = decks.data ?? [];
+  const favorites = publicDecks.filter((deck) => deck.favorite);
+  const publicFolders = folders.data ?? [];
+
+  const tile = (deck: Deck) => {
+    const artId = deckArtId(deck);
+    return (
+      <DeckTile
+        key={deck.id}
+        deck={deck}
+        art={artId ? (deckArts.data?.[artId] ?? null) : null}
+        showVisibility={false}
+      />
+    );
+  };
+
+  function toggleFolder(folderId: number) {
+    setCollapsedFolders((current) => {
+      const next = new Set(current);
+      if (!next.delete(folderId)) {
+        next.add(folderId);
+      }
+      return next;
+    });
+  }
 
   return (
     <Stack gap="xl">
@@ -95,16 +124,28 @@ export function ProfilePage() {
         </Group>
       </Paper>
 
+      {favorites.length > 0 && (
+        <Stack gap="sm">
+          <Title order={3} size="h4">
+            Favoris{' '}
+            <Text span size="sm" c="dimmed">
+              ({favorites.length})
+            </Text>
+          </Title>
+          <DeckFormatGroups decks={favorites} renderDeck={tile} />
+        </Stack>
+      )}
+
       <Stack gap="sm">
         <Title order={3} size="h4">
-          Decks publics{' '}
+          Tous les decks{' '}
           {decks.data && (
             <Text span size="sm" c="dimmed">
               ({publicDecks.length})
             </Text>
           )}
         </Title>
-        {decks.isLoading ? (
+        {decks.isLoading || folders.isLoading ? (
           <Center p="lg">
             <Loader />
           </Center>
@@ -116,32 +157,15 @@ export function ProfilePage() {
               ? "Aucun deck public pour le moment : passe un deck en « Public » depuis sa page pour qu'il apparaisse ici."
               : 'Aucun deck public pour le moment.'}
           </Text>
+        ) : publicFolders.length > 0 ? (
+          <FolderTreeView
+            tree={buildFolderTree(publicFolders, publicDecks)}
+            renderDeck={tile}
+            isCollapsed={(folder) => collapsedFolders.has(folder.id)}
+            onToggle={(folder) => toggleFolder(folder.id)}
+          />
         ) : (
-          <Stack gap="xl">
-            {groupByRecent(publicDecks, (deck) => deck.format, capitalize).map((group) => (
-              <Stack key={group.key} gap="sm">
-                <Title order={4} size="h5">
-                  {group.label}{' '}
-                  <Text span size="sm" c="dimmed">
-                    ({group.items.length})
-                  </Text>
-                </Title>
-                <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
-                  {group.items.map((deck) => {
-                    const artId = deckArtId(deck);
-                    return (
-                      <DeckTile
-                        key={deck.id}
-                        deck={deck}
-                        art={artId ? (deckArts.data?.[artId] ?? null) : null}
-                        showVisibility={false}
-                      />
-                    );
-                  })}
-                </SimpleGrid>
-              </Stack>
-            ))}
-          </Stack>
+          <DeckFormatGroups decks={publicDecks} renderDeck={tile} />
         )}
       </Stack>
     </Stack>

@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import type { DeckBoard } from '../api/types';
 import { boardLabels, boardOptions, type CollapsibleBoard } from './boards';
 
-function Chevron({ open }: { open: boolean }) {
+export function Chevron({ open }: { open: boolean }) {
   return (
     <svg
       width={18}
