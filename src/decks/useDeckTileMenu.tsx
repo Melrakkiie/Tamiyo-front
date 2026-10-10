@@ -7,7 +7,7 @@ import type { Deck, DeckFolder } from '../api/types';
 import { useDeleteDeck, useUpdateDeck } from './api';
 import { DeckFormModal } from './DeckFormModal';
 import { type FolderEdit, FolderEditModal } from './FolderModals';
-import { folderPath, useMoveDeckToFolder } from './folders';
+import { folderPath, useMoveDeckToFolder, useSetFavorite } from './folders';
 import { visibilityOptions } from './visibility';
 
 function notifyError(err: unknown) {
@@ -18,6 +18,7 @@ export function useDeckTileMenu(folders: DeckFolder[]) {
   const update = useUpdateDeck();
   const remove = useDeleteDeck();
   const move = useMoveDeckToFolder();
+  const setFavorite = useSetFavorite();
   const [editing, setEditing] = useState<Deck | null>(null);
   const [deleting, setDeleting] = useState<Deck | null>(null);
   const [folderEdit, setFolderEdit] = useState<FolderEdit | null>(null);
@@ -51,6 +52,10 @@ export function useDeckTileMenu(folders: DeckFolder[]) {
     const current = folders.find((folder) => folder.id === deck.folder_id);
     return (
       <>
+        <Menu.Item onClick={() => setFavorite.mutate({ deckId: deck.id, favorite: !deck.favorite })}>
+          {deck.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+        </Menu.Item>
+        <Menu.Divider />
         {visibilityOptions
           .filter((option) => option.value !== deck.visibility)
           .map((option) => (
