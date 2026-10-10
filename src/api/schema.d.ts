@@ -4617,6 +4617,11 @@ export interface components {
              * @description Scryfall id of the commander card, null without a commander.
              */
             readonly commander_scryfall_id?: string | null;
+            /**
+             * @description Colors of the deck in WUBRG order: the commander's color identity when the deck has one, otherwise every color in the color identity of the main board's cards, owned or pending. Empty when colorless, null for a deck without commander nor cards.
+             * @example UBR
+             */
+            readonly color_identity?: string | null;
             visibility: components["schemas"]["DeckVisibility"];
             /** @description Commander bracket, 1 (Exhibition) to 5 (cEDH); null when not set. */
             bracket: number | null;

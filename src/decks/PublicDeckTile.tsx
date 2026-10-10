@@ -4,15 +4,11 @@ import { Link } from 'react-router';
 import type { PublicDeck } from '../api/types';
 import { ProfileAvatar } from '../auth/UserAvatar';
 import type { CardArt } from '../scryfall/client';
-import { withSymbols } from '../scryfall/manaSymbols';
 import { isCommanderFormat } from './api';
 import { artBackground } from './art';
 import { BracketBadge } from './bracket';
+import { ColorIdentity } from './ColorIdentity';
 import { LikeCount } from './LikeButton';
-
-function identitySymbols(identity: string) {
-  return identity === '' ? '{C}' : [...identity].map((letter) => `{${letter}}`).join('');
-}
 
 export function PublicDeckTile({ deck, art }: { deck: PublicDeck; art: CardArt | null }) {
   const ownerName = deck.owner.display_name || 'Sans pseudo';
@@ -24,9 +20,12 @@ export function PublicDeckTile({ deck, art }: { deck: PublicDeck; art: CardArt |
       <Stack justify="space-between" h="100%" gap="xs">
         <div>
           <Group justify="space-between" align="flex-start" wrap="nowrap">
-            <Text fw={600} lineClamp={1} style={{ minWidth: 0 }}>
-              {deck.name}
-            </Text>
+            <Stack gap={4} style={{ minWidth: 0 }}>
+              <Text fw={600} lineClamp={1}>
+                {deck.name}
+              </Text>
+              <ColorIdentity identity={deck.color_identity} />
+            </Stack>
             <Stack gap={4} align="flex-end" style={{ flexShrink: 0 }}>
               <Badge variant={art ? 'white' : 'light'}>{deck.format}</Badge>
               {isCommanderFormat(deck.format) && <BracketBadge bracket={deck.bracket} onImage={art !== null} />}
@@ -38,9 +37,6 @@ export function PublicDeckTile({ deck, art }: { deck: PublicDeck; art: CardArt |
             </Text>
           )}
           <Group gap="xs" mt={4}>
-            <Text span size="sm" title={deck.color_identity === '' ? 'Incolore' : `Identité ${deck.color_identity}`}>
-              {withSymbols(identitySymbols(deck.color_identity))}
-            </Text>
             <Text size="sm" c={dimmed}>
               {deck.card_count} carte{deck.card_count > 1 ? 's' : ''}
             </Text>
