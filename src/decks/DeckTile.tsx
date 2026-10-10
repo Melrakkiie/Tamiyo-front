@@ -2,6 +2,7 @@ import { Badge, Card, Group, Stack, Text } from '@mantine/core';
 import { Link } from 'react-router';
 
 import type { Deck } from '../api/types';
+import type { ContextMenuEvent } from '../cards/CardContextMenu';
 import type { CardArt } from '../scryfall/client';
 import { isCommanderFormat } from './api';
 import { artBackground } from './art';
@@ -21,6 +22,7 @@ interface DeckTileProps {
   to?: string;
   showVisibility?: boolean;
   onToggleFavorite?: () => void;
+  onContextMenu?: (event: ContextMenuEvent) => void;
 }
 
 export function DeckTile({
@@ -29,6 +31,7 @@ export function DeckTile({
   to = `/decks/${deck.id}`,
   showVisibility = true,
   onToggleFavorite,
+  onContextMenu,
 }: DeckTileProps) {
   const style = art ? { ...artBackground(art.url), color: 'white' } : undefined;
   const content = (
@@ -77,7 +80,7 @@ export function DeckTile({
   );
 
   return (
-    <Card withBorder component={Link} to={to} mih={128} style={style}>
+    <Card withBorder component={Link} to={to} mih={128} style={style} onContextMenu={onContextMenu}>
       {content}
     </Card>
   );

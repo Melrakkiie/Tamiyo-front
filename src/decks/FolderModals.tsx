@@ -14,13 +14,16 @@ import {
 } from './folders';
 
 export type FolderEdit =
-  | { kind: 'create'; parent: DeckFolder | null }
+  | { kind: 'create'; parent: DeckFolder | null; deck?: Deck }
   | { kind: 'rename'; folder: DeckFolder }
   | { kind: 'delete'; folder: DeckFolder };
 
 function editTitle(edit: FolderEdit) {
   switch (edit.kind) {
     case 'create':
+      if (edit.deck) {
+        return `Nouveau dossier pour ${edit.deck.name}`;
+      }
       return edit.parent ? `Nouveau dossier dans ${edit.parent.name}` : 'Nouveau dossier';
     case 'rename':
       return `Renommer ${edit.folder.name}`;
@@ -44,6 +47,7 @@ export function FolderEditModal({ edit, onClose }: { edit: FolderEdit | null; on
 function FolderNameForm({ edit, onClose }: { edit: Exclude<FolderEdit, { kind: 'delete' }>; onClose: () => void }) {
   const create = useCreateFolder();
   const update = useUpdateFolder();
+  const move = useMoveDeckToFolder();
   const [name, setName] = useState(edit.kind === 'rename' ? edit.folder.name : '');
   const pending = create.isPending || update.isPending;
   const error = create.error ?? update.error;
@@ -54,7 +58,18 @@ function FolderNameForm({ edit, onClose }: { edit: Exclude<FolderEdit, { kind: '
       return;
     }
     if (edit.kind === 'create') {
-      create.mutate({ name: trimmed, parentId: edit.parent?.id ?? null }, { onSuccess: onClose });
+      const deck = edit.deck;
+      create.mutate(
+        { name: trimmed, parentId: edit.parent?.id ?? null },
+        {
+          onSuccess: (folder) => {
+            if (deck) {
+              move.mutate({ deckId: deck.id, folderId: folder.id });
+            }
+            onClose();
+          },
+        },
+      );
     } else {
       update.mutate({ id: edit.folder.id, changes: { name: trimmed } }, { onSuccess: onClose });
     }

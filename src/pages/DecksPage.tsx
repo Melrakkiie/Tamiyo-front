@@ -20,6 +20,8 @@ import {
   useSetFavorite,
   useUpdateFolder,
 } from '../decks/folders';
+import { useCardContextMenu } from '../cards/CardContextMenu';
+import { useDeckTileMenu } from '../decks/useDeckTileMenu';
 import { useCardArts } from '../scryfall/hooks';
 
 export function DecksPage() {
@@ -31,6 +33,8 @@ export function DecksPage() {
   const moveDeck = useMoveDeckToFolder();
   const setFavorite = useSetFavorite();
   const [folderEdit, setFolderEdit] = useState<FolderEdit | null>(null);
+  const contextMenu = useCardContextMenu();
+  const deckMenu = useDeckTileMenu(folders.data ?? []);
   const create = useCreateDeck();
   const importList = useImportIntoDeck();
   const remove = useDeleteDeck();
@@ -99,6 +103,7 @@ export function DecksPage() {
         deck={deck}
         art={artId ? (arts.data?.[artId] ?? null) : null}
         onToggleFavorite={() => setFavorite.mutate({ deckId: deck.id, favorite: !deck.favorite })}
+        onContextMenu={(event) => contextMenu.open(event, deckMenu.menuFor(deck))}
       />
     );
   };
@@ -203,6 +208,8 @@ export function DecksPage() {
         onSubmit={createDeck}
       />
       <FolderEditModal edit={folderEdit} onClose={() => setFolderEdit(null)} />
+      {deckMenu.modals}
+      {contextMenu.element}
     </Stack>
   );
 }
