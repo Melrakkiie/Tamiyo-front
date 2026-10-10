@@ -3007,6 +3007,185 @@ export interface paths {
         };
         trace?: never;
     };
+    "/deck/{id}/like": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        /** A deck's likes, and whether you liked it */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LikeStatus"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Unknown or malformed deck id, or someone else's private deck */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        /** Like someone else's deck */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LikeStatus"];
+                    };
+                };
+                /** @description The deck is yours. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Unknown or malformed deck id, or someone else's private deck */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Remove your like */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LikeStatus"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Unknown or malformed deck id, or someone else's private deck */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/me/liked-decks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The decks you liked
+         * @description Most recent like first. A liked deck its owner made private, or deleted, is left out.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PaginatedLikedDecks"];
+                    };
+                };
+                /** @description Invalid page or limit */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deck/{id}/ownership": {
         parameters: {
             query?: never;
@@ -3366,7 +3545,7 @@ export interface paths {
                     colors?: string;
                     color_mode?: "exact" | "include" | "within";
                     color_count?: number;
-                    sort?: "updated" | "-updated" | "name" | "-name" | "added" | "-added" | "card_count" | "-card_count";
+                    sort?: "updated" | "-updated" | "name" | "-name" | "added" | "-added" | "card_count" | "-card_count" | "likes" | "-likes";
                     page?: number;
                     limit?: number;
                 };
@@ -4161,9 +4340,26 @@ export interface components {
             color_identity: string;
             /** @description Cards of the main board, pending ones included. */
             card_count: number;
+            /** @description How many users liked the deck. */
+            likes_count: number;
             owner: components["schemas"]["Profile"];
             added: string;
             updated: string;
+        };
+        LikedDeck: components["schemas"]["PublicDeck"] & {
+            /** @description When you liked the deck. */
+            liked_at: string;
+        };
+        PaginatedLikedDecks: {
+            data: components["schemas"]["LikedDeck"][];
+            page: number;
+            limit: number;
+            total: number;
+            total_pages: number;
+        };
+        LikeStatus: {
+            likes_count: number;
+            liked_by_me: boolean;
         };
         PaginatedPublicDecks: {
             data: components["schemas"]["PublicDeck"][];
@@ -4422,6 +4618,8 @@ export interface components {
             card_count: number;
             /** @description Copies waiting in the main board's pending list (not in the collection yet), not counted in card_count. */
             pending_count?: number;
+            /** @description How many users liked the deck. */
+            likes_count: number;
             added: string;
             updated: string;
         };
@@ -4438,6 +4636,8 @@ export interface components {
             commander_scryfall_id: string | null;
             /** @description Every card of the main board, owned or pending. */
             card_count: number;
+            /** @description How many users liked the deck. */
+            likes_count: number;
             added: string;
             updated: string;
         };

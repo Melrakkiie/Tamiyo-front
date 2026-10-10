@@ -6,6 +6,7 @@ import { ProfileAvatar } from '../auth/UserAvatar';
 import type { CardArt } from '../scryfall/client';
 import { withSymbols } from '../scryfall/manaSymbols';
 import { artBackground } from './art';
+import { LikeCount } from './LikeButton';
 
 function identitySymbols(identity: string) {
   return identity === '' ? '{C}' : [...identity].map((letter) => `{${letter}}`).join('');
@@ -40,6 +41,7 @@ export function PublicDeckTile({ deck, art }: { deck: PublicDeck; art: CardArt |
             <Text size="sm" c={dimmed}>
               {deck.card_count} carte{deck.card_count > 1 ? 's' : ''}
             </Text>
+            <LikeCount count={deck.likes_count} onImage={art !== null} />
           </Group>
         </div>
         <Group gap="xs" wrap="nowrap" justify="space-between">

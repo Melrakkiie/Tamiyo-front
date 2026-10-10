@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 import type { Deck } from '../api/types';
 import type { CardArt } from '../scryfall/client';
 import { artBackground } from './art';
+import { LikeCount } from './LikeButton';
 import { visibilityOption } from './visibility';
 
 function totalCards(deck: Deck) {
@@ -40,9 +41,12 @@ export function DeckTile({ deck, art, to = `/decks/${deck.id}`, showVisibility =
             )}
           </Stack>
         </Group>
-        <Text size="sm" c={art ? 'gray.3' : 'dimmed'}>
-          {totalCards(deck)} carte{totalCards(deck) > 1 ? 's' : ''}
-        </Text>
+        <Group gap="xs">
+          <Text size="sm" c={art ? 'gray.3' : 'dimmed'}>
+            {totalCards(deck)} carte{totalCards(deck) > 1 ? 's' : ''}
+          </Text>
+          <LikeCount count={deck.likes_count} onImage={art !== null} />
+        </Group>
       </div>
       {art?.artist && (
         <Text size="xs" c="gray.4" ta="right" lineClamp={1}>

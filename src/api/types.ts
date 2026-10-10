@@ -29,3 +29,5 @@ export type PendingCard = components['schemas']['PendingCard'];
 export type AddPendingCardInput = components['schemas']['AddPendingCardRequest'];
 export type FollowStatus = components['schemas']['FollowStatus'];
 export type Connection = components['schemas']['Connection'];
+export type LikeStatus = components['schemas']['LikeStatus'];
+export type LikedDeck = components['schemas']['LikedDeck'];

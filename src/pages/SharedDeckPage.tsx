@@ -33,6 +33,7 @@ import { type CollapsibleBoard, DEFAULT_COLLAPSED_BOARDS, inBoard } from '../dec
 import { BoardSection } from '../decks/BoardSection';
 import { type DeckCardGrouped, DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
 import { LegalityWarning } from '../decks/DeckLegalityWarning';
+import { LikeButton, LikeCount } from '../decks/LikeButton';
 import { CollectionToggle } from '../decks/CollectionToggle';
 import { CompareDeckModal } from '../decks/CompareDeckModal';
 import { useDeckCopyActions } from '../decks/DeckCopyActions';
@@ -131,6 +132,11 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
             >
               {visibilityOption(deck.visibility).label}
             </Badge>
+            {signedIn ? (
+              <SharedDeckLike deckId={deck.id} ownerId={owner.id} onImage={art !== null} />
+            ) : (
+              <LikeCount count={deck.likes_count} onImage={art !== null} />
+            )}
           </Group>
           <Group gap="xs" wrap="nowrap">
             <ProfileAvatar scryfallId={owner.avatar_scryfall_id} name={ownerName} size={28} />
@@ -235,6 +241,14 @@ function SignedInDeckMenu({ ownerId, ...props }: SharedDeckMenuProps & { ownerId
       extraModals={copyActions.modal}
     />
   );
+}
+
+function SharedDeckLike({ deckId, ownerId, onImage }: { deckId: string; ownerId: string; onImage: boolean }) {
+  const account = useAccount();
+  if (!account.data) {
+    return null;
+  }
+  return <LikeButton deckId={deckId} canLike={account.data.id !== ownerId} onImage={onImage} />;
 }
 
 function OwnDeckNotice({ ownerId, deckId }: { ownerId: string; deckId: string }) {

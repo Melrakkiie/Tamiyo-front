@@ -16,6 +16,7 @@ export const DEFAULT_PUBLIC_SORT: PublicDeckSort = '-updated';
 export const publicDeckSortOptions: { value: PublicDeckSort; label: string }[] = [
   { value: '-updated', label: 'Modifiés récemment' },
   { value: '-added', label: 'Créés récemment' },
+  { value: '-likes', label: 'Les plus aimés' },
   { value: 'name', label: 'Nom (A → Z)' },
   { value: '-card_count', label: 'Le plus de cartes' },
   { value: 'card_count', label: 'Le moins de cartes' },

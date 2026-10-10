@@ -51,6 +51,7 @@ import { useDeckCopyActions } from '../decks/DeckCopyActions';
 import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckTagsModal } from '../decks/DeckTagsModal';
 import { DeckLegalityWarning } from '../decks/DeckLegalityWarning';
+import { LikeButton } from '../decks/LikeButton';
 import { DeckStatsPanel } from '../decks/DeckStatsPanel';
 import { ExportDeckModal } from '../decks/ExportDeckModal';
 import { ImportListModal } from '../decks/ImportListModal';
@@ -216,6 +217,7 @@ function DeckView({ id }: { id: string }) {
             >
               {visibilityOption(current.visibility).label}
             </Badge>
+            <LikeButton deckId={current.id} canLike={false} onImage={art !== null} />
           </Group>
         </Stack>
         {art && (

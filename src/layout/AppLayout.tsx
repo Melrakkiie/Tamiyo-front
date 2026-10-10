@@ -113,6 +113,9 @@ export function AppLayout() {
                   Mes connexions
                 </Menu.Item>
               )}
+              <Menu.Item component={Link} to="/decks-aimes">
+                Decks aimés
+              </Menu.Item>
               <Menu.Item component={Link} to="/settings">
                 Paramètres
               </Menu.Item>

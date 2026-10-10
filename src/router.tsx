@@ -11,6 +11,7 @@ import { DeckComparePage } from './pages/DeckComparePage';
 import { DeckPage } from './pages/DeckPage';
 import { DecksPage } from './pages/DecksPage';
 import { ExplorePage } from './pages/ExplorePage';
+import { LikedDecksPage } from './pages/LikedDecksPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
@@ -56,6 +57,7 @@ export const router = createBrowserRouter([
           { path: '/storages/:id', element: <StoragePage /> },
           { path: '/decks', element: <DecksPage /> },
           { path: '/explorer', element: <ExplorePage /> },
+          { path: '/decks-aimes', element: <LikedDecksPage /> },
           { path: '/settings', element: <SettingsPage /> },
           { path: '/users/:id', element: <ProfilePage /> },
           { path: '/users/:id/connexions', element: <ConnectionsPage /> },
