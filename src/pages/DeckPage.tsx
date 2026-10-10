@@ -51,6 +51,7 @@ import { useDeckCopyActions } from '../decks/DeckCopyActions';
 import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckTagsModal } from '../decks/DeckTagsModal';
 import { DeckLegalityWarning } from '../decks/DeckLegalityWarning';
+import { BracketBadge } from '../decks/bracket';
 import { LikeButton } from '../decks/LikeButton';
 import { DeckStatsPanel } from '../decks/DeckStatsPanel';
 import { ExportDeckModal } from '../decks/ExportDeckModal';
@@ -217,6 +218,9 @@ function DeckView({ id }: { id: string }) {
             >
               {visibilityOption(current.visibility).label}
             </Badge>
+            {isCommanderFormat(current.format) && (
+              <BracketBadge bracket={current.bracket} onImage={art !== null} size="md" />
+            )}
             <LikeButton deckId={current.id} canLike={false} onImage={art !== null} />
           </Group>
         </Stack>
@@ -288,7 +292,7 @@ function DeckView({ id }: { id: string }) {
         error={update.error}
         onSubmit={(values) =>
           update.mutate(
-            { id: current.id, changes: values },
+            { id: current.id, changes: { ...values, clear_bracket: values.bracket === undefined } },
             {
               onSuccess: () => {
                 notifications.show({ color: 'green', message: 'Deck mis à jour.' });

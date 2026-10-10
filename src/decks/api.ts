@@ -93,6 +93,7 @@ export interface DeckInput {
   name: string;
   format: string;
   visibility: DeckVisibility;
+  bracket?: number;
 }
 
 export function useCreateDeck() {

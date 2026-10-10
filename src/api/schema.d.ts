@@ -3545,6 +3545,8 @@ export interface paths {
                     colors?: string;
                     color_mode?: "exact" | "include" | "within";
                     color_count?: number;
+                    /** @description Commander brackets, comma-separated (2,3). Decks without a bracket are left out. */
+                    bracket?: string;
                     sort?: "updated" | "-updated" | "name" | "-name" | "added" | "-added" | "card_count" | "-card_count" | "likes" | "-likes";
                     page?: number;
                     limit?: number;
@@ -4331,6 +4333,8 @@ export interface components {
             id: string;
             name: string;
             format: string;
+            /** @description Commander bracket, 1 (Exhibition) to 5 (cEDH); null when not set. */
+            bracket: number | null;
             /** Format: uuid */
             background_scryfall_id: string | null;
             /** Format: uuid */
@@ -4614,6 +4618,8 @@ export interface components {
              */
             readonly commander_scryfall_id?: string | null;
             visibility: components["schemas"]["DeckVisibility"];
+            /** @description Commander bracket, 1 (Exhibition) to 5 (cEDH); null when not set. */
+            bracket: number | null;
             /** @description Cards of the main board. */
             card_count: number;
             /** @description Copies waiting in the main board's pending list (not in the collection yet), not counted in card_count. */
@@ -4630,6 +4636,8 @@ export interface components {
             format: string;
             /** @enum {string} */
             visibility: "public" | "unlisted";
+            /** @description Commander bracket, 1 (Exhibition) to 5 (cEDH); null when not set. */
+            bracket: number | null;
             /** Format: uuid */
             background_scryfall_id: string | null;
             /** Format: uuid */
@@ -4746,6 +4754,7 @@ export interface components {
             /** Format: uuid */
             background_scryfall_id?: string;
             visibility?: components["schemas"]["DeckVisibility"];
+            bracket?: number;
         };
         /** @description All fields optional; only included fields are modified. */
         UpdateDeckRequest: {
@@ -4761,6 +4770,9 @@ export interface components {
             /** @description Set to true to remove the chosen art (set background_scryfall_id to null). */
             clear_background_scryfall_id?: boolean;
             visibility?: components["schemas"]["DeckVisibility"];
+            bracket?: number;
+            /** @description Set to true to remove the bracket. */
+            clear_bracket?: boolean;
         };
         /**
          * @description Who may see the deck once decks can be shared: only its owner (private), anyone with its link (unlisted), or anyone, listed when browsing decks (public). No effect yet: deck routes only serve the owner's decks.

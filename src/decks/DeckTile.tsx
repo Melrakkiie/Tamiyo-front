@@ -3,7 +3,9 @@ import { Link } from 'react-router';
 
 import type { Deck } from '../api/types';
 import type { CardArt } from '../scryfall/client';
+import { isCommanderFormat } from './api';
 import { artBackground } from './art';
+import { BracketBadge } from './bracket';
 import { LikeCount } from './LikeButton';
 import { visibilityOption } from './visibility';
 
@@ -29,6 +31,7 @@ export function DeckTile({ deck, art, to = `/decks/${deck.id}`, showVisibility =
           </Text>
           <Stack gap={4} align="flex-end" style={{ flexShrink: 0 }}>
             <Badge variant={art ? 'white' : 'light'}>{deck.format}</Badge>
+            {isCommanderFormat(deck.format) && <BracketBadge bracket={deck.bracket} onImage={art !== null} />}
             {showVisibility && (
               <Badge
                 variant={art ? 'white' : 'light'}

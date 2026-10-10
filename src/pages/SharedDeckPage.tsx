@@ -33,6 +33,8 @@ import { type CollapsibleBoard, DEFAULT_COLLAPSED_BOARDS, inBoard } from '../dec
 import { BoardSection } from '../decks/BoardSection';
 import { type DeckCardGrouped, DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
 import { LegalityWarning } from '../decks/DeckLegalityWarning';
+import { isCommanderFormat } from '../decks/api';
+import { BracketBadge } from '../decks/bracket';
 import { LikeButton, LikeCount } from '../decks/LikeButton';
 import { CollectionToggle } from '../decks/CollectionToggle';
 import { CompareDeckModal } from '../decks/CompareDeckModal';
@@ -132,6 +134,7 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
             >
               {visibilityOption(deck.visibility).label}
             </Badge>
+            {isCommanderFormat(deck.format) && <BracketBadge bracket={deck.bracket} onImage={art !== null} size="md" />}
             {signedIn ? (
               <SharedDeckLike deckId={deck.id} ownerId={owner.id} onImage={art !== null} />
             ) : (

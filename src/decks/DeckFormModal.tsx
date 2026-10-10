@@ -17,7 +17,8 @@ import { useEffect, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Deck } from '../api/types';
-import { useDeckFormats, type DeckInput } from './api';
+import { isCommanderFormat, useDeckFormats, type DeckInput } from './api';
+import { bracketOptions, GaugeIcon } from './bracket';
 import { DeckListInput, deckListErrorMessage, useDeckList, useTamiyoDeckFile } from './DeckListInput';
 import { visibilityOption, visibilityOptions } from './visibility';
 
@@ -80,6 +81,10 @@ function DeckForm({
   });
   const [visibility, setVisibility] = useState(form.getValues().visibility);
   form.watch('visibility', ({ value }) => setVisibility(value));
+  const [format, setFormat] = useState(form.getValues().format);
+  form.watch('format', ({ value }) => setFormat(value));
+  const [bracket, setBracket] = useState<string | null>(initial?.bracket ? String(initial.bracket) : null);
+  const commander = isCommanderFormat(format.trim().toLowerCase());
   const tamiyoFile = useTamiyoDeckFile(withList ? list.source : null);
 
   useEffect(() => {
@@ -97,7 +102,10 @@ function DeckForm({
   return (
     <form
       onSubmit={form.onSubmit((values) =>
-        onSubmit(values, listOpened && list.source ? { file: list.source, commanderFromFirstLine } : undefined),
+        onSubmit(
+          { ...values, bracket: commander && bracket ? Number(bracket) : undefined },
+          listOpened && list.source ? { file: list.source, commanderFromFirstLine } : undefined,
+        ),
       )}
     >
       <Stack>
@@ -110,6 +118,22 @@ function DeckForm({
           key={form.key('format')}
           {...form.getInputProps('format')}
         />
+        {commander && (
+          <Select
+            label={
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <GaugeIcon />
+                Bracket
+              </span>
+            }
+            description="Le niveau de puissance Commander du deck, de 1 (Exhibition) à 5 (cEDH)."
+            placeholder="Non défini"
+            data={bracketOptions}
+            value={bracket}
+            onChange={setBracket}
+            clearable
+          />
+        )}
         <Select
           label="Visibilité"
           description={visibilityOption(visibility).description}

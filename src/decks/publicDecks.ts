@@ -31,6 +31,7 @@ export interface PublicDeckFilters {
   colors: string;
   colorMode: PublicColorMode;
   colorCount: number | null;
+  brackets: string;
   sort: PublicDeckSort;
   page: number;
 }
@@ -44,6 +45,7 @@ const keys = {
   colors: 'couleurs',
   colorMode: 'mode',
   colorCount: 'ncouleurs',
+  brackets: 'bracket',
   sort: 'tri',
   page: 'page',
 } as const;
@@ -55,6 +57,10 @@ function letters(raw: string | null) {
     (letter, index, all) => 'WUBRGC'.includes(letter) && all.indexOf(letter) === index,
   );
   return picked.includes(COLORLESS) ? COLORLESS : picked.join('');
+}
+
+function bracketDigits(raw: string | null) {
+  return [...new Set((raw ?? '').replace(/[^1-5]/g, ''))].sort().join('');
 }
 
 function integer(raw: string | null, min: number, max: number) {
@@ -72,6 +78,7 @@ export function parsePublicDeckFilters(params: URLSearchParams): PublicDeckFilte
     colors: letters(params.get(keys.colors)),
     colorMode: colorModes.find((mode) => mode === params.get(keys.colorMode)) ?? 'exact',
     colorCount: integer(params.get(keys.colorCount), 0, 5),
+    brackets: bracketDigits(params.get(keys.brackets)),
     sort: publicDeckSortOptions.find((option) => option.value === params.get(keys.sort))?.value ?? DEFAULT_PUBLIC_SORT,
     page: integer(params.get(keys.page), 1, Number.MAX_SAFE_INTEGER) ?? 1,
   };
@@ -102,6 +109,7 @@ export function activePublicFilterCount(filters: PublicDeckFilters) {
     filters.owner !== '',
     filters.colors !== '',
     filters.colorCount !== null,
+    filters.brackets !== '',
   ].filter(Boolean).length;
 }
 
@@ -115,6 +123,7 @@ function toQuery(filters: PublicDeckFilters): PublicDecksQuery {
     colors: filters.colors || undefined,
     color_mode: filters.colors && filters.colors !== COLORLESS ? filters.colorMode : undefined,
     color_count: filters.colorCount ?? undefined,
+    bracket: filters.brackets ? [...filters.brackets].join(',') : undefined,
     sort: filters.sort,
     page: filters.page,
     limit: PUBLIC_DECKS_PAGE_SIZE,

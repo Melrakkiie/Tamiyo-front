@@ -5,7 +5,9 @@ import type { PublicDeck } from '../api/types';
 import { ProfileAvatar } from '../auth/UserAvatar';
 import type { CardArt } from '../scryfall/client';
 import { withSymbols } from '../scryfall/manaSymbols';
+import { isCommanderFormat } from './api';
 import { artBackground } from './art';
+import { BracketBadge } from './bracket';
 import { LikeCount } from './LikeButton';
 
 function identitySymbols(identity: string) {
@@ -25,9 +27,10 @@ export function PublicDeckTile({ deck, art }: { deck: PublicDeck; art: CardArt |
             <Text fw={600} lineClamp={1} style={{ minWidth: 0 }}>
               {deck.name}
             </Text>
-            <Badge variant={art ? 'white' : 'light'} style={{ flexShrink: 0 }}>
-              {deck.format}
-            </Badge>
+            <Stack gap={4} align="flex-end" style={{ flexShrink: 0 }}>
+              <Badge variant={art ? 'white' : 'light'}>{deck.format}</Badge>
+              {isCommanderFormat(deck.format) && <BracketBadge bracket={deck.bracket} onImage={art !== null} />}
+            </Stack>
           </Group>
           {deck.commander_name && (
             <Text size="sm" c={dimmed} lineClamp={1}>

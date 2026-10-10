@@ -3,6 +3,7 @@ import {
   Alert,
   Button,
   Center,
+  Chip,
   Collapse,
   Group,
   Indicator,
@@ -16,6 +17,7 @@ import {
   Stack,
   Text,
   Title,
+  Tooltip,
 } from '@mantine/core';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
@@ -25,6 +27,7 @@ import { COLORLESS } from '../cards/advancedFilters';
 import { ColorChips } from '../cards/AdvancedSearch';
 import { COMMON_FORMATS } from '../decks/api';
 import { deckArtId } from '../decks/art';
+import { BRACKETS, bracketName, GaugeIcon } from '../decks/bracket';
 import {
   activePublicFilterCount,
   type PublicColorMode,
@@ -89,6 +92,34 @@ function FiltersPanel({ filters, onChange, onReset }: FiltersPanelProps) {
             onChange={(value) => onChange({ colorCount: value === null ? null : Number(value) })}
             clearable
           />
+
+          <Input.Wrapper
+            label={
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <GaugeIcon />
+                Bracket
+              </span>
+            }
+            description="Les decks Commander de ces brackets"
+          >
+            <Chip.Group
+              multiple
+              value={[...filters.brackets]}
+              onChange={(value) => onChange({ brackets: [...value].sort().join('') })}
+            >
+              <Group gap={6} mt={4}>
+                {BRACKETS.map((bracket) => (
+                  <Tooltip key={bracket} label={bracketName(bracket)} withArrow>
+                    <div>
+                      <Chip value={String(bracket)} size="sm">
+                        {bracket}
+                      </Chip>
+                    </div>
+                  </Tooltip>
+                ))}
+              </Group>
+            </Chip.Group>
+          </Input.Wrapper>
 
           <Select
             label="Format"
@@ -168,7 +199,16 @@ export function ExplorePage() {
   }
 
   function resetFilters() {
-    update({ format: null, commander: '', card: '', owner: '', colors: '', colorMode: 'exact', colorCount: null });
+    update({
+      format: null,
+      commander: '',
+      card: '',
+      owner: '',
+      colors: '',
+      colorMode: 'exact',
+      colorCount: null,
+      brackets: '',
+    });
   }
 
   return (
