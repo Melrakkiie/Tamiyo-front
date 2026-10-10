@@ -1,5 +1,5 @@
 import { Alert, Anchor, Badge, Center, Group, Loader, Paper, Stack, Text, Title } from '@mantine/core';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router';
 
 import { errorMessage } from '../api/errors';
@@ -21,6 +21,11 @@ export function ProfilePage() {
   const decks = usePublicDecks(id);
   const folders = usePublicFolders(id);
   const [collapsedFolders, setCollapsedFolders] = useState<ReadonlySet<number>>(new Set());
+  useEffect(() => {
+    if (folders.data?.length) {
+      setCollapsedFolders(new Set(folders.data.map((f) => f.id)));
+    }
+  }, [folders.data]);
   const deckArts = useCardArts((decks.data ?? []).map(deckArtId));
   const avatarArt = useAvatarArt(profile.data?.avatar_scryfall_id);
   const follow = useFollowStatus(id);
