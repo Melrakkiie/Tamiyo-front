@@ -4689,6 +4689,13 @@ export interface components {
             type_breakdown: {
                 [key: string]: number;
             };
+            /** @description Cards whose front face isn't a land but whose back face is (modal double-faced cards), by name. They aren't in land_count. */
+            back_face_lands: components["schemas"]["BackFaceCard"][];
+        };
+        BackFaceCard: {
+            name: string;
+            scryfall_id: string;
+            quantity: number;
         };
         Error: {
             error: string;

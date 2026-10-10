@@ -1,11 +1,12 @@
 import { Alert, Card, Center, Grid, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
 import { ApiError, errorMessage } from '../api/errors';
 import type { DeckStats } from '../api/types';
 import { useDeckStats } from './api';
 import { withSymbols } from '../scryfall/manaSymbols';
 import { BarList } from './charts';
+import { BackFacesExtra } from './DeckCardGroups';
 import { CurveCardList } from './CurveCardList';
 import { CurveLegend, fullCurve, ManaCurveChart } from './ManaCurveChart';
 
@@ -31,7 +32,7 @@ const TYPE_LABELS: Record<string, string> = {
   Unknown: 'Introuvables sur Scryfall',
 };
 
-function StatTile({ label, value }: { label: string; value: string | number }) {
+function StatTile({ label, value }: { label: string; value: ReactNode }) {
   return (
     <Card withBorder padding="md">
       <Text size="xs" c="dimmed">
@@ -104,7 +105,17 @@ export function DeckStatsView({
 
       <SimpleGrid cols={{ base: 2, sm: 4 }}>
         <StatTile label="Cartes" value={data.card_count} />
-        <StatTile label="Terrains" value={data.land_count} />
+        <StatTile
+          label="Terrains"
+          value={
+            <>
+              {data.land_count}{' '}
+              <Text span size="sm" fw={400} c="dimmed">
+                <BackFacesExtra label="Terrains" count={data.land_count} backFaces={data.back_face_lands ?? []} />
+              </Text>
+            </>
+          }
+        />
         <StatTile label="Hors terrains" value={data.nonland_count} />
         <StatTile label="Coût de mana moyen" value={data.average_mana_value.toFixed(2)} />
       </SimpleGrid>
