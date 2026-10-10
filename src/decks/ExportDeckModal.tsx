@@ -28,7 +28,7 @@ const formats: { value: DeckExportFormat; label: string; description: string }[]
     value: 'moxfield',
     label: 'Moxfield',
     description:
-      'Une ligne par édition : « 1 Sol Ring (SLD) 1011 *F* », à importer dans Moxfield. Le commandant en premier.',
+      'Une ligne par édition : « 1 Sol Ring (SLD) 1011 *F* », à importer dans Moxfield. Le commandant en premier, et les tags si tu veux.',
   },
   {
     value: 'arena',
@@ -148,7 +148,7 @@ export function ExportDeckModal({ deckId, deckName, opened, onClose, shared = fa
             </Checkbox.Group>
           </Stack>
         )}
-        {format === 'tamiyo' && (
+        {(format === 'tamiyo' || format === 'moxfield') && (
           <Switch
             label="Inclure les tags"
             checked={withTags}

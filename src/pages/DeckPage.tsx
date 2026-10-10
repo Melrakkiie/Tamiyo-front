@@ -52,6 +52,7 @@ import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckTagsModal } from '../decks/DeckTagsModal';
 import { DeckLegalityWarning } from '../decks/DeckLegalityWarning';
 import { BracketBadge } from '../decks/bracket';
+import { BulkEditModal } from '../decks/BulkEditModal';
 import { LikeButton } from '../decks/LikeButton';
 import { DeckStatsPanel } from '../decks/DeckStatsPanel';
 import { ExportDeckModal } from '../decks/ExportDeckModal';
@@ -126,6 +127,7 @@ function DeckView({ id }: { id: string }) {
   const [tab, setTab] = useState<string | null>('cards');
   const [artPickerOpened, setArtPickerOpened] = useState(false);
   const [exportOpened, setExportOpened] = useState(false);
+  const [bulkEditOpened, setBulkEditOpened] = useState(false);
   const [shareOpened, setShareOpened] = useState(false);
   const [compareOpened, setCompareOpened] = useState(false);
   const [tagsOpened, setTagsOpened] = useState(false);
@@ -194,6 +196,7 @@ function DeckView({ id }: { id: string }) {
             <Menu.Item onClick={() => setShareOpened(true)}>Partager</Menu.Item>
             <Menu.Item onClick={() => setArtPickerOpened(true)}>Illustration</Menu.Item>
             <Menu.Item onClick={() => setExportOpened(true)}>Exporter</Menu.Item>
+            <Menu.Item onClick={() => setBulkEditOpened(true)}>Édition en masse</Menu.Item>
             <Menu.Item onClick={() => setCompareOpened(true)}>Comparer avec un autre deck</Menu.Item>
             <Menu.Item onClick={() => setTagsOpened(true)}>Gérer les tags</Menu.Item>
             <Menu.Item onClick={() => setEditOpened(true)}>Modifier</Menu.Item>
@@ -276,6 +279,12 @@ function DeckView({ id }: { id: string }) {
       />
       <DeckTagsModal deckId={current.id} opened={tagsOpened} onClose={() => setTagsOpened(false)} />
       <ArtPickerModal deck={current} opened={artPickerOpened} onClose={() => setArtPickerOpened(false)} />
+      <BulkEditModal
+        deckId={current.id}
+        deckName={current.name}
+        opened={bulkEditOpened}
+        onClose={() => setBulkEditOpened(false)}
+      />
       <ExportDeckModal
         deckId={current.id}
         deckName={current.name}

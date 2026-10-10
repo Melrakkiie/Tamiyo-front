@@ -74,6 +74,12 @@ export interface DeckListImport {
   commanderFromFirstLine: boolean;
 }
 
+export function useBulkEditDeck() {
+  return useImport(({ deckId, list }: { deckId: string; list: string }) =>
+    postForm(`/deck/${deckId}/bulk-edit`, { file: new File([list], 'deck.txt', { type: 'text/plain' }) }),
+  );
+}
+
 export function useImportIntoDeck() {
   return useImport(({ deckId, file, commanderFromFirstLine }: DeckListImport) =>
     postForm(`/deck/${deckId}/import`, { file, commander_from_first_line: String(commanderFromFirstLine) }),
@@ -135,7 +141,7 @@ export interface DeckExportOptions {
 
 function deckExportQuery({ format, withTags, onlyPending, printings, boards }: DeckExportOptions) {
   const params = new URLSearchParams({ format });
-  if (format === 'tamiyo' && withTags) {
+  if ((format === 'tamiyo' || format === 'moxfield') && withTags) {
     params.set('tags', 'true');
   }
   if (format === 'cardmarket' && onlyPending) {

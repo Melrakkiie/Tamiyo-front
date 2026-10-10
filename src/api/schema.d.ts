@@ -4790,6 +4790,8 @@ export interface components {
             cards_skipped?: number;
             storages_created?: number;
             decks_created?: number;
+            /** @description Bulk edit only — copies that left the deck. Omitted otherwise. */
+            cards_removed?: number;
             /** @description Omitted entirely when there are no warnings. */
             warnings?: string[];
         };
