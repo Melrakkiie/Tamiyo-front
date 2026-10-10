@@ -1,17 +1,21 @@
-import { Alert, Card, Center, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { Alert, Card, Center, Grid, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { useState } from 'react';
 
 import { ApiError, errorMessage } from '../api/errors';
 import type { DeckStats } from '../api/types';
 import { useDeckStats } from './api';
-import { BarList, ColumnChart, type BarDatum } from './charts';
+import { withSymbols } from '../scryfall/manaSymbols';
+import { BarList } from './charts';
+import { CurveCardList } from './CurveCardList';
+import { CurveLegend, fullCurve, ManaCurveChart } from './ManaCurveChart';
 
-const COLOR_LABELS: [string, string][] = [
-  ['W', 'Blanc'],
-  ['U', 'Bleu'],
-  ['B', 'Noir'],
-  ['R', 'Rouge'],
-  ['G', 'Vert'],
-  ['C', 'Incolore'],
+const COLORS: { key: string; name: string; color: string }[] = [
+  { key: 'W', name: 'Blanc', color: '#F8F6D8' },
+  { key: 'U', name: 'Bleu', color: '#C1D7E9' },
+  { key: 'B', name: 'Noir', color: '#BAB1AB' },
+  { key: 'R', name: 'Rouge', color: '#E49977' },
+  { key: 'G', name: 'Vert', color: '#A3C095' },
+  { key: 'C', name: 'Incolore', color: '#CAC5C0' },
 ];
 
 const TYPE_LABELS: Record<string, string> = {
@@ -26,12 +30,6 @@ const TYPE_LABELS: Record<string, string> = {
   Other: 'Autres',
   Unknown: 'Introuvables sur Scryfall',
 };
-
-function curveData(curve: { mana_value: number; count: number }[]): BarDatum[] {
-  const counts = new Map(curve.map((bucket) => [bucket.mana_value, bucket.count]));
-  const max = Math.max(0, ...curve.map((bucket) => bucket.mana_value));
-  return Array.from({ length: max + 1 }, (_, mv) => ({ label: String(mv), value: counts.get(mv) ?? 0 }));
-}
 
 function StatTile({ label, value }: { label: string; value: string | number }) {
   return (
@@ -59,6 +57,8 @@ export function DeckStatsView({
   stats,
   emptyMessage = 'Ajoute des cartes au deck pour voir ses statistiques.',
 }: DeckStatsViewProps) {
+  const [selectedManaValue, setSelectedManaValue] = useState<number | null>(null);
+
   if (stats.isLoading) {
     return (
       <Center p="xl">
@@ -82,12 +82,21 @@ export function DeckStatsView({
     return <Text c="dimmed">{emptyMessage}</Text>;
   }
 
-  const colors = COLOR_LABELS.map(([key, label]) => ({ label, value: data.color_breakdown[key] ?? 0 })).filter(
-    (d) => d.value > 0,
-  );
+  const colors = COLORS.map(({ key, name, color }) => ({
+    key,
+    label: (
+      <Text span size="lg" title={name} aria-label={name}>
+        {withSymbols(`{${key}}`)}
+      </Text>
+    ),
+    value: data.color_breakdown[key] ?? 0,
+    color,
+  })).filter((d) => d.value > 0);
   const types = Object.entries(data.type_breakdown)
-    .map(([key, value]) => ({ label: TYPE_LABELS[key] ?? key, value: Number(value) }))
+    .map(([key, value]) => ({ key, label: TYPE_LABELS[key] ?? key, value: Number(value) }))
     .sort((a, b) => b.value - a.value);
+  const curve = fullCurve(data.mana_curve ?? []);
+  const selectedBucket = curve.find((bucket) => bucket.mana_value === selectedManaValue && bucket.count > 0);
 
   return (
     <Stack gap="xl">
@@ -105,18 +114,34 @@ export function DeckStatsView({
           Courbe de mana
         </Title>
         <Text size="xs" c="dimmed">
-          Nombre de cartes par coût de mana, terrains exclus.
+          Nombre de cartes par coût de mana, terrains exclus. Clique sur une barre pour voir ses cartes.
         </Text>
         {(data.mana_curve ?? []).length === 0 ? (
           <Text size="sm" c="dimmed">
             Aucune carte hors terrain.
           </Text>
         ) : (
-          <ColumnChart
-            data={curveData(data.mana_curve ?? [])}
-            ariaLabel="Courbe de mana"
-            describe={(d) => `${d.value} carte${d.value > 1 ? 's' : ''} à ${d.label}`}
-          />
+          <Grid gutter="xl">
+            <Grid.Col span={{ base: 12, md: 8 }}>
+              <Stack gap="xs">
+                <CurveLegend />
+                <ManaCurveChart
+                  buckets={curve}
+                  selected={selectedBucket ? selectedManaValue : null}
+                  onSelect={setSelectedManaValue}
+                />
+              </Stack>
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, md: 4 }}>
+              {selectedBucket ? (
+                <CurveCardList bucket={selectedBucket} />
+              ) : (
+                <Text size="sm" c="dimmed">
+                  Aucun coût sélectionné.
+                </Text>
+              )}
+            </Grid.Col>
+          </Grid>
         )}
       </Stack>
 
@@ -128,7 +153,7 @@ export function DeckStatsView({
           <Text size="xs" c="dimmed">
             Cartes par couleur, terrains exclus. Une carte multicolore compte pour chacune de ses couleurs.
           </Text>
-          <BarList data={colors} ariaLabel="Répartition par couleur" />
+          <BarList data={colors} ariaLabel="Répartition par couleur" labelWidth={32} />
         </Stack>
         <Stack gap="xs">
           <Title order={3} size="h5">

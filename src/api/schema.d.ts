@@ -4267,6 +4267,20 @@ export interface components {
         ManaCurveBucket: {
             mana_value: number;
             count: number;
+            /** @description Cards of the bucket that are permanents. */
+            permanents: number;
+            /** @description Instants and sorceries of the bucket. */
+            non_permanents: number;
+            /** @description The bucket's cards, sorted by name. */
+            cards: components["schemas"]["ManaCurveCard"][];
+        };
+        ManaCurveCard: {
+            name: string;
+            scryfall_id: string;
+            /** @description Copies of the card in the bucket. */
+            quantity: number;
+            /** @description Primary type of the card, as in type_breakdown. */
+            type: string;
         };
         DeckStats: {
             card_count: number;
