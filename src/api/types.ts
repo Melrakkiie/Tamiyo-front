@@ -27,3 +27,5 @@ export type UpdateDeckInput = components['schemas']['UpdateDeckRequest'];
 export type ImportSummary = components['schemas']['ImportSummary'];
 export type PendingCard = components['schemas']['PendingCard'];
 export type AddPendingCardInput = components['schemas']['AddPendingCardRequest'];
+export type FollowStatus = components['schemas']['FollowStatus'];
+export type Connection = components['schemas']['Connection'];

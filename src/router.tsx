@@ -6,6 +6,7 @@ import { AuthLayout } from './layout/AuthLayout';
 import { SharedLayout } from './layout/SharedLayout';
 import { CollectionPage } from './pages/CollectionPage';
 import { ConfirmEmailPage } from './pages/ConfirmEmailPage';
+import { ConnectionsPage } from './pages/ConnectionsPage';
 import { DeckComparePage } from './pages/DeckComparePage';
 import { DeckPage } from './pages/DeckPage';
 import { DecksPage } from './pages/DecksPage';
@@ -57,6 +58,7 @@ export const router = createBrowserRouter([
           { path: '/explorer', element: <ExplorePage /> },
           { path: '/settings', element: <SettingsPage /> },
           { path: '/users/:id', element: <ProfilePage /> },
+          { path: '/users/:id/connexions', element: <ConnectionsPage /> },
         ],
       },
     ],

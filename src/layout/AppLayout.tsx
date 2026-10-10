@@ -108,6 +108,11 @@ export function AppLayout() {
                   Mon profil
                 </Menu.Item>
               )}
+              {account.data && (
+                <Menu.Item component={Link} to={`/users/${account.data.id}/connexions`}>
+                  Mes connexions
+                </Menu.Item>
+              )}
               <Menu.Item component={Link} to="/settings">
                 Paramètres
               </Menu.Item>
