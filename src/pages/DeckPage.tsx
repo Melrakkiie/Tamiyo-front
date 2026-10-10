@@ -33,7 +33,10 @@ import { CardTile } from '../cards/CardTile';
 import { PendingBadge, type PendingStatus } from '../cards/PendingBadge';
 import { type CardGroup, hasMissingDetails } from '../cards/grouping';
 import { MissingDetailsAlert } from '../cards/MissingDetailsAlert';
+import { AddCardModal, type CardToAdd } from '../cards/AddCardModal';
 import { AddToDeckModal } from '../decks/AddToDeckModal';
+import { DropOverlay } from '../scryfall/DropOverlay';
+import { useScryfallDrop } from '../scryfall/useScryfallDrop';
 import { artBackground, artCredit, deckArtId } from '../decks/art';
 import { ArtPickerModal } from '../decks/ArtPickerModal';
 import { isCommanderFormat, useDeck, useDeckCards, useDeleteDeck, usePendingCards, useUpdateDeck } from '../decks/api';
@@ -497,6 +500,8 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
   const contextMenu = useCardContextMenu();
   const cardMenu = useDeckCardMenu(deck, pendingItems, actions);
   const [addOpened, setAddOpened] = useState(false);
+  const [droppedCard, setDroppedCard] = useState<CardToAdd | null>(null);
+  const scryfallDrop = useScryfallDrop((printing) => setDroppedCard({ name: printing.name, printing }));
   const [importOpened, setImportOpened] = useState(false);
   const [openedCard, setOpenedCard] = useState<OpenedCard | null>(null);
   const [openedPending, setOpenedPending] = useState<Card | null>(null);
@@ -696,6 +701,17 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
         {contextMenu.element}
         {cardMenu.modals}
         <ImportListModal deck={deck} opened={importOpened} onClose={() => setImportOpened(false)} />
+        <DropOverlay
+          dragging={scryfallDrop.dragging}
+          resolving={scryfallDrop.resolving}
+          hint="Elle sera proposée à l'ajout dans ce deck, dans cette édition."
+        />
+        <AddCardModal
+          card={droppedCard}
+          onClose={() => setDroppedCard(null)}
+          defaultStorageId={undefined}
+          target={{ kind: 'deck', deckId: deck.id, deckName: deck.name }}
+        />
         <AddToDeckModal
           deck={deck}
           deckCardIds={new Set(deckCards.map((card) => card.id))}

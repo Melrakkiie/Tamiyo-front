@@ -4,7 +4,11 @@ import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { DeckBoard } from '../api/types';
+import { useImportIntoDeck } from '../bulk/api';
+import { deckLineFile } from '../decks/AddCopiesToDeckModal';
 import { useAddPendingCard } from '../decks/api';
+import { BoardPicker } from '../decks/BoardSection';
+import { deckListErrorMessage, deckListSummary } from '../decks/DeckListInput';
 import type { ScryfallCard } from '../scryfall/client';
 import { usePrintings } from '../scryfall/hooks';
 import { canBeFoil, canBeNonFoil, printingDetails } from '../scryfall/printing';
@@ -18,7 +22,10 @@ export interface CardToAdd {
   printing?: ScryfallCard;
 }
 
-export type AddTarget = { kind: 'collection' } | { kind: 'pending'; deckId: string; board: DeckBoard };
+export type AddTarget =
+  | { kind: 'collection' }
+  | { kind: 'pending'; deckId: string; board: DeckBoard }
+  | { kind: 'deck'; deckId: string; deckName: string };
 
 interface AddCardModalProps {
   card: CardToAdd | null;
@@ -28,7 +35,14 @@ interface AddCardModalProps {
 }
 
 function modalTitle(name: string, target: AddTarget) {
-  return target.kind === 'pending' ? `Ajouter ${name} au deck` : `Ajouter ${name}`;
+  switch (target.kind) {
+    case 'pending':
+      return `Ajouter ${name} au deck`;
+    case 'deck':
+      return `Ajouter ${name} à ${target.deckName}`;
+    case 'collection':
+      return `Ajouter ${name}`;
+  }
 }
 
 export function AddCardModal({ card, onClose, defaultStorageId, target = { kind: 'collection' } }: AddCardModalProps) {
@@ -78,7 +92,10 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
   const storageOptions = useStorageOptions();
   const create = useCreateCards();
   const addPending = useAddPendingCard();
+  const importLine = useImportIntoDeck();
+  const [board, setBoard] = useState<DeckBoard>('main');
   const pending = target.kind === 'pending';
+  const toDeck = target.kind === 'pending' || target.kind === 'deck';
 
   function selectPrinting(next: ScryfallCard) {
     setPrinting(next);
@@ -92,6 +109,22 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
     const copies = clampQuantity(quantity);
     setQuantity(copies);
     const details = { ...printingDetails(printing), foil };
+
+    if (target.kind === 'deck') {
+      importLine.mutate(
+        { deckId: target.deckId, file: deckLineFile(details, copies, board), commanderFromFirstLine: false },
+        {
+          onSuccess: (summary) => {
+            notifications.show({
+              color: (summary.cards_skipped ?? 0) > 0 ? 'yellow' : 'green',
+              message: `${printing.name} ajoutée à ${target.deckName} : ${deckListSummary(summary)}.`,
+            });
+            onClose();
+          },
+        },
+      );
+      return;
+    }
 
     if (target.kind === 'pending') {
       addPending.mutate(
@@ -123,13 +156,15 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
     create.mutate({ card, quantity: copies }, { onSuccess, onError });
   }
 
-  const activeError = pending ? addPending.error : create.error;
+  const activeError = target.kind === 'deck' ? null : pending ? addPending.error : create.error;
   const createError =
-    activeError instanceof PartialCreationError
-      ? `Seulement ${activeError.created} exemplaire(s) sur ${activeError.requested} ajouté(s) : ${errorMessage(activeError.reason)} Le nombre d'exemplaires restant est prérempli, clique sur Ajouter pour réessayer.`
-      : activeError
-        ? errorMessage(activeError)
-        : null;
+    target.kind === 'deck' && importLine.error
+      ? deckListErrorMessage(importLine.error)
+      : activeError instanceof PartialCreationError
+        ? `Seulement ${activeError.created} exemplaire(s) sur ${activeError.requested} ajouté(s) : ${errorMessage(activeError.reason)} Le nombre d'exemplaires restant est prérempli, clique sur Ajouter pour réessayer.`
+        : activeError
+          ? errorMessage(activeError)
+          : null;
 
   return (
     <Stack>
@@ -152,9 +187,19 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
         )}
       </Stack>
 
+      {printing && target.kind === 'deck' && (
+        <Stack gap={4}>
+          <BoardPicker value={board} onChange={setBoard} />
+          <Text size="xs" c="dimmed">
+            Les exemplaires viennent de ta collection s'il t'en reste de libres dans cette édition, sinon ils sont
+            ajoutés en attente.
+          </Text>
+        </Stack>
+      )}
+
       {printing && (
         <Group align="flex-end" grow>
-          {!pending && (
+          {!toDeck && (
             <Select
               label={<StorageFieldLabel>Rangement</StorageFieldLabel>}
               placeholder="Aucun rangement"
@@ -182,7 +227,7 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
               mb={8}
             />
           )}
-          {!pending && (
+          {!toDeck && (
             <Switch label="Proxy" checked={proxy} onChange={(event) => setProxy(event.currentTarget.checked)} mb={8} />
           )}
         </Group>
@@ -194,8 +239,12 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
         <Button variant="default" onClick={onClose}>
           Annuler
         </Button>
-        <Button onClick={submit} disabled={!printing} loading={pending ? addPending.isPending : create.isPending}>
-          {pending ? 'Ajouter au deck' : 'Ajouter'}
+        <Button
+          onClick={submit}
+          disabled={!printing}
+          loading={target.kind === 'deck' ? importLine.isPending : pending ? addPending.isPending : create.isPending}
+        >
+          {toDeck ? 'Ajouter au deck' : 'Ajouter'}
         </Button>
       </Group>
     </Stack>

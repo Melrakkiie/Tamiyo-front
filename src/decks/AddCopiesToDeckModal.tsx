@@ -11,14 +11,16 @@ import { deckListErrorMessage, deckListSummary } from './DeckListInput';
 
 const MAX_COPIES = 100;
 
-export function deckLine(card: Card, count: number, board: DeckBoard) {
+type DeckLinePrinting = Pick<Card, 'name' | 'set_code' | 'collector_number' | 'foil'>;
+
+export function deckLine(card: DeckLinePrinting, count: number, board: DeckBoard) {
   return withBoardHeader(
     `${count} ${card.name} (${card.set_code}) ${card.collector_number}${card.foil ? ' *F*' : ''}\n`,
     board,
   );
 }
 
-export function deckLineFile(card: Card, count: number, board: DeckBoard) {
+export function deckLineFile(card: DeckLinePrinting, count: number, board: DeckBoard) {
   return new File([deckLine(card, count, board)], 'deck.txt', { type: 'text/plain' });
 }
 

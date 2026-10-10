@@ -1,6 +1,16 @@
 import { Center, Loader, Overlay, Paper, Stack, Text } from '@mantine/core';
 
-export function DropOverlay({ dragging, resolving }: { dragging: boolean; resolving: boolean }) {
+interface DropOverlayProps {
+  dragging: boolean;
+  resolving: boolean;
+  hint?: string;
+}
+
+export function DropOverlay({
+  dragging,
+  resolving,
+  hint = "Elle sera proposée à l'ajout dans ta collection, dans cette édition.",
+}: DropOverlayProps) {
   if (!dragging && !resolving) {
     return null;
   }
@@ -20,7 +30,7 @@ export function DropOverlay({ dragging, resolving }: { dragging: boolean; resolv
                   Dépose la carte ici
                 </Text>
                 <Text size="sm" c="dimmed">
-                  Elle sera proposée à l'ajout dans ta collection, dans cette édition.
+                  {hint}
                 </Text>
               </>
             )}
