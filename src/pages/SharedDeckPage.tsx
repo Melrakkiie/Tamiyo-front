@@ -355,6 +355,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
         backImageUrl={backImages.data?.[card.scryfall_id]}
         imageLoading={images.isLoading}
         textOnly={textOnly}
+        commander={commander !== undefined && card.id === commander.id}
         manaCost={manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)}
         collectionCount={showCollection ? ownedByName.get(cardNameKey(card.name)) : undefined}
         compact={size === 'small'}

@@ -535,6 +535,10 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
           backImageUrl={backImages.data?.[card.scryfall_id]}
           imageLoading={images.isLoading}
           textOnly={textOnly}
+          commander={
+            board === 'main' &&
+            (notOwned ? pendingIdOf(card) === deck.commander_pending_id : card.id === deck.commander_id)
+          }
           manaCost={manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)}
           storageName={
             showCollection ? (card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null) : undefined

@@ -266,36 +266,32 @@ function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps
     return compared ? sideTags(compared, side) : [];
   });
 
+  function isCommander(card: Card) {
+    const compared = byId.get(card.id);
+    return (
+      compared !== undefined &&
+      ((side !== 'other' && compared.commander) || (side !== 'deck' && compared.other_commander))
+    );
+  }
+
   function details(card: Card, long: boolean): ReactNode {
     const compared = byId.get(card.id);
-    if (!compared) {
+    if (!compared || side !== 'both') {
       return null;
-    }
-    const commander = (side !== 'other' && compared.commander) || (side !== 'deck' && compared.other_commander);
-    const badge = commander ? (
-      <Badge size="xs" variant="light" color="grape">
-        Commandant
-      </Badge>
-    ) : null;
-    if (side !== 'both') {
-      return badge;
     }
     const differs = compared.quantity !== compared.other_quantity;
     return (
-      <Group gap={6} wrap="nowrap">
-        <Text
-          size={long ? 'sm' : 'xs'}
-          fw={differs ? 700 : undefined}
-          c={differs ? 'orange' : 'dimmed'}
-          lineClamp={1}
-          title={`${compared.quantity} dans ${deck.name}, ${compared.other_quantity} dans ${other.name}`}
-        >
-          {long
-            ? `${compared.quantity} dans ${deck.name} · ${compared.other_quantity} dans ${other.name}`
-            : `${compared.quantity} / ${compared.other_quantity}`}
-        </Text>
-        {badge}
-      </Group>
+      <Text
+        size={long ? 'sm' : 'xs'}
+        fw={differs ? 700 : undefined}
+        c={differs ? 'orange' : 'dimmed'}
+        lineClamp={1}
+        title={`${compared.quantity} dans ${deck.name}, ${compared.other_quantity} dans ${other.name}`}
+      >
+        {long
+          ? `${compared.quantity} dans ${deck.name} · ${compared.other_quantity} dans ${other.name}`
+          : `${compared.quantity} / ${compared.other_quantity}`}
+      </Text>
     );
   }
 
@@ -308,6 +304,7 @@ function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps
         backImageUrl={backImages.data?.[card.scryfall_id]}
         imageLoading={images.isLoading}
         textOnly={options.textOnly}
+        commander={isCommander(card)}
         manaCost={manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)}
         details={details(card, false)}
         onOpen={setOpened}

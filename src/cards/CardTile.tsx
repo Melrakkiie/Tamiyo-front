@@ -8,6 +8,7 @@ import { withSymbols } from '../scryfall/manaSymbols';
 import { StorageLabel } from '../storages/StorageLabel';
 import type { ContextMenuEvent } from './CardContextMenu';
 import { CardImage } from './CardImage';
+import { CommanderBadge, CommanderInlineMark } from './CommanderMark';
 import { CollectionBadge, PendingBadge, type PendingStatus } from './PendingBadge';
 
 interface CardTileProps {
@@ -20,6 +21,7 @@ interface CardTileProps {
   collectionCount?: number;
   compact?: boolean;
   textOnly?: boolean;
+  commander?: boolean;
   manaCost?: string | null;
   details?: ReactNode;
   onOpen: (card: Card) => void;
@@ -50,6 +52,7 @@ function ManaCost({ card, manaCost }: { card: Card; manaCost: string | null | un
 
 function CardRow({
   card,
+  commander,
   pendingStatus,
   collectionCount,
   manaCost,
@@ -59,7 +62,7 @@ function CardRow({
   onContextMenu,
 }: Pick<
   CardTileProps,
-  'card' | 'pendingStatus' | 'collectionCount' | 'manaCost' | 'details' | 'onOpen' | 'onContextMenu'
+  'card' | 'commander' | 'pendingStatus' | 'collectionCount' | 'manaCost' | 'details' | 'onOpen' | 'onContextMenu'
 > & {
   onPreview: () => void;
 }) {
@@ -83,6 +86,7 @@ function CardRow({
             <Text size="sm" fw={500} truncate>
               {card.name}
             </Text>
+            {commander && <CommanderInlineMark />}
             {card.foil && (
               <Badge size="xs" variant="light">
                 Foil
@@ -118,6 +122,7 @@ export function CardTile({
   collectionCount,
   compact,
   textOnly,
+  commander = false,
   manaCost,
   details,
   onOpen,
@@ -136,6 +141,7 @@ export function CardTile({
     return (
       <CardRow
         card={card}
+        commander={commander}
         pendingStatus={pendingStatus}
         collectionCount={collectionCount}
         manaCost={manaCost}
@@ -172,6 +178,11 @@ export function CardTile({
               });
             }}
           />
+          {commander && (
+            <Box pos="absolute" top={8} left={8}>
+              <CommanderBadge />
+            </Box>
+          )}
           {quantity > 1 && (
             <Badge
               pos="absolute"
