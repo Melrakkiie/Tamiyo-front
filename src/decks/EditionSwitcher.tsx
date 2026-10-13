@@ -39,7 +39,7 @@ interface EditionSwitcherProps {
   source: EditionSource;
   deckCardIds: Set<number>;
   isCommander: boolean;
-  onSwapped: () => void;
+  onSwapped: (next: EditionSource) => void;
 }
 
 function sourceDetails(source: EditionSource) {
@@ -78,37 +78,39 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
   const busy = swap.isPending || swapPending.isPending || toPending.isPending || replacePending.isPending;
   const error = swap.error ?? swapPending.error ?? toPending.error ?? replacePending.error;
 
-  function done(message: string) {
+  function done(message: string, next: EditionSource) {
     notifications.show({ color: 'green', message });
-    onSwapped();
+    onSwapped(next);
   }
+
+  function ignore() {}
 
   function chooseOwned(copy: Card) {
     const message = `${current.name} : l'exemplaire ${copy.set_code.toUpperCase()} #${copy.collector_number}${copy.foil ? ' foil' : ''} de ta collection est maintenant dans le deck.`;
     if (source.kind === 'card') {
-      swap.mutate(
-        { deckId, fromCardId: source.card.id, toCardId: copy.id, board: source.board, isCommander },
-        { onSuccess: () => done(message) },
-      );
+      swap
+        .mutateAsync({ deckId, fromCardId: source.card.id, toCardId: copy.id, board: source.board, isCommander })
+        .then(() => done(message, { kind: 'card', card: copy, board: source.board }), ignore);
     } else {
-      swapPending.mutate(
-        { deckId, from: source.item, toCardId: copy.id, isCommander },
-        { onSuccess: () => done(message) },
-      );
+      swapPending
+        .mutateAsync({ deckId, from: source.item, toCardId: copy.id, isCommander })
+        .then(() => done(message, { kind: 'card', card: copy, board: source.item.board }), ignore);
     }
   }
 
   function choosePrinting(printing: ScryfallCard) {
     const card = { ...printingDetails(printing), foil: foilFor(printing, current.foil), quantity: 1 };
     const message = `${current.name} : l'édition ${printing.set.toUpperCase()} #${printing.collector_number} est dans le deck, en attendant d'être dans ta collection.`;
-    if (source.kind === 'card') {
-      toPending.mutate(
-        { deckId, fromCardId: source.card.id, isCommander, card: { ...card, board: source.board } },
-        { onSuccess: () => done(message) },
-      );
-    } else {
-      replacePending.mutate({ deckId, from: source.item, isCommander, card }, { onSuccess: () => done(message) });
-    }
+    const swapped =
+      source.kind === 'card'
+        ? toPending.mutateAsync({
+            deckId,
+            fromCardId: source.card.id,
+            isCommander,
+            card: { ...card, board: source.board },
+          })
+        : replacePending.mutateAsync({ deckId, from: source.item, isCommander, card });
+    swapped.then((item) => done(message, { kind: 'pending', item }), ignore);
   }
 
   return (

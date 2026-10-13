@@ -3184,6 +3184,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deck/{id}/split-printings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Give each copy of a card in a deck its own printing and finish
+         * @description The listed owned copies and pending cards, all the same card on the same board and not the commander, get one printing each. Copies that already have a wanted printing and finish stay; the others leave the deck (an owned copy stays in the collection as it is, a pending card loses those copies) and the remaining printings are added on the same board: owned copies in no deck first, then ones another deck uses (never from a storage locked against the deck), and pending cards for the rest. The collection itself is never modified.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description Ids of the deck's owned copies. */
+                        card_ids?: number[];
+                        /** @description Ids of the deck's pending cards. At least one id overall. */
+                        pending_ids?: number[];
+                        /** @description One entry per copy, owned copies plus the quantity of each pending card. */
+                        printings: {
+                            scryfall_id: string;
+                            set_code?: string;
+                            collector_number?: string;
+                            foil: boolean;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description cards_linked copies found in the collection, cards_pending copies left pending, cards_removed copies that left the deck. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportSummary"];
+                    };
+                };
+                /** @description id is not a UUID, no id at all, no printing or one without scryfall_id, an id that isn't an owned copy or a pending card of this deck, copies of several cards or boards, the commander among them, or not one printing per copy. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or not owned by the authenticated user */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deck/{id}/import": {
         parameters: {
             query?: never;

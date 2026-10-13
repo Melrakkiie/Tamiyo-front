@@ -18,7 +18,7 @@ import { BoardPicker } from './BoardSection';
 import { CardTagsInput } from './CardTagsInput';
 import { pendingStatus } from './pendingCards';
 import { DeckQuantityControl } from './DeckQuantityControl';
-import { EditionSwitcher } from './EditionSwitcher';
+import { type EditionSource, EditionSwitcher } from './EditionSwitcher';
 
 interface PendingCardModalProps {
   deckId: string;
@@ -29,6 +29,7 @@ interface PendingCardModalProps {
   item: PendingCard | undefined;
   imageUrl: string | undefined;
   onClose: () => void;
+  onSwapped: (next: EditionSource) => void;
 }
 
 export function PendingCardModal({
@@ -40,6 +41,7 @@ export function PendingCardModal({
   item,
   imageUrl,
   onClose,
+  onSwapped,
 }: PendingCardModalProps) {
   const lastShown = useRef<{ card: Card; item: PendingCard | undefined; imageUrl: string | undefined } | null>(null);
   if (card) {
@@ -187,7 +189,7 @@ export function PendingCardModal({
                 source={{ kind: 'pending', item: shown.item }}
                 deckCardIds={deckCardIds}
                 isCommander={commanderPendingId === shown.item.id}
-                onSwapped={onClose}
+                onSwapped={onSwapped}
               />
             </>
           )}

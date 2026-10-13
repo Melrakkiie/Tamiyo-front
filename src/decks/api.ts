@@ -61,8 +61,7 @@ export function useDeckComparison(id: string, otherId: string, signedIn: boolean
 export function useDeckCards(id: string, sort: DeckCardSort) {
   return useQuery({
     queryKey: ['decks', 'cards', id, sort],
-    queryFn: async () =>
-      unwrap(await api.GET('/deck/{id}/cards', { params: { path: { id }, query: { sort } } })),
+    queryFn: async () => unwrap(await api.GET('/deck/{id}/cards', { params: { path: { id }, query: { sort } } })),
   });
 }
 
@@ -219,9 +218,7 @@ export function useSwapDeckCard() {
       if (isCommander) {
         unwrap(await api.PATCH('/deck/{id}', { params: { path: { id: deckId } }, body: { commander_id: toCardId } }));
       }
-      unwrap(
-        await api.DELETE('/deck/{id}/cards/{card_id}', { params: { path: { id: deckId, card_id: fromCardId } } }),
-      );
+      unwrap(await api.DELETE('/deck/{id}/cards/{card_id}', { params: { path: { id: deckId, card_id: fromCardId } } }));
     },
     onSettled: invalidate,
   });
@@ -355,6 +352,38 @@ export function useSwitchFoil() {
   });
 }
 
+export interface PrintingChoice {
+  scryfall_id: string;
+  set_code: string;
+  collector_number: string;
+  foil: boolean;
+}
+
+export function useSplitPrintings() {
+  const invalidate = useInvalidateDeckAndCollection();
+
+  return useMutation({
+    mutationFn: async ({
+      deckId,
+      cardIds,
+      pendingIds,
+      printings,
+    }: {
+      deckId: string;
+      cardIds?: number[];
+      pendingIds?: number[];
+      printings: PrintingChoice[];
+    }) =>
+      unwrap(
+        await api.POST('/deck/{id}/split-printings', {
+          params: { path: { id: deckId } },
+          body: { card_ids: cardIds, pending_ids: pendingIds, printings },
+        }),
+      ),
+    onSettled: invalidate,
+  });
+}
+
 export function useCollectDeck() {
   const invalidate = useInvalidateDeckAndCollection();
 
@@ -431,6 +460,7 @@ export function useReplaceDeckCardWithPending() {
         );
       }
       unwrap(await api.DELETE('/deck/{id}/cards/{card_id}', { params: { path: { id: deckId, card_id: fromCardId } } }));
+      return added;
     },
     onSettled: invalidate,
   });
@@ -470,6 +500,7 @@ export function useReplacePendingCard() {
           params: { path: { id: deckId, pending_id: from.id } },
         }),
       );
+      return added;
     },
     onSettled: invalidate,
   });

@@ -22,6 +22,7 @@ import {
 import { BOARDS } from './boards';
 import { deckListErrorMessage, deckListSummary } from './DeckListInput';
 import { isPendingCard, pendingIdOf } from './pendingCards';
+import { SplitPrintingsModal, summaryDetails } from './SplitPrintingsModal';
 import type { DeckCardActions } from './useDeckCardActions';
 
 const moveLabels: Record<DeckBoard, string> = {
@@ -44,6 +45,7 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
   const commit = useCommitPendingCards();
   const createCards = useCreateCards();
   const [otherDeckCard, setOtherDeckCard] = useState<Card | null>(null);
+  const [splitCard, setSplitCard] = useState<Card | null>(null);
 
   const pendingOf = (card: Card) => pendingItems.find((item) => item.id === pendingIdOf(card));
   const isCommander = (card: Card) =>
@@ -61,18 +63,11 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
         ? { deckId: deck.id, pendingIds: [pendingId], foil }
         : { deckId: deck.id, cardIds: copyIds(card), foil },
       {
-        onSuccess: (summary) => {
-          const linked = summary.cards_linked ?? 0;
-          const pending = summary.cards_pending ?? 0;
-          const details = [
-            linked > 0 ? `${linked} exemplaire${linked > 1 ? 's' : ''} de ta collection` : null,
-            pending > 0 ? `${pending} en attente` : null,
-          ].filter(Boolean);
+        onSuccess: (summary) =>
           notifications.show({
             color: 'green',
-            message: `${card.name} est maintenant ${finish} dans ce deck${details.length > 0 ? ` : ${details.join(', ')}` : ''}. Ta collection n'a pas changé.`,
-          });
-        },
+            message: `${card.name} est maintenant ${finish} dans ce deck${summaryDetails(summary)}. Ta collection n'a pas changé.`,
+          }),
         onError: notifyError,
       },
     );
@@ -166,6 +161,7 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
     return (
       <>
         <FoilToggleItem card={card} onToggle={(foil) => toggleFoil(card, foil)} />
+        {quantity >= 2 && !commander && <Menu.Item onClick={() => setSplitCard(card)}>Séparer les éditions…</Menu.Item>}
         <Menu.Item onClick={() => addOne(card, board)}>Ajouter un exemplaire</Menu.Item>
         <Menu.Item onClick={() => removeOne(card)} disabled={commander && quantity <= 1}>
           Retirer un exemplaire
@@ -196,7 +192,10 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
   }
 
   const modals = (
-    <AddCopiesToDeckModal card={otherDeckCard} excludedDeckId={deck.id} onClose={() => setOtherDeckCard(null)} />
+    <>
+      <AddCopiesToDeckModal card={otherDeckCard} excludedDeckId={deck.id} onClose={() => setOtherDeckCard(null)} />
+      <SplitPrintingsModal deckId={deck.id} card={splitCard} onClose={() => setSplitCard(null)} />
+    </>
   );
 
   return { menuFor, modals };

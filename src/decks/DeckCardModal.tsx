@@ -16,7 +16,7 @@ import { movedMessage } from './boards';
 import { BoardPicker } from './BoardSection';
 import { CardTagsInput } from './CardTagsInput';
 import { DeckQuantityControl } from './DeckQuantityControl';
-import { EditionSwitcher } from './EditionSwitcher';
+import { type EditionSource, EditionSwitcher } from './EditionSwitcher';
 
 interface DeckCardModalProps {
   deckId: string;
@@ -27,6 +27,7 @@ interface DeckCardModalProps {
   board: DeckBoard;
   imageUrl: string | undefined;
   onClose: () => void;
+  onSwapped: (next: EditionSource) => void;
 }
 
 export function DeckCardModal({
@@ -38,6 +39,7 @@ export function DeckCardModal({
   board,
   imageUrl,
   onClose,
+  onSwapped,
 }: DeckCardModalProps) {
   const lastShown = useRef<{ card: Card; board: DeckBoard; imageUrl: string | undefined } | null>(null);
   if (card) {
@@ -58,6 +60,7 @@ export function DeckCardModal({
           board={shown.board}
           imageUrl={shown.imageUrl}
           onClose={onClose}
+          onSwapped={onSwapped}
         />
       )}
     </Modal>
@@ -79,6 +82,7 @@ interface DeckCardDetailProps {
   board: DeckBoard;
   imageUrl: string | undefined;
   onClose: () => void;
+  onSwapped: (next: EditionSource) => void;
 }
 
 function DeckCardDetail({
@@ -90,6 +94,7 @@ function DeckCardDetail({
   board,
   imageUrl,
   onClose,
+  onSwapped,
 }: DeckCardDetailProps) {
   const update = useUpdateDeck();
   const move = useMoveDeckCards();
@@ -272,7 +277,7 @@ function DeckCardDetail({
         source={{ kind: 'card', card, board }}
         deckCardIds={deckCardIds}
         isCommander={isCommander}
-        onSwapped={onClose}
+        onSwapped={onSwapped}
       />
     </Stack>
   );

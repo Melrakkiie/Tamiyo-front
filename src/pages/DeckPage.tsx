@@ -57,6 +57,7 @@ import { useDeckCardMenu } from '../decks/useDeckCardMenu';
 import { CollectionToggle } from '../decks/CollectionToggle';
 import { CompareDeckModal } from '../decks/CompareDeckModal';
 import { DeckCardModal } from '../decks/DeckCardModal';
+import type { EditionSource } from '../decks/EditionSwitcher';
 import { useDeckCopyActions } from '../decks/DeckCopyActions';
 import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckTagsModal } from '../decks/DeckTagsModal';
@@ -529,6 +530,16 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   const [openedCard, setOpenedCard] = useState<OpenedCard | null>(null);
   const [openedPending, setOpenedPending] = useState<Card | null>(null);
 
+  function showSwapped(next: EditionSource) {
+    if (next.kind === 'card') {
+      setOpenedPending(null);
+      setOpenedCard({ card: next.card, board: next.board });
+    } else {
+      setOpenedCard(null);
+      setOpenedPending(pendingToCards([next.item])[0]);
+    }
+  }
+
   const commanderScryfallId = isCommanderFormat(deck.format) ? deck.commander_scryfall_id : null;
   const commanderName = commanderScryfallId
     ? mainCards.find((card) => card.scryfall_id === commanderScryfallId)?.name
@@ -757,6 +768,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
           board={openedCard?.board ?? 'main'}
           imageUrl={openedCard ? images.data?.[openedCard.card.scryfall_id] : undefined}
           onClose={() => setOpenedCard(null)}
+          onSwapped={showSwapped}
         />
         <PendingCardModal
           deckId={deck.id}
@@ -767,6 +779,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
           item={openedPending ? pendingItems.find((item) => item.id === pendingIdOf(openedPending)) : undefined}
           imageUrl={openedPending ? images.data?.[openedPending.scryfall_id] : undefined}
           onClose={() => setOpenedPending(null)}
+          onSwapped={showSwapped}
         />
       </Stack>
     </DeckDragProvider>
