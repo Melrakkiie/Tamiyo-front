@@ -1,9 +1,10 @@
-import { Box, Divider, SimpleGrid, Stack, Text, Title, Tooltip } from '@mantine/core';
+import { Box, Divider, Stack, Text, Title, Tooltip } from '@mantine/core';
 import type { ReactNode } from 'react';
 
 import type { Card } from '../api/types';
 import { copyCount } from '../cards/api';
 import type { CardDisplay } from '../cards/CardDisplay';
+import { CardGroupsLayout } from '../cards/CardLayout';
 import { type CardGroup, groupCards, sortIntoGroups, typeLabels } from '../cards/grouping';
 import type { FaceTypes } from '../scryfall/classify';
 import { useCardFaceTypes } from '../scryfall/hooks';
@@ -139,43 +140,51 @@ function GroupDropArea({ group, drop, children }: { group: CardGroup; drop?: Gro
 }
 
 interface DeckCardGroupsProps extends DeckCardGrouped {
-  gridProps: CardDisplay['gridProps'];
+  display: CardDisplay;
   renderTile: (card: Card, group: CardGroup) => ReactNode;
   drop?: GroupDrop;
 }
 
-export function DeckCardGroups({ groups, backFaces, gridProps, renderTile, drop }: DeckCardGroupsProps) {
+export function DeckCardGroups({ groups, backFaces, display, renderTile, drop }: DeckCardGroupsProps) {
+  const layoutGroups = groups.map((group, index) => ({
+    key: `${index}-${group.label}`,
+    group,
+    cards: group.cards,
+    wrap: (content: ReactNode) => (
+      <GroupDropArea group={group} drop={drop}>
+        {content}
+      </GroupDropArea>
+    ),
+    header: (
+      <Divider
+        labelPosition="left"
+        label={
+          <Title order={4}>
+            {group.storage && (
+              <Text span c="dimmed" mr={6} style={{ display: 'inline-block', verticalAlign: '-0.1em' }}>
+                <StorageIcon size={16} />
+              </Text>
+            )}
+            {group.label}{' '}
+            <Text span size="sm" c="dimmed">
+              <GroupCount
+                label={group.label}
+                cards={group.cards}
+                backFaces={[...(backFaces.get(group.label) ?? new Map<string, number>())]
+                  .map(([name, quantity]) => ({ name, quantity }))
+                  .sort((a, b) => a.name.localeCompare(b.name))}
+              />
+            </Text>
+          </Title>
+        }
+      />
+    ),
+  }));
   return (
-    <Stack gap="lg">
-      {groups.map((group, index) => (
-        <GroupDropArea key={`${index}-${group.label}`} group={group} drop={drop}>
-          <Stack gap="sm">
-            <Divider
-              labelPosition="left"
-              label={
-                <Title order={4}>
-                  {group.storage && (
-                    <Text span c="dimmed" mr={6} style={{ display: 'inline-block', verticalAlign: '-0.1em' }}>
-                      <StorageIcon size={16} />
-                    </Text>
-                  )}
-                  {group.label}{' '}
-                  <Text span size="sm" c="dimmed">
-                    <GroupCount
-                      label={group.label}
-                      cards={group.cards}
-                      backFaces={[...(backFaces.get(group.label) ?? new Map<string, number>())]
-                        .map(([name, quantity]) => ({ name, quantity }))
-                        .sort((a, b) => a.name.localeCompare(b.name))}
-                    />
-                  </Text>
-                </Title>
-              }
-            />
-            <SimpleGrid {...gridProps}>{group.cards.map((card) => renderTile(card, group))}</SimpleGrid>
-          </Stack>
-        </GroupDropArea>
-      ))}
-    </Stack>
+    <CardGroupsLayout
+      display={display}
+      groups={layoutGroups}
+      renderTile={(card, layoutGroup) => renderTile(card, layoutGroup.group)}
+    />
   );
 }

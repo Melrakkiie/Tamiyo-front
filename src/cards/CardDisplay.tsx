@@ -5,7 +5,7 @@ import { usePreferences, useUpdatePreferences } from '../auth/preferences';
 import { useSession } from '../auth/useSession';
 import { GearIcon } from '../layout/SettingsMenu';
 
-export type CardDisplayMode = 'text' | 'images';
+export type CardDisplayMode = 'text' | 'images' | 'grid' | 'stacks';
 
 export interface DisplaySettings {
   mode: CardDisplayMode;
@@ -21,6 +21,8 @@ const MAX_COLUMNS = 12;
 const modeOptions: { value: CardDisplayMode; label: string }[] = [
   { value: 'text', label: 'Texte' },
   { value: 'images', label: 'Images' },
+  { value: 'grid', label: 'Grille' },
+  { value: 'stacks', label: 'Piles' },
 ];
 
 export function placement(inside: boolean, width: number) {
@@ -62,9 +64,11 @@ export function cardDisplay(settings: DisplaySettings, change: (next: Partial<Di
   const dense = columns >= 9;
   return {
     ...settings,
+    showDetails: settings.mode === 'images' && settings.showDetails,
     change,
     textOnly,
     compact: !textOnly && columns >= 7,
+    stacked: settings.mode === 'stacks',
     gridProps: textOnly
       ? { cols: { base: 1, sm: 2, lg: 3 }, spacing: 'xs', verticalSpacing: 'xs' }
       : {
@@ -171,12 +175,14 @@ export function CardDisplayControls({ display, options }: CardDisplayControlsPro
               />
             ) : (
               <>
-                <Switch
-                  label="Afficher les infos sous les cartes"
-                  description="Nom, édition et rangement"
-                  checked={display.showDetails}
-                  onChange={(event) => display.change({ showDetails: event.currentTarget.checked })}
-                />
+                {display.mode === 'images' && (
+                  <Switch
+                    label="Afficher les infos sous les cartes"
+                    description="Nom, édition et rangement"
+                    checked={display.showDetails}
+                    onChange={(event) => display.change({ showDetails: event.currentTarget.checked })}
+                  />
+                )}
                 <ColumnsSlider value={display.columns} onChange={(columns) => display.change({ columns })} />
               </>
             )}

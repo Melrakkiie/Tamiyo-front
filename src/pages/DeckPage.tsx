@@ -10,7 +10,6 @@ import {
   Menu,
   Paper,
   Select,
-  SimpleGrid,
   Stack,
   Tabs,
   Text,
@@ -35,6 +34,7 @@ import {
   displayToStored,
   placement,
 } from '../cards/CardDisplay';
+import { CardGrid } from '../cards/CardLayout';
 import { useCardContextMenu } from '../cards/CardContextMenu';
 import { CardTile } from '../cards/CardTile';
 import { PendingBadge, type PendingStatus } from '../cards/PendingBadge';
@@ -490,7 +490,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   }
 
   const display = cardDisplay(displaySettings, (next) => changeView({ display: next }));
-  const { textOnly, gridProps } = display;
+  const { textOnly } = display;
   const showCollection = useShowCollectionInDecks();
   const cards = useDeckCards(deck.id, sort);
   const deckCards = cards.data ?? [];
@@ -582,6 +582,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
             showCollection && notOwned ? (pendingStatuses.get(pendingIdOf(card)) ?? { kind: 'missing' }) : undefined
           }
           compact={display.compact}
+          stacked={display.stacked}
           hideDetails={!display.showDetails}
           onOpen={notOwned ? setOpenedPending : (opened) => setOpenedCard({ card: opened, board })}
           onContextMenu={(event, clicked) =>
@@ -626,9 +627,9 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   function renderBoard(board: DeckBoard, stacks: Card[], grouped: DeckCardGrouped) {
     const tile = renderTile(board);
     return grouping ? (
-      <DeckCardGroups {...grouped} gridProps={gridProps} renderTile={tile} drop={tagDrop(board)} />
+      <DeckCardGroups {...grouped} display={display} renderTile={tile} drop={tagDrop(board)} />
     ) : (
-      <SimpleGrid {...gridProps}>{stacks.map((card) => tile(card))}</SimpleGrid>
+      <CardGrid display={display} cards={stacks} renderTile={(card) => tile(card)} />
     );
   }
 

@@ -4716,7 +4716,7 @@ export interface components {
              * @default images
              * @enum {string}
              */
-            card_display: "text" | "images";
+            card_display: "text" | "images" | "grid" | "stacks";
             /**
              * @description Card images per row.
              * @default 6
@@ -4748,7 +4748,7 @@ export interface components {
         PreferencesChanges: {
             show_collection_in_decks?: boolean;
             /** @enum {string} */
-            card_display?: "text" | "images";
+            card_display?: "text" | "images" | "grid" | "stacks";
             card_columns?: number;
             show_mana_cost?: boolean;
             show_card_details?: boolean;
@@ -5287,7 +5287,7 @@ export interface components {
              * @description How the deck's cards are shown. Optional when saving, where leaving it out keeps the saved value (as for the next three).
              * @enum {string}
              */
-            card_display?: "text" | "images";
+            card_display?: "text" | "images" | "grid" | "stacks";
             card_columns?: number;
             show_mana_cost?: boolean;
             show_card_details?: boolean;

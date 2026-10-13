@@ -9,7 +9,6 @@ import {
   Menu,
   Paper,
   Select,
-  SimpleGrid,
   Stack,
   Tabs,
   Text,
@@ -27,6 +26,7 @@ import { useSession } from '../auth/useSession';
 import { useCardContextMenu } from '../cards/CardContextMenu';
 import { CardImage } from '../cards/CardImage';
 import { CardDisplayControls, placement, useCardDisplay } from '../cards/CardDisplay';
+import { CardGrid } from '../cards/CardLayout';
 import { CardTile } from '../cards/CardTile';
 import { artBackground, artCredit, deckArtId } from '../decks/art';
 import { type CollapsibleBoard, DEFAULT_COLLAPSED_BOARDS, inBoard } from '../decks/boards';
@@ -298,7 +298,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
   const [sort, setSort] = useState<SharedDeckSort>('mana_value');
   const [grouping, setGrouping] = useState<SharedCardGrouping | null>('type');
   const display = useCardDisplay();
-  const { textOnly, gridProps } = display;
+  const { textOnly } = display;
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
   const [collapsed, setCollapsed] = useState<CollapsibleBoard[]>(DEFAULT_COLLAPSED_BOARDS);
   const all = sharedCardsToCards(shared.cards);
@@ -362,6 +362,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
         }
         collectionCount={showCollection ? ownedByName.get(cardNameKey(card.name)) : undefined}
         compact={display.compact}
+        stacked={display.stacked}
         hideDetails={!display.showDetails}
         onOpen={setOpenedCard}
         onContextMenu={(event, clicked) =>
@@ -373,9 +374,9 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
 
   function renderBoard(boardCards: Card[], grouped: DeckCardGrouped) {
     return grouping ? (
-      <DeckCardGroups {...grouped} gridProps={gridProps} renderTile={renderTile} />
+      <DeckCardGroups {...grouped} display={display} renderTile={renderTile} />
     ) : (
-      <SimpleGrid {...gridProps}>{boardCards.map(renderTile)}</SimpleGrid>
+      <CardGrid display={display} cards={boardCards} renderTile={renderTile} />
     );
   }
 

@@ -22,6 +22,7 @@ interface CardTileProps {
   compact?: boolean;
   textOnly?: boolean;
   hideDetails?: boolean;
+  stacked?: boolean;
   commander?: boolean;
   manaCost?: string | null;
   details?: ReactNode;
@@ -126,6 +127,7 @@ export function CardTile({
   compact,
   textOnly,
   hideDetails = false,
+  stacked = false,
   commander = false,
   manaCost,
   details,
@@ -184,23 +186,41 @@ export function CardTile({
               });
             }}
           />
-          {commander && (
-            <Box pos="absolute" top={8} left={8}>
-              <CommanderBadge />
-            </Box>
-          )}
-          {quantity > 1 && (
-            <Badge
-              pos="absolute"
-              top={8}
-              right={8}
-              size="lg"
-              variant="filled"
-              color={pendingStatus ? 'orange' : 'dark'}
-              style={{ boxShadow: 'var(--mantine-shadow-sm)' }}
-            >
-              ×{quantity}
-            </Badge>
+          {stacked ? (
+            <Group pos="absolute" top={4} right={4} gap={4} wrap="nowrap">
+              {commander && <CommanderBadge size="sm" />}
+              {quantity > 1 && (
+                <Badge
+                  size="sm"
+                  variant="filled"
+                  color={pendingStatus ? 'orange' : 'dark'}
+                  style={{ boxShadow: 'var(--mantine-shadow-sm)' }}
+                >
+                  ×{quantity}
+                </Badge>
+              )}
+            </Group>
+          ) : (
+            <>
+              {commander && (
+                <Box pos="absolute" top={8} left={8}>
+                  <CommanderBadge />
+                </Box>
+              )}
+              {quantity > 1 && (
+                <Badge
+                  pos="absolute"
+                  top={8}
+                  right={8}
+                  size="lg"
+                  variant="filled"
+                  color={pendingStatus ? 'orange' : 'dark'}
+                  style={{ boxShadow: 'var(--mantine-shadow-sm)' }}
+                >
+                  ×{quantity}
+                </Badge>
+              )}
+            </>
           )}
           {pendingStatus && (
             <Box pos="absolute" bottom={8} left={8}>

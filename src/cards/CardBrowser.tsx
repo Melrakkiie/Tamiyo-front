@@ -9,7 +9,6 @@ import {
   Loader,
   Pagination,
   Select,
-  SimpleGrid,
   Stack,
   Text,
   TextInput,
@@ -42,6 +41,7 @@ import { copyCount, useCards } from './api';
 import { useCardContextMenu } from './CardContextMenu';
 import { CardDetailModal } from './CardDetailModal';
 import { CardDisplayControls, placement, useCardDisplay } from './CardDisplay';
+import { CardGrid, CardGroupsLayout } from './CardLayout';
 import { CardTile } from './CardTile';
 import { MissingDetailsAlert } from './MissingDetailsAlert';
 import { groupCards, groupingOptions, hasMissingDetails, parseGrouping } from './grouping';
@@ -144,6 +144,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
         imageLoading={images.isLoading}
         textOnly={textOnly}
         compact={display.compact}
+        stacked={display.stacked}
         hideDetails={!display.showDetails}
         manaCost={
           !display.showManaCost || manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)
@@ -158,7 +159,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   }
 
   const display = useCardDisplay();
-  const { textOnly, gridProps } = display;
+  const { textOnly } = display;
 
   function updateParams(changes: Record<string, string | null>) {
     setParams(
@@ -340,9 +341,12 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
           </Stack>
         </Center>
       ) : grouping ? (
-        <Stack gap="lg">
-          {groupCards(pageCards, grouping).map((group, index) => (
-            <Stack key={`${index}-${group.label}`} gap="sm">
+        <CardGroupsLayout
+          display={display}
+          groups={groupCards(pageCards, grouping).map((group, index) => ({
+            key: `${index}-${group.label}`,
+            cards: group.cards,
+            header: (
               <Divider
                 labelPosition="left"
                 label={
@@ -354,12 +358,12 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
                   </Title>
                 }
               />
-              <SimpleGrid {...gridProps}>{group.cards.map(renderTile)}</SimpleGrid>
-            </Stack>
-          ))}
-        </Stack>
+            ),
+          }))}
+          renderTile={renderTile}
+        />
       ) : (
-        <SimpleGrid {...gridProps}>{pageCards.map(renderTile)}</SimpleGrid>
+        <CardGrid display={display} cards={pageCards} renderTile={renderTile} />
       )}
 
       {totalPages > 1 && (

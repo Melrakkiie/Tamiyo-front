@@ -21,6 +21,7 @@ import { ApiError, errorMessage } from '../api/errors';
 import type { Card, ComparedCard, ComparedDeck } from '../api/types';
 import { useSession } from '../auth/useSession';
 import { type CardDisplay, CardDisplayControls, placement, useCardDisplay } from '../cards/CardDisplay';
+import { CardGrid } from '../cards/CardLayout';
 import { CardTile } from '../cards/CardTile';
 import { useDeckComparison } from '../decks/api';
 import { DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
@@ -306,6 +307,7 @@ function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps
         imageLoading={images.isLoading}
         textOnly={options.display.textOnly}
         compact={options.display.compact}
+        stacked={options.display.stacked}
         hideDetails={!options.display.showDetails}
         commander={isCommander(card)}
         manaCost={
@@ -335,9 +337,9 @@ function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps
         </Text>
       )}
       {options.grouping ? (
-        <DeckCardGroups {...grouped} gridProps={options.display.gridProps} renderTile={renderTile} />
+        <DeckCardGroups {...grouped} display={options.display} renderTile={renderTile} />
       ) : (
-        <SimpleGrid {...options.display.gridProps}>{sorted.map(renderTile)}</SimpleGrid>
+        <CardGrid display={options.display} cards={sorted} renderTile={renderTile} />
       )}
       <SharedCardModal
         card={opened}

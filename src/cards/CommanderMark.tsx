@@ -19,17 +19,17 @@ export function CrownIcon({ size = 14 }: { size?: number }) {
   );
 }
 
-export function CommanderBadge() {
+export function CommanderBadge({ size = 'md' }: { size?: 'sm' | 'md' }) {
   return (
     <ThemeIcon
-      size="md"
+      size={size}
       radius="xl"
       variant="default"
       title="Commandant"
       aria-label="Commandant"
       style={{ boxShadow: 'var(--mantine-shadow-sm)' }}
     >
-      <CrownIcon size={14} />
+      <CrownIcon size={size === 'sm' ? 12 : 14} />
     </ThemeIcon>
   );
 }
