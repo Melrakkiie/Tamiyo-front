@@ -5269,6 +5269,8 @@ export interface components {
             background_scryfall_id?: string;
             visibility?: components["schemas"]["DeckVisibility"];
             bracket?: number;
+            /** @description One of your folders to create the deck in; at the root when absent. */
+            folder_id?: number;
         };
         /** @description All fields optional; only included fields are modified. */
         UpdateDeckRequest: {

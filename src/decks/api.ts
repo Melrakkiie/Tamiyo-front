@@ -94,6 +94,7 @@ export interface DeckInput {
   format: string;
   visibility: DeckVisibility;
   bracket?: number;
+  folder_id?: number;
 }
 
 export function useCreateDeck() {

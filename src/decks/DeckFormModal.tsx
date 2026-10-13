@@ -19,7 +19,9 @@ import { errorMessage } from '../api/errors';
 import type { Deck } from '../api/types';
 import { isCommanderFormat, useDeckFormats, type DeckInput } from './api';
 import { bracketOptions, GaugeIcon } from './bracket';
+import { FolderIcon } from './DeckFolderTree';
 import { DeckListInput, deckListErrorMessage, useDeckList, useTamiyoDeckFile } from './DeckListInput';
+import { folderPath, useDeckFolders } from './folders';
 import { visibilityOption, visibilityOptions } from './visibility';
 
 interface DeckFormModalProps {
@@ -84,6 +86,12 @@ function DeckForm({
   const [format, setFormat] = useState(form.getValues().format);
   form.watch('format', ({ value }) => setFormat(value));
   const [bracket, setBracket] = useState<string | null>(initial?.bracket ? String(initial.bracket) : null);
+  const [folderId, setFolderId] = useState<string | null>(null);
+  const folders = useDeckFolders();
+  const allFolders = folders.data ?? [];
+  const folderOptions = allFolders
+    .map((folder) => ({ value: String(folder.id), label: folderPath(allFolders, folder.id) }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }));
   const commander = isCommanderFormat(format.trim().toLowerCase());
   const tamiyoFile = useTamiyoDeckFile(withList ? list.source : null);
 
@@ -103,7 +111,11 @@ function DeckForm({
     <form
       onSubmit={form.onSubmit((values) =>
         onSubmit(
-          { ...values, bracket: commander && bracket ? Number(bracket) : undefined },
+          {
+            ...values,
+            bracket: commander && bracket ? Number(bracket) : undefined,
+            folder_id: !initial && folderId ? Number(folderId) : undefined,
+          },
           listOpened && list.source ? { file: list.source, commanderFromFirstLine } : undefined,
         ),
       )}
@@ -142,6 +154,23 @@ function DeckForm({
           key={form.key('visibility')}
           {...form.getInputProps('visibility')}
         />
+        {!initial && folderOptions.length > 0 && (
+          <Select
+            label={
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <FolderIcon size={14} />
+                Dossier
+              </span>
+            }
+            placeholder="Aucun dossier"
+            data={folderOptions}
+            value={folderId}
+            onChange={setFolderId}
+            clearable
+            searchable
+            nothingFoundMessage="Aucun dossier"
+          />
+        )}
         {withList && (
           <Stack gap="xs">
             <Anchor component="button" type="button" size="sm" ta="left" onClick={() => setListOpened((o) => !o)}>
