@@ -59,6 +59,8 @@ import { visibilityOption } from '../decks/visibility';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import { SettingsMenu } from '../layout/SettingsMenu';
 import { useCardArts, useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
+import { EmptyNote } from '../theme/EmptyNote';
+import { usePageTitle } from '../layout/usePageTitle';
 
 export function SharedDeckRedirect() {
   const { id = '' } = useParams();
@@ -67,6 +69,7 @@ export function SharedDeckRedirect() {
 
 export function SharedDeckView({ deckId }: { deckId: string }) {
   const shared = useSharedDeck(deckId);
+  usePageTitle(shared.data?.deck.name ?? 'Deck');
   const legality = useSharedDeckLegality(deckId);
   const [tab, setTab] = useState<string | null>('cards');
   const stats = useSharedDeckStats(deckId, tab === 'stats');
@@ -114,6 +117,7 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
         p={art ? 'lg' : 0}
         mih={art ? 200 : undefined}
         pos="relative"
+        className={art ? 'tamiyo-banner-taped' : undefined}
         style={art ? { ...artBackground(art.url, 'light'), display: 'flex', flexDirection: 'column' } : undefined}
       >
         {signedIn ? (
@@ -415,9 +419,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
       </Group>
 
       {cards.length === 0 ? (
-        <Center p="xl">
-          <Text c="dimmed">Ce deck est vide.</Text>
-        </Center>
+        <EmptyNote title="Ce deck est vide" />
       ) : mainCards.length === 0 ? (
         <Text size="sm" c="dimmed">
           Aucune carte dans le deck principal.

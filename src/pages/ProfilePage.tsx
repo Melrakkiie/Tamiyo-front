@@ -13,11 +13,13 @@ import { buildFolderTree, usePublicFolders } from '../decks/folders';
 import { useCardArts } from '../scryfall/hooks';
 import { connectionsUrl, useFollowStatus, usePublicDecks, useProfile } from '../users/api';
 import { FollowButton } from '../users/FollowButton';
+import { usePageTitle } from '../layout/usePageTitle';
 
 export function ProfilePage() {
   const { id } = useParams();
   const account = useAccount();
   const profile = useProfile(id);
+  usePageTitle(profile.data ? profile.data.display_name || 'Sans pseudo' : 'Profil');
   const decks = usePublicDecks(id);
   const folders = usePublicFolders(id);
   const [collapsedFolders, setCollapsedFolders] = useState<ReadonlySet<number>>(new Set());

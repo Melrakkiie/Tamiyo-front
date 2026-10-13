@@ -6,10 +6,12 @@ import { Link } from 'react-router';
 import { errorMessage } from '../api/errors';
 import { MAX_DISPLAY_NAME_LENGTH } from '../auth/account';
 import { register } from '../auth/actions';
+import { usePageTitle } from '../layout/usePageTitle';
 
 type RegisterValues = { email: string; displayName: string; password: string; confirmPassword: string };
 
 export function RegisterPage() {
+  usePageTitle('Inscription');
   const form = useForm<RegisterValues>({
     mode: 'uncontrolled',
     initialValues: { email: '', displayName: '', password: '', confirmPassword: '' },

@@ -1,7 +1,10 @@
 import { Anchor, Center, Stack, Text, Title } from '@mantine/core';
 import { Link } from 'react-router';
 
+import { usePageTitle } from '../layout/usePageTitle';
+
 export function NotFoundPage() {
+  usePageTitle('Page introuvable');
   return (
     <Center mih="100vh">
       <Stack align="center" gap="xs">

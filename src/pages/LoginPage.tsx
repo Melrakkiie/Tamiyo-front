@@ -5,10 +5,12 @@ import { Link } from 'react-router';
 
 import { errorMessage } from '../api/errors';
 import { login } from '../auth/actions';
+import { usePageTitle } from '../layout/usePageTitle';
 
 type LoginValues = { email: string; password: string };
 
 export function LoginPage() {
+  usePageTitle('Connexion');
   const form = useForm<LoginValues>({
     mode: 'uncontrolled',
     initialValues: { email: '', password: '' },

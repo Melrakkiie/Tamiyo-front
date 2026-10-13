@@ -285,3 +285,51 @@ h6,
     transition: none;
   }
 }
+
+.tamiyo-margin-note {
+  align-self: center;
+  margin-bottom: -8px;
+}
+
+.tamiyo-margin-note[data-arrow='up-right'] {
+  align-self: flex-end;
+  margin-right: 12%;
+}
+
+.mantine-Tabs-tab {
+  padding-bottom: 16px;
+  font-family: var(--mantine-font-family-headings);
+  font-size: var(--mantine-font-size-lg);
+  font-variation-settings:
+    'SOFT' 100,
+    'WONK' 1;
+}
+
+.mantine-Tabs-tab[data-active] {
+  border-bottom-color: transparent;
+  text-decoration: underline wavy var(--tamiyo-eyespot) 2px;
+  text-underline-offset: 6px;
+}
+
+.tamiyo-banner-taped::before,
+.tamiyo-banner-taped::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: -10px;
+  width: 92px;
+  height: 22px;
+  pointer-events: none;
+}
+
+.tamiyo-banner-taped::before {
+  left: 28px;
+  transform: rotate(-5deg);
+  background: repeating-linear-gradient(45deg, rgba(217, 160, 180, 0.85) 0 8px, rgba(204, 140, 162, 0.85) 8px 16px);
+}
+
+.tamiyo-banner-taped::after {
+  right: 64px;
+  transform: rotate(4deg);
+  background: repeating-linear-gradient(45deg, rgba(205, 227, 165, 0.85) 0 8px, rgba(190, 214, 146, 0.85) 8px 16px);
+}

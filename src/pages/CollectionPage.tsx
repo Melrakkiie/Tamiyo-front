@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { CollectionExportMenu } from '../bulk/CollectionExportMenu';
 import { CollectionImportModal } from '../bulk/CollectionImportModal';
 import { CardBrowser } from '../cards/CardBrowser';
+import { usePageTitle } from '../layout/usePageTitle';
 
 export function CollectionPage() {
+  usePageTitle('Collection');
   const [importOpened, setImportOpened] = useState(false);
 
   return (

@@ -23,8 +23,11 @@ import {
 import { useCardContextMenu } from '../cards/CardContextMenu';
 import { useDeckTileMenu } from '../decks/useDeckTileMenu';
 import { useCardArts } from '../scryfall/hooks';
+import { EmptyNote } from '../theme/EmptyNote';
+import { usePageTitle } from '../layout/usePageTitle';
 
 export function DecksPage() {
+  usePageTitle('Decks');
   const navigate = useNavigate();
   const decks = useAllDecks();
   const folders = useDeckFolders();
@@ -152,9 +155,7 @@ export function DecksPage() {
           <Loader />
         </Center>
       ) : allDecks.length === 0 && allFolders.length === 0 ? (
-        <Center p="xl">
-          <Text c="dimmed">Aucun deck pour le moment.</Text>
-        </Center>
+        <EmptyNote title="Aucun deck pour le moment" note="commence par un nouveau deck, juste là" arrow="up-right" />
       ) : (
         <Stack gap="xl">
           {favorites.length > 0 && (

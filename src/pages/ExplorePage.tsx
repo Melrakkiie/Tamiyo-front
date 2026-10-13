@@ -42,6 +42,8 @@ import { PublicDeckTile } from '../decks/PublicDeckTile';
 import { DebouncedTextInput } from '../layout/DebouncedTextInput';
 import { FilterIcon } from '../layout/FilterIcon';
 import { useCardArts } from '../scryfall/hooks';
+import { EmptyNote } from '../theme/EmptyNote';
+import { usePageTitle } from '../layout/usePageTitle';
 
 const formatOptions = COMMON_FORMATS.map((format) => ({
   value: format,
@@ -170,6 +172,7 @@ function FiltersPanel({ filters, onChange, onReset }: FiltersPanelProps) {
 }
 
 export function ExplorePage() {
+  usePageTitle('Explorer');
   const [params, setParams] = useSearchParams();
   const filters = parsePublicDeckFilters(params);
   const activeFilters = activePublicFilterCount(filters);
@@ -271,11 +274,10 @@ export function ExplorePage() {
           <Loader />
         </Center>
       ) : results.length === 0 && !decks.error ? (
-        <Center p="xl">
-          <Text c="dimmed">
-            {searching ? 'Aucun deck public ne correspond à cette recherche.' : "Aucun deck public pour l'instant."}
-          </Text>
-        </Center>
+        <EmptyNote
+          title={searching ? 'Aucun deck public ne correspond à cette recherche' : "Aucun deck public pour l'instant"}
+          note={searching ? 'essaie avec moins de filtres' : undefined}
+        />
       ) : (
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} style={{ opacity: decks.isPlaceholderData ? 0.6 : undefined }}>
           {results.map((deck) => {

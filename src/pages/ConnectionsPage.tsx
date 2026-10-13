@@ -7,6 +7,7 @@ import { useAccount } from '../auth/account';
 import { ProfileAvatar } from '../auth/UserAvatar';
 import { type ConnectionKind, connectionTabKeys, useConnections, useFollowStatus, useProfile } from '../users/api';
 import { FollowButton } from '../users/FollowButton';
+import { usePageTitle } from '../layout/usePageTitle';
 
 function parseKind(raw: string | null): ConnectionKind {
   return raw === connectionTabKeys.following ? 'following' : 'followers';
@@ -21,6 +22,7 @@ export function ConnectionsPage() {
   const page = Math.max(1, Number(searchParams.get('page')) || 1);
   const account = useAccount();
   const profile = useProfile(id);
+  usePageTitle(profile.data ? `Connexions de ${profile.data.display_name || 'Sans pseudo'}` : 'Connexions');
   const status = useFollowStatus(id);
   const own = account.data?.id === id;
 

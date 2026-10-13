@@ -31,6 +31,7 @@ import { SharedCardModal } from '../decks/SharedCardModal';
 import { type SharedDeckSort, sharedDeckSortOptions } from '../decks/shared';
 import { parseSharedGrouping, type SharedCardGrouping, sharedGroupingOptions } from '../decks/storageGrouping';
 import { useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
+import { usePageTitle } from '../layout/usePageTitle';
 
 type Side = 'deck' | 'other' | 'both';
 
@@ -48,6 +49,9 @@ export function DeckComparePage() {
   const otherId = params.otherId ?? '';
   const signedIn = useSession().status === 'authenticated';
   const comparison = useDeckComparison(id, otherId, signedIn);
+  usePageTitle(
+    comparison.data ? `${comparison.data.deck.name} / ${comparison.data.other.name}` : 'Comparaison de decks',
+  );
   const [tab, setTab] = useState<string | null>('common');
   const [sort, setSort] = useState<SharedDeckSort>('mana_value');
   const [grouping, setGrouping] = useState<SharedCardGrouping | null>('type');

@@ -40,6 +40,7 @@ import { useCardContextMenu } from './CardContextMenu';
 import { CardDetailModal } from './CardDetailModal';
 import { CardDisplayControls, placement, useCardDisplay } from './CardDisplay';
 import { SectionTitle } from '../theme/SectionTitle';
+import { EmptyNote } from '../theme/EmptyNote';
 import { CardGrid, CardGroupsLayout } from './CardLayout';
 import { CardTile } from './CardTile';
 import { MissingDetailsAlert } from './MissingDetailsAlert';
@@ -323,22 +324,19 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
           <Loader />
         </Center>
       ) : pageCards.length === 0 && !cards.error ? (
-        <Center p="xl">
-          <Stack align="center" gap="xs">
-            <Text c="dimmed">
-              {filtered
-                ? 'Aucune carte ne correspond à ces filtres.'
-                : fixedStorageId
-                  ? 'Ce rangement est vide pour le moment.'
-                  : 'Ta collection est vide pour le moment.'}
-            </Text>
-            {!filtered && (
-              <Text size="sm" c="dimmed">
-                Cherche une carte dans la barre ci-dessus pour l'ajouter.
-              </Text>
-            )}
-          </Stack>
-        </Center>
+        <EmptyNote
+          title={
+            filtered
+              ? 'Aucune carte ne correspond à ces filtres'
+              : fixedStorageId
+                ? 'Ce rangement est vide pour le moment'
+                : 'Ta collection est vide pour le moment'
+          }
+          note={
+            filtered ? 'essaie d’enlever un filtre ou deux' : 'cherche une carte dans la barre, là-haut, pour l’ajouter'
+          }
+          arrow={filtered ? undefined : 'up'}
+        />
       ) : grouping ? (
         <CardGroupsLayout
           display={display}

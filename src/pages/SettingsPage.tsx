@@ -10,10 +10,12 @@ import { AvatarSection } from '../auth/AvatarSection';
 import { ChangeEmailSection } from '../auth/ChangeEmailSection';
 import { DisplayNameSection } from '../auth/DisplayNameSection';
 import { DeleteCollectionSection } from '../cards/DeleteCollectionSection';
+import { usePageTitle } from '../layout/usePageTitle';
 
 type ChangePasswordValues = { currentPassword: string; newPassword: string; confirmPassword: string };
 
 export function SettingsPage() {
+  usePageTitle('Paramètres');
   const form = useForm<ChangePasswordValues>({
     mode: 'uncontrolled',
     initialValues: { currentPassword: '', newPassword: '', confirmPassword: '' },

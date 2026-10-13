@@ -5,10 +5,12 @@ import { Link } from 'react-router';
 
 import { errorMessage } from '../api/errors';
 import { requestPasswordReset } from '../auth/actions';
+import { usePageTitle } from '../layout/usePageTitle';
 
 type ForgotPasswordValues = { email: string };
 
 export function ForgotPasswordPage() {
+  usePageTitle('Mot de passe oublié');
   const form = useForm<ForgotPasswordValues>({
     mode: 'uncontrolled',
     initialValues: { email: '' },
