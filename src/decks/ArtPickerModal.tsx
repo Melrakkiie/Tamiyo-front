@@ -18,9 +18,9 @@ import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import type { Card, Deck } from '../api/types';
+import type { Deck } from '../api/types';
 import { useCardArts, usePrintings } from '../scryfall/hooks';
-import { useDeckCards, useUpdateDeck } from './api';
+import { useDeckCards, usePendingCards, useUpdateDeck } from './api';
 import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
 
 interface ArtPickerModalProps {
@@ -37,23 +37,31 @@ export function ArtPickerModal({ deck, opened, onClose }: ArtPickerModalProps) {
   );
 }
 
-function uniquePrintings(cards: Card[]): Card[] {
+interface DeckPrinting {
+  name: string;
+  scryfall_id: string;
+}
+
+function uniquePrintings(cards: DeckPrinting[]): DeckPrinting[] {
   const seen = new Set<string>();
-  return cards.filter((card) => {
-    if (seen.has(card.scryfall_id)) {
-      return false;
-    }
-    seen.add(card.scryfall_id);
-    return true;
-  });
+  return [...cards]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .filter((card) => {
+      if (seen.has(card.scryfall_id)) {
+        return false;
+      }
+      seen.add(card.scryfall_id);
+      return true;
+    });
 }
 
 function ArtPicker({ deck, onClose }: { deck: Deck; onClose: () => void }) {
   const [activeTab, setActiveTab] = useState<'deck' | 'scryfall'>('deck');
   const [selectedCardName, setSelectedCardName] = useState<string | null>(null);
 
-  const cards = useDeckCards(deck.id, 'name');
-  const deckPrintings = uniquePrintings(cards.data ?? []);
+  const owned = useDeckCards(deck.id, 'name');
+  const pending = usePendingCards(deck.id);
+  const deckPrintings = uniquePrintings([...(owned.data ?? []), ...(pending.data ?? [])]);
   const deckArts = useCardArts(deckPrintings.map((card) => card.scryfall_id));
 
   const scryfallPrintings = usePrintings(selectedCardName);
@@ -91,12 +99,12 @@ function ArtPicker({ deck, onClose }: { deck: Deck; onClose: () => void }) {
             Choisis une carte du deck : son illustration sera affichée en fond du deck.
           </Text>
 
-          {cards.isLoading || deckArts.isLoading ? (
+          {owned.isLoading || pending.isLoading || deckArts.isLoading ? (
             <Center p="lg">
               <Loader />
             </Center>
-          ) : cards.error || deckArts.error ? (
-            <Alert color="red">{errorMessage(cards.error ?? deckArts.error)}</Alert>
+          ) : owned.error || pending.error || deckArts.error ? (
+            <Alert color="red">{errorMessage(owned.error ?? pending.error ?? deckArts.error)}</Alert>
           ) : deckPrintings.length === 0 ? (
             <Text size="sm" c="dimmed">
               Ce deck est vide : ajoute des cartes pour pouvoir choisir une illustration.
