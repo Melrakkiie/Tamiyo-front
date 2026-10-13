@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
 import { errorMessage } from '../api/errors';
+import { useCardContextMenu } from '../cards/CardContextMenu';
 import { capitalize, groupByRecent } from '../layout/groupByRecent';
 import { StorageFormModal } from '../storages/StorageFormModal';
 import { useAllStorages, useCreateStorage } from '../storages/api';
 import { StorageArt } from '../storages/StorageArt';
 import { LockIcon } from '../storages/StorageLabel';
+import { useStorageTileMenu } from '../storages/useStorageTileMenu';
 import { EmptyNote } from '../theme/EmptyNote';
 import { SectionTitle } from '../theme/SectionTitle';
 import { Sticker } from '../theme/Sticker';
@@ -31,6 +33,8 @@ export function StoragesPage() {
   const storages = useAllStorages();
   const create = useCreateStorage();
   const [createOpened, setCreateOpened] = useState(false);
+  const contextMenu = useCardContextMenu();
+  const storageMenu = useStorageTileMenu();
 
   function closeCreate() {
     setCreateOpened(false);
@@ -71,7 +75,14 @@ export function StoragesPage() {
               <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="xl" verticalSpacing="xl" pt={6}>
                 {group.items.map((storage) => (
                   <div key={storage.id} {...tapeProps(`storage-${storage.id}`)}>
-                    <Card withBorder shadow="sm" h="100%" component={Link} to={`/storages/${storage.id}`}>
+                    <Card
+                      withBorder
+                      shadow="sm"
+                      h="100%"
+                      component={Link}
+                      to={`/storages/${storage.id}`}
+                      onContextMenu={(event) => contextMenu.open(event, storageMenu.menuFor(storage))}
+                    >
                       <Group gap="md" wrap="nowrap">
                         <StorageArt type={storage.type} />
                         <Stack gap={2} style={{ minWidth: 0 }}>
@@ -128,6 +139,8 @@ export function StoragesPage() {
           })
         }
       />
+      {storageMenu.modals}
+      {contextMenu.element}
     </Stack>
   );
 }
