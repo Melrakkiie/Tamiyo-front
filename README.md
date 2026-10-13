@@ -54,7 +54,32 @@ src/
 ├── api/        typed client (openapi-fetch), errors, generated schema.d.ts
 ├── auth/       session (in-memory token, refresh), actions, route guards
 ├── layout/     AppLayout (logged-in app), AuthLayout (login and password pages)
+├── theme/      Mantine theme, day and night palettes, fonts, day/night switch
 ├── pages/      one file per screen
 ├── router.tsx  routes
 └── main.tsx    entry point (providers)
 ```
+
+## Look and feel
+
+The theme (`src/theme/`) is a collector's notebook: dotted paper, sepia ink, and the colors of the luna moth (pale wing green, plum wing edge, ochre eyespot). It has a day palette and a night one. Each user picks day, night, or the time of day in their settings (night from 22:00 to 06:00 by default, hours adjustable); the choice is saved in their preferences, and visitors get the time of day.
+
+### Fonts
+
+The fonts are self-hosted, from `public/fonts/`, so visitors never call Google. They are all under the SIL Open Font License:
+
+| File | Font | Used for |
+|---|---|---|
+| `fraunces.woff2` | [Fraunces](https://fonts.google.com/specimen/Fraunces), variable, with its `SOFT` and `WONK` axes | headings |
+| `karla.woff2` | [Karla](https://fonts.google.com/specimen/Karla), variable weight | interface text |
+| `patrick-hand.woff2` | [Patrick Hand](https://fonts.google.com/specimen/Patrick+Hand) | handwritten notes (`tamiyo-hand` class) |
+
+Fontsource publishes them as woff2, Latin subset:
+
+```bash
+curl -L -o public/fonts/fraunces.woff2 https://cdn.jsdelivr.net/npm/@fontsource-variable/fraunces/files/fraunces-latin-full-normal.woff2
+curl -L -o public/fonts/karla.woff2 https://cdn.jsdelivr.net/npm/@fontsource-variable/karla/files/karla-latin-wght-normal.woff2
+curl -L -o public/fonts/patrick-hand.woff2 https://cdn.jsdelivr.net/npm/@fontsource/patrick-hand/files/patrick-hand-latin-400-normal.woff2
+```
+
+Without them the app falls back to system fonts.

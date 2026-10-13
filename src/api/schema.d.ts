@@ -4743,6 +4743,22 @@ export interface components {
              * @enum {string}
              */
             collection_sort: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "color" | "-color" | "type" | "-type";
+            /**
+             * @description Whether the app shows its day or its night colors; auto follows the time of day.
+             * @default auto
+             * @enum {string}
+             */
+            theme: "day" | "night" | "auto";
+            /**
+             * @description With theme auto, the hour night starts, in the user's own time zone.
+             * @default 22
+             */
+            night_starts_at: number;
+            /**
+             * @description With theme auto, the hour night ends; must differ from night_starts_at.
+             * @default 6
+             */
+            night_ends_at: number;
         };
         /** @description Any of the preferences; at least one. */
         PreferencesChanges: {
@@ -4758,6 +4774,10 @@ export interface components {
             clear_collection_grouping?: boolean;
             /** @enum {string} */
             collection_sort?: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "color" | "-color" | "type" | "-type";
+            /** @enum {string} */
+            theme?: "day" | "night" | "auto";
+            night_starts_at?: number;
+            night_ends_at?: number;
         };
         DeckOwnership: {
             cards: {

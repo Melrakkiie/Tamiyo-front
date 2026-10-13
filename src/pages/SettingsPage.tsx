@@ -5,6 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 
 import { errorMessage } from '../api/errors';
 import { changePassword } from '../auth/actions';
+import { AppearanceSection } from '../auth/AppearanceSection';
 import { AvatarSection } from '../auth/AvatarSection';
 import { ChangeEmailSection } from '../auth/ChangeEmailSection';
 import { DisplayNameSection } from '../auth/DisplayNameSection';
@@ -44,6 +45,8 @@ export function SettingsPage() {
       <DisplayNameSection />
 
       <ChangeEmailSection />
+
+      <AppearanceSection />
 
       <Paper withBorder p="lg">
         <form onSubmit={form.onSubmit((values) => mutation.mutate(values))}>

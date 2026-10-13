@@ -1,0 +1,75 @@
+@font-face {
+  font-family: 'Fraunces';
+  src: url('/fonts/fraunces.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Karla';
+  src: url('/fonts/karla.woff2') format('woff2');
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Patrick Hand';
+  src: url('/fonts/patrick-hand.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+html body {
+  background-color: var(--tamiyo-page);
+  background-image: radial-gradient(var(--tamiyo-dots) 1.3px, transparent 1.4px);
+  background-size: 24px 24px;
+  background-attachment: fixed;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.mantine-Title-root {
+  font-variation-settings:
+    'SOFT' 100,
+    'WONK' 1;
+  font-optical-sizing: auto;
+}
+
+.mantine-Button-root:is([data-variant='filled'], [data-variant='default']):not(:disabled, [data-disabled]) {
+  border: 2px solid var(--tamiyo-ink);
+  box-shadow: 2px 2px 0 var(--tamiyo-ink);
+  transition:
+    transform 80ms ease,
+    box-shadow 80ms ease;
+}
+
+.mantine-Button-root:is([data-variant='filled'], [data-variant='default']):not(:disabled, [data-disabled]):active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 var(--tamiyo-ink);
+}
+
+[data-mantine-color-scheme='dark'] .mantine-Button-root[data-variant='filled']:not(:disabled, [data-disabled]) {
+  border-color: transparent;
+  box-shadow: 0 0 18px rgba(205, 227, 165, 0.3);
+}
+
+.tamiyo-hand {
+  font-family: var(--tamiyo-hand);
+  font-weight: 400;
+}
+
+[data-mantine-color-scheme='dark'] .mantine-Pagination-control[data-active] {
+  color: var(--mantine-color-dark-8);
+}
+
+[data-mantine-color-scheme='dark'] .mantine-Checkbox-icon,
+[data-mantine-color-scheme='dark'] .mantine-Radio-icon {
+  color: var(--mantine-color-dark-8);
+}
