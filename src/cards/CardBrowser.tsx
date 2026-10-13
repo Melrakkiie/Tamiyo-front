@@ -35,7 +35,7 @@ import {
   cardsQueryFilters,
   parseAdvancedFilters,
 } from './advancedFilters';
-import { copyCount, useCards } from './api';
+import { copyCount, useCard, useCards } from './api';
 import { useCardContextMenu } from './CardContextMenu';
 import { CardDetailModal } from './CardDetailModal';
 import { CardDisplayControls, placement, useCardDisplay } from './CardDisplay';
@@ -109,6 +109,10 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const drop = useScryfallDrop((printing) => setCardToAdd({ name: printing.name, printing }));
   const [searchKey, setSearchKey] = useState(0);
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
+  const linkedCardId = Number(params.get('carte')) || null;
+  const linkedCard = useCard(linkedCardId);
+  const detailCard = openedCard ?? (linkedCardId ? (linkedCard.data ?? null) : null);
+  const detailImage = useCardImages(detailCard ? [detailCard.scryfall_id] : []);
   const contextMenu = useCardContextMenu();
   const cardMenu = useCollectionCardMenu();
 
@@ -383,9 +387,14 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
       {contextMenu.element}
       {cardMenu.modals}
       <CardDetailModal
-        card={openedCard}
-        imageUrl={openedCard ? images.data?.[openedCard.scryfall_id] : undefined}
-        onClose={() => setOpenedCard(null)}
+        card={detailCard}
+        imageUrl={detailCard ? detailImage.data?.[detailCard.scryfall_id] : undefined}
+        onClose={() => {
+          setOpenedCard(null);
+          if (linkedCardId) {
+            updateParams({ carte: null });
+          }
+        }}
       />
     </Stack>
   );

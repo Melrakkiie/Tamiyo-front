@@ -1,73 +1,287 @@
-import { Badge, Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import {
+  Anchor,
+  Box,
+  Button,
+  Card,
+  Center,
+  Group,
+  Loader,
+  Paper,
+  SimpleGrid,
+  Skeleton,
+  Stack,
+  Text,
+  Title,
+} from '@mantine/core';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 
+import type { Card as CollectionCard, Deck } from '../api/types';
 import { useAccount } from '../auth/account';
-import { LunaMoth } from '../theme/LunaMoth';
-import { tapeProps } from '../theme/tape';
+import { useCards } from '../cards/api';
+import { CardImage } from '../cards/CardImage';
+import { useAllDecks } from '../decks/api';
+import { artBackground, deckArtId } from '../decks/art';
+import { DeckTile } from '../decks/DeckTile';
 import { usePageTitle } from '../layout/usePageTitle';
+import { useCardArts, useCardImages } from '../scryfall/hooks';
+import { useAllStorages } from '../storages/api';
+import { StorageArt } from '../storages/StorageArt';
+import { EmptyNote } from '../theme/EmptyNote';
+import { LunaMoth } from '../theme/LunaMoth';
+import { SectionTitle } from '../theme/SectionTitle';
+import { tapeProps } from '../theme/tape';
 
-interface Section {
-  title: string;
-  text: string;
-  to?: string;
+const RECENT_DECKS = 3;
+const RECENT_CARDS = 6;
+
+function greeting(hour: number) {
+  if (hour < 6) {
+    return 'Bonne nuit';
+  }
+  return hour < 18 ? 'Bonjour' : 'Bonsoir';
 }
 
-const sections: Section[] = [
-  { title: 'Collection', text: 'Tes cartes, avec leurs images, triées et filtrées.', to: '/cards' },
-  { title: 'Rangements', text: 'Classeurs, boîtes et deckboxes, et ce qu’ils contiennent.', to: '/storages' },
-  { title: 'Decks', text: 'Tes decks, leur légalité par format et leurs statistiques.', to: '/decks' },
-];
+function plural(count: number, word: string) {
+  return `${count} ${word}${count > 1 ? 's' : ''}`;
+}
 
-function SectionContent({ section }: { section: Section }) {
+function latestCards(cards: CollectionCard[]) {
+  const seen = new Set<string>();
+  return cards
+    .filter((card) => {
+      if (seen.has(card.scryfall_id)) {
+        return false;
+      }
+      seen.add(card.scryfall_id);
+      return true;
+    })
+    .slice(0, RECENT_CARDS);
+}
+
+interface StatTileProps {
+  label: string;
+  value: number | undefined;
+  note?: string;
+  art: ReactNode;
+  to: string;
+}
+
+function StatTile({ label, value, note, art, to }: StatTileProps) {
   return (
-    <>
-      <Group justify="space-between" wrap="nowrap">
-        <Text ff="heading" fw={600} size="xl">
-          {section.title}
-        </Text>
-        {!section.to && (
-          <Badge variant="light" color="gray">
-            Bientôt
-          </Badge>
+    <div {...tapeProps(`home-${label}`)}>
+      <Card withBorder shadow="sm" h="100%" component={Link} to={to}>
+        <Group gap="md" wrap="nowrap">
+          {art}
+          <Stack gap={0} style={{ minWidth: 0 }}>
+            {value === undefined ? (
+              <Skeleton h={36} w={56} my={4} />
+            ) : (
+              <Text ff="heading" fw={700} fz={36} lh={1.2}>
+                {value}
+              </Text>
+            )}
+            <Text fw={600}>{label}</Text>
+            {note && (
+              <Text className="tamiyo-hand" size="lg" c="dimmed" lineClamp={1}>
+                {note}
+              </Text>
+            )}
+          </Stack>
+        </Group>
+      </Card>
+    </div>
+  );
+}
+
+function SeeAll({ to, children }: { to: string; children: ReactNode }) {
+  return (
+    <Anchor component={Link} to={to} size="sm" c="prune" style={{ flexShrink: 0 }}>
+      {children}
+    </Anchor>
+  );
+}
+
+function Hero({ name, deck, artUrl, artist }: { name?: string; deck?: Deck; artUrl?: string; artist?: string | null }) {
+  const onArt = !!artUrl;
+  return (
+    <Paper
+      withBorder
+      shadow="sm"
+      radius="md"
+      p={{ base: 'lg', sm: 'xl' }}
+      pos="relative"
+      mih={onArt ? 240 : undefined}
+      className="tamiyo-banner-taped"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+        ...(onArt ? { ...artBackground(artUrl, 'light'), color: 'white' } : {}),
+      }}
+    >
+      <Group gap="lg" wrap="nowrap" align="flex-end">
+        {!onArt && (
+          <Box visibleFrom="xs" style={{ transform: 'rotate(-8deg)' }}>
+            <LunaMoth size={96} />
+          </Box>
         )}
+        <Stack gap={4} style={{ minWidth: 0 }}>
+          <Title order={1} c={onArt ? 'white' : undefined}>
+            {greeting(new Date().getHours())}
+            {name ? `, ${name}` : ''}
+          </Title>
+          <Text
+            className="tamiyo-hand"
+            fz={24}
+            c={onArt ? 'prune.2' : 'prune'}
+            style={{ transform: 'rotate(-1.5deg)', transformOrigin: 'left' }}
+          >
+            {deck ? `on reprend « ${deck.name} » ?` : 'par quelle page du carnet on commence ?'}
+          </Text>
+          <Group gap="sm" mt="md">
+            {deck && (
+              <Button component={Link} to={`/decks/${deck.id}`}>
+                Reprendre le deck
+              </Button>
+            )}
+            <Button component={Link} to="/cards" variant={deck ? 'default' : 'filled'}>
+              Ouvrir la collection
+            </Button>
+            <Button component={Link} to="/explorer" variant="default">
+              Explorer les decks
+            </Button>
+          </Group>
+        </Stack>
       </Group>
-      <Text size="sm" c="dimmed">
-        {section.text}
-      </Text>
-    </>
+      {onArt && artist && (
+        <Text size="xs" c="gray.4" pos="absolute" bottom={8} right={12} visibleFrom="sm">
+          Illustration : {artist}
+        </Text>
+      )}
+    </Paper>
   );
 }
 
 export function HomePage() {
   usePageTitle('Accueil');
   const account = useAccount();
-  const displayName = account.data?.display_name;
+  const decks = useAllDecks();
+  const storages = useAllStorages();
+  const cards = useCards({ page: 1, limit: 2 * RECENT_CARDS, sort: '-added', name: '', storageId: undefined });
+
+  const recentDecks = [...(decks.data ?? [])].sort((a, b) => b.updated.localeCompare(a.updated)).slice(0, RECENT_DECKS);
+  const lastDeck = recentDecks[0];
+  const arts = useCardArts(recentDecks.map(deckArtId));
+  const lastArt = lastDeck ? arts.data?.[deckArtId(lastDeck) ?? ''] : undefined;
+
+  const recentCards = latestCards(cards.data?.data ?? []);
+  const images = useCardImages(recentCards.map((card) => card.scryfall_id));
+
+  const favorites = (decks.data ?? []).filter((deck) => deck.favorite).length;
+  const storedCards = (storages.data ?? []).reduce((total, storage) => total + storage.card_count, 0);
+  const cardTotal = cards.data?.total;
+  const loading = decks.isLoading || cards.isLoading;
+  const empty = !loading && cardTotal === 0 && decks.data?.length === 0;
+
   return (
-    <Stack>
-      <Group gap="md" wrap="nowrap" align="center">
-        <LunaMoth size={56} />
-        <div>
-          <Title order={2}>{displayName ? `Bienvenue sur Tamiyo, ${displayName}` : 'Bienvenue sur Tamiyo'}</Title>
-          <Text className="tamiyo-hand" size="xl" c="prune" style={{ transform: 'rotate(-1deg)' }}>
-            par quelle page du carnet on commence ?
-          </Text>
-        </div>
-      </Group>
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xl" verticalSpacing="xl" pt="sm">
-        {sections.map((section) => (
-          <div key={section.title} {...tapeProps(section.title)}>
-            {section.to ? (
-              <Card withBorder shadow="sm" h="100%" component={Link} to={section.to}>
-                <SectionContent section={section} />
-              </Card>
-            ) : (
-              <Card withBorder shadow="sm" h="100%">
-                <SectionContent section={section} />
-              </Card>
-            )}
-          </div>
-        ))}
+    <Stack gap={40} pt="xs">
+      <Hero
+        name={account.data?.display_name || undefined}
+        deck={lastDeck}
+        artUrl={lastArt?.url}
+        artist={lastArt?.artist}
+      />
+
+      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="xl" verticalSpacing="xl">
+        <StatTile
+          label={cardTotal === 1 ? 'Carte' : 'Cartes'}
+          value={cardTotal}
+          note={recentCards[0] ? `dernière : ${recentCards[0].name}` : undefined}
+          art={<StorageArt type="box" size={56} />}
+          to="/cards"
+        />
+        <StatTile
+          label={decks.data?.length === 1 ? 'Deck' : 'Decks'}
+          value={decks.data?.length}
+          note={favorites > 0 ? `dont ${plural(favorites, 'favori')}` : undefined}
+          art={<StorageArt type="deckbox" size={56} />}
+          to="/decks"
+        />
+        <StatTile
+          label={storages.data?.length === 1 ? 'Rangement' : 'Rangements'}
+          value={storages.data?.length}
+          note={storedCards > 0 ? `${plural(storedCards, 'carte')} rangée${storedCards > 1 ? 's' : ''}` : undefined}
+          art={<StorageArt type="binder" size={56} />}
+          to="/storages"
+        />
       </SimpleGrid>
+
+      {loading ? (
+        <Center p="xl">
+          <Loader />
+        </Center>
+      ) : empty ? (
+        <EmptyNote title="Ton carnet est encore tout neuf" note="ajoute tes premières cartes, ou monte un deck">
+          <Group gap="sm" justify="center">
+            <Button component={Link} to="/cards">
+              Ajouter des cartes
+            </Button>
+            <Button component={Link} to="/decks" variant="default">
+              Créer un deck
+            </Button>
+          </Group>
+        </EmptyNote>
+      ) : (
+        <>
+          {recentDecks.length > 0 && (
+            <Stack gap="md">
+              <Group gap="md" wrap="nowrap">
+                <Box style={{ flex: 1, minWidth: 0 }}>
+                  <SectionTitle>Decks récents</SectionTitle>
+                </Box>
+                <SeeAll to="/decks">Tous les decks</SeeAll>
+              </Group>
+              <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="xl" verticalSpacing="xl" pt={6}>
+                {recentDecks.map((deck) => {
+                  const artId = deckArtId(deck);
+                  return (
+                    <DeckTile
+                      key={deck.id}
+                      deck={deck}
+                      art={artId ? (arts.data?.[artId] ?? null) : null}
+                      showVisibility={false}
+                    />
+                  );
+                })}
+              </SimpleGrid>
+            </Stack>
+          )}
+
+          {recentCards.length > 0 && (
+            <Stack gap="md">
+              <Group gap="md" wrap="nowrap">
+                <Box style={{ flex: 1, minWidth: 0 }}>
+                  <SectionTitle>Dernières trouvailles</SectionTitle>
+                </Box>
+                <SeeAll to="/cards">Toute la collection</SeeAll>
+              </Group>
+              <SimpleGrid cols={{ base: 2, xs: 3, md: 6 }} spacing="lg" verticalSpacing="xl" pt={6}>
+                {recentCards.map((card) => (
+                  <Box
+                    key={card.id}
+                    component={Link}
+                    to={`/cards?carte=${card.id}`}
+                    {...tapeProps(`home-card-${card.id}`)}
+                  >
+                    <CardImage name={card.name} url={images.data?.[card.scryfall_id]} loading={images.isLoading} />
+                  </Box>
+                ))}
+              </SimpleGrid>
+            </Stack>
+          )}
+        </>
+      )}
     </Stack>
   );
 }
