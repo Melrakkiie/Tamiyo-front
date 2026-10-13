@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { errorMessage } from '../api/errors';
 import type { Card, Deck, DeckBoard, PendingCard } from '../api/types';
 import { useImportIntoDeck } from '../bulk/api';
-import { copyIds, useCreateCards, useUpdateCopies } from '../cards/api';
+import { copyIds, useCreateCards } from '../cards/api';
 import { CardCopyItems, FoilToggleItem } from '../cards/CardContextMenu';
 import { commanderEligibility } from '../scryfall/commander';
 import { useScryfallCard } from '../scryfall/hooks';
@@ -15,8 +15,8 @@ import {
   useCommitPendingCards,
   useRemoveCardFromDeck,
   useRemovePendingCard,
-  useReplacePendingCard,
   useSetPendingQuantity,
+  useSwitchFoil,
   useUpdateDeck,
 } from './api';
 import { BOARDS } from './boards';
@@ -35,8 +35,7 @@ function notifyError(err: unknown) {
 }
 
 export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions: DeckCardActions) {
-  const updateCopies = useUpdateCopies();
-  const replacePending = useReplacePendingCard();
+  const switchFoil = useSwitchFoil();
   const importLine = useImportIntoDeck();
   const removeOwned = useRemoveCardFromDeck();
   const removePending = useRemovePendingCard();
@@ -55,34 +54,28 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
   });
 
   function toggleFoil(card: Card, foil: boolean) {
-    const message = `${card.name} est maintenant ${foil ? 'foil' : 'non-foil'}.`;
-    if (!isPendingCard(card)) {
-      updateCopies.mutate({ ids: copyIds(card), changes: { foil } }, done(message));
-      return;
-    }
-    const item = pendingOf(card);
-    if (item) {
-      replacePending.mutate(
-        {
-          deckId: deck.id,
-          from: item,
-          isCommander: isCommander(card),
-          card: {
-            name: item.name,
-            scryfall_id: item.scryfall_id,
-            set_code: item.set_code,
-            collector_number: item.collector_number,
-            foil,
-            quantity: item.quantity,
-            mana_value: item.mana_value,
-            colors: item.colors,
-            card_type: item.card_type,
-            color_identity: item.color_identity,
-          },
+    const pendingId = isPendingCard(card) ? pendingIdOf(card) : null;
+    const finish = foil ? 'foil' : 'non-foil';
+    switchFoil.mutate(
+      pendingId !== null
+        ? { deckId: deck.id, pendingIds: [pendingId], foil }
+        : { deckId: deck.id, cardIds: copyIds(card), foil },
+      {
+        onSuccess: (summary) => {
+          const linked = summary.cards_linked ?? 0;
+          const pending = summary.cards_pending ?? 0;
+          const details = [
+            linked > 0 ? `${linked} exemplaire${linked > 1 ? 's' : ''} de ta collection` : null,
+            pending > 0 ? `${pending} en attente` : null,
+          ].filter(Boolean);
+          notifications.show({
+            color: 'green',
+            message: `${card.name} est maintenant ${finish} dans ce deck${details.length > 0 ? ` : ${details.join(', ')}` : ''}. Ta collection n'a pas changé.`,
+          });
         },
-        done(message),
-      );
-    }
+        onError: notifyError,
+      },
+    );
   }
 
   function addOne(card: Card, board: DeckBoard) {

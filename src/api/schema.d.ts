@@ -3244,6 +3244,80 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deck/{id}/switch-foil": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Switch cards of a deck to the other finish
+         * @description Each listed owned copy or pending card not already in that finish leaves the deck (an owned copy stays in the collection as it is) and is replaced on the same board by copies of the same printing in that finish: ones in no deck first, then ones another deck uses, and pending cards for the rest. The commander stays the commander. The collection itself is never modified.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description Ids of the deck's owned copies. */
+                        card_ids?: number[];
+                        /** @description Ids of the deck's pending cards. At least one id overall. */
+                        pending_ids?: number[];
+                        foil: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description cards_linked copies found in the collection, cards_pending copies left pending, cards_removed copies that left the deck. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportSummary"];
+                    };
+                };
+                /** @description id is not a UUID, foil missing, no id at all, or an id that isn't an owned copy or a pending card of this deck. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or not owned by the authenticated user */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deck/{id}/import": {
         parameters: {
             query?: never;

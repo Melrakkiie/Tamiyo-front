@@ -329,6 +329,31 @@ export function useCommitPendingCards() {
 
 export type CollectMode = 'all' | 'missing' | 'pending';
 
+export function useSwitchFoil() {
+  const invalidate = useInvalidateDeckAndCollection();
+
+  return useMutation({
+    mutationFn: async ({
+      deckId,
+      cardIds,
+      pendingIds,
+      foil,
+    }: {
+      deckId: string;
+      cardIds?: number[];
+      pendingIds?: number[];
+      foil: boolean;
+    }) =>
+      unwrap(
+        await api.POST('/deck/{id}/switch-foil', {
+          params: { path: { id: deckId } },
+          body: { card_ids: cardIds, pending_ids: pendingIds, foil },
+        }),
+      ),
+    onSettled: invalidate,
+  });
+}
+
 export function useCollectDeck() {
   const invalidate = useInvalidateDeckAndCollection();
 
