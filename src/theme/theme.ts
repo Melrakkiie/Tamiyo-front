@@ -1,4 +1,6 @@
-import { createTheme, defaultVariantColorsResolver } from '@mantine/core';
+import { Loader, createTheme, defaultVariantColorsResolver } from '@mantine/core';
+
+import { MoonLoader } from './MoonLoader';
 
 export const palette = {
   paper: '#F4EFE3',
@@ -108,6 +110,11 @@ export const theme = createTheme({
   },
   defaultRadius: 'md',
   radius: { xs: '4px', sm: '6px', md: '10px', lg: '14px', xl: '20px' },
+  components: {
+    Loader: Loader.extend({
+      defaultProps: { loaders: { ...Loader.defaultLoaders, moon: MoonLoader }, type: 'moon' },
+    }),
+  },
   shadows: {
     xs: '0 1px 3px rgba(43, 36, 32, 0.08)',
     sm: '0 3px 8px rgba(43, 36, 32, 0.1)',

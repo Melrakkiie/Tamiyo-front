@@ -1,50 +1,9 @@
-import { ThemeIcon } from '@mantine/core';
-
-export function CrownIcon({ size = 14 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      style={{ display: 'block', flexShrink: 0 }}
-    >
-      <path d="M12 6l4 6l5 -4l-2 10h-14l-2 -10l5 4z" />
-    </svg>
-  );
-}
+import { CrownStickerIcon, Sticker } from '../theme/Sticker';
 
 export function CommanderBadge({ size = 'md' }: { size?: 'sm' | 'md' }) {
-  return (
-    <ThemeIcon
-      size={size}
-      radius="xl"
-      variant="default"
-      title="Commandant"
-      aria-label="Commandant"
-      style={{ boxShadow: 'var(--mantine-shadow-sm)' }}
-    >
-      <CrownIcon size={size === 'sm' ? 12 : 14} />
-    </ThemeIcon>
-  );
+  return <Sticker tone="ocelle" icon={<CrownStickerIcon />} size={size} tilt={-6} title="Commandant" />;
 }
 
 export function CommanderInlineMark() {
-  return (
-    <ThemeIcon
-      size="sm"
-      radius="xl"
-      variant="default"
-      title="Commandant"
-      aria-label="Commandant"
-      style={{ flexShrink: 0 }}
-    >
-      <CrownIcon size={12} />
-    </ThemeIcon>
-  );
+  return <Sticker tone="ocelle" icon={<CrownStickerIcon />} size="xs" tilt={-6} title="Commandant" />;
 }

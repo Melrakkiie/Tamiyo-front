@@ -25,6 +25,7 @@ import { colorCode } from '../scryfall/classify';
 import { useScryfallCard } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
 import { StorageLabel } from '../storages/StorageLabel';
+import { FoilSticker } from '../theme/Sticker';
 import { isCommanderFormat, useAddCardToDeck } from './api';
 import { BoardPicker } from './BoardSection';
 import { ScryfallFallback } from './ScryfallFallback';
@@ -137,11 +138,7 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
                       <Text size="sm" fw={500} lineClamp={1}>
                         {card.name}
                       </Text>
-                      {card.foil && (
-                        <Badge size="xs" variant="light">
-                          Foil
-                        </Badge>
-                      )}
+                      {card.foil && <FoilSticker />}
                     </Group>
                     <Group gap={8} wrap="nowrap">
                       <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>

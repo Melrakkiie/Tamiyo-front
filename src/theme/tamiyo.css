@@ -73,3 +73,215 @@ h6,
 [data-mantine-color-scheme='dark'] .mantine-Radio-icon {
   color: var(--mantine-color-dark-8);
 }
+
+:root {
+  --tamiyo-sticker-edge: #fbf8f1;
+}
+
+[data-mantine-color-scheme='dark'] {
+  --tamiyo-sticker-edge: #3a3542;
+}
+
+.tamiyo-sticker {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  font-family: var(--tamiyo-hand);
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow:
+    0 0 0 2px var(--tamiyo-sticker-edge),
+    0 2px 6px rgba(43, 36, 32, 0.25);
+}
+
+.tamiyo-sticker[data-size='xs'] {
+  font-size: 13px;
+  padding: 2px 7px 2px 5px;
+}
+
+.tamiyo-sticker[data-size='sm'] {
+  font-size: 15px;
+  padding: 3px 9px 3px 6px;
+}
+
+.tamiyo-sticker[data-size='md'] {
+  font-size: 17px;
+  padding: 4px 11px 4px 8px;
+}
+
+.tamiyo-sticker[data-round] {
+  justify-content: center;
+  padding: 0;
+}
+
+.tamiyo-sticker[data-round][data-size='xs'] {
+  width: 20px;
+  height: 20px;
+}
+
+.tamiyo-sticker[data-round][data-size='sm'] {
+  width: 24px;
+  height: 24px;
+}
+
+.tamiyo-sticker[data-round][data-size='md'] {
+  width: 30px;
+  height: 30px;
+}
+
+.tamiyo-sticker-icon {
+  display: block;
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
+}
+
+.tamiyo-sticker[data-round] .tamiyo-sticker-icon {
+  width: 60%;
+  height: 60%;
+}
+
+.tamiyo-sticker[data-tone='prune'] {
+  background: #6e2f45;
+  color: #fbf8f1;
+}
+
+.tamiyo-sticker[data-tone='lune'] {
+  background: #cde3a5;
+  color: #2b2420;
+}
+
+.tamiyo-sticker[data-tone='ocelle'] {
+  background: #d9a441;
+  color: #2b2420;
+}
+
+.tamiyo-sticker[data-tone='paper'] {
+  background: #fbf8f1;
+  color: #2b2420;
+  border: 1.5px dashed #6b5e52;
+}
+
+[data-mantine-color-scheme='dark'] .tamiyo-sticker[data-tone='prune'] {
+  background: #d9a0b4;
+  color: #1c1a22;
+}
+
+[data-mantine-color-scheme='dark'] .tamiyo-sticker[data-tone='lune'],
+[data-mantine-color-scheme='dark'] .tamiyo-sticker[data-tone='ocelle'] {
+  color: #1c1a22;
+}
+
+[data-mantine-color-scheme='dark'] .tamiyo-sticker[data-tone='paper'] {
+  background: #26232d;
+  color: #ede6d6;
+  border-color: #a79f92;
+}
+
+.tamiyo-flight {
+  flex: 1;
+  min-width: 24px;
+  height: 0;
+  border-top: 2px dotted var(--mantine-color-gray-5);
+}
+
+[data-mantine-color-scheme='dark'] .tamiyo-flight {
+  border-top-color: var(--mantine-color-dark-3);
+}
+
+.tamiyo-nav-link {
+  padding: 6px 10px 8px;
+  border-radius: var(--mantine-radius-md);
+  color: var(--mantine-color-dimmed);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.tamiyo-nav-link:hover {
+  color: var(--mantine-color-text);
+  background: var(--mantine-color-default-hover);
+}
+
+.tamiyo-nav-link[data-active] {
+  color: var(--mantine-color-text);
+  font-weight: 700;
+  text-decoration: underline wavy var(--tamiyo-eyespot) 2px;
+  text-underline-offset: 7px;
+}
+
+.tamiyo-taped {
+  position: relative;
+  transform: rotate(var(--tamiyo-tilt, 0deg));
+  transition: transform 160ms ease;
+}
+
+.tamiyo-taped:hover,
+.tamiyo-taped:focus-within {
+  transform: rotate(0deg) translateY(-2px);
+}
+
+.tamiyo-taped::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: -9px;
+  left: calc(50% - 34px);
+  width: 68px;
+  height: 20px;
+  transform: rotate(-4deg);
+  pointer-events: none;
+  background: repeating-linear-gradient(45deg, rgba(205, 227, 165, 0.85) 0 7px, rgba(190, 214, 146, 0.85) 7px 14px);
+}
+
+.tamiyo-taped[data-tape='prune']::before {
+  transform: rotate(3deg);
+  background: repeating-linear-gradient(45deg, rgba(217, 160, 180, 0.85) 0 7px, rgba(204, 140, 162, 0.85) 7px 14px);
+}
+
+.tamiyo-taped[data-tape='ocelle']::before {
+  transform: rotate(-2deg);
+  background: repeating-linear-gradient(45deg, rgba(217, 164, 65, 0.75) 0 7px, rgba(200, 148, 52, 0.75) 7px 14px);
+}
+
+.tamiyo-moon-loader {
+  position: relative;
+  display: inline-block;
+  width: var(--loader-size, 36px);
+  height: var(--loader-size, 36px);
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--mantine-color-lune-3);
+  box-shadow: inset 0 0 0 2px var(--mantine-color-lune-7);
+}
+
+.tamiyo-moon-shadow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--tamiyo-page);
+  animation: tamiyo-moon-phases 2.4s ease-in-out infinite;
+}
+
+@keyframes tamiyo-moon-phases {
+  0% {
+    transform: translateX(-105%);
+  }
+  100% {
+    transform: translateX(105%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tamiyo-moon-shadow {
+    animation: none;
+    transform: translateX(55%);
+  }
+
+  .tamiyo-taped,
+  .tamiyo-taped:hover,
+  .tamiyo-taped:focus-within {
+    transition: none;
+  }
+}

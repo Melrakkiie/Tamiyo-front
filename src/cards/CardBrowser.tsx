@@ -3,7 +3,6 @@ import {
   Alert,
   Center,
   Collapse,
-  Divider,
   Group,
   Indicator,
   Loader,
@@ -12,7 +11,6 @@ import {
   Stack,
   Text,
   TextInput,
-  Title,
 } from '@mantine/core';
 import { useDebouncedValue, useLocalStorage } from '@mantine/hooks';
 import { useEffect, useState } from 'react';
@@ -41,6 +39,7 @@ import { copyCount, useCards } from './api';
 import { useCardContextMenu } from './CardContextMenu';
 import { CardDetailModal } from './CardDetailModal';
 import { CardDisplayControls, placement, useCardDisplay } from './CardDisplay';
+import { SectionTitle } from '../theme/SectionTitle';
 import { CardGrid, CardGroupsLayout } from './CardLayout';
 import { CardTile } from './CardTile';
 import { MissingDetailsAlert } from './MissingDetailsAlert';
@@ -347,17 +346,9 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
             key: `${index}-${group.label}`,
             cards: group.cards,
             header: (
-              <Divider
-                labelPosition="left"
-                label={
-                  <Title order={4}>
-                    {group.label}{' '}
-                    <Text span size="sm" c="dimmed">
-                      ({group.cards.reduce((total, card) => total + copyCount(card), 0)})
-                    </Text>
-                  </Title>
-                }
-              />
+              <SectionTitle count={group.cards.reduce((total, card) => total + copyCount(card), 0)}>
+                {group.label}
+              </SectionTitle>
             ),
           }))}
           renderTile={renderTile}

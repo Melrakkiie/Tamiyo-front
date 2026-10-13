@@ -2,6 +2,7 @@ import { AppShell, Button, Group, Title } from '@mantine/core';
 import { useEffect } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
 
+import { LunaMoth } from '../theme/LunaMoth';
 import { showCardPreview } from './cardPreview';
 import { CardPreviewPanel } from './CardPreviewPanel';
 import { FanContentNotice } from './FanContentNotice';
@@ -21,7 +22,10 @@ export function PublicLayout() {
     >
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
-          <Title order={3}>Tamiyo</Title>
+          <Group gap={8} wrap="nowrap">
+            <LunaMoth size={30} />
+            <Title order={3}>Tamiyo</Title>
+          </Group>
           <Group gap="xs" wrap="nowrap">
             <Button component={Link} to="/login" state={{ from: location }} variant="default" size="compact-md">
               Se connecter

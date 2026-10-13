@@ -1,16 +1,4 @@
-import {
-  Alert,
-  Badge,
-  Center,
-  Group,
-  Image,
-  Loader,
-  Paper,
-  SimpleGrid,
-  Stack,
-  Text,
-  UnstyledButton,
-} from '@mantine/core';
+import { Alert, Center, Group, Image, Loader, Paper, SimpleGrid, Stack, Text, UnstyledButton } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 
 import { errorMessage } from '../api/errors';
@@ -23,6 +11,7 @@ import { PrintingGrid } from '../scryfall/PrintingGrid';
 import { SetIcon } from '../scryfall/SetIcon';
 import { useAllStorages } from '../storages/api';
 import { StorageLabel } from '../storages/StorageLabel';
+import { FoilSticker, ProxySticker } from '../theme/Sticker';
 import {
   useReplaceDeckCardWithPending,
   useReplacePendingCard,
@@ -133,16 +122,8 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
                       <Text size="xs">
                         {copy.set_code.toUpperCase()} · #{copy.collector_number}
                       </Text>
-                      {copy.foil && (
-                        <Badge size="xs" variant="light">
-                          foil
-                        </Badge>
-                      )}
-                      {copy.proxy && (
-                        <Badge size="xs" variant="light" color="gray">
-                          proxy
-                        </Badge>
-                      )}
+                      {copy.foil && <FoilSticker />}
+                      {copy.proxy && <ProxySticker />}
                     </Group>
                     <Group gap={4} justify="space-between" align="center" wrap="nowrap">
                       <StorageLabel
