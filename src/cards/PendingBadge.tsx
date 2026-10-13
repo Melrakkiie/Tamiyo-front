@@ -1,15 +1,11 @@
-import { Badge } from '@mantine/core';
+import type { ReactNode } from 'react';
+
+import { CheckIcon, HourglassIcon, Sticker, type StickerTone, SwapIcon } from '../theme/Sticker';
 
 export type PendingStatus =
   | { kind: 'missing' }
   | { kind: 'other-printing'; owned: number }
   | { kind: 'owned'; owned: number };
-
-const paths: Record<PendingStatus['kind'], string> = {
-  missing: 'M12 5v14M5 12h14',
-  'other-printing': 'M7 7h11l-3-3M17 17H6l3 3',
-  owned: 'M5 12l5 5 9-10',
-};
 
 const labels: Record<PendingStatus['kind'], string> = {
   missing: 'Manquante',
@@ -17,10 +13,16 @@ const labels: Record<PendingStatus['kind'], string> = {
   owned: 'Dans ta collection',
 };
 
-const colors: Record<PendingStatus['kind'], string> = {
-  missing: 'orange',
-  'other-printing': 'teal',
-  owned: 'teal',
+const tones: Record<PendingStatus['kind'], StickerTone> = {
+  missing: 'prune',
+  'other-printing': 'ocelle',
+  owned: 'lune',
+};
+
+const icons: Record<PendingStatus['kind'], () => ReactNode> = {
+  missing: HourglassIcon,
+  'other-printing': SwapIcon,
+  owned: CheckIcon,
 };
 
 function copies(count: number) {
@@ -38,25 +40,6 @@ export function pendingStatusDescription(status: PendingStatus) {
   }
 }
 
-function StatusIcon({ status }: { status: PendingStatus }) {
-  return (
-    <svg
-      width={12}
-      height={12}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={3}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      style={{ display: 'block' }}
-    >
-      <path d={paths[status.kind]} />
-    </svg>
-  );
-}
-
 interface PendingBadgeProps {
   status: PendingStatus;
   compact?: boolean;
@@ -65,19 +48,11 @@ interface PendingBadgeProps {
 
 export function PendingBadge({ status, compact = false, size = 'sm' }: PendingBadgeProps) {
   const description = pendingStatusDescription(status);
+  const Icon = icons[status.kind];
   return (
-    <Badge
-      size={size}
-      variant="filled"
-      color={colors[status.kind]}
-      leftSection={<StatusIcon status={status} />}
-      title={description}
-      aria-label={description}
-      style={{ textTransform: 'none', boxShadow: 'var(--mantine-shadow-sm)', flexShrink: 0 }}
-      px={compact ? 4 : undefined}
-    >
+    <Sticker tone={tones[status.kind]} icon={<Icon />} size={size} tilt={-3} title={description}>
       {compact ? null : labels[status.kind]}
-    </Badge>
+    </Sticker>
   );
 }
 
@@ -90,17 +65,8 @@ interface CollectionBadgeProps {
 export function CollectionBadge({ owned, compact = false, size = 'sm' }: CollectionBadgeProps) {
   const description = `Tu en as ${copies(owned)} dans ta collection, toutes éditions confondues`;
   return (
-    <Badge
-      size={size}
-      variant="filled"
-      color="teal"
-      leftSection={<StatusIcon status={{ kind: 'owned', owned }} />}
-      title={description}
-      aria-label={description}
-      style={{ textTransform: 'none', boxShadow: 'var(--mantine-shadow-sm)', flexShrink: 0 }}
-      px={compact ? 4 : undefined}
-    >
+    <Sticker tone="lune" icon={<CheckIcon />} size={size} tilt={2} title={description}>
       {compact ? null : owned > 1 ? `${owned} dans ta collection` : 'Dans ta collection'}
-    </Badge>
+    </Sticker>
   );
 }

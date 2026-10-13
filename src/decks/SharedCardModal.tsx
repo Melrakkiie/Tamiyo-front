@@ -1,4 +1,4 @@
-import { Badge, Button, Grid, Group, Modal, Paper, Select, Stack, Text, Title } from '@mantine/core';
+import { Button, Grid, Group, Modal, Paper, Select, Stack, Text, Title } from '@mantine/core';
 import { type ReactNode, useRef, useState } from 'react';
 
 import type { Card, DeckBoard } from '../api/types';
@@ -7,6 +7,7 @@ import { AddCardModal, type AddTarget } from '../cards/AddCardModal';
 import { CardImage } from '../cards/CardImage';
 import { CardRulesText } from '../scryfall/CardRulesText';
 import { useBackImage, useScryfallCard } from '../scryfall/hooks';
+import { FoilSticker } from '../theme/Sticker';
 import { useAllDecks } from './api';
 import { BoardPicker } from './BoardSection';
 
@@ -80,11 +81,7 @@ function SharedCardDetail({ card, imageUrl, details, onAdd }: SharedCardDetailPr
                   {card.set_code.toUpperCase()} · #{card.collector_number}
                   {quantity > 1 ? ` · ${quantity} exemplaires` : ''}
                 </Text>
-                {card.foil && (
-                  <Badge size="xs" variant="light">
-                    Foil
-                  </Badge>
-                )}
+                {card.foil && <FoilSticker />}
               </Group>
             )}
           </div>

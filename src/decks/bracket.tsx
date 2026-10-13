@@ -14,7 +14,7 @@ const bracketColors: Record<number, string> = {
   1: 'teal',
   2: 'green',
   3: 'yellow',
-  4: 'orange',
+  4: 'prune',
   5: 'red',
 };
 

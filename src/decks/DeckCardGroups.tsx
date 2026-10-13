@@ -1,10 +1,11 @@
-import { Box, Divider, Stack, Text, Title, Tooltip } from '@mantine/core';
+import { Box, Stack, Text, Tooltip } from '@mantine/core';
 import type { ReactNode } from 'react';
 
 import type { Card } from '../api/types';
 import { copyCount } from '../cards/api';
 import type { CardDisplay } from '../cards/CardDisplay';
 import { CardGroupsLayout } from '../cards/CardLayout';
+import { SectionTitle } from '../theme/SectionTitle';
 import { type CardGroup, groupCards, sortIntoGroups, typeLabels } from '../cards/grouping';
 import type { FaceTypes } from '../scryfall/classify';
 import { useCardFaceTypes } from '../scryfall/hooks';
@@ -20,11 +21,11 @@ interface BackFaceEntry {
 function GroupCount({ label, cards, backFaces }: { label: string; cards: Card[]; backFaces: BackFaceEntry[] }) {
   const count = cards.reduce((total, card) => total + copyCount(card), 0);
   if (backFaces.length === 0) {
-    return <>({count})</>;
+    return <>{count}</>;
   }
   return (
     <>
-      ({count} <BackFacesExtra label={label} count={count} backFaces={backFaces} />)
+      {count} <BackFacesExtra label={label} count={count} backFaces={backFaces} />
     </>
   );
 }
@@ -156,28 +157,24 @@ export function DeckCardGroups({ groups, backFaces, display, renderTile, drop }:
       </GroupDropArea>
     ),
     header: (
-      <Divider
-        labelPosition="left"
-        label={
-          <Title order={4}>
-            {group.storage && (
-              <Text span c="dimmed" mr={6} style={{ display: 'inline-block', verticalAlign: '-0.1em' }}>
-                <StorageIcon size={16} />
-              </Text>
-            )}
-            {group.label}{' '}
-            <Text span size="sm" c="dimmed">
-              <GroupCount
-                label={group.label}
-                cards={group.cards}
-                backFaces={[...(backFaces.get(group.label) ?? new Map<string, number>())]
-                  .map(([name, quantity]) => ({ name, quantity }))
-                  .sort((a, b) => a.name.localeCompare(b.name))}
-              />
-            </Text>
-          </Title>
+      <SectionTitle
+        count={
+          <GroupCount
+            label={group.label}
+            cards={group.cards}
+            backFaces={[...(backFaces.get(group.label) ?? new Map<string, number>())]
+              .map(([name, quantity]) => ({ name, quantity }))
+              .sort((a, b) => a.name.localeCompare(b.name))}
+          />
         }
-      />
+      >
+        {group.storage && (
+          <Text span c="dimmed" mr={6} style={{ display: 'inline-block', verticalAlign: '-0.1em' }}>
+            <StorageIcon size={16} />
+          </Text>
+        )}
+        {group.label}
+      </SectionTitle>
     ),
   }));
   return (

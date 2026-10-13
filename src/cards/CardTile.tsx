@@ -6,6 +6,7 @@ import type { Card } from '../api/types';
 import { showCardPreview } from '../layout/cardPreview';
 import { withSymbols } from '../scryfall/manaSymbols';
 import { StorageLabel } from '../storages/StorageLabel';
+import { FoilSticker, ProxySticker } from '../theme/Sticker';
 import type { ContextMenuEvent } from './CardContextMenu';
 import { CardImage } from './CardImage';
 import { CommanderBadge, CommanderInlineMark } from './CommanderMark';
@@ -91,16 +92,8 @@ function CardRow({
               {card.name}
             </Text>
             {commander && <CommanderInlineMark />}
-            {card.foil && (
-              <Badge size="xs" variant="light">
-                Foil
-              </Badge>
-            )}
-            {card.proxy && (
-              <Badge size="xs" variant="light" color="gray">
-                Proxy
-              </Badge>
-            )}
+            {card.foil && <FoilSticker />}
+            {card.proxy && <ProxySticker />}
             {pendingStatus && <PendingBadge status={pendingStatus} size="xs" />}
             {!pendingStatus && collectionCount !== undefined && collectionCount > 0 && (
               <CollectionBadge owned={collectionCount} size="xs" compact />
@@ -245,16 +238,8 @@ export function CardTile({
                 <Text size="xs" c="dimmed">
                   {card.set_code.toUpperCase()} · #{card.collector_number}
                 </Text>
-                {card.foil && (
-                  <Badge size="xs" variant="light">
-                    Foil
-                  </Badge>
-                )}
-                {card.proxy && (
-                  <Badge size="xs" variant="light" color="gray">
-                    Proxy
-                  </Badge>
-                )}
+                {card.foil && <FoilSticker />}
+                {card.proxy && <ProxySticker />}
               </Group>
             )}
             {pendingStatus ? (

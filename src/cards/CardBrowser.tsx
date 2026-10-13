@@ -3,7 +3,6 @@ import {
   Alert,
   Center,
   Collapse,
-  Divider,
   Group,
   Indicator,
   Loader,
@@ -12,7 +11,6 @@ import {
   Stack,
   Text,
   TextInput,
-  Title,
 } from '@mantine/core';
 import { useDebouncedValue, useLocalStorage } from '@mantine/hooks';
 import { useEffect, useState } from 'react';
@@ -37,10 +35,12 @@ import {
   cardsQueryFilters,
   parseAdvancedFilters,
 } from './advancedFilters';
-import { copyCount, useCards } from './api';
+import { copyCount, useCard, useCards } from './api';
 import { useCardContextMenu } from './CardContextMenu';
 import { CardDetailModal } from './CardDetailModal';
 import { CardDisplayControls, placement, useCardDisplay } from './CardDisplay';
+import { SectionTitle } from '../theme/SectionTitle';
+import { EmptyNote } from '../theme/EmptyNote';
 import { CardGrid, CardGroupsLayout } from './CardLayout';
 import { CardTile } from './CardTile';
 import { MissingDetailsAlert } from './MissingDetailsAlert';
@@ -109,6 +109,10 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const drop = useScryfallDrop((printing) => setCardToAdd({ name: printing.name, printing }));
   const [searchKey, setSearchKey] = useState(0);
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
+  const linkedCardId = Number(params.get('carte')) || null;
+  const linkedCard = useCard(linkedCardId);
+  const detailCard = openedCard ?? (linkedCardId ? (linkedCard.data ?? null) : null);
+  const detailImage = useCardImages(detailCard ? [detailCard.scryfall_id] : []);
   const contextMenu = useCardContextMenu();
   const cardMenu = useCollectionCardMenu();
 
@@ -324,22 +328,19 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
           <Loader />
         </Center>
       ) : pageCards.length === 0 && !cards.error ? (
-        <Center p="xl">
-          <Stack align="center" gap="xs">
-            <Text c="dimmed">
-              {filtered
-                ? 'Aucune carte ne correspond à ces filtres.'
-                : fixedStorageId
-                  ? 'Ce rangement est vide pour le moment.'
-                  : 'Ta collection est vide pour le moment.'}
-            </Text>
-            {!filtered && (
-              <Text size="sm" c="dimmed">
-                Cherche une carte dans la barre ci-dessus pour l'ajouter.
-              </Text>
-            )}
-          </Stack>
-        </Center>
+        <EmptyNote
+          title={
+            filtered
+              ? 'Aucune carte ne correspond à ces filtres'
+              : fixedStorageId
+                ? 'Ce rangement est vide pour le moment'
+                : 'Ta collection est vide pour le moment'
+          }
+          note={
+            filtered ? 'essaie d’enlever un filtre ou deux' : 'cherche une carte dans la barre, là-haut, pour l’ajouter'
+          }
+          arrow={filtered ? undefined : 'up'}
+        />
       ) : grouping ? (
         <CardGroupsLayout
           display={display}
@@ -347,17 +348,9 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
             key: `${index}-${group.label}`,
             cards: group.cards,
             header: (
-              <Divider
-                labelPosition="left"
-                label={
-                  <Title order={4}>
-                    {group.label}{' '}
-                    <Text span size="sm" c="dimmed">
-                      ({group.cards.reduce((total, card) => total + copyCount(card), 0)})
-                    </Text>
-                  </Title>
-                }
-              />
+              <SectionTitle count={group.cards.reduce((total, card) => total + copyCount(card), 0)}>
+                {group.label}
+              </SectionTitle>
             ),
           }))}
           renderTile={renderTile}
@@ -394,9 +387,14 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
       {contextMenu.element}
       {cardMenu.modals}
       <CardDetailModal
-        card={openedCard}
-        imageUrl={openedCard ? images.data?.[openedCard.scryfall_id] : undefined}
-        onClose={() => setOpenedCard(null)}
+        card={detailCard}
+        imageUrl={detailCard ? detailImage.data?.[detailCard.scryfall_id] : undefined}
+        onClose={() => {
+          setOpenedCard(null);
+          if (linkedCardId) {
+            updateParams({ carte: null });
+          }
+        }}
       />
     </Stack>
   );

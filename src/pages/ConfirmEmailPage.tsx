@@ -7,8 +7,10 @@ import { Link, useSearchParams } from 'react-router';
 import { errorMessage } from '../api/errors';
 import { confirmEmailChange } from '../auth/actions';
 import { useSession } from '../auth/useSession';
+import { usePageTitle } from '../layout/usePageTitle';
 
 export function ConfirmEmailPage() {
+  usePageTitle("Confirmation de l'email");
   const [searchParams] = useSearchParams();
   const tokenFromLink = searchParams.get('token') ?? '';
   const session = useSession();

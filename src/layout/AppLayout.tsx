@@ -1,16 +1,4 @@
-import {
-  AppShell,
-  Box,
-  Burger,
-  Button,
-  Drawer,
-  Group,
-  Menu,
-  NavLink,
-  Text,
-  Title,
-  UnstyledButton,
-} from '@mantine/core';
+import { AppShell, Box, Burger, Drawer, Group, Menu, NavLink, Text, Title, UnstyledButton } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useEffect } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
@@ -19,6 +7,7 @@ import { useAccount } from '../auth/account';
 import { logout } from '../auth/actions';
 import { UserAvatar } from '../auth/UserAvatar';
 import { showCardPreview } from './cardPreview';
+import { LunaMoth } from '../theme/LunaMoth';
 import { CardPreviewPanel } from './CardPreviewPanel';
 import { FanContentNotice } from './FanContentNotice';
 
@@ -68,20 +57,25 @@ export function AppLayout() {
           <Group gap="lg" wrap="nowrap">
             <Group gap="sm" wrap="nowrap">
               <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" aria-label="Menu" />
-              <Title order={3}>Tamiyo</Title>
+              <UnstyledButton component={Link} to="/">
+                <Group gap={8} wrap="nowrap">
+                  <LunaMoth size={30} />
+                  <Title order={3}>Tamiyo</Title>
+                </Group>
+              </UnstyledButton>
             </Group>
             <Group gap={4} visibleFrom="sm" wrap="nowrap">
               {navItems.map((item) => (
-                <Button
+                <UnstyledButton
                   key={item.to}
                   component={Link}
                   to={item.to}
-                  variant={isActive(item, pathname) ? 'light' : 'subtle'}
-                  color={isActive(item, pathname) ? undefined : 'gray'}
-                  size="compact-md"
+                  className="tamiyo-nav-link"
+                  data-active={isActive(item, pathname) || undefined}
+                  aria-current={isActive(item, pathname) ? 'page' : undefined}
                 >
                   {item.label}
-                </Button>
+                </UnstyledButton>
               ))}
             </Group>
           </Group>

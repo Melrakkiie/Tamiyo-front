@@ -6,10 +6,12 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { errorMessage } from '../api/errors';
 import { resetPassword } from '../auth/actions';
+import { usePageTitle } from '../layout/usePageTitle';
 
 type ResetPasswordValues = { token: string; password: string; confirmPassword: string };
 
 export function ResetPasswordPage() {
+  usePageTitle('Nouveau mot de passe');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tokenFromLink = searchParams.get('token') ?? '';

@@ -88,6 +88,8 @@ import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import { SettingsMenu } from '../layout/SettingsMenu';
 import { useCardArts, useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
+import { EmptyNote } from '../theme/EmptyNote';
+import { usePageTitle } from '../layout/usePageTitle';
 import { SharedDeckView } from './SharedDeckPage';
 
 const sortOptions: { value: DeckCardSort; label: string }[] = [
@@ -132,6 +134,7 @@ function DeckView({ id }: { id: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const deck = useDeck(id);
+  usePageTitle(deck.data?.name ?? 'Deck');
   const update = useUpdateDeck();
   const remove = useDeleteDeck();
   const [editOpened, setEditOpened] = useState(false);
@@ -203,6 +206,7 @@ function DeckView({ id }: { id: string }) {
         p={art ? 'lg' : 0}
         mih={art ? 200 : undefined}
         pos="relative"
+        className={art ? 'tamiyo-banner-taped' : undefined}
         style={art ? { ...artBackground(art.url, 'light'), display: 'flex', flexDirection: 'column' } : undefined}
       >
         <Box pos="absolute" top={art ? 'var(--mantine-spacing-lg)' : 0} right={art ? 'var(--mantine-spacing-lg)' : 0}>
@@ -691,9 +695,11 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
         ) : (
           <>
             {allCards.length === 0 ? (
-              <Center p="xl">
-                <Text c="dimmed">Ce deck est vide : ajoute des cartes de ta collection.</Text>
-              </Center>
+              <EmptyNote
+                title="Ce deck est vide"
+                note="ajoute des cartes de ta collection, juste là-haut"
+                arrow="up-right"
+              />
             ) : mainCards.length === 0 ? (
               <Text size="sm" c="dimmed">
                 Aucune carte dans le deck principal.

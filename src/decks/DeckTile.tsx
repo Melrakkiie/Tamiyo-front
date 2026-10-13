@@ -6,6 +6,7 @@ import type { ContextMenuEvent } from '../cards/CardContextMenu';
 import type { CardArt } from '../scryfall/client';
 import { isCommanderFormat } from './api';
 import { artBackground } from './art';
+import { tapeProps } from '../theme/tape';
 import { BracketBadge } from './bracket';
 import { ColorIdentity } from './ColorIdentity';
 import { FavoriteToggle } from './FavoriteStar';
@@ -45,7 +46,7 @@ export function DeckTile({
               {onToggleFavorite && (
                 <FavoriteToggle favorite={!!deck.favorite} onToggle={onToggleFavorite} onImage={art !== null} />
               )}
-              <Text fw={600} lineClamp={1}>
+              <Text ff="heading" fw={600} size="lg" lineClamp={1}>
                 {deck.name}
               </Text>
             </Group>
@@ -82,8 +83,10 @@ export function DeckTile({
   );
 
   return (
-    <Card withBorder component={Link} to={to} h={TILE_HEIGHT} style={style} onContextMenu={onContextMenu}>
-      {content}
-    </Card>
+    <div {...tapeProps(deck.id)}>
+      <Card withBorder shadow="sm" component={Link} to={to} h={TILE_HEIGHT} style={style} onContextMenu={onContextMenu}>
+        {content}
+      </Card>
+    </div>
   );
 }

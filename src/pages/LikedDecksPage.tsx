@@ -7,8 +7,11 @@ import { useLikedDecks } from '../decks/likes';
 import { PublicDeckTile } from '../decks/PublicDeckTile';
 import { capitalize, groupByRecent } from '../layout/groupByRecent';
 import { useCardArts } from '../scryfall/hooks';
+import { EmptyNote } from '../theme/EmptyNote';
+import { usePageTitle } from '../layout/usePageTitle';
 
 export function LikedDecksPage() {
+  usePageTitle('Decks aimés');
   const liked = useLikedDecks();
   const decks = liked.data ?? [];
   const arts = useCardArts(decks.map(deckArtId));
@@ -30,13 +33,11 @@ export function LikedDecksPage() {
       ) : liked.error ? (
         <Alert color="red">{errorMessage(liked.error)}</Alert>
       ) : decks.length === 0 ? (
-        <Text size="sm" c="dimmed">
-          Tu n'as encore aimé aucun deck : clique sur le cœur d'un deck pour le retrouver ici, par exemple depuis{' '}
-          <Anchor component={Link} to="/explorer" size="sm">
-            l'explorateur
+        <EmptyNote title="Tu n'as encore aimé aucun deck" note="clique sur le cœur d'un deck pour le retrouver ici">
+          <Anchor component={Link} to="/explorer">
+            Aller voir l'explorateur
           </Anchor>
-          .
-        </Text>
+        </EmptyNote>
       ) : (
         <Stack gap="xl">
           {groupByRecent(decks, (deck) => deck.format, capitalize).map((group) => (

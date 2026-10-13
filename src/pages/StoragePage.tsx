@@ -10,6 +10,7 @@ import { CardBrowser } from '../cards/CardBrowser';
 import { SettingsMenu } from '../layout/SettingsMenu';
 import { StorageFormModal } from '../storages/StorageFormModal';
 import { useDeleteStorage, useStorage, useUpdateStorage } from '../storages/api';
+import { usePageTitle } from '../layout/usePageTitle';
 
 const DECK_PAGE_SIZE = 96;
 
@@ -21,6 +22,7 @@ export function StoragePage() {
 function StorageView({ id }: { id: number }) {
   const navigate = useNavigate();
   const storage = useStorage(id);
+  usePageTitle(storage.data?.name ?? 'Rangement');
   const update = useUpdateStorage();
   const remove = useDeleteStorage();
   const [editOpened, setEditOpened] = useState(false);
