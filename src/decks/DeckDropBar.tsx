@@ -43,26 +43,16 @@ function DropZone({ id, accepts, onDrop, danger = false, fullWidth = false, labe
   if (!active) {
     return null;
   }
-  const color = danger ? 'var(--mantine-color-red-4)' : 'var(--mantine-color-gray-3)';
   return (
     <UnstyledButton
       {...targetProps}
-      aria-label={label}
+      className="tamiyo-drop-zone"
+      data-over={over || undefined}
+      data-danger={danger || undefined}      aria-label={label}
       tabIndex={-1}
       px="lg"
       py="sm"
       style={{
-        border: `2px dashed ${over ? (danger ? 'var(--mantine-color-red-5)' : 'var(--mantine-color-blue-4)') : color}`,
-        borderRadius: 'var(--mantine-radius-md)',
-        background: over
-          ? danger
-            ? 'rgba(250, 82, 82, 0.25)'
-            : 'rgba(77, 171, 247, 0.25)'
-          : 'rgba(255, 255, 255, 0.06)',
-        color: danger ? 'var(--mantine-color-red-4)' : 'var(--mantine-color-gray-0)',
-        transform: over ? 'scale(1.05)' : undefined,
-        transition: 'transform 100ms ease, background 100ms ease',
-        cursor: 'grabbing',
         width: fullWidth ? '100%' : undefined,
         textAlign: fullWidth ? 'center' : undefined,
       }}
@@ -74,19 +64,8 @@ function DropZone({ id, accepts, onDrop, danger = false, fullWidth = false, labe
 
 function AppliedTag({ tag }: { tag: string }) {
   return (
-    <Box
-      px="lg"
-      py="sm"
-      w="100%"
-      ta="center"
-      style={{
-        border: '2px solid transparent',
-        borderRadius: 'var(--mantine-radius-md)',
-        background: 'rgba(255, 255, 255, 0.03)',
-        color: 'var(--mantine-color-gray-6)',
-      }}
-    >
-      <Text size="md" td="line-through" title="Cette carte a déjà ce tag">
+    <Box px="lg" py="sm" w="100%" ta="center" style={{ border: '2px solid transparent' }}>
+      <Text size="md" c="dimmed" td="line-through" title="Cette carte a déjà ce tag">
         #{tag}
       </Text>
     </Box>
@@ -113,16 +92,16 @@ function QuickTagsPanel({ tags, dragged, actions, tagsOf }: QuickTagsPanelProps)
       >
         <Paper
           data-no-autoscroll="side"
+          className="tamiyo-drop-panel"
           radius="md"
-          p="md"
-          shadow="xl"
-          style={{ pointerEvents: 'auto', background: 'rgba(37, 38, 43, 0.95)' }}
+          p="xs"
+          style={{ pointerEvents: 'auto' }}
         >
-          <Text size="sm" fw={600} c="gray.0" ta="center" mb="sm">
+          <Text className="tamiyo-hand" fz={20} c="prune" ta="center" mb="sm">
             Tags rapides
           </Text>
           <ScrollArea.Autosize mah="70vh" type="auto" offsetScrollbars>
-            <Stack gap="xs">
+            <Stack gap="xs" p="xs">
               {tags.map((tag) =>
                 applied.has(tag) ? (
                   <AppliedTag key={tag} tag={tag} />
@@ -184,10 +163,10 @@ function DropBar({ dragged, actions, tagMode, tagsOf }: Omit<DeckDropBarProps, '
       >
         <Paper
           data-no-autoscroll="top"
+          className="tamiyo-drop-panel"
           radius="md"
           p="md"
-          shadow="xl"
-          style={{ pointerEvents: 'auto', background: 'rgba(37, 38, 43, 0.95)', maxWidth: '100%' }}
+          style={{ pointerEvents: 'auto', maxWidth: '100%' }}
         >
           <Stack gap="sm" align="center">
             <Group gap="md" justify="center">
@@ -233,7 +212,7 @@ function DropBar({ dragged, actions, tagMode, tagsOf }: Omit<DeckDropBarProps, '
               )}
             </Group>
             {!tagMode && (
-              <Text size="sm" c="gray.4">
+              <Text size="sm" c="dimmed">
                 Groupe les cartes par tag pour les glisser d'un tag à l'autre.
               </Text>
             )}

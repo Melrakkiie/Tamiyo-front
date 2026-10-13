@@ -311,6 +311,91 @@ h6,
   text-underline-offset: 6px;
 }
 
+.tamiyo-drop-panel {
+  background: var(--mantine-color-body);
+  border: 2px solid var(--tamiyo-ink);
+  box-shadow:
+    3px 3px 0 var(--tamiyo-ink),
+    var(--mantine-shadow-xl);
+}
+
+[data-mantine-color-scheme='dark'] .tamiyo-drop-panel {
+  border-color: var(--mantine-color-dark-3);
+  box-shadow:
+    0 0 18px rgba(205, 227, 165, 0.18),
+    0 16px 36px rgba(0, 0, 0, 0.5);
+}
+
+.tamiyo-drop-zone {
+  border: 2px dashed var(--mantine-color-gray-6);
+  border-radius: var(--mantine-radius-md);
+  background: var(--tamiyo-page);
+  color: var(--mantine-color-text);
+  cursor: grabbing;
+  transition:
+    transform 100ms ease,
+    background 100ms ease,
+    border-color 100ms ease;
+}
+
+.tamiyo-drop-zone[data-over] {
+  border-color: var(--mantine-color-lune-7);
+  background: var(--mantine-color-lune-1);
+  transform: rotate(-1deg) scale(1.05);
+}
+.tamiyo-drop-zone[data-danger] {
+  border-color: var(--mantine-color-red-5);
+  color: var(--mantine-color-red-7);
+}
+
+.tamiyo-drop-zone[data-danger][data-over] {
+  border-color: var(--mantine-color-red-7);
+  background: var(--mantine-color-red-1);
+}
+
+[data-mantine-color-scheme='dark'] .tamiyo-drop-zone {
+  border-color: var(--mantine-color-dark-2);
+}
+
+[data-mantine-color-scheme='dark'] .tamiyo-drop-zone[data-over] {
+  border-color: var(--mantine-color-lune-3);
+  background: rgba(205, 227, 165, 0.16);
+}
+
+[data-mantine-color-scheme='dark'] .tamiyo-drop-zone[data-danger] {
+  border-color: var(--mantine-color-red-4);
+  color: var(--mantine-color-red-3);
+}
+
+[data-mantine-color-scheme='dark'] .tamiyo-drop-zone[data-danger][data-over] {
+  border-color: var(--mantine-color-red-3);
+  background: rgba(255, 135, 135, 0.16);
+}
+
+.tamiyo-drop-area {
+  border-radius: var(--mantine-radius-md);
+  outline: 2px dashed var(--mantine-color-gray-5);
+  outline-offset: 6px;
+  transition: background 100ms ease;
+}
+
+.tamiyo-drop-area[data-over] {
+  outline-color: var(--mantine-primary-color-filled);
+  background: var(--mantine-primary-color-light);
+}
+
+[data-mantine-color-scheme='dark'] .tamiyo-drop-area:not([data-over]) {
+  outline-color: var(--mantine-color-dark-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tamiyo-drop-zone,
+  .tamiyo-drop-zone[data-over] {
+    transition: none;
+    transform: none;
+  }
+}
+
 .tamiyo-banner-taped::before,
 .tamiyo-banner-taped::after {
   content: '';

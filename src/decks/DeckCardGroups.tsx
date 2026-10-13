@@ -123,18 +123,7 @@ function GroupDropArea({ group, drop, children }: { group: CardGroup; drop?: Gro
     onDrop: (item) => drop?.onDrop(group, item),
   });
   return (
-    <Box
-      {...targetProps}
-      style={{
-        borderRadius: 'var(--mantine-radius-md)',
-        outline: active
-          ? `2px dashed ${over ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-default-border)'}`
-          : undefined,
-        outlineOffset: 6,
-        background: over ? 'var(--mantine-color-blue-light)' : undefined,
-        transition: 'background 100ms ease',
-      }}
-    >
+    <Box {...targetProps} className={active ? 'tamiyo-drop-area' : undefined} data-over={over || undefined}>
       {children}
     </Box>
   );

@@ -139,16 +139,13 @@ function FolderSection<F extends FolderLike>({ node, renderDeck, ...props }: Fol
   const header = (
     <Group
       {...target.targetProps}
+      className={target.active ? 'tamiyo-drop-area' : undefined}
+      data-over={target.over || undefined}
       gap="xs"
       wrap="nowrap"
       px="xs"
       py={6}
-      style={{
-        borderRadius: 'var(--mantine-radius-md)',
-        outline: target.active ? '2px dashed var(--mantine-color-default-border)' : undefined,
-        background: target.over ? 'var(--mantine-primary-color-light)' : undefined,
-        transition: 'background 100ms ease',
-      }}
+      style={{ borderRadius: 'var(--mantine-radius-md)', outlineOffset: 0 }}
     >
       <UnstyledButton
         onClick={() => props.onToggle(folder)}
@@ -212,21 +209,21 @@ function RootDropBar({ moves }: { moves: FolderMoves }) {
         style={{ zIndex: 900, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}
       >
         <Paper
-          {...target.targetProps}
           data-no-autoscroll="top"
+          className="tamiyo-drop-panel"
           radius="md"
-          px="xl"
-          py="md"
-          shadow="xl"
-          style={{
-            pointerEvents: 'auto',
-            background: target.over ? 'rgba(77, 171, 247, 0.35)' : 'rgba(37, 38, 43, 0.95)',
-            border: `2px dashed ${target.over ? 'var(--mantine-color-blue-4)' : 'var(--mantine-color-gray-3)'}`,
-            color: 'var(--mantine-color-gray-0)',
-            cursor: 'grabbing',
-          }}
+          p="md"
+          style={{ pointerEvents: 'auto' }}
         >
-          <Text size="md">Sortir du dossier</Text>
+          <Box
+            {...target.targetProps}
+            className="tamiyo-drop-zone"
+            data-over={target.over || undefined}
+            px="xl"
+            py="sm"
+          >
+            <Text size="md">Sortir du dossier</Text>
+          </Box>
         </Paper>
       </Box>
     </Portal>
