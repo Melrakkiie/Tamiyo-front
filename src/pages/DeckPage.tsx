@@ -27,7 +27,14 @@ import { useShowCollectionInDecks } from '../auth/preferences';
 import { useSession } from '../auth/useSession';
 import { useCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
-import { CardDisplayControls, placement, useCardDisplay } from '../cards/CardDisplay';
+import {
+  cardDisplay,
+  CardDisplayControls,
+  type DisplaySettings,
+  displayFromStored,
+  displayToStored,
+  placement,
+} from '../cards/CardDisplay';
 import { useCardContextMenu } from '../cards/CardContextMenu';
 import { CardTile } from '../cards/CardTile';
 import { PendingBadge, type PendingStatus } from '../cards/PendingBadge';
@@ -415,6 +422,7 @@ function DeckCardsWithView({ deck }: { deck: Deck }) {
       initialSort={initialSort}
       initialGrouping={initialGrouping}
       initialCollapsed={initialCollapsed}
+      initialDisplay={displayFromStored(saved)}
     />
   );
 }
@@ -424,12 +432,14 @@ interface DeckCardsProps {
   initialSort: DeckCardSort;
   initialGrouping: DeckCardGrouping | null;
   initialCollapsed: CollapsibleBoard[];
+  initialDisplay: DisplaySettings;
 }
 
 interface DeckViewChange {
   grouping?: DeckCardGrouping | null;
   sort?: DeckCardSort;
   collapsed?: CollapsibleBoard[];
+  display?: Partial<DisplaySettings>;
 }
 
 interface OpenedCard {
@@ -444,11 +454,12 @@ const emptyBoardMessages: Record<CollapsibleBoard, string> = {
     "Aucune carte envisagée pour ce deck : ouvre une carte pour l'y déplacer, ou choisis cette section en ajoutant des cartes.",
 };
 
-function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: DeckCardsProps) {
+function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initialDisplay }: DeckCardsProps) {
   const { pathname } = useLocation();
   const [sort, setSort] = useState<DeckCardSort>(initialSort);
   const [grouping, setGrouping] = useState<DeckCardGrouping | null>(initialGrouping);
   const [collapsed, setCollapsed] = useState<CollapsibleBoard[]>(initialCollapsed);
+  const [displaySettings, setDisplaySettings] = useState<DisplaySettings>(initialDisplay);
   const saveView = useSaveDeckView();
 
   function changeView(change: DeckViewChange) {
@@ -456,13 +467,20 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
       grouping: change.grouping !== undefined ? change.grouping : grouping,
       sort: change.sort ?? sort,
       collapsed: change.collapsed ?? collapsed,
+      display: { ...displaySettings, ...change.display },
     };
     setGrouping(next.grouping);
     setSort(next.sort);
     setCollapsed(next.collapsed);
+    setDisplaySettings(next.display);
     saveView.mutate({
       deckId: deck.id,
-      view: { grouping: next.grouping, sort: next.sort, collapsed_boards: next.collapsed },
+      view: {
+        grouping: next.grouping,
+        sort: next.sort,
+        collapsed_boards: next.collapsed,
+        ...displayToStored(next.display),
+      },
     });
   }
 
@@ -471,7 +489,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
     changeView({ collapsed: COLLAPSIBLE_BOARDS.filter((candidate) => folded.includes(candidate)) });
   }
 
-  const display = useCardDisplay();
+  const display = cardDisplay(displaySettings, (next) => changeView({ display: next }));
   const { textOnly, gridProps } = display;
   const showCollection = useShowCollectionInDecks();
   const cards = useDeckCards(deck.id, sort);

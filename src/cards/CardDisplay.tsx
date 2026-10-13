@@ -7,14 +7,14 @@ import { GearIcon } from '../layout/SettingsMenu';
 
 export type CardDisplayMode = 'text' | 'images';
 
-interface DisplaySettings {
+export interface DisplaySettings {
   mode: CardDisplayMode;
   columns: number;
   showManaCost: boolean;
   showDetails: boolean;
 }
 
-const DEFAULTS: DisplaySettings = { mode: 'images', columns: 6, showManaCost: true, showDetails: true };
+export const DEFAULT_DISPLAY: DisplaySettings = { mode: 'images', columns: 6, showManaCost: true, showDetails: true };
 const MIN_COLUMNS = 2;
 const MAX_COLUMNS = 12;
 
@@ -31,35 +31,32 @@ function clampColumns(columns: number) {
   return Math.min(MAX_COLUMNS, Math.max(MIN_COLUMNS, Math.round(columns)));
 }
 
-export function useCardDisplay() {
-  const { status } = useSession();
-  const signedIn = status === 'authenticated';
-  const preferences = usePreferences(signedIn);
-  const update = useUpdatePreferences();
-  const [local, setLocal] = useState(DEFAULTS);
-  const settings: DisplaySettings =
-    signedIn && preferences.data
-      ? {
-          mode: preferences.data.card_display,
-          columns: clampColumns(preferences.data.card_columns),
-          showManaCost: preferences.data.show_mana_cost,
-          showDetails: preferences.data.show_card_details,
-        }
-      : local;
+interface StoredDisplay {
+  card_display?: CardDisplayMode;
+  card_columns?: number;
+  show_mana_cost?: boolean;
+  show_card_details?: boolean;
+}
 
-  function change(next: Partial<DisplaySettings>) {
-    if (signedIn) {
-      update.mutate({
-        card_display: next.mode,
-        card_columns: next.columns,
-        show_mana_cost: next.showManaCost,
-        show_card_details: next.showDetails,
-      });
-    } else {
-      setLocal((current) => ({ ...current, ...next }));
-    }
-  }
+export function displayFromStored(stored: StoredDisplay | undefined): DisplaySettings {
+  return {
+    mode: stored?.card_display ?? DEFAULT_DISPLAY.mode,
+    columns: clampColumns(stored?.card_columns ?? DEFAULT_DISPLAY.columns),
+    showManaCost: stored?.show_mana_cost ?? DEFAULT_DISPLAY.showManaCost,
+    showDetails: stored?.show_card_details ?? DEFAULT_DISPLAY.showDetails,
+  };
+}
 
+export function displayToStored(settings: Partial<DisplaySettings>): StoredDisplay {
+  return {
+    card_display: settings.mode,
+    card_columns: settings.columns,
+    show_mana_cost: settings.showManaCost,
+    show_card_details: settings.showDetails,
+  };
+}
+
+export function cardDisplay(settings: DisplaySettings, change: (next: Partial<DisplaySettings>) => void) {
   const textOnly = settings.mode === 'text';
   const columns = settings.columns;
   const dense = columns >= 9;
@@ -83,7 +80,24 @@ export function useCardDisplay() {
   };
 }
 
-export type CardDisplay = ReturnType<typeof useCardDisplay>;
+export function useCardDisplay() {
+  const { status } = useSession();
+  const signedIn = status === 'authenticated';
+  const preferences = usePreferences(signedIn);
+  const update = useUpdatePreferences();
+  const [local, setLocal] = useState(DEFAULT_DISPLAY);
+  const settings = signedIn && preferences.data ? displayFromStored(preferences.data) : local;
+
+  return cardDisplay(settings, (next) => {
+    if (signedIn) {
+      update.mutate(displayToStored(next));
+    } else {
+      setLocal((current) => ({ ...current, ...next }));
+    }
+  });
+}
+
+export type CardDisplay = ReturnType<typeof cardDisplay>;
 
 function ColumnsSlider({ value, onChange }: { value: number; onChange: (columns: number) => void }) {
   const [dragged, setDragged] = useState<number | null>(null);

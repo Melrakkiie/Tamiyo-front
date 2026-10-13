@@ -4732,6 +4732,17 @@ export interface components {
              * @default true
              */
             show_card_details: boolean;
+            /**
+             * @description How the collection and the storages group cards; null for no grouping.
+             * @enum {string|null}
+             */
+            collection_grouping: "type" | "color" | "mana" | null;
+            /**
+             * @description How the collection and the storages sort cards.
+             * @default -added
+             * @enum {string}
+             */
+            collection_sort: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "color" | "-color" | "type" | "-type";
         };
         /** @description Any of the preferences; at least one. */
         PreferencesChanges: {
@@ -4741,6 +4752,12 @@ export interface components {
             card_columns?: number;
             show_mana_cost?: boolean;
             show_card_details?: boolean;
+            /** @enum {string} */
+            collection_grouping?: "type" | "color" | "mana";
+            /** @description Set collection_grouping back to null (no grouping). */
+            clear_collection_grouping?: boolean;
+            /** @enum {string} */
+            collection_sort?: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "color" | "-color" | "type" | "-type";
         };
         DeckOwnership: {
             cards: {
@@ -5266,6 +5283,14 @@ export interface components {
             sort: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value";
             /** @description The boards folded on the deck page, among sideboard and considering. Always returned; optional when saving, where leaving it out means [considering]. */
             collapsed_boards?: ("sideboard" | "considering")[];
+            /**
+             * @description How the deck's cards are shown. Optional when saving, where leaving it out keeps the saved value (as for the next three).
+             * @enum {string}
+             */
+            card_display?: "text" | "images";
+            card_columns?: number;
+            show_mana_cost?: boolean;
+            show_card_details?: boolean;
         };
         TaggedCard: {
             name: string;

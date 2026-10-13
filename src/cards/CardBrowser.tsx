@@ -26,6 +26,7 @@ import { DropOverlay } from '../scryfall/DropOverlay';
 import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
 import { useScryfallDrop } from '../scryfall/useScryfallDrop';
 import { FilterIcon } from '../layout/FilterIcon';
+import { usePreferences, useUpdatePreferences } from '../auth/preferences';
 import { useAllStorages } from '../storages/api';
 import { AddCardModal, type CardToAdd } from './AddCardModal';
 import { AdvancedSearch } from './AdvancedSearch';
@@ -88,8 +89,10 @@ interface CardBrowserProps {
 export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize }: CardBrowserProps) {
   const [params, setParams] = useSearchParams();
   const page = Math.max(1, Number(params.get('page')) || 1);
-  const sort = parseSort(params.get('sort'));
-  const grouping = parseGrouping(params.get('group'));
+  const preferences = usePreferences();
+  const updatePreferences = useUpdatePreferences();
+  const sort = parseSort(preferences.data?.collection_sort ?? null);
+  const grouping = parseGrouping(preferences.data?.collection_grouping ?? null);
   const { chosen: chosenPageSize, setChosen: setChosenPageSize } = usePageSize();
   const pageSize = chosenPageSize ?? fixedPageSize ?? (grouping ? GROUPED_PAGE_SIZE : PAGE_SIZE);
   const name = params.get('q') ?? '';
@@ -251,7 +254,13 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
                   placeholder="Aucun regroupement"
                   data={groupingOptions}
                   value={grouping}
-                  onChange={(value) => updateParams({ group: value, page: null })}
+                  onChange={(value) => {
+                    const next = parseGrouping(value);
+                    updatePreferences.mutate(
+                      next ? { collection_grouping: next } : { clear_collection_grouping: true },
+                    );
+                    updateParams({ page: null });
+                  }}
                   clearable
                   {...placement(inside, 200)}
                 />
@@ -259,7 +268,10 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
                   label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
                   data={sortOptions}
                   value={sort}
-                  onChange={(value) => updateParams({ sort: value === DEFAULT_SORT ? null : value, page: null })}
+                  onChange={(value) => {
+                    updatePreferences.mutate({ collection_sort: parseSort(value) });
+                    updateParams({ page: null });
+                  }}
                   allowDeselect={false}
                   {...placement(inside, 240)}
                 />

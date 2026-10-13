@@ -30,8 +30,13 @@ export function useUpdatePreferences() {
       await queryClient.cancelQueries({ queryKey: preferencesKey });
       const previous = queryClient.getQueryData<Preferences>(preferencesKey);
       if (previous) {
-        const defined = Object.fromEntries(Object.entries(changes).filter(([, value]) => value !== undefined));
-        queryClient.setQueryData<Preferences>(preferencesKey, { ...previous, ...defined });
+        const { clear_collection_grouping: clearGrouping, ...rest } = changes;
+        const defined = Object.fromEntries(Object.entries(rest).filter(([, value]) => value !== undefined));
+        queryClient.setQueryData<Preferences>(preferencesKey, {
+          ...previous,
+          ...defined,
+          ...(clearGrouping ? { collection_grouping: null } : {}),
+        });
       }
       return { previous };
     },
