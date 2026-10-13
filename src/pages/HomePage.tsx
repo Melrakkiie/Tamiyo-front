@@ -111,7 +111,7 @@ function Hero({ name, deck, artUrl, artist }: { name?: string; deck?: Deck; artU
       radius="md"
       p={{ base: 'lg', sm: 'xl' }}
       pos="relative"
-      mih={onArt ? 240 : undefined}
+      mih={onArt ? { base: 280, sm: 360 } : undefined}
       className="tamiyo-banner-taped"
       style={{
         display: 'flex',

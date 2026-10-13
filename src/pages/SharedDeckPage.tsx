@@ -115,7 +115,7 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
       <Paper
         radius="md"
         p={art ? 'lg' : 0}
-        mih={art ? 200 : undefined}
+        mih={art ? { base: 240, sm: 320 } : undefined}
         pos="relative"
         className={art ? 'tamiyo-banner-taped' : undefined}
         style={art ? { ...artBackground(art.url, 'light'), display: 'flex', flexDirection: 'column' } : undefined}
