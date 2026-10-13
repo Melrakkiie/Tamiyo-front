@@ -3449,7 +3449,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["Preferences"];
+                    "application/json": components["schemas"]["PreferencesChanges"];
                 };
             };
             responses: {
@@ -4711,6 +4711,36 @@ export interface components {
              * @default true
              */
             show_collection_in_decks: boolean;
+            /**
+             * @description How card lists are shown, as text rows or card images.
+             * @default images
+             * @enum {string}
+             */
+            card_display: "text" | "images";
+            /**
+             * @description Card images per row.
+             * @default 6
+             */
+            card_columns: number;
+            /**
+             * @description Whether text rows show the mana cost.
+             * @default true
+             */
+            show_mana_cost: boolean;
+            /**
+             * @description Whether card images show the card's details below them (name, printing, storage).
+             * @default true
+             */
+            show_card_details: boolean;
+        };
+        /** @description Any of the preferences; at least one. */
+        PreferencesChanges: {
+            show_collection_in_decks?: boolean;
+            /** @enum {string} */
+            card_display?: "text" | "images";
+            card_columns?: number;
+            show_mana_cost?: boolean;
+            show_card_details?: boolean;
         };
         DeckOwnership: {
             cards: {

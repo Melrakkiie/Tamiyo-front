@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api, unwrap } from '../api/client';
 import { errorMessage } from '../api/errors';
-import type { Preferences } from '../api/types';
+import type { Preferences, PreferencesChanges } from '../api/types';
 
 const preferencesKey = ['account', 'preferences'];
 
@@ -24,12 +24,15 @@ export function useUpdatePreferences() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (preferences: Preferences) =>
-      unwrap(await api.PATCH('/auth/me/preferences', { body: preferences })),
-    onMutate: async (preferences) => {
+    mutationFn: async (changes: PreferencesChanges) =>
+      unwrap(await api.PATCH('/auth/me/preferences', { body: changes })),
+    onMutate: async (changes) => {
       await queryClient.cancelQueries({ queryKey: preferencesKey });
       const previous = queryClient.getQueryData<Preferences>(preferencesKey);
-      queryClient.setQueryData(preferencesKey, preferences);
+      if (previous) {
+        const defined = Object.fromEntries(Object.entries(changes).filter(([, value]) => value !== undefined));
+        queryClient.setQueryData<Preferences>(preferencesKey, { ...previous, ...defined });
+      }
       return { previous };
     },
     onError: (err, _preferences, context) => {

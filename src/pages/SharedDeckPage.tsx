@@ -26,7 +26,7 @@ import { useShowCollectionInDecks } from '../auth/preferences';
 import { useSession } from '../auth/useSession';
 import { useCardContextMenu } from '../cards/CardContextMenu';
 import { CardImage } from '../cards/CardImage';
-import { CardSizeControl, useCardSize } from '../cards/CardSizeControl';
+import { CardDisplayControls, placement, useCardDisplay } from '../cards/CardDisplay';
 import { CardTile } from '../cards/CardTile';
 import { artBackground, artCredit, deckArtId } from '../decks/art';
 import { type CollapsibleBoard, DEFAULT_COLLAPSED_BOARDS, inBoard } from '../decks/boards';
@@ -297,7 +297,8 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
   const ownedByName = new Map((ownership.data?.cards ?? []).map((entry) => [cardNameKey(entry.name), entry.owned]));
   const [sort, setSort] = useState<SharedDeckSort>('mana_value');
   const [grouping, setGrouping] = useState<SharedCardGrouping | null>('type');
-  const { size, setSize, textOnly, gridProps } = useCardSize();
+  const display = useCardDisplay();
+  const { textOnly, gridProps } = display;
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
   const [collapsed, setCollapsed] = useState<CollapsibleBoard[]>(DEFAULT_COLLAPSED_BOARDS);
   const all = sharedCardsToCards(shared.cards);
@@ -356,9 +357,12 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
         imageLoading={images.isLoading}
         textOnly={textOnly}
         commander={commander !== undefined && card.id === commander.id}
-        manaCost={manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)}
+        manaCost={
+          !display.showManaCost || manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)
+        }
         collectionCount={showCollection ? ownedByName.get(cardNameKey(card.name)) : undefined}
-        compact={size === 'small'}
+        compact={display.compact}
+        hideDetails={!display.showDetails}
         onOpen={setOpenedCard}
         onContextMenu={(event, clicked) =>
           contextMenu.open(event, cardMenu.menuFor(clicked, images.data?.[clicked.scryfall_id]))
@@ -381,30 +385,32 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
         <CommanderCard card={commander} imageUrl={commanderImage} onOpen={() => setOpenedCard(commander)} />
       )}
 
-      <Group justify="space-between" align="flex-end">
-        <Group align="flex-end">
-          <Select
-            label="Grouper par"
-            placeholder="Aucun regroupement"
-            data={sharedGroupingOptions}
-            value={grouping}
-            onChange={(value) => setGrouping(parseSharedGrouping(value))}
-            clearable
-            w={200}
-          />
-          <Select
-            label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
-            data={sharedDeckSortOptions}
-            value={sort}
-            onChange={(value) => value && setSort(value as SharedDeckSort)}
-            allowDeselect={false}
-            w={240}
-          />
-        </Group>
-        <Group gap="lg" align="stretch">
-          {signedIn && <CollectionToggle description="Les cartes de ce deck que tu as dans ta collection" />}
-          <CardSizeControl value={size} onChange={setSize} />
-        </Group>
+      <Group gap="lg" align="stretch">
+        <CardDisplayControls
+          display={display}
+          options={(inside) => (
+            <>
+              <Select
+                label="Grouper par"
+                placeholder="Aucun regroupement"
+                data={sharedGroupingOptions}
+                value={grouping}
+                onChange={(value) => setGrouping(parseSharedGrouping(value))}
+                clearable
+                {...placement(inside, 200)}
+              />
+              <Select
+                label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
+                data={sharedDeckSortOptions}
+                value={sort}
+                onChange={(value) => value && setSort(value as SharedDeckSort)}
+                allowDeselect={false}
+                {...placement(inside, 240)}
+              />
+            </>
+          )}
+        />
+        {signedIn && <CollectionToggle description="Les cartes de ce deck que tu as dans ta collection" />}
       </Group>
 
       {cards.length === 0 ? (

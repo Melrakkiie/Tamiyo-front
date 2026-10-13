@@ -40,7 +40,7 @@ import {
 } from '../decks/publicDecks';
 import { PublicDeckTile } from '../decks/PublicDeckTile';
 import { DebouncedTextInput } from '../layout/DebouncedTextInput';
-import { GearIcon } from '../layout/SettingsMenu';
+import { FilterIcon } from '../layout/FilterIcon';
 import { useCardArts } from '../scryfall/hooks';
 
 const formatOptions = COMMON_FORMATS.map((format) => ({
@@ -241,7 +241,7 @@ export function ExplorePage() {
               aria-expanded={advancedOpen}
               title="Recherche avancée"
             >
-              <GearIcon />
+              <FilterIcon />
             </ActionIcon>
           </Indicator>
         </Group>

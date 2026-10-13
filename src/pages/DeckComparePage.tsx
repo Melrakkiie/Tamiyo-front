@@ -20,7 +20,7 @@ import { Link, useParams } from 'react-router';
 import { ApiError, errorMessage } from '../api/errors';
 import type { Card, ComparedCard, ComparedDeck } from '../api/types';
 import { useSession } from '../auth/useSession';
-import { CardSizeControl, useCardSize } from '../cards/CardSizeControl';
+import { type CardDisplay, CardDisplayControls, placement, useCardDisplay } from '../cards/CardDisplay';
 import { CardTile } from '../cards/CardTile';
 import { useDeckComparison } from '../decks/api';
 import { DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
@@ -38,8 +38,7 @@ const sideColors: Record<Side, string> = { deck: 'blue', both: 'teal', other: 'g
 interface DisplayOptions {
   grouping: SharedCardGrouping | null;
   sort: SharedDeckSort;
-  textOnly: boolean;
-  gridProps: ReturnType<typeof useCardSize>['gridProps'];
+  display: CardDisplay;
 }
 
 export function DeckComparePage() {
@@ -51,7 +50,7 @@ export function DeckComparePage() {
   const [tab, setTab] = useState<string | null>('common');
   const [sort, setSort] = useState<SharedDeckSort>('mana_value');
   const [grouping, setGrouping] = useState<SharedCardGrouping | null>('type');
-  const { size, setSize, textOnly, gridProps } = useCardSize();
+  const display = useCardDisplay();
 
   if (comparison.isLoading) {
     return (
@@ -81,7 +80,7 @@ export function DeckComparePage() {
   }
 
   const { deck, other, common, only_in_deck: onlyInDeck, only_in_other: onlyInOther } = comparison.data;
-  const options: DisplayOptions = { grouping, sort, textOnly, gridProps };
+  const options: DisplayOptions = { grouping, sort, display };
 
   return (
     <Stack>
@@ -101,28 +100,30 @@ export function DeckComparePage() {
         <DeckSummary deck={other} color={sideColors.other} />
       </SimpleGrid>
 
-      <Group justify="space-between" align="flex-end">
-        <Group align="flex-end">
-          <Select
-            label="Grouper par"
-            placeholder="Aucun regroupement"
-            data={sharedGroupingOptions}
-            value={grouping}
-            onChange={(value) => setGrouping(parseSharedGrouping(value))}
-            clearable
-            w={200}
-          />
-          <Select
-            label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
-            data={sharedDeckSortOptions}
-            value={sort}
-            onChange={(value) => value && setSort(value as SharedDeckSort)}
-            allowDeselect={false}
-            w={240}
-          />
-        </Group>
-        <CardSizeControl value={size} onChange={setSize} />
-      </Group>
+      <CardDisplayControls
+        display={display}
+        options={(inside) => (
+          <>
+            <Select
+              label="Grouper par"
+              placeholder="Aucun regroupement"
+              data={sharedGroupingOptions}
+              value={grouping}
+              onChange={(value) => setGrouping(parseSharedGrouping(value))}
+              clearable
+              {...placement(inside, 200)}
+            />
+            <Select
+              label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
+              data={sharedDeckSortOptions}
+              value={sort}
+              onChange={(value) => value && setSort(value as SharedDeckSort)}
+              allowDeselect={false}
+              {...placement(inside, 240)}
+            />
+          </>
+        )}
+      />
 
       <Tabs value={tab} onChange={setTab} variant="pills" radius="md">
         <Paper withBorder p={4} radius="md">
@@ -303,9 +304,15 @@ function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps
         imageUrl={images.data?.[card.scryfall_id]}
         backImageUrl={backImages.data?.[card.scryfall_id]}
         imageLoading={images.isLoading}
-        textOnly={options.textOnly}
+        textOnly={options.display.textOnly}
+        compact={options.display.compact}
+        hideDetails={!options.display.showDetails}
         commander={isCommander(card)}
-        manaCost={manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)}
+        manaCost={
+          !options.display.showManaCost || manaCosts.isLoading
+            ? undefined
+            : (manaCosts.data?.[card.scryfall_id] ?? null)
+        }
         details={details(card, false)}
         onOpen={setOpened}
       />
@@ -328,9 +335,9 @@ function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps
         </Text>
       )}
       {options.grouping ? (
-        <DeckCardGroups {...grouped} gridProps={options.gridProps} renderTile={renderTile} />
+        <DeckCardGroups {...grouped} gridProps={options.display.gridProps} renderTile={renderTile} />
       ) : (
-        <SimpleGrid {...options.gridProps}>{sorted.map(renderTile)}</SimpleGrid>
+        <SimpleGrid {...options.display.gridProps}>{sorted.map(renderTile)}</SimpleGrid>
       )}
       <SharedCardModal
         card={opened}

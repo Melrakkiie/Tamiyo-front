@@ -21,6 +21,7 @@ interface CardTileProps {
   collectionCount?: number;
   compact?: boolean;
   textOnly?: boolean;
+  hideDetails?: boolean;
   commander?: boolean;
   manaCost?: string | null;
   details?: ReactNode;
@@ -74,6 +75,8 @@ function CardRow({
       onMouseEnter={onPreview}
       onFocus={onPreview}
       aria-label={quantity > 1 ? `${card.name}, ${quantity} exemplaires` : card.name}
+      display="block"
+      w="100%"
     >
       <Paper withBorder px="sm" py={6} radius="md">
         <Group gap="xs" wrap="nowrap" justify="space-between">
@@ -122,6 +125,7 @@ export function CardTile({
   collectionCount,
   compact,
   textOnly,
+  hideDetails = false,
   commander = false,
   manaCost,
   details,
@@ -160,6 +164,8 @@ export function CardTile({
       onMouseEnter={onPreview}
       onFocus={onPreview}
       aria-label={quantity > 1 ? `${card.name}, ${quantity} exemplaires` : card.name}
+      display="block"
+      w="100%"
     >
       <Stack gap={6}>
         <Box pos="relative">
@@ -207,37 +213,39 @@ export function CardTile({
             </Box>
           )}
         </Box>
-        <div>
-          <Text size="sm" fw={500} lineClamp={1}>
-            {card.name}
-          </Text>
-          {details !== undefined ? (
-            details
-          ) : (
-            <Group gap={6} wrap="nowrap">
-              <Text size="xs" c="dimmed">
-                {card.set_code.toUpperCase()} · #{card.collector_number}
-              </Text>
-              {card.foil && (
-                <Badge size="xs" variant="light">
-                  Foil
-                </Badge>
-              )}
-              {card.proxy && (
-                <Badge size="xs" variant="light" color="gray">
-                  Proxy
-                </Badge>
-              )}
-            </Group>
-          )}
-          {pendingStatus ? (
-            <Text size="xs" c="dimmed" fs="italic" lineClamp={1}>
-              En attente
+        {!hideDetails && (
+          <div>
+            <Text size="sm" fw={500} lineClamp={1}>
+              {card.name}
             </Text>
-          ) : (
-            storageName !== undefined && <StorageLabel name={storageName} />
-          )}
-        </div>
+            {details !== undefined ? (
+              details
+            ) : (
+              <Group gap={6} wrap="nowrap">
+                <Text size="xs" c="dimmed">
+                  {card.set_code.toUpperCase()} · #{card.collector_number}
+                </Text>
+                {card.foil && (
+                  <Badge size="xs" variant="light">
+                    Foil
+                  </Badge>
+                )}
+                {card.proxy && (
+                  <Badge size="xs" variant="light" color="gray">
+                    Proxy
+                  </Badge>
+                )}
+              </Group>
+            )}
+            {pendingStatus ? (
+              <Text size="xs" c="dimmed" fs="italic" lineClamp={1}>
+                En attente
+              </Text>
+            ) : (
+              storageName !== undefined && <StorageLabel name={storageName} />
+            )}
+          </div>
+        )}
       </Stack>
     </UnstyledButton>
   );

@@ -25,7 +25,7 @@ import { useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hook
 import { DropOverlay } from '../scryfall/DropOverlay';
 import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
 import { useScryfallDrop } from '../scryfall/useScryfallDrop';
-import { GearIcon } from '../layout/SettingsMenu';
+import { FilterIcon } from '../layout/FilterIcon';
 import { useAllStorages } from '../storages/api';
 import { AddCardModal, type CardToAdd } from './AddCardModal';
 import { AdvancedSearch } from './AdvancedSearch';
@@ -40,7 +40,7 @@ import {
 import { copyCount, useCards } from './api';
 import { useCardContextMenu } from './CardContextMenu';
 import { CardDetailModal } from './CardDetailModal';
-import { CardSizeControl, useCardSize } from './CardSizeControl';
+import { CardDisplayControls, placement, useCardDisplay } from './CardDisplay';
 import { CardTile } from './CardTile';
 import { MissingDetailsAlert } from './MissingDetailsAlert';
 import { groupCards, groupingOptions, hasMissingDetails, parseGrouping } from './grouping';
@@ -140,10 +140,12 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
         backImageUrl={backImages.data?.[card.scryfall_id]}
         imageLoading={images.isLoading}
         textOnly={textOnly}
-        manaCost={manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)}
-        storageName={
-          showStorage ? (card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null) : undefined
+        compact={display.compact}
+        hideDetails={!display.showDetails}
+        manaCost={
+          !display.showManaCost || manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)
         }
+        storageName={showStorage ? (card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null) : undefined}
         onOpen={setOpenedCard}
         onContextMenu={(event, clicked) =>
           contextMenu.open(event, cardMenu.menuFor(clicked, images.data?.[clicked.scryfall_id]))
@@ -152,7 +154,8 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
     );
   }
 
-  const { size, setSize, textOnly, gridProps } = useCardSize();
+  const display = useCardDisplay();
+  const { textOnly, gridProps } = display;
 
   function updateParams(changes: Record<string, string | null>) {
     setParams(
@@ -239,7 +242,30 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
             allowDeselect={false}
             w={130}
           />
-          <CardSizeControl value={size} onChange={setSize} />
+          <CardDisplayControls
+            display={display}
+            options={(inside) => (
+              <>
+                <Select
+                  label="Grouper par"
+                  placeholder="Aucun regroupement"
+                  data={groupingOptions}
+                  value={grouping}
+                  onChange={(value) => updateParams({ group: value, page: null })}
+                  clearable
+                  {...placement(inside, 200)}
+                />
+                <Select
+                  label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
+                  data={sortOptions}
+                  value={sort}
+                  onChange={(value) => updateParams({ sort: value === DEFAULT_SORT ? null : value, page: null })}
+                  allowDeselect={false}
+                  {...placement(inside, 240)}
+                />
+              </>
+            )}
+          />
         </Group>
       </Group>
 
@@ -261,25 +287,10 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
               aria-expanded={advancedOpen}
               title="Recherche avancée"
             >
-              <GearIcon />
+              <FilterIcon />
             </ActionIcon>
           </Indicator>
         </Group>
-        <Select
-          label="Grouper par"
-          placeholder="Aucun regroupement"
-          data={groupingOptions}
-          value={grouping}
-          onChange={(value) => updateParams({ group: value, page: null })}
-          clearable
-        />
-        <Select
-          label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
-          data={sortOptions}
-          value={sort}
-          onChange={(value) => updateParams({ sort: value === DEFAULT_SORT ? null : value, page: null })}
-          allowDeselect={false}
-        />
       </Group>
 
       <Collapse in={advancedOpen}>

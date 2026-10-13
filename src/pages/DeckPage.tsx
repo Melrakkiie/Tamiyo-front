@@ -27,7 +27,7 @@ import { useShowCollectionInDecks } from '../auth/preferences';
 import { useSession } from '../auth/useSession';
 import { useCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
-import { CardSizeControl, useCardSize } from '../cards/CardSizeControl';
+import { CardDisplayControls, placement, useCardDisplay } from '../cards/CardDisplay';
 import { useCardContextMenu } from '../cards/CardContextMenu';
 import { CardTile } from '../cards/CardTile';
 import { PendingBadge, type PendingStatus } from '../cards/PendingBadge';
@@ -471,7 +471,8 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
     changeView({ collapsed: COLLAPSIBLE_BOARDS.filter((candidate) => folded.includes(candidate)) });
   }
 
-  const { size, setSize, textOnly, gridProps } = useCardSize();
+  const display = useCardDisplay();
+  const { textOnly, gridProps } = display;
   const showCollection = useShowCollectionInDecks();
   const cards = useDeckCards(deck.id, sort);
   const deckCards = cards.data ?? [];
@@ -553,14 +554,17 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
             board === 'main' &&
             (notOwned ? pendingIdOf(card) === deck.commander_pending_id : card.id === deck.commander_id)
           }
-          manaCost={manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)}
+          manaCost={
+            !display.showManaCost || manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)
+          }
           storageName={
             showCollection ? (card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null) : undefined
           }
           pendingStatus={
             showCollection && notOwned ? (pendingStatuses.get(pendingIdOf(card)) ?? { kind: 'missing' }) : undefined
           }
-          compact={size === 'small'}
+          compact={display.compact}
+          hideDetails={!display.showDetails}
           onOpen={notOwned ? setOpenedPending : (opened) => setOpenedCard({ card: opened, board })}
           onContextMenu={(event, clicked) =>
             contextMenu.open(event, cardMenu.menuFor(clicked, board, images.data?.[clicked.scryfall_id]))
@@ -619,34 +623,35 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed }: Dec
           tagsOf={cardTagsOf}
           deckTags={deckTags.data?.tags ?? []}
         />
-        <Group justify="flex-end">
+        <Group align="flex-start" wrap="wrap-reverse">
           <Group gap="lg" align="stretch">
+            <CardDisplayControls
+              display={display}
+              options={(inside) => (
+                <>
+                  <Select
+                    label="Grouper par"
+                    placeholder="Aucun regroupement"
+                    data={deckGroupingOptions}
+                    value={grouping}
+                    onChange={(value) => changeView({ grouping: parseDeckGrouping(value) })}
+                    clearable
+                    {...placement(inside, 200)}
+                  />
+                  <Select
+                    label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
+                    data={sortOptions}
+                    value={sort}
+                    onChange={(value) => value && changeView({ sort: value as DeckCardSort })}
+                    allowDeselect={false}
+                    {...placement(inside, 240)}
+                  />
+                </>
+              )}
+            />
             <CollectionToggle description="Les cartes en attente et le rangement de chaque exemplaire" />
-            <CardSizeControl value={size} onChange={setSize} />
           </Group>
-        </Group>
-
-        <Group justify="space-between" align="flex-end">
-          <Group align="flex-end">
-            <Select
-              label="Grouper par"
-              placeholder="Aucun regroupement"
-              data={deckGroupingOptions}
-              value={grouping}
-              onChange={(value) => changeView({ grouping: parseDeckGrouping(value) })}
-              clearable
-              w={200}
-            />
-            <Select
-              label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
-              data={sortOptions}
-              value={sort}
-              onChange={(value) => value && changeView({ sort: value as DeckCardSort })}
-              allowDeselect={false}
-              w={240}
-            />
-          </Group>
-          <Group gap="xs">
+          <Group gap="xs" ml="auto">
             <Button variant="default" onClick={() => setImportOpened(true)}>
               Importer une liste
             </Button>

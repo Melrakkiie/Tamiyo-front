@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 
 import type { Card } from '../api/types';
 import { copyCount } from '../cards/api';
-import { useCardSize } from '../cards/CardSizeControl';
+import type { CardDisplay } from '../cards/CardDisplay';
 import { type CardGroup, groupCards, sortIntoGroups, typeLabels } from '../cards/grouping';
 import type { FaceTypes } from '../scryfall/classify';
 import { useCardFaceTypes } from '../scryfall/hooks';
@@ -139,7 +139,7 @@ function GroupDropArea({ group, drop, children }: { group: CardGroup; drop?: Gro
 }
 
 interface DeckCardGroupsProps extends DeckCardGrouped {
-  gridProps: ReturnType<typeof useCardSize>['gridProps'];
+  gridProps: CardDisplay['gridProps'];
   renderTile: (card: Card, group: CardGroup) => ReactNode;
   drop?: GroupDrop;
 }
