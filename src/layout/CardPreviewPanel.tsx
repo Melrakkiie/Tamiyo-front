@@ -2,13 +2,15 @@ import { Stack, Text, UnstyledButton } from '@mantine/core';
 import { useLocation } from 'react-router';
 
 import { CardImage } from '../cards/CardImage';
-import { useCardImages } from '../scryfall/hooks';
+import { useCardBackImages, useCardImages } from '../scryfall/hooks';
 import { useCardPreview } from './cardPreview';
 
 export function CardPreviewPanel() {
   const { pathname } = useLocation();
   const card = useCardPreview(pathname);
-  const fallback = useCardImages(card && !card.imageUrl ? [card.scryfallId] : []);
+  const ids = card ? [card.scryfallId] : [];
+  const fronts = useCardImages(ids);
+  const backs = useCardBackImages(ids);
 
   if (!card) {
     return (
@@ -18,11 +20,16 @@ export function CardPreviewPanel() {
     );
   }
 
+  const front = fronts.data?.[card.scryfallId];
+  const back = backs.data?.[card.scryfallId];
+  const shown = card.imageUrl ?? front;
   const image = (
     <CardImage
+      key={`${card.scryfallId}:${shown ?? ''}`}
       name={card.name}
-      url={card.imageUrl ?? fallback.data?.[card.scryfallId]}
-      loading={!card.imageUrl && fallback.isLoading}
+      url={shown}
+      loading={!card.imageUrl && fronts.isLoading}
+      backUrl={back && shown === back ? front : back}
     />
   );
 
