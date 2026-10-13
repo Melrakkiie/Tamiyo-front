@@ -5,6 +5,8 @@ const SCRYFALL_API = 'https://api.scryfall.com';
 const COLLECTION_BATCH_SIZE = 75;
 const MAX_SEARCH_PAGES = 5;
 const DELAY_BETWEEN_REQUESTS_MS = 100;
+const RATE_LIMIT_RETRIES = 3;
+const RATE_LIMIT_BACKOFF_MS = 1000;
 
 type ImageSize = 'small' | 'normal';
 
@@ -73,11 +75,36 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+let nextRequestAt = 0;
+
+async function waitForTurn() {
+  const now = Date.now();
+  const turn = Math.max(now, nextRequestAt);
+  nextRequestAt = turn + DELAY_BETWEEN_REQUESTS_MS;
+  if (turn > now) {
+    await delay(turn - now);
+  }
+}
+
+function retryAfterMs(response: Response, attempt: number) {
+  const seconds = Number(response.headers.get('Retry-After'));
+  return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : RATE_LIMIT_BACKOFF_MS * 2 ** attempt;
+}
+
 async function scryfall<T>(pathOrUrl: string, init?: RequestInit): Promise<T | null> {
   const url = pathOrUrl.startsWith('https://') ? pathOrUrl : `${SCRYFALL_API}${pathOrUrl}`;
   const headers: Record<string, string> = init?.body ? { 'Content-Type': 'application/json' } : {};
 
-  const response = await fetch(url, { ...init, headers });
+  let response: Response;
+  for (let attempt = 0; ; attempt++) {
+    await waitForTurn();
+    response = await fetch(url, { ...init, headers });
+    if (response.status !== 429 || attempt >= RATE_LIMIT_RETRIES) {
+      break;
+    }
+    const wait = retryAfterMs(response, attempt);
+    nextRequestAt = Math.max(nextRequestAt, Date.now() + wait);
+  }
   if (response.status === 404) {
     return null;
   }
@@ -180,7 +207,6 @@ export async function fetchFrenchPrinting(card: ScryfallCard): Promise<ScryfallC
   if (!card.oracle_id) {
     return null;
   }
-  await delay(DELAY_BETWEEN_REQUESTS_MS);
   const query = encodeURIComponent(`oracleid:${card.oracle_id} lang:fr`);
   const other = await scryfall<ScryfallList<ScryfallCard>>(
     `/cards/search?q=${query}&unique=prints&order=released&dir=desc`,
@@ -206,9 +232,6 @@ export async function searchPrintings(name: string): Promise<ScryfallCard[]> {
   let next: string | undefined = `/cards/search?q=${query}&unique=prints&order=released&dir=desc`;
 
   for (let page = 0; next && page < MAX_SEARCH_PAGES; page++) {
-    if (page > 0) {
-      await delay(DELAY_BETWEEN_REQUESTS_MS);
-    }
     const result: ScryfallList<ScryfallCard> | null = await scryfall<ScryfallList<ScryfallCard>>(next);
     printings.push(...(result?.data ?? []));
     next = result?.has_more ? result.next_page : undefined;
@@ -220,9 +243,6 @@ export async function searchPrintings(name: string): Promise<ScryfallCard[]> {
 export async function fetchCardsByIds(ids: string[]): Promise<ScryfallCard[]> {
   const cards: ScryfallCard[] = [];
   for (let start = 0; start < ids.length; start += COLLECTION_BATCH_SIZE) {
-    if (start > 0) {
-      await delay(500);
-    }
     const identifiers = ids.slice(start, start + COLLECTION_BATCH_SIZE).map((id) => ({ id }));
     const result = await scryfall<ScryfallList<ScryfallCard>>('/cards/collection', {
       method: 'POST',

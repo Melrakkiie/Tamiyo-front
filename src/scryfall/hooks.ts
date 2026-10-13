@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { ApiError } from '../api/errors';
+import { loadCards, rememberCards } from './cardCache';
 import { type FaceTypes, faceTypes } from './classify';
 import {
   autocompleteCardNames,
@@ -9,7 +10,6 @@ import {
   type CardArt,
   cardArt,
   type CardSuggestion,
-  fetchCardsByIds,
   fetchFrenchPrinting,
   fetchSetIcons,
   imageUrl,
@@ -26,13 +26,7 @@ function useScryfallCardsByIds<T>(scryfallIds: string[], select: (cards: Record<
 
   return useQuery({
     queryKey: ['scryfall', 'cards', ids],
-    queryFn: async () => {
-      const cards: Record<string, ScryfallCard> = {};
-      for (const card of await fetchCardsByIds(ids)) {
-        cards[card.id] = card;
-      }
-      return cards;
-    },
+    queryFn: () => loadCards(ids),
     select,
     enabled: ids.length > 0,
     staleTime: ONE_DAY,
@@ -93,7 +87,7 @@ export function useManaCosts(scryfallIds: string[]) {
 export function useScryfallCard(scryfallId: string | null | undefined) {
   return useQuery({
     queryKey: ['scryfall', 'card', scryfallId],
-    queryFn: async () => (await fetchCardsByIds([scryfallId ?? '']))[0] ?? null,
+    queryFn: async () => (scryfallId ? ((await loadCards([scryfallId]))[scryfallId] ?? null) : null),
     enabled: !!scryfallId,
     staleTime: ONE_DAY,
     gcTime: ONE_DAY,
@@ -117,10 +111,9 @@ export function useCardArts(scryfallIds: (string | null | undefined)[]) {
   return useQuery({
     queryKey: ['scryfall', 'arts', ids],
     queryFn: async () => {
-      const cards = await fetchCardsByIds(ids);
       const arts: Record<string, CardArt | null> = {};
-      for (const card of cards) {
-        arts[card.id] = cardArt(card);
+      for (const [id, card] of Object.entries(await loadCards(ids))) {
+        arts[id] = cardArt(card);
       }
       return arts;
     },
@@ -163,7 +156,11 @@ export function useCardNameSuggestions(query: string) {
 export function usePrintings(name: string | null) {
   return useQuery({
     queryKey: ['scryfall', 'printings', name],
-    queryFn: () => searchPrintings(name ?? ''),
+    queryFn: async () => {
+      const printings = await searchPrintings(name ?? '');
+      rememberCards(printings);
+      return printings;
+    },
     enabled: !!name,
     staleTime: ONE_DAY,
   });
