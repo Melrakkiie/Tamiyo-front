@@ -22,12 +22,34 @@ export function StorageIcon({ size = 12 }: { size?: number }) {
   );
 }
 
+export function LockIcon({ size = 12 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      style={{ display: 'block', flexShrink: 0 }}
+    >
+      <path d="M6 11h12a1 1 0 0 1 1 1v7a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-7a1 1 0 0 1 1 -1z" />
+      <path d="M8 11v-3a4 4 0 0 1 8 0v3" />
+      <path d="M12 15v2" />
+    </svg>
+  );
+}
+
 interface StorageLabelProps {
   name: string | null;
   unknown?: boolean;
+  locked?: boolean;
 }
 
-export function StorageLabel({ name, unknown = false }: StorageLabelProps) {
+export function StorageLabel({ name, unknown = false, locked = false }: StorageLabelProps) {
   const missing = name === null;
   return (
     <Group gap={4} wrap="nowrap" c="dimmed" style={{ minWidth: 0 }}>
@@ -35,6 +57,11 @@ export function StorageLabel({ name, unknown = false }: StorageLabelProps) {
       <Text size="xs" c="dimmed" fs={missing ? 'italic' : undefined} lineClamp={1}>
         {name ?? (unknown ? 'Rangement inconnu' : 'Sans rangement')}
       </Text>
+      {locked && (
+        <span title="Rangement verrouillé pour ce deck" style={{ display: 'inline-flex' }}>
+          <LockIcon />
+        </span>
+      )}
     </Group>
   );
 }

@@ -8,8 +8,10 @@ import { capitalize, groupByRecent } from '../layout/groupByRecent';
 import { StorageFormModal } from '../storages/StorageFormModal';
 import { useAllStorages, useCreateStorage } from '../storages/api';
 import { StorageArt } from '../storages/StorageArt';
+import { LockIcon } from '../storages/StorageLabel';
 import { EmptyNote } from '../theme/EmptyNote';
 import { SectionTitle } from '../theme/SectionTitle';
+import { Sticker } from '../theme/Sticker';
 import { tapeProps } from '../theme/tape';
 import { usePageTitle } from '../layout/usePageTitle';
 
@@ -73,9 +75,26 @@ export function StoragesPage() {
                       <Group gap="md" wrap="nowrap">
                         <StorageArt type={storage.type} />
                         <Stack gap={2} style={{ minWidth: 0 }}>
-                          <Text ff="heading" fw={600} size="lg" lineClamp={1}>
-                            {storage.name}
-                          </Text>
+                          <Group gap={8} wrap="nowrap">
+                            <Text ff="heading" fw={600} size="lg" lineClamp={1}>
+                              {storage.name}
+                            </Text>
+                            {storage.locked && (
+                              <Sticker
+                                tone="prune"
+                                size="xs"
+                                tilt={-3}
+                                icon={<LockIcon size={13} />}
+                                title={
+                                  storage.allowed_deck_ids.length > 0
+                                    ? 'Verrouillé, sauf pour quelques decks'
+                                    : 'Verrouillé pour tous les decks'
+                                }
+                              >
+                                {storage.allowed_deck_ids.length > 0 ? 'réservé' : 'verrouillé'}
+                              </Sticker>
+                            )}
+                          </Group>
                           <Text className="tamiyo-hand" size="lg" c="dimmed">
                             {storage.card_count === 0
                               ? 'encore vide'

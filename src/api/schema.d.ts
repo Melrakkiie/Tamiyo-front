@@ -746,10 +746,8 @@ export interface paths {
                     page?: number;
                     /** @description Number of cards per page (max 100). */
                     limit?: number;
-                    /** @description Sort field, with an optional "-" prefix for descending order. id is always used as a secondary tie-breaker for a stable order. "color" groups cards as white, blue, black, red, green, multicolor, colorless, lands, then cards whose colors aren't known yet; "type" by primary type (creature, planeswalker, battle, instant, sorcery, artifact, enchantment, land, other, unknown). Both sort by name within a group. */
+                    /** @description Sort field, with an optional "-" prefix for descending order. id is always used as a secondary tie-breaker for a stable order. */
                     sort?: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "color" | "-color" | "type" | "-type";
-                    /** @description Order the cards by group first (primary type, color group as for sort=color, or mana value rounded down), then by sort within each group, so a client can show grouped pages sorted its way. */
-                    group?: "type" | "color" | "mana";
                     /** @description WUBRG letters, read with color_mode. Cards whose colors aren't known are left out. */
                     colors?: string;
                     /** @description exact (exactly these colors; an empty colors keeps colorless cards), include (at least these colors) or within (only colors among these, colorless included). */
@@ -766,6 +764,10 @@ export interface paths {
                     foil?: boolean;
                     /** @description Only cards in a storage of this type, case-insensitive. */
                     storage_type?: string;
+                    /** @description Only cards open to this deck: in no storage, in an unlocked storage, or in a locked storage whose allowed_deck_ids contain this deck. */
+                    open_to_deck?: string;
+                    /** @description Order the cards by group first (primary type, color group as for sort=color, or mana value rounded down), then by sort within each group, so a client can show grouped pages sorted its way. "color" groups cards as white, blue, black, red, green, multicolor, colorless, lands, then cards whose colors aren't known yet; "type" by primary type (creature, planeswalker, battle, instant, sorcery, artifact, enchantment, land, other, unknown). Both sort by name within a group. */
+                    group?: "type" | "color" | "mana";
                     /** @description Return one entry per stack of identical copies (same printing, foil, proxy and storage) instead of one per card. Each entry is the stack's lowest-id copy with quantity and copy_ids set; total, page and limit then count stacks. added is the oldest copy's, updated the most recent one's. */
                     stack?: boolean;
                 };
@@ -1141,7 +1143,7 @@ export interface paths {
                         "application/json": components["schemas"]["Storage"];
                     };
                 };
-                /** @description Missing required field */
+                /** @description Missing required field, or an allowed_deck_ids entry that isn't one of the user's decks */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1270,7 +1272,15 @@ export interface paths {
                         "application/json": components["schemas"]["Storage"];
                     };
                 };
-                400: components["responses"]["InvalidID"];
+                /** @description Invalid id or body, or an allowed_deck_ids entry that isn't one of the user's decks */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
                 401: components["responses"]["Unauthorized"];
                 /** @description Storage not found, or not owned by the authenticated user */
                 404: {
@@ -1801,9 +1811,7 @@ export interface paths {
             };
             cookie?: never;
         };
-        /**
-         * A user's follow counts and how they relate to you
-         */
+        /** A user's follow counts and how they relate to you */
         get: {
             parameters: {
                 query?: never;
@@ -1824,27 +1832,15 @@ export interface paths {
                         "application/json": components["schemas"]["FollowStatus"];
                     };
                 };
-                /** @description id is not a UUID, invalid page or limit, or following yourself */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
+                400: components["responses"]["FollowBadRequest"];
                 401: components["responses"]["Unauthorized"];
-                /** @description No such user */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
+                404: components["responses"]["UserNotFound"];
             };
         };
+        /**
+         * Follow a user
+         * @description Idempotent. You cannot follow yourself.
+         */
         put: {
             parameters: {
                 query?: never;
@@ -1856,7 +1852,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description OK */
+                /** @description The follow status after the change. */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1865,28 +1861,16 @@ export interface paths {
                         "application/json": components["schemas"]["FollowStatus"];
                     };
                 };
-                /** @description id is not a UUID, invalid page or limit, or following yourself */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
+                400: components["responses"]["FollowBadRequest"];
                 401: components["responses"]["Unauthorized"];
-                /** @description No such user */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
+                404: components["responses"]["UserNotFound"];
             };
         };
         post?: never;
+        /**
+         * Stop following a user
+         * @description Idempotent.
+         */
         delete: {
             parameters: {
                 query?: never;
@@ -1898,7 +1882,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description OK */
+                /** @description The follow status after the change. */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1907,25 +1891,9 @@ export interface paths {
                         "application/json": components["schemas"]["FollowStatus"];
                     };
                 };
-                /** @description id is not a UUID, invalid page or limit, or following yourself */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
+                400: components["responses"]["FollowBadRequest"];
                 401: components["responses"]["Unauthorized"];
-                /** @description No such user */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
+                404: components["responses"]["UserNotFound"];
             };
         };
         options?: never;
@@ -1947,8 +1915,8 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    page?: number;
-                    limit?: number;
+                    page?: components["parameters"]["ConnectionsPage"];
+                    limit?: components["parameters"]["ConnectionsLimit"];
                 };
                 header?: never;
                 path: {
@@ -1967,25 +1935,9 @@ export interface paths {
                         "application/json": components["schemas"]["PaginatedConnections"];
                     };
                 };
-                /** @description id is not a UUID, invalid page or limit, or following yourself */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
+                400: components["responses"]["FollowBadRequest"];
                 401: components["responses"]["Unauthorized"];
-                /** @description No such user */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
+                404: components["responses"]["UserNotFound"];
             };
         };
         put?: never;
@@ -2010,8 +1962,8 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    page?: number;
-                    limit?: number;
+                    page?: components["parameters"]["ConnectionsPage"];
+                    limit?: components["parameters"]["ConnectionsLimit"];
                 };
                 header?: never;
                 path: {
@@ -2030,25 +1982,9 @@ export interface paths {
                         "application/json": components["schemas"]["PaginatedConnections"];
                     };
                 };
-                /** @description id is not a UUID, invalid page or limit, or following yourself */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
+                400: components["responses"]["FollowBadRequest"];
                 401: components["responses"]["Unauthorized"];
-                /** @description No such user */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
+                404: components["responses"]["UserNotFound"];
             };
         };
         put?: never;
@@ -2537,7 +2473,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description OK */
+                /** @description The saved settings. */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -2634,9 +2570,7 @@ export interface paths {
         };
         put?: never;
         post?: never;
-        /**
-         * Remove a tag from every card of the deck
-         */
+        /** Remove a tag from every card of the deck */
         delete: {
             parameters: {
                 query: {
@@ -3100,6 +3034,242 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deck/{id}/bulk-edit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Make a deck match a list
+         * @description Every card on the list ends up in the deck, every card not on it leaves it. Lines are matched against the deck's copies and pending cards on the same board (by printing and finish, or by name for a line without printing); unmatched copies leave the deck (owned ones stay in the collection, a removed commander is cleared), and what the deck lacks is added as POST /deck/{id}/import adds it. Each listed card gets exactly the tags its lines give. Sending back the moxfield export with tags=true changes nothing.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /**
+                         * Format: binary
+                         * @description The list, one card per line.
+                         */
+                        file: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The deck now matches the list. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportSummary"];
+                    };
+                };
+                /** @description id is not a UUID, or the file is missing or can't be parsed. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or not owned by the authenticated user */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+                502: components["responses"]["BadGateway"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deck/{id}/switch-foil": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Switch cards of a deck to the other finish
+         * @description Each listed owned copy or pending card not already in that finish leaves the deck (an owned copy stays in the collection as it is) and is replaced on the same board by copies of the same printing in that finish: ones in no deck first, then ones another deck uses, and pending cards for the rest. The commander stays the commander. The collection itself is never modified.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description Ids of the deck's owned copies. */
+                        card_ids?: number[];
+                        /** @description Ids of the deck's pending cards. At least one id overall. */
+                        pending_ids?: number[];
+                        foil: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description cards_linked copies found in the collection, cards_pending copies left pending, cards_removed copies that left the deck. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportSummary"];
+                    };
+                };
+                /** @description id is not a UUID, foil missing, no id at all, or an id that isn't an owned copy or a pending card of this deck. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or not owned by the authenticated user */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deck/{id}/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a list of cards to an existing deck
+         * @description Adds a decklist to this deck, without ever creating cards in the collection. Accepts a Moxfield plain-text export ("1 Sol Ring (SLD) 1011 *F*", resolved by set and collector number against Scryfall), a plain "4 Lightning Bolt" list (resolved by name, any owned printing can be used, missing copies are added in Scryfall's default printing), or a mix of both. Owned copies go in the deck (cards_linked), copies in no deck and of the same finish first, each copy used once and copies already in this deck never used twice, copies in storages locked against this deck left out unless include_locked_storages is true; missing copies become pending cards (cards_pending). Section headers choose the board of the lines below them: Sideboard for sideboard, Maybeboard or Considering for considering, main otherwise. With commander_from_first_line, the first card line of the main board becomes the commander only if the deck has none yet: an owned one becomes commander_id, a missing one the pending commander. Moxfield tags at the end of a line ("#ramp #food generator") are added to that card's tags. A file starting with "{" is read as a Tamiyo deck file (see TamiyoFile): cards go on their boards, its commander becomes the deck's when it has none, and its tags are added to the deck's.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /**
+                         * Format: binary
+                         * @description The list, one card per line, or a Tamiyo deck file.
+                         */
+                        file: string;
+                        /**
+                         * @description Treat the first line as the commander when the deck has none.
+                         * @default false
+                         */
+                        commander_from_first_line?: boolean;
+                        /**
+                         * @description Also use copies in storages locked against this deck, after the open ones, for an explicit addition by the user.
+                         * @default false
+                         */
+                        include_locked_storages?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Cards added (possibly with some lines skipped — see ImportSummary.warnings). */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportSummary"];
+                    };
+                };
+                /** @description id is not a UUID, the file is missing or can't be parsed, or commander_from_first_line or include_locked_storages is invalid. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or not owned by the authenticated user */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+                502: components["responses"]["BadGateway"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deck/{id}/duplicate": {
         parameters: {
             query?: never;
@@ -3238,617 +3408,6 @@ export interface paths {
                 500: components["responses"]["InternalError"];
             };
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/deck/{id}/switch-foil": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Deck ID (a UUID) */
-                id: components["parameters"]["DeckID"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Switch cards of a deck to the other finish
-         * @description Each listed owned copy or pending card not already in that finish leaves the deck (an owned copy stays in the collection as it is) and is replaced on the same board by copies of the same printing in that finish: ones in no deck first, then ones another deck uses, and pending cards for the rest. The commander stays the commander. The collection itself is never modified.
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Deck ID (a UUID) */
-                    id: components["parameters"]["DeckID"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** @description Ids of the deck's owned copies. */
-                        card_ids?: number[];
-                        /** @description Ids of the deck's pending cards. At least one id overall. */
-                        pending_ids?: number[];
-                        foil: boolean;
-                    };
-                };
-            };
-            responses: {
-                /** @description cards_linked copies found in the collection, cards_pending copies left pending, cards_removed copies that left the deck. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ImportSummary"];
-                    };
-                };
-                /** @description id is not a UUID, foil missing, no id at all, or an id that isn't an owned copy or a pending card of this deck. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-                /** @description Deck not found, or not owned by the authenticated user */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/deck/{id}/import": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Deck ID (a UUID) */
-                id: components["parameters"]["DeckID"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add a list of cards to an existing deck
-         * @description Adds a decklist to this deck, without ever creating cards in the collection. Accepts a Moxfield plain-text export ("1 Sol Ring (SLD) 1011 *F*", resolved by set and collector number against Scryfall), a plain "4 Lightning Bolt" list (resolved by name, any owned printing can be used, missing copies are added in Scryfall's default printing), or a mix of both. Owned copies go in the deck (cards_linked), copies in no deck and of the same finish first, each copy used once and copies already in this deck never used twice; missing copies become pending cards (cards_pending). Section headers choose the board of the lines below them: Sideboard for sideboard, Maybeboard or Considering for considering, main otherwise. With commander_from_first_line, the first card line of the main board becomes the commander only if the deck has none yet: an owned one becomes commander_id, a missing one the pending commander.
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Deck ID (a UUID) */
-                    id: components["parameters"]["DeckID"];
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "multipart/form-data": {
-                        /**
-                         * Format: binary
-                         * @description The list, one card per line.
-                         */
-                        file: string;
-                        /**
-                         * @description Treat the first line as the commander when the deck has none.
-                         * @default false
-                         */
-                        commander_from_first_line?: boolean;
-                    };
-                };
-            };
-            responses: {
-                /** @description Cards added (possibly with some lines skipped — see ImportSummary.warnings). */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ImportSummary"];
-                    };
-                };
-                /** @description id is not a UUID, the file is missing or can't be parsed, or commander_from_first_line is invalid. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-                /** @description Deck not found, or not owned by the authenticated user */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                500: components["responses"]["InternalError"];
-                502: components["responses"]["BadGateway"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/me/preferences": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The account's display preferences
-         * @description The defaults until something is saved.
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Preferences"];
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Change the account's display preferences
-         * @description Only the fields present in the body change.
-         */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["PreferencesChanges"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Preferences"];
-                    };
-                };
-                /** @description No known field, or a field of the wrong type */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-            };
-        };
-        trace?: never;
-    };
-    "/deck/{id}/like": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Deck ID (a UUID) */
-                id: components["parameters"]["DeckID"];
-            };
-            cookie?: never;
-        };
-        /** A deck's likes, and whether you liked it */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Deck ID (a UUID) */
-                    id: components["parameters"]["DeckID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["LikeStatus"];
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-                /** @description Unknown or malformed deck id, or someone else's private deck */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        /** Like someone else's deck */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Deck ID (a UUID) */
-                    id: components["parameters"]["DeckID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["LikeStatus"];
-                    };
-                };
-                /** @description The deck is yours. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-                /** @description Unknown or malformed deck id, or someone else's private deck */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        post?: never;
-        /** Remove your like */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Deck ID (a UUID) */
-                    id: components["parameters"]["DeckID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["LikeStatus"];
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-                /** @description Unknown or malformed deck id, or someone else's private deck */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/me/liked-decks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The decks you liked
-         * @description Most recent like first. A liked deck its owner made private, or deleted, is left out.
-         */
-        get: {
-            parameters: {
-                query?: {
-                    page?: number;
-                    limit?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["PaginatedLikedDecks"];
-                    };
-                };
-                /** @description Invalid page or limit */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/deck/{id}/ownership": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Deck ID (a UUID) */
-                id: components["parameters"]["DeckID"];
-            };
-            cookie?: never;
-        };
-        /**
-         * How many copies of each card of a deck the caller owns
-         * @description The deck can be one of the caller's or someone else's public or unlisted deck. Every card of the deck is listed once, every board included, matched by name only (any printing or finish, " / " and " // " alike), counting every copy of the caller's collection.
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Deck ID (a UUID) */
-                    id: components["parameters"]["DeckID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK, sorted by name */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["DeckOwnership"];
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-                /** @description Unknown or malformed id, or someone else's private deck */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/deck/{id}/compare/{other_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Deck ID (a UUID) */
-                id: components["parameters"]["DeckID"];
-                /** @description The deck to compare with. */
-                other_id: string;
-            };
-            cookie?: never;
-        };
-        /**
-         * Compare two decks by card name
-         * @description Compares two decks card by card, matching cards by name only (printings and finishes are ignored; " / " and " // " in split or double-faced card names are equivalent). Owned copies and pending cards both count. Each deck can be one of the caller's, whatever its visibility, or anyone's public or unlisted deck. Every list is sorted by name.
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Deck ID (a UUID) */
-                    id: components["parameters"]["DeckID"];
-                    /** @description The deck to compare with. */
-                    other_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["DeckComparison"];
-                    };
-                };
-                /** @description An id is not a UUID. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-                /** @description A deck doesn't exist, or is someone else's private deck. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                500: components["responses"]["InternalError"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/deck/{id}/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Deck ID (a UUID) */
-                id: components["parameters"]["DeckID"];
-            };
-            cookie?: never;
-        };
-        /**
-         * Export one deck as text, in a chosen format
-         * @description Exports the deck's cards, pending ones included, as plain text. moxfield: one line per printing, "1 Sol Ring (SLD) 1011 *F*", the commander first. plain: one line per card name, "4 Lightning Bolt", the commander first. arena: MTG Arena's format, a "Commander" section (when the deck has one) then a "Deck" section, one line per card name, split cards written with " // ". The sideboard follows in a section of its own ("SIDEBOARD:" in moxfield, "Sideboard" otherwise), then the considered cards ("MAYBEBOARD:" in moxfield, "Maybeboard" in plain, left out of arena), each section only when it has cards.
-         */
-        get: {
-            parameters: {
-                query?: {
-                    format?: "moxfield" | "plain" | "arena" | "tamiyo" | "cardmarket";
-                    /** @description With format=tamiyo, include the deck's tags. */
-                    tags?: boolean;
-                    /** @description With format=cardmarket, the boards to list, comma-separated (main, sideboard, considering). */
-                    boards?: string;
-                    /** @description With format=cardmarket, only list the pending cards. */
-                    pending?: boolean;
-                    /** @description With format=cardmarket, add each card's expansion name (Scryfall's), one line per card and expansion. */
-                    printings?: boolean;
-                };
-                header?: never;
-                path: {
-                    /** @description Deck ID (a UUID) */
-                    id: components["parameters"]["DeckID"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The deck as text, served as a download (Deck_moxfield.txt, Deck_list.txt or Deck_arena.txt). */
-                200: {
-                    headers: {
-                        "Content-Disposition"?: string;
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": string;
-                    };
-                };
-                /** @description id is not a UUID, or format is unknown */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-                /** @description Deck not found, or not owned by the authenticated user */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                500: components["responses"]["InternalError"];
-            };
-        };
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4178,6 +3737,72 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/shared/decks/{id}/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Statistics of a shared deck
+         * @description Same statistics as GET /deck/{id}/stats. Works without authentication.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeckStats"];
+                    };
+                };
+                /** @description The deck's format isn't one Scryfall recognizes */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No deck has this id, or the deck is private. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                429: components["responses"]["SharedTooManyRequests"];
+                500: components["responses"]["InternalError"];
+                502: components["responses"]["BadGateway"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/shared/decks/{id}/export": {
         parameters: {
             query?: never;
@@ -4196,7 +3821,7 @@ export interface paths {
             parameters: {
                 query?: {
                     format?: "moxfield" | "plain" | "arena" | "tamiyo" | "cardmarket";
-                    /** @description With format=tamiyo, include the deck's tags. */
+                    /** @description With format=tamiyo or moxfield, include the deck's tags (as "#tag" at the end of each moxfield line). */
                     tags?: boolean;
                     /** @description With format=cardmarket, the boards to list, comma-separated (main, sideboard, considering). */
                     boards?: string;
@@ -4214,7 +3839,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description The deck as text, served as a download (Deck_moxfield.txt, Deck_list.txt, Deck_arena.txt, or Deck_tamiyo.json as application/json). */
+                /** @description The deck as text, served as a download (Deck_moxfield.txt, Deck_list.txt, Deck_arena.txt, Deck_cardmarket.txt, or Deck_tamiyo.json as application/json). */
                 200: {
                     headers: {
                         "Content-Disposition"?: string;
@@ -4222,10 +3847,10 @@ export interface paths {
                     };
                     content: {
                         "text/plain": string;
-                        "application/json": Record<string, unknown>;
+                        "application/json": components["schemas"]["TamiyoFile"];
                     };
                 };
-                /** @description format is unknown, or tags isn't a boolean */
+                /** @description format is unknown, tags, pending or printings isn't a boolean, or boards lists an unknown board */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -4245,6 +3870,7 @@ export interface paths {
                 };
                 429: components["responses"]["SharedTooManyRequests"];
                 500: components["responses"]["InternalError"];
+                502: components["responses"]["BadGateway"];
             };
         };
         put?: never;
@@ -4315,7 +3941,84 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/shared/decks/{id}/stats": {
+    "/auth/me/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The account's display preferences
+         * @description The defaults until something is saved.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Preferences"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change the account's display preferences
+         * @description Only the fields present in the body change.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PreferencesChanges"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Preferences"];
+                    };
+                };
+                /** @description No known field, a field of the wrong type, an unknown card_display, or card_columns outside 2..12 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+            };
+        };
+        trace?: never;
+    };
+    "/deck/{id}/like": {
         parameters: {
             query?: never;
             header?: never;
@@ -4326,8 +4029,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Statistics of a shared deck
-         * @description Same statistics as GET /deck/{id}/stats. Works without authentication.
+         * A deck's likes, and whether you liked it
+         * @description Works on your own decks, whatever their visibility, and on anyone's public or unlisted deck.
          */
         get: {
             parameters: {
@@ -4347,10 +4050,39 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["DeckStats"];
+                        "application/json": components["schemas"]["LikeStatus"];
                     };
                 };
-                /** @description The deck's format isn't one Scryfall recognizes */
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["LikeDeckNotFound"];
+            };
+        };
+        /**
+         * Like someone else's deck
+         * @description Idempotent. You cannot like your own deck.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The likes after the change. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LikeStatus"];
+                    };
+                };
+                /** @description The deck is yours. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -4359,7 +4091,134 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                /** @description No deck has this id, or the deck is private. */
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["LikeDeckNotFound"];
+            };
+        };
+        post?: never;
+        /**
+         * Remove your like
+         * @description Idempotent.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The likes after the change. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LikeStatus"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                404: components["responses"]["LikeDeckNotFound"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/me/liked-decks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The decks you liked
+         * @description Most recent like first. A liked deck its owner made private, or deleted, is left out.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PaginatedLikedDecks"];
+                    };
+                };
+                /** @description Invalid page or limit */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deck/{id}/ownership": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * How many copies of each card of a deck the caller owns
+         * @description The deck can be one of the caller's or someone else's public or unlisted deck. Every card of the deck is listed once, every board included, matched by name only (any printing or finish, " / " and " // " alike), counting every copy of the caller's collection.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK, sorted by name */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeckOwnership"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Unknown or malformed id, or someone else's private deck */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -4368,9 +4227,75 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
-                429: components["responses"]["SharedTooManyRequests"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deck/{id}/compare/{other_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+                /** @description The deck to compare with. */
+                other_id: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Compare two decks by card name
+         * @description Compares two decks card by card, matching cards by name only (printings and finishes are ignored; " / " and " // " in split or double-faced card names are equivalent). Owned copies and pending cards both count. Each deck can be one of the caller's, whatever its visibility, or anyone's public or unlisted deck. Every list is sorted by name.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                    /** @description The deck to compare with. */
+                    other_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeckComparison"];
+                    };
+                };
+                /** @description An id is not a UUID. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description A deck doesn't exist, or is someone else's private deck. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
                 500: components["responses"]["InternalError"];
-                502: components["responses"]["BadGateway"];
             };
         };
         put?: never;
@@ -4392,7 +4317,7 @@ export interface paths {
         put?: never;
         /**
          * Bulk import a ManaBox collection export
-         * @description Imports a ManaBox_Collection.csv export. For each row, gets or creates the matching storage (Binder Name/Binder Type), gets or creates a deck too if Binder Type is "deck" (format defaults to "commander" — correct it afterwards with PATCH /deck/:id if needed), creates one card per physical copy (Quantity), and links deck cards accordingly. The export already carries the Scryfall ID directly, so this route never calls Scryfall and never returns 502.
+         * @description Imports a ManaBox_Collection.csv export. For each row, gets or creates the matching storage (Binder Name/Binder Type, a "deck" binder becoming a storage of type "deckbox"), gets or creates a deck too if Binder Type is "deck" (format defaults to "commander" — correct it afterwards with PATCH /deck/:id if needed), creates one card per physical copy (Quantity), and links deck cards accordingly. The export already carries the Scryfall ID directly, so this route never calls Scryfall and never returns 502.
          */
         post: {
             parameters: {
@@ -4578,7 +4503,7 @@ export interface paths {
         };
         /**
          * Export the collection as a ManaBox CSV
-         * @description Exports the account's collection, or only one storage with storage_id, as a ManaBox-compatible CSV (ManaBox_Collection_export.csv), matching the columns POST /import/manabox reads. Identical physical copies within the same storage collapse into one row with a Quantity. Cards are grouped by storage (ManaBox's only organizing concept); a card with no storage is grouped under a synthetic "Unsorted" binder rather than dropped. A card's deck membership is tracked independently of storage in Tamiyo and isn't reflected here — only a storage whose own type is "deck" is exported as Binder Type "deck".
+         * @description Exports the account's collection, or only one storage with storage_id, as a ManaBox-compatible CSV (ManaBox_Collection_export.csv), matching the columns POST /import/manabox reads. Identical physical copies within the same storage collapse into one row with a Quantity. Cards are grouped by storage (ManaBox's only organizing concept); a card with no storage is grouped under a synthetic "Unsorted" binder rather than dropped. A card's deck membership is tracked independently of storage in Tamiyo and isn't reflected here — only a storage whose own type is "deckbox" is exported as Binder Type "deck".
          */
         get: {
             parameters: {
@@ -4600,6 +4525,130 @@ export interface paths {
                     };
                     content: {
                         "text/csv": string;
+                    };
+                };
+                /** @description storage_id is not a positive integer. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description storage_id does not reference an existing storage. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/import/tamiyo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk import a Tamiyo collection or storage file
+         * @description Creates one card per copy from a Tamiyo file of kind collection or storage, keeping each printing, finish and proxy status. Without storage_id, cards go in the storage named in the file (an existing storage with that exact name, or a new one of the file's type); with storage_id, they all go in that storage. Printings Scryfall doesn't know are skipped and reported in ImportSummary.warnings.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /**
+                         * Format: binary
+                         * @description The Tamiyo file (JSON, see TamiyoFile).
+                         */
+                        file: string;
+                        /** @description An existing storage for this account. */
+                        storage_id?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Import finished (possibly with some cards skipped — see ImportSummary.warnings). */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportSummary"];
+                    };
+                };
+                /** @description No file field, the file isn't a valid Tamiyo collection or storage file (a deck file is refused), or storage_id is invalid or does not reference an existing storage. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                502: components["responses"]["BadGateway"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/export/tamiyo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export the collection or one storage as a Tamiyo file
+         * @description Exports the account's collection (kind collection), or only one storage with storage_id (kind storage), as a Tamiyo file that POST /import/tamiyo reads back.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Only export the cards in this storage. */
+                    storage_id?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The Tamiyo file, served as a download (Tamiyo_Collection.json). */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TamiyoFile"];
                     };
                 };
                 /** @description storage_id is not a positive integer. */
@@ -4695,16 +4744,88 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deck/{id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Export one deck as text, in a chosen format
+         * @description Exports the deck's cards, pending ones included, as plain text, or as a Tamiyo deck file with format=tamiyo (with the deck's tags when tags=true). cardmarket: a list for a Cardmarket wants list, the cards of the boards listed in boards, main and sideboard by default (only the pending ones with pending=true), one line per card name, "4 Dark Ritual", or per card and expansion with printings=true, "2 Dark Confidant (Modern Masters)", expansion names being Scryfall's. moxfield: one line per printing, "1 Sol Ring (SLD) 1011 *F*", the commander's line first with its full quantity, the rest sorted alphabetically, so importing the file back reconstructs the same commander. plain: one line per card name, "4 Lightning Bolt", the commander first. arena: MTG Arena's format, a "Commander" section (when the deck has one) then a "Deck" section, one line per card name, split cards written with " // ". The sideboard follows in a section of its own ("SIDEBOARD:" in moxfield, "Sideboard" otherwise), then the considered cards ("MAYBEBOARD:" in moxfield, "Maybeboard" in plain, left out of arena), each section only when it has cards.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    format?: "moxfield" | "plain" | "arena" | "tamiyo" | "cardmarket";
+                    /** @description With format=tamiyo or moxfield, include the deck's tags (as "#tag" at the end of each moxfield line). */
+                    tags?: boolean;
+                    /** @description With format=cardmarket, the boards to list, comma-separated (main, sideboard, considering). */
+                    boards?: string;
+                    /** @description With format=cardmarket, only list the pending cards. */
+                    pending?: boolean;
+                    /** @description With format=cardmarket, add each card's expansion name (Scryfall's), one line per card and expansion. */
+                    printings?: boolean;
+                };
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The deck as text, served as a download (Deck_moxfield.txt, Deck_list.txt, Deck_arena.txt, Deck_cardmarket.txt, or Deck_tamiyo.json as application/json). */
+                200: {
+                    headers: {
+                        "Content-Disposition"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": string;
+                        "application/json": components["schemas"]["TamiyoFile"];
+                    };
+                };
+                /** @description id is not a UUID, format is unknown, tags, pending or printings isn't a boolean, or boards lists an unknown board */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or not owned by the authenticated user */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+                502: components["responses"]["BadGateway"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /**
-         * @description Where a card sits in its deck: the deck itself, its sideboard, or the cards being considered for it. Only main counts in card counts, statistics, the deck size and comparisons.
-         * @default main
-         * @enum {string}
-         */
-        DeckBoard: "main" | "sideboard" | "considering";
         Preferences: {
             /**
              * @description Whether deck pages show what the collection holds: pending cards and storages in the user's own decks, owned cards in other people's decks.
@@ -4785,6 +4906,47 @@ export interface components {
                 owned: number;
             }[];
         };
+        /** @description Tamiyo's own versioned file format, for a collection, a storage or a deck. Collection and storage files list storages and cards with their storage and proxy status; deck files have a deck object, cards with their board and commander flag, and optionally tags. */
+        TamiyoFile: {
+            /** @description Format version, currently 1. */
+            tamiyo: number;
+            /** @enum {string} */
+            kind: "collection" | "storage" | "deck";
+            /** Format: date-time */
+            exported_at?: string;
+            deck?: {
+                name?: string;
+                format?: string;
+            };
+            storages?: {
+                name: string;
+                type: string;
+            }[];
+            cards: {
+                name: string;
+                /** Format: uuid */
+                scryfall_id: string;
+                set_code?: string;
+                collector_number?: string;
+                foil?: boolean;
+                /** @description Collection and storage files only. */
+                proxy?: boolean;
+                quantity: number;
+                /** @description Collection and storage files only; the name of one of the storages, null for no storage. */
+                storage?: string | null;
+                board?: components["schemas"]["DeckBoard"];
+                /** @description Deck files only. */
+                commander?: boolean;
+            }[];
+            /** @description Deck files exported with their tags only. */
+            tags?: components["schemas"]["TaggedCard"][];
+        };
+        /**
+         * @description Where a card sits in its deck: the deck itself, its sideboard, or the cards being considered for it. Only main counts in card counts, statistics, the deck size and comparisons.
+         * @default main
+         * @enum {string}
+         */
+        DeckBoard: "main" | "sideboard" | "considering";
         DeckCard: components["schemas"]["Card"] & {
             board: components["schemas"]["DeckBoard"];
         };
@@ -4884,14 +5046,13 @@ export interface components {
              */
             avatar_scryfall_id: string | null;
         };
-        /** @description What any signed-in user can see of another user; never the email. */
         PublicDeck: {
             /** Format: uuid */
             id: string;
             name: string;
             format: string;
             /** @description Commander bracket, 1 (Exhibition) to 5 (cEDH); null when not set. */
-            bracket: number | null;
+            bracket?: number | null;
             /** Format: uuid */
             background_scryfall_id: string | null;
             /** Format: uuid */
@@ -4958,6 +5119,7 @@ export interface components {
             total: number;
             total_pages: number;
         };
+        /** @description What any signed-in user can see of another user; never the email. */
         Profile: {
             /** Format: uuid */
             id: string;
@@ -5037,7 +5199,7 @@ export interface components {
             color_identity?: string | null;
             board: components["schemas"]["DeckBoard"];
             added: string;
-            /** @description Cards of the same name in the collection, any printing, outside this deck (copies in other decks count). Only computed by GET /deck/{id}/pending, 0 elsewhere. */
+            /** @description Cards of the same name in the collection, any printing, outside this deck (copies in other decks count), leaving out the storages locked against this deck. Only computed by GET /deck/{id}/pending, 0 elsewhere. */
             owned_copies: number;
             /** @description Among them, the copies of this exact printing. Only computed by GET /deck/{id}/pending, 0 elsewhere. */
             owned_same_printing: number;
@@ -5136,6 +5298,10 @@ export interface components {
             card_count: number;
             added: string;
             updated: string;
+            /** @description A locked storage is hidden from the decks it doesn't allow: its cards don't count as owned copies for their pending cards and are never put in them by imports, duplications or finish switches. */
+            locked: boolean;
+            /** @description The decks a locked storage stays open to; empty means closed to every deck. Kept but ignored while the storage is unlocked. */
+            allowed_deck_ids: string[];
         };
         PaginatedStorages: {
             data: components["schemas"]["Storage"][];
@@ -5147,11 +5313,17 @@ export interface components {
         CreateStorageRequest: {
             name: string;
             type: string;
+            /** @description Defaults to false. */
+            locked?: boolean;
+            allowed_deck_ids?: string[];
         };
         /** @description All fields optional; only included fields are modified. */
         UpdateStorageRequest: {
             name?: string;
             type?: string;
+            locked?: boolean;
+            /** @description Replaces the whole list. Duplicates are dropped. */
+            allowed_deck_ids?: string[];
         };
         Deck: {
             /**
@@ -5181,7 +5353,7 @@ export interface components {
             readonly color_identity?: string | null;
             visibility: components["schemas"]["DeckVisibility"];
             /** @description Commander bracket, 1 (Exhibition) to 5 (cEDH); null when not set. */
-            bracket: number | null;
+            bracket?: number | null;
             /** @description Cards of the main board. */
             card_count: number;
             /** @description Copies waiting in the main board's pending list (not in the collection yet), not counted in card_count. */
@@ -5218,7 +5390,7 @@ export interface components {
             /** @enum {string} */
             visibility: "public" | "unlisted";
             /** @description Commander bracket, 1 (Exhibition) to 5 (cEDH); null when not set. */
-            bracket: number | null;
+            bracket?: number | null;
             /** Format: uuid */
             background_scryfall_id: string | null;
             /** Format: uuid */
@@ -5388,6 +5560,33 @@ export interface components {
         };
     };
     responses: {
+        /** @description Unknown or malformed deck id, or someone else's private deck */
+        LikeDeckNotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description id is not a UUID, invalid page or limit, or following yourself */
+        FollowBadRequest: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description No such user */
+        UserNotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         /** @description id is not a valid integer (a UUID for decks) */
         InvalidID: {
             headers: {
@@ -5461,6 +5660,8 @@ export interface components {
         DeckID: string;
         /** @description Card ID */
         CardIDPath: number;
+        ConnectionsPage: number;
+        ConnectionsLimit: number;
     };
     requestBodies: never;
     headers: {

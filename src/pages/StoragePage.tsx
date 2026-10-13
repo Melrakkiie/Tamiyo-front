@@ -7,8 +7,11 @@ import { ApiError, errorMessage } from '../api/errors';
 import { type CollectionExport, useExportCollection } from '../bulk/api';
 import { CollectionImportModal } from '../bulk/CollectionImportModal';
 import { CardBrowser } from '../cards/CardBrowser';
+import { useAllDecks } from '../decks/api';
 import { SettingsMenu } from '../layout/SettingsMenu';
 import { StorageFormModal } from '../storages/StorageFormModal';
+import { LockIcon } from '../storages/StorageLabel';
+import { StorageLockModal } from '../storages/StorageLockModal';
 import { useDeleteStorage, useStorage, useUpdateStorage } from '../storages/api';
 import { usePageTitle } from '../layout/usePageTitle';
 
@@ -28,6 +31,8 @@ function StorageView({ id }: { id: number }) {
   const [editOpened, setEditOpened] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [importOpened, setImportOpened] = useState(false);
+  const [lockOpened, setLockOpened] = useState(false);
+  const decks = useAllDecks();
   const exportStorage = useExportCollection(id);
 
   function closeEdit() {
@@ -76,6 +81,8 @@ function StorageView({ id }: { id: number }) {
   }
 
   const current = storage.data;
+  const deckNames = new Map((decks.data ?? []).map((deck) => [deck.id, deck.name]));
+  const allowedNames = current.allowed_deck_ids.flatMap((deckId) => deckNames.get(deckId) ?? []);
 
   return (
     <Stack>
@@ -90,6 +97,16 @@ function StorageView({ id }: { id: number }) {
             <Title order={2}>{current.name}</Title>
             <Badge variant="light">{current.type}</Badge>
           </Group>
+          {current.locked && (
+            <Group gap={6} wrap="nowrap" c="dimmed" mt={4}>
+              <LockIcon size={14} />
+              <Text size="sm" c="dimmed">
+                {allowedNames.length > 0
+                  ? `Verrouillé · réservé à ${allowedNames.join(', ')}`
+                  : 'Verrouillé pour tous les decks'}
+              </Text>
+            </Group>
+          )}
         </div>
         <SettingsMenu label="Actions sur le rangement">
           <Menu.Item onClick={() => setImportOpened(true)}>Importer des cartes</Menu.Item>
@@ -106,6 +123,7 @@ function StorageView({ id }: { id: number }) {
           </Menu.Item>
           <Menu.Divider />
           <Menu.Item onClick={() => setEditOpened(true)}>Modifier</Menu.Item>
+          <Menu.Item onClick={() => setLockOpened(true)}>Verrouiller pour les decks…</Menu.Item>
           <Menu.Item color="red" onClick={() => setConfirmingDelete(true)}>
             Supprimer
           </Menu.Item>
@@ -139,6 +157,8 @@ function StorageView({ id }: { id: number }) {
         onClose={() => setImportOpened(false)}
         storage={{ id: current.id, name: current.name }}
       />
+
+      <StorageLockModal storage={current} opened={lockOpened} onClose={() => setLockOpened(false)} />
 
       <StorageFormModal
         opened={editOpened}

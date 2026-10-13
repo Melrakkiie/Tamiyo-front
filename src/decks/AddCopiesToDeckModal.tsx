@@ -69,7 +69,7 @@ function AddCopiesForm({
     const copies = Math.min(MAX_COPIES, Math.max(1, Math.floor(Number(count)) || 1));
     const deckName = options.find((option) => option.value === deckId)?.label ?? 'le deck';
     add.mutate(
-      { deckId, file: deckLineFile(card, copies, board), commanderFromFirstLine: false },
+      { deckId, file: deckLineFile(card, copies, board), commanderFromFirstLine: false, includeLockedStorages: true },
       {
         onSuccess: (summary) => {
           notifications.show({
@@ -105,8 +105,8 @@ function AddCopiesForm({
         w={160}
       />
       <Text size="xs" c="dimmed">
-        Les exemplaires viennent de ta collection s'il t'en reste de libres dans cette édition, sinon ils sont ajoutés
-        en attente.
+        Les exemplaires viennent de ta collection s'il t'en reste de libres dans cette édition, même dans un rangement
+        verrouillé (en dernier recours), sinon ils sont ajoutés en attente.
       </Text>
       {add.error && <Alert color="red">{deckListErrorMessage(add.error)}</Alert>}
       <Group justify="flex-end">

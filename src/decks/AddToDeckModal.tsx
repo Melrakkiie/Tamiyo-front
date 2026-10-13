@@ -23,7 +23,7 @@ import { hasMissingDetails } from '../cards/grouping';
 import { MissingDetailsAlert } from '../cards/MissingDetailsAlert';
 import { colorCode } from '../scryfall/classify';
 import { useScryfallCard } from '../scryfall/hooks';
-import { useAllStorages } from '../storages/api';
+import { isOpenTo, useAllStorages } from '../storages/api';
 import { StorageLabel } from '../storages/StorageLabel';
 import { FoilSticker } from '../theme/Sticker';
 import { isCommanderFormat, useAddCardToDeck } from './api';
@@ -64,6 +64,13 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
   const identityFilter = commanderIdentity !== null && restrictToIdentity ? commanderIdentity : undefined;
   const [search, setSearch] = useState('');
   const [debouncedSearch] = useDebouncedValue(search.trim(), 300);
+  const storages = useAllStorages();
+  const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
+  const closedStorageIds = new Set(
+    (storages.data ?? []).filter((storage) => !isOpenTo(storage, deckId)).map((storage) => storage.id),
+  );
+  const [showLocked, setShowLocked] = useState(false);
+  const openToDeck = showLocked ? undefined : deckId;
   const cards = useCards({
     page: 1,
     limit: 30,
@@ -71,11 +78,17 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
     name: debouncedSearch,
     storageId: undefined,
     colorIdentity: identityFilter,
+    openToDeck,
   });
-  const unfiltered = useCards({ page: 1, limit: 30, sort: 'name', name: debouncedSearch, storageId: undefined });
+  const unfiltered = useCards({
+    page: 1,
+    limit: 30,
+    sort: 'name',
+    name: debouncedSearch,
+    storageId: undefined,
+    openToDeck,
+  });
   const someIdentitiesUnknown = identityFilter !== undefined && hasMissingDetails(unfiltered.data?.data ?? []);
-  const storages = useAllStorages();
-  const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
   const add = useAddCardToDeck();
   const [board, setBoard] = useState<DeckBoard>('main');
   const [pendingCardId, setPendingCardId] = useState<number | null>(null);
@@ -102,6 +115,13 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
           label={`Seulement l'identité de couleur du commandant (${identityLabel(commanderIdentity)})`}
           checked={restrictToIdentity}
           onChange={(event) => setRestrictToIdentity(event.currentTarget.checked)}
+        />
+      )}
+      {closedStorageIds.size > 0 && (
+        <Switch
+          label="Montrer aussi les rangements verrouillés"
+          checked={showLocked}
+          onChange={(event) => setShowLocked(event.currentTarget.checked)}
         />
       )}
       {someIdentitiesUnknown && <MissingDetailsAlert />}
@@ -144,7 +164,12 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
                       <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>
                         {card.set_code.toUpperCase()} · #{card.collector_number}
                       </Text>
-                      {storageName && <StorageLabel name={storageName} />}
+                      {storageName && (
+                        <StorageLabel
+                          name={storageName}
+                          locked={card.storage_id != null && closedStorageIds.has(card.storage_id)}
+                        />
+                      )}
                     </Group>
                   </div>
                   {inDeck ? (

@@ -14,6 +14,7 @@ export interface CardFilters {
   storageId: number | undefined;
   colorIdentity?: string;
   stack?: boolean;
+  openToDeck?: string;
   advanced?: ReturnType<typeof cardsQueryFilters>;
 }
 
@@ -41,6 +42,7 @@ export function useCards(filters: CardFilters) {
               storage_id: filters.storageId,
               color_identity: filters.colorIdentity,
               stack: filters.stack,
+              open_to_deck: filters.openToDeck,
               ...filters.advanced,
             },
           },

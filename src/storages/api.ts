@@ -24,6 +24,10 @@ export function useAllStorages() {
   });
 }
 
+export function isOpenTo(storage: Storage, deckId: string) {
+  return !storage.locked || storage.allowed_deck_ids.includes(deckId);
+}
+
 export function useStorageOptions() {
   const { data } = useAllStorages();
   return (data ?? []).map((storage) => ({
@@ -56,6 +60,8 @@ export interface StorageInput {
   type: string;
 }
 
+export type StorageChanges = Partial<StorageInput & Pick<Storage, 'locked' | 'allowed_deck_ids'>>;
+
 export function useCreateStorage() {
   const invalidate = useInvalidateStorages();
 
@@ -66,12 +72,18 @@ export function useCreateStorage() {
 }
 
 export function useUpdateStorage() {
-  const invalidate = useInvalidateStorages();
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, changes }: { id: number; changes: Partial<StorageInput> }) =>
+    mutationFn: async ({ id, changes }: { id: number; changes: StorageChanges }) =>
       unwrap(await api.PATCH('/storage/{id}', { params: { path: { id } }, body: changes })),
-    onSettled: invalidate,
+    onSettled: (_data, _error, { changes }) => {
+      void queryClient.invalidateQueries({ queryKey: ['storages'] });
+      if (changes.locked !== undefined || changes.allowed_deck_ids !== undefined) {
+        void queryClient.invalidateQueries({ queryKey: ['cards'] });
+        void queryClient.invalidateQueries({ queryKey: ['decks', 'pending'] });
+      }
+    },
   });
 }
 

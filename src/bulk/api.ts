@@ -72,6 +72,7 @@ export interface DeckListImport {
   deckId: string;
   file: File;
   commanderFromFirstLine: boolean;
+  includeLockedStorages?: boolean;
 }
 
 export function useBulkEditDeck() {
@@ -81,8 +82,12 @@ export function useBulkEditDeck() {
 }
 
 export function useImportIntoDeck() {
-  return useImport(({ deckId, file, commanderFromFirstLine }: DeckListImport) =>
-    postForm(`/deck/${deckId}/import`, { file, commander_from_first_line: String(commanderFromFirstLine) }),
+  return useImport(({ deckId, file, commanderFromFirstLine, includeLockedStorages }: DeckListImport) =>
+    postForm(`/deck/${deckId}/import`, {
+      file,
+      commander_from_first_line: String(commanderFromFirstLine),
+      include_locked_storages: includeLockedStorages ? 'true' : undefined,
+    }),
   );
 }
 

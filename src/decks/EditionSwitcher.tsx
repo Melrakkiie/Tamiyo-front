@@ -1,5 +1,18 @@
-import { Alert, Center, Group, Image, Loader, Paper, SimpleGrid, Stack, Text, UnstyledButton } from '@mantine/core';
+import {
+  Alert,
+  Anchor,
+  Center,
+  Group,
+  Image,
+  Loader,
+  Paper,
+  SimpleGrid,
+  Stack,
+  Text,
+  UnstyledButton,
+} from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Card, DeckBoard, PendingCard } from '../api/types';
@@ -9,7 +22,7 @@ import { useCardImages, usePrintings } from '../scryfall/hooks';
 import { foilFor, printingDetails } from '../scryfall/printing';
 import { PrintingGrid } from '../scryfall/PrintingGrid';
 import { SetIcon } from '../scryfall/SetIcon';
-import { useAllStorages } from '../storages/api';
+import { isOpenTo, useAllStorages } from '../storages/api';
 import { StorageLabel } from '../storages/StorageLabel';
 import { FoilSticker, ProxySticker } from '../theme/Sticker';
 import {
@@ -50,6 +63,13 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
   );
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
+  const closedStorageIds = new Set(
+    (storages.data ?? []).filter((storage) => !isOpenTo(storage, deckId)).map((storage) => storage.id),
+  );
+  const isClosed = (copy: Card) => copy.storage_id != null && closedStorageIds.has(copy.storage_id);
+  const closedCount = owned.filter(isClosed).length;
+  const [showClosed, setShowClosed] = useState(false);
+  const shown = showClosed ? owned : owned.filter((copy) => !isClosed(copy));
 
   const swap = useSwapDeckCard();
   const swapPending = useReplacePendingWithOwned();
@@ -110,11 +130,17 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
         ) : (
           <>
             <Text size="xs" c="dimmed">
-              Dans ta collection : clique sur un exemplaire pour le mettre dans le deck à la place de celui-ci.
-              {isCommander ? ' Il deviendra aussi le commandant.' : ''}
+              {shown.length === 0
+                ? 'Tous les autres exemplaires de ta collection sont dans des rangements verrouillés pour ce deck.'
+                : `Dans ta collection : clique sur un exemplaire pour le mettre dans le deck à la place de celui-ci.${isCommander ? ' Il deviendra aussi le commandant.' : ''}`}
             </Text>
+            {closedCount > 0 && !showClosed && (
+              <Anchor component="button" type="button" size="xs" ta="left" onClick={() => setShowClosed(true)}>
+                Voir {closedCount} exemplaire{closedCount > 1 ? 's' : ''} dans des rangements verrouillés
+              </Anchor>
+            )}
             <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
-              {owned.map((copy) => (
+              {shown.map((copy) => (
                 <UnstyledButton key={copy.id} onClick={() => chooseOwned(copy)} disabled={busy}>
                   <Paper withBorder p={4} radius="md" style={busy ? { opacity: 0.5 } : undefined}>
                     <Image src={images.data?.[copy.scryfall_id]} alt={copy.name} radius="sm" loading="lazy" />
@@ -129,6 +155,7 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
                       <StorageLabel
                         name={copy.storage_id ? (storageNames.get(copy.storage_id) ?? null) : null}
                         unknown={copy.storage_id != null && !storageNames.has(copy.storage_id)}
+                        locked={isClosed(copy)}
                       />
                       <SetIcon setCode={copy.set_code} size={22} />
                     </Group>
