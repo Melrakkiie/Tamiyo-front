@@ -941,7 +941,7 @@ export interface paths {
         };
         /**
          * Value of the collection
-         * @description Sum of the Scryfall prices of every card of the account but proxies, in both currencies. A foil card counts its foil price, another card its regular price, and the other price when that one is missing.
+         * @description Sum of the Scryfall prices of every card of the account but proxies, in both currencies. A foil card counts its foil price, another card its regular price, and the other price when that one is missing. A card with no euro price counts its dollar price converted with the rate of GET /exchange-rate.
          */
         get: {
             parameters: {
@@ -962,6 +962,46 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["Unauthorized"];
+                500: components["responses"]["InternalError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/exchange-rate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Dollar to euro exchange rate
+         * @description The European Central Bank's reference rate, in US dollars per euro, refreshed every 6 hours, used to convert a card's dollar price when it has no euro price. Both fields are null until a first rate has been fetched. Works without authentication.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ExchangeRate"];
+                    };
+                };
                 500: components["responses"]["InternalError"];
             };
         };
@@ -5206,10 +5246,20 @@ export interface components {
             /** @description Value of the main board, owned and pending cards, proxies left out, from Scryfall's current prices, rounded to the cent. */
             value: components["schemas"]["Value"];
         };
-        /** @description A sum of Scryfall prices, in euros (Cardmarket) and US dollars (TCGplayer). Proxies never count; a foil card counts its foil price, another card its regular price, and the other price when that one is missing; a card without any price counts 0. */
+        /** @description A sum of Scryfall prices, in euros (Cardmarket) and US dollars (TCGplayer). Proxies never count; a foil card counts its foil price, another card its regular price, and the other price when that one is missing; a card without a euro price counts its dollar price converted with the rate of GET /exchange-rate, the dollar price of its own finish before the euro price of the other; a card without any price counts 0. */
         Value: {
             eur: number;
             usd: number;
+        };
+        ExchangeRate: {
+            /** @example 1.0876 */
+            usd_per_eur: number | null;
+            /**
+             * Format: date
+             * @description The day the European Central Bank published the rate.
+             * @example 2026-10-13
+             */
+            date: string | null;
         };
         BackFaceCard: {
             name: string;

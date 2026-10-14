@@ -1,6 +1,8 @@
 import { Text, type TextProps } from '@mantine/core';
+import { useQuery } from '@tanstack/react-query';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
+import { api, unwrap } from '../api/client';
 import type { Value } from '../api/types';
 import { usePreferences } from '../auth/preferences';
 import { useSession } from '../auth/useSession';
@@ -38,10 +40,30 @@ function parsePrice(raw: string | null | undefined) {
   return Number.isFinite(amount) ? amount : null;
 }
 
-export function printPrice(card: ScryfallCard, foil: boolean, currency: PriceCurrency) {
+function useUsdPerEur(enabled: boolean) {
+  const rate = useQuery({
+    queryKey: ['exchange-rate'],
+    queryFn: async () => unwrap(await api.GET('/exchange-rate')),
+    enabled,
+    staleTime: 60 * 60 * 1000,
+  });
+  return rate.data?.usd_per_eur ?? null;
+}
+
+function finishPrices(card: ScryfallCard, foil: boolean, currency: PriceCurrency) {
   const regular = parsePrice(card.prices?.[currency]);
   const foiled = parsePrice(card.prices?.[`${currency}_foil`]);
-  return foil ? (foiled ?? regular) : (regular ?? foiled);
+  return foil ? [foiled, regular] : [regular, foiled];
+}
+
+function printPrice(card: ScryfallCard, foil: boolean, currency: PriceCurrency, usdPerEur: number | null) {
+  const [first, second] = finishPrices(card, foil, currency);
+  if (currency === 'usd' || !usdPerEur) {
+    return first ?? second;
+  }
+  const toEur = (usd: number | null) => (usd === null ? null : usd / usdPerEur);
+  const [usdFirst, usdSecond] = finishPrices(card, foil, 'usd');
+  return first ?? toEur(usdFirst) ?? second ?? toEur(usdSecond);
 }
 
 interface PriceTextProps extends TextProps, Omit<ComponentPropsWithoutRef<'p'>, keyof TextProps | 'children'> {
@@ -64,10 +86,11 @@ interface PrintingPriceProps extends TextProps {
 
 export function PrintingPrice({ printing, foil = false, ...props }: PrintingPriceProps) {
   const currency = usePriceCurrency();
+  const usdPerEur = useUsdPerEur(currency === 'eur');
   if (!currency) {
     return null;
   }
-  const amount = printPrice(printing, foil, currency);
+  const amount = printPrice(printing, foil, currency, usdPerEur);
   return (
     <PriceText {...props}>
       {amount === null ? 'Prix inconnu' : formatPrice(amount, currency)}
