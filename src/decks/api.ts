@@ -434,6 +434,21 @@ export function useCollectDeck() {
   });
 }
 
+export function useStoreDeck() {
+  const invalidate = useInvalidateDeckAndCollection();
+
+  return useMutation({
+    mutationFn: async ({ deckId, boards, storageId }: { deckId: string; boards: DeckBoard[]; storageId: number }) =>
+      unwrap(
+        await api.POST('/deck/{id}/store', {
+          params: { path: { id: deckId } },
+          body: { storage_id: storageId, boards },
+        }),
+      ),
+    onSettled: invalidate,
+  });
+}
+
 export function useDuplicateDeck() {
   const invalidate = useInvalidateDecks();
 

@@ -5,9 +5,10 @@ import { useNavigate } from 'react-router';
 
 import { errorMessage } from '../api/errors';
 import type { DeckBoard } from '../api/types';
-import { useStorageOptions } from '../storages/api';
+import { useAllStorages, useCreateStorage, useStorageOptions } from '../storages/api';
+import { StorageFormModal } from '../storages/StorageFormModal';
 import { StorageFieldLabel } from '../storages/StorageLabel';
-import { type CollectMode, useCollectDeck, useDuplicateDeck } from './api';
+import { type CollectMode, useCollectDeck, useDuplicateDeck, useStoreDeck } from './api';
 import { BOARDS, boardLabels } from './boards';
 
 const DEFAULT_BOARDS: DeckBoard[] = ['main', 'sideboard'];
@@ -142,10 +143,126 @@ function CollectDeckModal({ deckId, mine, opened, onClose }: CollectDeckModalPro
   );
 }
 
+interface StoreDeckModalProps {
+  deckId: string;
+  opened: boolean;
+  onClose: () => void;
+}
+
+function StoreDeckModal({ deckId, opened, onClose }: StoreDeckModalProps) {
+  const storages = useAllStorages();
+  const storageOptions = useStorageOptions();
+  const store = useStoreDeck();
+  const createStorage = useCreateStorage();
+  const [boards, setBoards] = useState<DeckBoard[]>(DEFAULT_BOARDS);
+  const [storageId, setStorageId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  function close() {
+    store.reset();
+    onClose();
+  }
+
+  function closeCreate() {
+    setCreating(false);
+    createStorage.reset();
+  }
+
+  function submit() {
+    if (!storageId) {
+      return;
+    }
+    const storageName = storages.data?.find((storage) => String(storage.id) === storageId)?.name ?? 'ce rangement';
+    store.mutate(
+      { deckId, boards, storageId: Number(storageId) },
+      {
+        onSuccess: ({ cards_moved }) => {
+          notifications.show({
+            color: 'green',
+            message:
+              cards_moved === 0
+                ? 'Toutes ces cartes sont déjà dans ce rangement.'
+                : `${plural(cards_moved, 'carte')} rangée${cards_moved > 1 ? 's' : ''} dans ${storageName}.`,
+          });
+          close();
+        },
+      },
+    );
+  }
+
+  return (
+    <Modal opened={opened} onClose={close} title="Ranger les cartes du deck">
+      <Stack>
+        <Checkbox.Group
+          value={boards}
+          onChange={(value) => setBoards(value as DeckBoard[])}
+          label="Sections du deck"
+          error={boards.length === 0 ? 'Choisis au moins une section.' : undefined}
+        >
+          <Group gap="md" mt="xs">
+            {BOARDS.map((board) => (
+              <Checkbox key={board} value={board} label={boardLabels[board]} />
+            ))}
+          </Group>
+        </Checkbox.Group>
+        <Stack gap={4}>
+          <Select
+            label={<StorageFieldLabel>Rangement</StorageFieldLabel>}
+            placeholder="Choisis un rangement"
+            data={storageOptions}
+            value={storageId}
+            onChange={setStorageId}
+            searchable
+            required
+          />
+          <Group justify="flex-end">
+            <Button variant="subtle" size="compact-sm" onClick={() => setCreating(true)}>
+              Nouveau rangement…
+            </Button>
+          </Group>
+        </Stack>
+        <Text size="xs" c="dimmed">
+          Les cartes en attente ne sont pas concernées.
+        </Text>
+        {store.error && (
+          <Alert color="red">
+            {errorMessage(store.error, { 400: "Le rangement choisi n'existe plus. Choisis-en un autre." })}
+          </Alert>
+        )}
+        <Group justify="flex-end">
+          <Button variant="default" onClick={close}>
+            Annuler
+          </Button>
+          <Button onClick={submit} loading={store.isPending} disabled={boards.length === 0 || !storageId}>
+            Ranger
+          </Button>
+        </Group>
+      </Stack>
+      <StorageFormModal
+        opened={creating}
+        onClose={closeCreate}
+        title="Nouveau rangement"
+        submitLabel="Créer"
+        pending={createStorage.isPending}
+        error={createStorage.error}
+        onSubmit={(values) =>
+          createStorage.mutate(values, {
+            onSuccess: (created) => {
+              setStorageId(String(created.id));
+              closeCreate();
+            },
+          })
+        }
+      />
+    </Modal>
+  );
+}
+
 export function useDeckCopyActions(deckId: string, mine: boolean) {
   const navigate = useNavigate();
   const duplicate = useDuplicateDeck();
   const [collectOpened, setCollectOpened] = useState(false);
+  const [storeOpened, setStoreOpened] = useState(false);
 
   function duplicateDeck() {
     const notification = notifications.show({ loading: true, autoClose: false, message: 'Copie du deck en cours…' });
@@ -182,16 +299,20 @@ export function useDeckCopyActions(deckId: string, mine: boolean) {
         Dupliquer
       </Menu.Item>
       <Menu.Item onClick={() => setCollectOpened(true)}>Ajouter à ma collection</Menu.Item>
+      {mine && <Menu.Item onClick={() => setStoreOpened(true)}>Ranger les cartes…</Menu.Item>}
     </>
   );
   const modal = (
-    <CollectDeckModal
-      key={String(mine)}
-      deckId={deckId}
-      mine={mine}
-      opened={collectOpened}
-      onClose={() => setCollectOpened(false)}
-    />
+    <>
+      <CollectDeckModal
+        key={String(mine)}
+        deckId={deckId}
+        mine={mine}
+        opened={collectOpened}
+        onClose={() => setCollectOpened(false)}
+      />
+      {mine && <StoreDeckModal deckId={deckId} opened={storeOpened} onClose={() => setStoreOpened(false)} />}
+    </>
   );
   return { menuItems, modal };
 }

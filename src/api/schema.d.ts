@@ -941,7 +941,7 @@ export interface paths {
         };
         /**
          * Value of the collection
-         * @description Sum of the Scryfall prices of every card of the account but proxies, in both currencies. A foil card counts its foil price, another card its regular price, and the other price when that one is missing. A card with no euro price counts its dollar price converted with the rate of GET /exchange-rate.
+         * @description Sum of the Scryfall prices of every card of the account but proxies, in both currencies. A foil card counts its foil price, another card its regular price, and the other price when that one is missing. The foil dollar price falls back to the etched dollar price. A card with no euro price counts its dollar price converted with the rate of GET /exchange-rate.
          */
         get: {
             parameters: {
@@ -982,7 +982,7 @@ export interface paths {
         };
         /**
          * Dollar to euro exchange rate
-         * @description The European Central Bank's reference rate, in US dollars per euro, refreshed every 6 hours, used to convert a card's dollar price when it has no euro price. Both fields are null until a first rate has been fetched. Works without authentication.
+         * @description The European Central Bank's reference rate, in US dollars per euro, refreshed every 6 hours, used to convert a card's dollar price when it has no euro price. Read from the ECB's daily feed, or from Frankfurter (same rates) when the ECB cannot be reached. Both fields are null until a first rate has been fetched. Works without authentication.
          */
         get: {
             parameters: {
@@ -3649,6 +3649,81 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deck/{id}/store": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put the owned cards of one of the user's decks in a storage
+         * @description Sets the storage of every owned card of the chosen boards of one of the user's own decks to storage_id, in one statement. Pending cards are not in the collection and are left alone. Cards already in that storage are left untouched and not counted. A locked storage is accepted: locking only hides, and the cards stay in the deck.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        storage_id: number;
+                        boards: ("main" | "sideboard" | "considering")[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Cards moved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Cards whose storage changed. */
+                            cards_moved: number;
+                        };
+                    };
+                };
+                /** @description Invalid id or body, missing or non-positive storage_id, unknown board or none, or storage_id doesn't reference an existing storage */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or someone else's deck */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deck/{id}/legality": {
         parameters: {
             query?: never;
@@ -5308,7 +5383,7 @@ export interface components {
             /** @description Value of the main board, owned and pending cards, proxies left out, from Scryfall's current prices, rounded to the cent. */
             value: components["schemas"]["Value"];
         };
-        /** @description A sum of Scryfall prices, in euros (Cardmarket) and US dollars (TCGplayer). Proxies never count; a foil card counts its foil price, another card its regular price, and the other price when that one is missing; a card without a euro price counts its dollar price converted with the rate of GET /exchange-rate, the dollar price of its own finish before the euro price of the other; a card without any price counts 0. */
+        /** @description A sum of Scryfall prices, in euros (Cardmarket) and US dollars (TCGplayer). Proxies never count; a foil card counts its foil price, another card its regular price, and the other price when that one is missing; the foil dollar price falls back to the etched dollar price; a card without a euro price counts its dollar price converted with the rate of GET /exchange-rate, the dollar price of its own finish before the euro price of the other; a card without any price counts 0. */
         Value: {
             eur: number;
             usd: number;
