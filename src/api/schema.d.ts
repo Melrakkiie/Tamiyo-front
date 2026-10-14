@@ -4239,7 +4239,7 @@ export interface paths {
                         "application/json": components["schemas"]["Preferences"];
                     };
                 };
-                /** @description No known field, a field of the wrong type, an unknown card_display, card_columns outside 2..12, or price_currency not eur or usd */
+                /** @description No known field, a field of the wrong type, an unknown card_display, card_columns outside 2..12, price_currency not eur or usd, or playtest_zoom outside 50..200 */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -4407,6 +4407,62 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["Unauthorized"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/deck/{id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * A deck the caller can see, its owner and its cards
+         * @description Same response as GET /shared/decks/{id}. The deck can be one of the caller's, whatever its visibility, or someone else's public or unlisted deck. Not rate-limited like the shared routes.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SharedDeck"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Unknown or malformed id, or someone else's private deck */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
             };
         };
         put?: never;
@@ -5126,6 +5182,11 @@ export interface components {
              * @enum {string}
              */
             price_currency: "eur" | "usd";
+            /**
+             * @description The card size a deck playtest opens with, as a percentage of the normal size.
+             * @default 100
+             */
+            playtest_zoom: number;
         };
         /** @description Any of the preferences; at least one. */
         PreferencesChanges: {
@@ -5148,6 +5209,7 @@ export interface components {
             show_prices?: boolean;
             /** @enum {string} */
             price_currency?: "eur" | "usd";
+            playtest_zoom?: number;
         };
         DeckOwnership: {
             cards: {

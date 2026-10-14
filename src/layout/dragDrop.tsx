@@ -3,7 +3,12 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useR
 
 export interface DropHandler<T> {
   accepts: (item: T) => boolean;
-  onDrop: (item: T) => void;
+  onDrop: (item: T, point: DropPoint) => void;
+}
+
+export interface DropPoint {
+  x: number;
+  y: number;
 }
 
 interface DragPosition<T> {
@@ -35,9 +40,10 @@ const CLICK_AFTER_RELEASE_MS = 60;
 interface DragDropOptions<T> {
   sameItem: (a: T, b: T) => boolean;
   Ghost: (props: { item: T }) => ReactNode;
+  centerGhost?: boolean;
 }
 
-export function createDragDrop<T>({ sameItem, Ghost }: DragDropOptions<T>) {
+export function createDragDrop<T>({ sameItem, Ghost, centerGhost = false }: DragDropOptions<T>) {
   const DragContext = createContext<DragContextValue<T> | null>(null);
 
   function DragProvider({ children }: { children: ReactNode }) {
@@ -177,7 +183,7 @@ export function createDragDrop<T>({ sameItem, Ghost }: DragDropOptions<T>) {
         swallowNextClick(upEvent.timeStamp);
         cleanup();
         if (id) {
-          handlers.current.get(id)?.onDrop(item);
+          handlers.current.get(id)?.onDrop(item, position);
         }
       };
 
@@ -276,9 +282,13 @@ export function createDragDrop<T>({ sameItem, Ghost }: DragDropOptions<T>) {
       <Portal>
         <Box
           pos="fixed"
-          left={drag.x + 14}
-          top={drag.y + 14}
-          style={{ zIndex: 1000, pointerEvents: 'none', transform: 'rotate(-3deg)' }}
+          left={centerGhost ? drag.x : drag.x + 14}
+          top={centerGhost ? drag.y : drag.y + 14}
+          style={{
+            zIndex: 1000,
+            pointerEvents: 'none',
+            transform: centerGhost ? 'translate(-50%, -50%) rotate(-3deg)' : 'rotate(-3deg)',
+          }}
         >
           <Ghost item={drag.item} />
         </Box>
@@ -302,7 +312,7 @@ export function createDragDrop<T>({ sameItem, Ghost }: DragDropOptions<T>) {
       }
       return register(id, {
         accepts: (item) => handlerRef.current.accepts(item),
-        onDrop: (item) => handlerRef.current.onDrop(item),
+        onDrop: (item, point) => handlerRef.current.onDrop(item, point),
       });
     }, [register, id]);
 

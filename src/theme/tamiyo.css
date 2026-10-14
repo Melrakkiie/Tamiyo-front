@@ -456,3 +456,53 @@ h6,
   transform: rotate(4deg);
   background: repeating-linear-gradient(45deg, rgba(205, 227, 165, 0.85) 0 8px, rgba(190, 214, 146, 0.85) 8px 16px);
 }
+
+.tamiyo-playtest-field {
+  background-color: var(--tamiyo-page);
+  background-image: radial-gradient(var(--tamiyo-dots) 1.3px, transparent 1.4px);
+  background-size: 24px 24px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-md);
+}
+
+.tamiyo-playtest-field[data-over] {
+  outline: 2px dashed var(--mantine-primary-color-filled);
+  outline-offset: -4px;
+}
+
+.tamiyo-playtest-pile {
+  border: 2px dashed var(--mantine-color-gray-4);
+  border-radius: var(--mantine-radius-md);
+  transition:
+    border-color 100ms ease,
+    background 100ms ease;
+}
+
+.tamiyo-playtest-pile[data-active] {
+  border-color: var(--mantine-color-gray-6);
+}
+
+.tamiyo-playtest-pile[data-over] {
+  border-color: var(--mantine-primary-color-filled);
+  background: var(--mantine-primary-color-light);
+}
+
+[data-mantine-color-scheme='dark'] .tamiyo-playtest-pile {
+  border-color: var(--mantine-color-dark-4);
+}
+
+[data-mantine-color-scheme='dark'] .tamiyo-playtest-pile[data-active] {
+  border-color: var(--mantine-color-dark-2);
+}
+
+[data-mantine-color-scheme='dark'] .tamiyo-playtest-pile[data-over] {
+  border-color: var(--mantine-color-lune-3);
+}
+
+.tamiyo-playtest-hand-card {
+  position: relative;
+}
+
+.tamiyo-playtest-hand-card:hover {
+  z-index: 1;
+}

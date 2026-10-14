@@ -2,6 +2,7 @@ import { ApiError } from '../api/errors';
 import type { ScryfallRef } from './dragDrop';
 
 const SCRYFALL_API = 'https://api.scryfall.com';
+export const MAGIC_CARD_BACK_URL = 'https://backs.scryfall.io/normal/0/a/0aeebaf5-8c7d-4636-9e82-8c27447861f7.jpg';
 const COLLECTION_BATCH_SIZE = 75;
 const MAX_SEARCH_PAGES = 5;
 const DELAY_BETWEEN_REQUESTS_MS = 100;
@@ -194,13 +195,17 @@ export function isAdvancedQuery(query: string) {
 }
 
 export async function searchCardSuggestions(query: string): Promise<CardSuggestion[]> {
-  const result = await scryfall<ScryfallList<ScryfallCard>>(
-    `/cards/search?q=${encodeURIComponent(query)}&unique=cards&order=name`,
-  );
-  return (result?.data ?? []).slice(0, MAX_SEARCH_SUGGESTIONS).map((card) => ({
+  return (await searchCards(query)).map((card) => ({
     name: card.name,
     typeLine: card.type_line ?? card.card_faces?.[0]?.type_line,
   }));
+}
+
+export async function searchCards(query: string): Promise<ScryfallCard[]> {
+  const result = await scryfall<ScryfallList<ScryfallCard>>(
+    `/cards/search?q=${encodeURIComponent(query)}&unique=cards&order=name`,
+  );
+  return (result?.data ?? []).slice(0, MAX_SEARCH_SUGGESTIONS);
 }
 
 export async function fetchFrenchPrinting(card: ScryfallCard): Promise<ScryfallCard | null> {

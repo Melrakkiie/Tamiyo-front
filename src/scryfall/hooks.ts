@@ -16,6 +16,7 @@ import {
   isAdvancedQuery,
   searchCardSuggestions,
   type ScryfallCard,
+  searchCards,
   searchPrintings,
 } from './client';
 
@@ -81,6 +82,58 @@ export function useManaCosts(scryfallIds: string[]) {
       costs[id] = card.mana_cost ?? card.card_faces?.[0]?.mana_cost ?? '';
     }
     return costs;
+  });
+}
+
+export interface RelatedToken {
+  id: string;
+  name: string;
+}
+
+export function useRelatedTokens(scryfallIds: string[]) {
+  const parts = useScryfallCardsByIds(scryfallIds, (cards) => {
+    const ids = new Set<string>();
+    for (const card of Object.values(cards)) {
+      for (const part of card.all_parts ?? []) {
+        if (part.component === 'token' && part.id !== card.id) {
+          ids.add(part.id);
+        }
+      }
+    }
+    return [...ids];
+  });
+  const tokens = useScryfallCardsByIds(parts.data ?? [], (cards) => {
+    const byOracle = new Map<string, RelatedToken>();
+    for (const card of Object.values(cards)) {
+      const key = card.oracle_id ?? card.id;
+      if (!byOracle.has(key)) {
+        byOracle.set(key, { id: card.id, name: card.name });
+      }
+    }
+    return [...byOracle.values()].sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  });
+  return { data: tokens.data, isLoading: parts.isLoading || tokens.isLoading };
+}
+
+export function useTokenSearch(query: string) {
+  const trimmed = query.trim();
+
+  return useQuery({
+    queryKey: ['scryfall', 'tokens', trimmed.toLowerCase()],
+    queryFn: async (): Promise<RelatedToken[]> => {
+      try {
+        const cards = await searchCards(`t:token ${trimmed}`);
+        rememberCards(cards);
+        return cards.map((card) => ({ id: card.id, name: card.name }));
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 400) {
+          return [];
+        }
+        throw err;
+      }
+    },
+    enabled: trimmed.length >= 2,
+    staleTime: ONE_DAY,
   });
 }
 

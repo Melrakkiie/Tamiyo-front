@@ -14,7 +14,7 @@ import {
   Title,
 } from '@mantine/core';
 import { type ReactNode, useEffect, useState } from 'react';
-import { Link, Navigate, useLocation, useParams } from 'react-router';
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
 import type { Card, DeckCard, SharedDeck } from '../api/types';
@@ -124,9 +124,15 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
         style={art ? { ...artBackground(art.url, 'light'), display: 'flex', flexDirection: 'column' } : undefined}
       >
         {signedIn ? (
-          <SignedInDeckMenu deckId={deck.id} deckName={deck.name} ownerId={owner.id} onImage={art !== null} />
+          <SignedInDeckMenu
+            deckId={deck.id}
+            deckName={deck.name}
+            cardCount={deck.card_count}
+            ownerId={owner.id}
+            onImage={art !== null}
+          />
         ) : (
-          <SharedDeckMenu deckId={deck.id} deckName={deck.name} onImage={art !== null} />
+          <SharedDeckMenu deckId={deck.id} deckName={deck.name} cardCount={deck.card_count} onImage={art !== null} />
         )}
         <Stack gap={6} pr={48} style={art ? { marginTop: 'auto' } : undefined}>
           <Title order={2} c={art ? 'white' : undefined}>
@@ -192,12 +198,14 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
 interface SharedDeckMenuProps {
   deckId: string;
   deckName: string;
+  cardCount: number;
   onImage: boolean;
   extraItems?: ReactNode;
   extraModals?: ReactNode;
 }
 
-function SharedDeckMenu({ deckId, deckName, onImage, extraItems, extraModals }: SharedDeckMenuProps) {
+function SharedDeckMenu({ deckId, deckName, cardCount, onImage, extraItems, extraModals }: SharedDeckMenuProps) {
+  const navigate = useNavigate();
   const [exportOpened, setExportOpened] = useState(false);
   const [compareOpened, setCompareOpened] = useState(false);
 
@@ -210,6 +218,9 @@ function SharedDeckMenu({ deckId, deckName, onImage, extraItems, extraModals }: 
       >
         <SettingsMenu label="Actions sur le deck" onImage={onImage}>
           <Menu.Item onClick={() => setCompareOpened(true)}>Comparer avec un autre deck</Menu.Item>
+          <Menu.Item disabled={cardCount === 0} onClick={() => navigate(`/decks/${deckId}/playtest`)}>
+            Tester le deck
+          </Menu.Item>
           <Menu.Divider />
           <Menu.Item onClick={() => setExportOpened(true)}>Exporter</Menu.Item>
           {extraItems}

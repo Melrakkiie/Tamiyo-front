@@ -9,6 +9,7 @@ import { ConfirmEmailPage } from './pages/ConfirmEmailPage';
 import { ConnectionsPage } from './pages/ConnectionsPage';
 import { DeckComparePage } from './pages/DeckComparePage';
 import { DeckPage } from './pages/DeckPage';
+import { DeckPlaytestPage } from './pages/DeckPlaytestPage';
 import { DecksPage } from './pages/DecksPage';
 import { ExplorePage } from './pages/ExplorePage';
 import { LikedDecksPage } from './pages/LikedDecksPage';
@@ -73,5 +74,6 @@ export const router = createBrowserRouter([
       { path: '/shared/:id', element: <SharedDeckRedirect /> },
     ],
   },
+  { path: '/decks/:id/playtest', element: <DeckPlaytestPage /> },
   { path: '*', element: <NotFoundPage /> },
 ]);
