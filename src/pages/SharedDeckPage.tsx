@@ -215,8 +215,9 @@ function SharedDeckMenu({ deckId, deckName, onImage, extraItems, extraModals }: 
         right={onImage ? 'var(--mantine-spacing-lg)' : 0}
       >
         <SettingsMenu label="Actions sur le deck" onImage={onImage}>
-          <Menu.Item onClick={() => setExportOpened(true)}>Exporter</Menu.Item>
           <Menu.Item onClick={() => setCompareOpened(true)}>Comparer avec un autre deck</Menu.Item>
+          <Menu.Divider />
+          <Menu.Item onClick={() => setExportOpened(true)}>Exporter</Menu.Item>
           {extraItems}
         </SettingsMenu>
       </Box>

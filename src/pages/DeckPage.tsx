@@ -224,17 +224,20 @@ function DeckView({ id }: { id: string }) {
       >
         <Box pos="absolute" top={art ? 'var(--mantine-spacing-lg)' : 0} right={art ? 'var(--mantine-spacing-lg)' : 0}>
           <SettingsMenu label="Actions sur le deck" onImage={art !== null}>
+            <Menu.Item onClick={() => setEditOpened(true)}>Modifier</Menu.Item>
+            <Menu.Item onClick={() => setArtPickerOpened(true)}>Illustration</Menu.Item>
+            <Menu.Item onClick={() => setTagsOpened(true)}>Gérer les tags</Menu.Item>
+            <Menu.Divider />
+            <Menu.Item onClick={() => setBulkEditOpened(true)}>Édition en masse</Menu.Item>
+            <Menu.Item onClick={() => setCompareOpened(true)}>Comparer avec un autre deck</Menu.Item>
+            <Menu.Divider />
             <Menu.Item onClick={() => setFavorite.mutate({ deckId: current.id, favorite: !current.favorite })}>
               {current.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
             </Menu.Item>
             <Menu.Item onClick={() => setFolderOpened(true)}>Ranger dans un dossier</Menu.Item>
+            <Menu.Divider />
             <Menu.Item onClick={() => setShareOpened(true)}>Partager</Menu.Item>
-            <Menu.Item onClick={() => setArtPickerOpened(true)}>Illustration</Menu.Item>
             <Menu.Item onClick={() => setExportOpened(true)}>Exporter</Menu.Item>
-            <Menu.Item onClick={() => setBulkEditOpened(true)}>Édition en masse</Menu.Item>
-            <Menu.Item onClick={() => setCompareOpened(true)}>Comparer avec un autre deck</Menu.Item>
-            <Menu.Item onClick={() => setTagsOpened(true)}>Gérer les tags</Menu.Item>
-            <Menu.Item onClick={() => setEditOpened(true)}>Modifier</Menu.Item>
             <Menu.Divider />
             {copyActions.menuItems}
             <Menu.Divider />
