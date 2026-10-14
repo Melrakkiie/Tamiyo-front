@@ -46,7 +46,15 @@ import { DropOverlay } from '../scryfall/DropOverlay';
 import { useScryfallDrop } from '../scryfall/useScryfallDrop';
 import { artBackground, artCredit, deckArtId } from '../decks/art';
 import { ArtPickerModal } from '../decks/ArtPickerModal';
-import { isCommanderFormat, useDeck, useDeckCards, useDeleteDeck, usePendingCards, useUpdateDeck } from '../decks/api';
+import {
+  isCommanderFormat,
+  useDeck,
+  useDeckCards,
+  useDeckStats,
+  useDeleteDeck,
+  usePendingCards,
+  useUpdateDeck,
+} from '../decks/api';
 import { type CollapsibleBoard, COLLAPSIBLE_BOARDS, DEFAULT_COLLAPSED_BOARDS, inBoard } from '../decks/boards';
 import { BoardSection } from '../decks/BoardSection';
 import { type DeckCardGrouped, DeckCardGroups, type GroupDrop, useDeckCardGroups } from '../decks/DeckCardGroups';
@@ -62,7 +70,9 @@ import { useDeckCopyActions } from '../decks/DeckCopyActions';
 import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckTagsModal } from '../decks/DeckTagsModal';
 import { DeckLegalityWarning } from '../decks/DeckLegalityWarning';
+import { usePriceCurrency } from '../cards/price';
 import { BracketBadge } from '../decks/bracket';
+import { DeckValue } from '../decks/DeckValue';
 import { BulkEditModal } from '../decks/BulkEditModal';
 import { MoveDeckToFolderModal } from '../decks/FolderModals';
 import { useSetFavorite } from '../decks/folders';
@@ -150,6 +160,8 @@ function DeckView({ id }: { id: string }) {
   const [folderOpened, setFolderOpened] = useState(false);
   const setFavorite = useSetFavorite();
   const copyActions = useDeckCopyActions(id, true);
+  const currency = usePriceCurrency();
+  const stats = useDeckStats(id, currency !== null);
   const artId = deck.data ? deckArtId(deck.data) : null;
   const arts = useCardArts([artId]);
   const art = artId ? (arts.data?.[artId] ?? null) : null;
@@ -248,6 +260,9 @@ function DeckView({ id }: { id: string }) {
               <BracketBadge bracket={current.bracket} onImage={art !== null} size="md" />
             )}
             <LikeButton deckId={current.id} canLike={false} onImage={art !== null} />
+            {currency && stats.data && (
+              <DeckValue value={stats.data.value} currency={currency} onImage={art !== null} />
+            )}
           </Group>
         </Stack>
         {art && (
@@ -587,6 +602,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
         ? {
             name: commanderName ?? 'Commandant',
             scryfallId: commanderScryfallId,
+            foil: commanderCard?.foil,
             imageUrl: commanderImage,
             open: commanderCard
               ? () => (isPendingCard(commanderCard) ? openPending(commanderCard) : openCard(commanderCard, 'main'))

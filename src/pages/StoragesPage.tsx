@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router';
 
 import { errorMessage } from '../api/errors';
 import { useCardContextMenu } from '../cards/CardContextMenu';
+import { formatPrice, PriceText, usePriceCurrency } from '../cards/price';
 import { capitalize, groupByRecent } from '../layout/groupByRecent';
 import { StorageFormModal } from '../storages/StorageFormModal';
 import { useAllStorages, useCreateStorage } from '../storages/api';
@@ -35,6 +36,7 @@ export function StoragesPage() {
   const [createOpened, setCreateOpened] = useState(false);
   const contextMenu = useCardContextMenu();
   const storageMenu = useStorageTileMenu();
+  const currency = usePriceCurrency();
 
   function closeCreate() {
     setCreateOpened(false);
@@ -110,6 +112,14 @@ export function StoragesPage() {
                             {storage.card_count === 0
                               ? 'encore vide'
                               : `${storage.card_count} carte${storage.card_count > 1 ? 's' : ''}`}
+                            {currency && storage.card_count > 0 && (
+                              <>
+                                {' · '}
+                                <PriceText span inherit>
+                                  {formatPrice(storage.value[currency], currency)}
+                                </PriceText>
+                              </>
+                            )}
                           </Text>
                         </Stack>
                       </Group>

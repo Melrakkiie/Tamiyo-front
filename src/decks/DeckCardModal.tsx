@@ -6,6 +6,7 @@ import { errorMessage } from '../api/errors';
 import type { Card, DeckBoard } from '../api/types';
 import { copyIds, useUpdateCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
+import { PrintPrice } from '../cards/price';
 import { CardRulesText } from '../scryfall/CardRulesText';
 import { commanderEligibility } from '../scryfall/commander';
 import { useBackImage, useScryfallCard } from '../scryfall/hooks';
@@ -150,6 +151,7 @@ function DeckCardDetail({
       <Grid gutter="lg">
         <Grid.Col span={{ base: 12, sm: 5 }}>
           <CardImage name={card.name} url={imageUrl} backUrl={backImage} loading={false} />
+          <PrintPrice scryfallId={card.scryfall_id} foil={card.foil} ta="center" mt="xs" />
         </Grid.Col>
         <Grid.Col span={{ base: 12, sm: 7 }}>
           <Stack>

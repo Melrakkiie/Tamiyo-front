@@ -3,6 +3,7 @@ import { type ReactNode, useState } from 'react';
 
 import { ApiError, errorMessage } from '../api/errors';
 import type { DeckStats } from '../api/types';
+import { formatPrice, PriceText, usePriceCurrency } from '../cards/price';
 import { useDeckStats } from './api';
 import { withSymbols } from '../scryfall/manaSymbols';
 import { BarList } from './charts';
@@ -59,6 +60,7 @@ export function DeckStatsView({
   emptyMessage = 'Ajoute des cartes au deck pour voir ses statistiques.',
 }: DeckStatsViewProps) {
   const [selectedManaValue, setSelectedManaValue] = useState<number | null>(null);
+  const currency = usePriceCurrency();
 
   if (stats.isLoading) {
     return (
@@ -103,7 +105,7 @@ export function DeckStatsView({
     <Stack gap="xl">
       {stats.error instanceof ApiError && <Alert color="orange">{errorMessage(stats.error)}</Alert>}
 
-      <SimpleGrid cols={{ base: 2, sm: 4 }}>
+      <SimpleGrid cols={{ base: 2, sm: currency ? 5 : 4 }}>
         <StatTile label="Cartes" value={data.card_count} />
         <StatTile
           label="Terrains"
@@ -118,6 +120,16 @@ export function DeckStatsView({
         />
         <StatTile label="Hors terrains" value={data.nonland_count} />
         <StatTile label="Coût de mana moyen" value={data.average_mana_value.toFixed(2)} />
+        {currency && (
+          <StatTile
+            label="Prix"
+            value={
+              <PriceText span fz={26} lh={1}>
+                {formatPrice(data.value[currency], currency)}
+              </PriceText>
+            }
+          />
+        )}
       </SimpleGrid>
 
       <Stack gap="xs">

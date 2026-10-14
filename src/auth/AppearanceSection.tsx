@@ -1,4 +1,4 @@
-import { Alert, Group, Paper, SegmentedControl, Select, Stack, Text, Title } from '@mantine/core';
+import { Alert, Divider, Group, Paper, SegmentedControl, Select, Stack, Switch, Text, Title } from '@mantine/core';
 
 import { errorMessage } from '../api/errors';
 import type { Preferences } from '../api/types';
@@ -6,11 +6,17 @@ import { DEFAULT_NIGHT_ENDS_AT, DEFAULT_NIGHT_STARTS_AT } from '../theme/colorSc
 import { usePreferences, useUpdatePreferences } from './preferences';
 
 type Theme = Preferences['theme'];
+type Currency = Preferences['price_currency'];
 
 const themeOptions: { value: Theme; label: string }[] = [
   { value: 'day', label: 'Jour' },
   { value: 'night', label: 'Nuit' },
   { value: 'auto', label: "Selon l'heure" },
+];
+
+const currencyOptions: { value: Currency; label: string }[] = [
+  { value: 'eur', label: 'Euros (Cardmarket)' },
+  { value: 'usd', label: 'Dollars (TCGplayer)' },
 ];
 
 const hours = Array.from({ length: 24 }, (_, hour) => hour);
@@ -25,6 +31,8 @@ export function AppearanceSection() {
   const theme = preferences.data?.theme ?? 'auto';
   const startsAt = preferences.data?.night_starts_at ?? DEFAULT_NIGHT_STARTS_AT;
   const endsAt = preferences.data?.night_ends_at ?? DEFAULT_NIGHT_ENDS_AT;
+  const showPrices = preferences.data?.show_prices ?? false;
+  const currency = preferences.data?.price_currency ?? 'eur';
 
   return (
     <Paper withBorder p="lg">
@@ -65,6 +73,23 @@ export function AppearanceSection() {
                   onChange={(value) => value !== null && update.mutate({ night_ends_at: Number(value) })}
                 />
               </Group>
+            )}
+            <Divider />
+            <Switch
+              label="Afficher les prix"
+              description="Le prix des cartes et la valeur de ta collection, de tes rangements et de tes decks, d'après Scryfall. Les proxys ne comptent pas."
+              checked={showPrices}
+              disabled={!preferences.data}
+              onChange={(event) => update.mutate({ show_prices: event.currentTarget.checked })}
+            />
+            {showPrices && (
+              <SegmentedControl
+                fullWidth
+                data={currencyOptions}
+                value={currency}
+                disabled={!preferences.data}
+                onChange={(value) => update.mutate({ price_currency: value as Currency })}
+              />
             )}
           </>
         )}

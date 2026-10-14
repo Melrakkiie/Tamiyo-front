@@ -52,6 +52,14 @@ export function useCards(filters: CardFilters) {
   });
 }
 
+export function useCollectionValue(enabled: boolean) {
+  return useQuery({
+    queryKey: ['cards', 'value'],
+    queryFn: async () => unwrap(await api.GET('/cards/value')),
+    enabled,
+  });
+}
+
 function useInvalidateCollection() {
   const queryClient = useQueryClient();
   return () =>

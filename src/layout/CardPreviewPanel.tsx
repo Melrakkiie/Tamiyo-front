@@ -2,6 +2,7 @@ import { Stack, Text, UnstyledButton } from '@mantine/core';
 import { useLocation } from 'react-router';
 
 import { CardImage } from '../cards/CardImage';
+import { PrintPrice } from '../cards/price';
 import { useCardBackImages, useCardImages } from '../scryfall/hooks';
 import { useCardPreview } from './cardPreview';
 
@@ -42,6 +43,7 @@ export function CardPreviewPanel() {
       ) : (
         image
       )}
+      <PrintPrice scryfallId={card.scryfallId} foil={card.foil} ta="center" />
       {card.open && (
         <Text size="xs" c="dimmed" ta="center">
           Clique pour ouvrir la carte

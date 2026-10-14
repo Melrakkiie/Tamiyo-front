@@ -7,6 +7,7 @@ import { ApiError, errorMessage } from '../api/errors';
 import { type CollectionExport, useExportCollection } from '../bulk/api';
 import { CollectionImportModal } from '../bulk/CollectionImportModal';
 import { CardBrowser } from '../cards/CardBrowser';
+import { formatPrice, PriceText, usePriceCurrency } from '../cards/price';
 import { useAllDecks } from '../decks/api';
 import { SettingsMenu } from '../layout/SettingsMenu';
 import { StorageFormModal } from '../storages/StorageFormModal';
@@ -33,6 +34,7 @@ function StorageView({ id }: { id: number }) {
   const [importOpened, setImportOpened] = useState(false);
   const [lockOpened, setLockOpened] = useState(false);
   const decks = useAllDecks();
+  const currency = usePriceCurrency();
   const exportStorage = useExportCollection(id);
 
   function closeEdit() {
@@ -67,7 +69,8 @@ function StorageView({ id }: { id: number }) {
   }
 
   if (!storage.data) {
-    const notFound = storage.error instanceof ApiError && (storage.error.status === 404 || storage.error.status === 400);
+    const notFound =
+      storage.error instanceof ApiError && (storage.error.status === 404 || storage.error.status === 400);
     return (
       <Stack align="flex-start">
         <Alert color="red">
@@ -97,6 +100,7 @@ function StorageView({ id }: { id: number }) {
             <Title order={2}>{current.name}</Title>
             <Badge variant="light">{current.type}</Badge>
           </Group>
+          {currency && <PriceText mt={4}>Valeur : {formatPrice(current.value[currency], currency)}</PriceText>}
           {current.locked && (
             <Group gap={6} wrap="nowrap" c="dimmed" mt={4}>
               <LockIcon size={14} />

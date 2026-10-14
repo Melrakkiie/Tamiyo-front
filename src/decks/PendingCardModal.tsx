@@ -6,6 +6,7 @@ import { errorMessage } from '../api/errors';
 import type { Card, PendingCard } from '../api/types';
 import { CardImage } from '../cards/CardImage';
 import { PendingBadge, pendingStatusDescription } from '../cards/PendingBadge';
+import { PrintPrice } from '../cards/price';
 import { CardRulesText } from '../scryfall/CardRulesText';
 import { commanderEligibility } from '../scryfall/commander';
 import { useBackImage, useScryfallCard } from '../scryfall/hooks';
@@ -91,6 +92,7 @@ export function PendingCardModal({
           <Grid gutter="lg">
             <Grid.Col span={{ base: 12, sm: 5 }}>
               <PendingCardImage card={shown.card} imageUrl={shown.imageUrl} />
+              <PrintPrice scryfallId={shown.card.scryfall_id} foil={shown.card.foil} ta="center" mt="xs" />
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 7 }}>
               <Stack>

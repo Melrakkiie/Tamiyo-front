@@ -4,6 +4,7 @@ export interface PreviewCard {
   name: string;
   scryfallId: string;
   imageUrl: string | undefined;
+  foil?: boolean;
   open?: () => void;
 }
 
@@ -15,7 +16,13 @@ const listeners = new Set<() => void>();
 function sameCard(a: PreviewCard | null, b: PreviewCard | null) {
   return (
     a === b ||
-    (!!a && !!b && a.scryfallId === b.scryfallId && a.imageUrl === b.imageUrl && a.name === b.name && a.open === b.open)
+    (!!a &&
+      !!b &&
+      a.scryfallId === b.scryfallId &&
+      a.imageUrl === b.imageUrl &&
+      a.name === b.name &&
+      a.foil === b.foil &&
+      a.open === b.open)
   );
 }
 

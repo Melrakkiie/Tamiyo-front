@@ -30,6 +30,7 @@ import { FoilSticker, ProxySticker } from '../theme/Sticker';
 import { copyIds, useUpdateCopies } from './api';
 import { CardImage } from './CardImage';
 import { CollectionQuantityControl } from './CollectionQuantityControl';
+import { PrintPrice } from './price';
 
 interface CardDetailModalProps {
   card: Card | null;
@@ -144,6 +145,7 @@ function CardDetail({ card, imageUrl, onUpdated, onClose }: CardDetailProps) {
             backUrl={printing ? printingBackImage : backImage}
             loading={false}
           />
+          <PrintPrice scryfallId={printing?.id ?? card.scryfall_id} foil={foil} ta="center" mt="xs" />
         </Grid.Col>
         <Grid.Col span={{ base: 12, sm: 7 }}>
           <Stack>

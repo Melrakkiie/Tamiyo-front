@@ -34,7 +34,9 @@ import { BoardSection } from '../decks/BoardSection';
 import { type DeckCardGrouped, DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
 import { LegalityWarning } from '../decks/DeckLegalityWarning';
 import { isCommanderFormat } from '../decks/api';
+import { usePriceCurrency } from '../cards/price';
 import { BracketBadge } from '../decks/bracket';
+import { DeckValue } from '../decks/DeckValue';
 import { LikeButton, LikeCount } from '../decks/LikeButton';
 import { CollectionToggle } from '../decks/CollectionToggle';
 import { CompareDeckModal } from '../decks/CompareDeckModal';
@@ -72,7 +74,8 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
   usePageTitle(shared.data?.deck.name ?? 'Deck');
   const legality = useSharedDeckLegality(deckId);
   const [tab, setTab] = useState<string | null>('cards');
-  const stats = useSharedDeckStats(deckId, tab === 'stats');
+  const currency = usePriceCurrency();
+  const stats = useSharedDeckStats(deckId, tab === 'stats' || currency !== null);
   const { status } = useSession();
   const signedIn = status === 'authenticated';
   const artId = shared.data ? deckArtId(shared.data.deck) : null;
@@ -143,6 +146,9 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
               <SharedDeckLike deckId={deck.id} ownerId={owner.id} onImage={art !== null} />
             ) : (
               <LikeCount count={deck.likes_count} onImage={art !== null} />
+            )}
+            {currency && stats.data && (
+              <DeckValue value={stats.data.value} currency={currency} onImage={art !== null} />
             )}
           </Group>
           <Group gap="xs" wrap="nowrap">
@@ -342,6 +348,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
         ? {
             name: commander.name,
             scryfallId: commander.scryfall_id,
+            foil: commander.foil,
             imageUrl: commanderImage,
             open: () => setOpenedCard(commander),
           }

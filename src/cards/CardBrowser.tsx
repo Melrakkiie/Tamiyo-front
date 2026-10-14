@@ -157,6 +157,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
         ? {
             name: firstCard.name,
             scryfallId: firstCard.scryfall_id,
+            foil: firstCard.foil,
             imageUrl: firstImage,
             open: () => openCard(firstCard),
           }

@@ -932,6 +932,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/cards/value": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Value of the collection
+         * @description Sum of the Scryfall prices of every card of the account but proxies, in both currencies. A foil card counts its foil price, another card its regular price, and the other price when that one is missing.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Value"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                500: components["responses"]["InternalError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/cards/{id}": {
         parameters: {
             query?: never;
@@ -4158,7 +4199,7 @@ export interface paths {
                         "application/json": components["schemas"]["Preferences"];
                     };
                 };
-                /** @description No known field, a field of the wrong type, an unknown card_display, or card_columns outside 2..12 */
+                /** @description No known field, a field of the wrong type, an unknown card_display, card_columns outside 2..12, or price_currency not eur or usd */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -5034,6 +5075,17 @@ export interface components {
              * @default 6
              */
             night_ends_at: number;
+            /**
+             * @description Whether the app shows card prices and the value of the collection, storages and decks.
+             * @default false
+             */
+            show_prices: boolean;
+            /**
+             * @description Which prices the app shows, eur (Cardmarket) or usd (TCGplayer).
+             * @default eur
+             * @enum {string}
+             */
+            price_currency: "eur" | "usd";
         };
         /** @description Any of the preferences; at least one. */
         PreferencesChanges: {
@@ -5053,6 +5105,9 @@ export interface components {
             theme?: "day" | "night" | "auto";
             night_starts_at?: number;
             night_ends_at?: number;
+            show_prices?: boolean;
+            /** @enum {string} */
+            price_currency?: "eur" | "usd";
         };
         DeckOwnership: {
             cards: {
@@ -5148,6 +5203,13 @@ export interface components {
             };
             /** @description Cards whose front face isn't a land but whose back face is (modal double-faced cards), by name. They aren't in land_count. */
             back_face_lands: components["schemas"]["BackFaceCard"][];
+            /** @description Value of the main board, owned and pending cards, proxies left out, from Scryfall's current prices, rounded to the cent. */
+            value: components["schemas"]["Value"];
+        };
+        /** @description A sum of Scryfall prices, in euros (Cardmarket) and US dollars (TCGplayer). Proxies never count; a foil card counts its foil price, another card its regular price, and the other price when that one is missing; a card without any price counts 0. */
+        Value: {
+            eur: number;
+            usd: number;
         };
         BackFaceCard: {
             name: string;
@@ -5452,6 +5514,8 @@ export interface components {
             name: string;
             type: string;
             card_count: number;
+            /** @description Value of the storage's cards, proxies left out. */
+            value: components["schemas"]["Value"];
             added: string;
             updated: string;
             /** @description A locked storage is hidden from the decks it doesn't allow: its cards don't count as owned copies for their pending cards and are never put in them by imports, duplications or finish switches. */

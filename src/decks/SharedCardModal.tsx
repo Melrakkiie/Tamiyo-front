@@ -5,6 +5,7 @@ import type { Card, DeckBoard } from '../api/types';
 import { useSession } from '../auth/useSession';
 import { AddCardModal, type AddTarget } from '../cards/AddCardModal';
 import { CardImage } from '../cards/CardImage';
+import { PrintPrice } from '../cards/price';
 import { CardRulesText } from '../scryfall/CardRulesText';
 import { useBackImage, useScryfallCard } from '../scryfall/hooks';
 import { FoilSticker } from '../theme/Sticker';
@@ -66,6 +67,7 @@ function SharedCardDetail({ card, imageUrl, details, onAdd }: SharedCardDetailPr
     <Grid gutter="lg">
       <Grid.Col span={{ base: 12, sm: 5 }}>
         <CardImage name={card.name} url={imageUrl} backUrl={backImage} loading={false} />
+        <PrintPrice scryfallId={card.scryfall_id} foil={card.foil} ta="center" mt="xs" />
       </Grid.Col>
       <Grid.Col span={{ base: 12, sm: 7 }}>
         <Stack>

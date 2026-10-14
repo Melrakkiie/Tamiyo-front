@@ -133,6 +133,7 @@ export function CardTile({
     showCardPreview({
       name: card.name,
       scryfallId: card.scryfall_id,
+      foil: card.foil,
       imageUrl: shownUrl ?? imageUrl,
       open: () => onOpen(card),
     });
@@ -174,6 +175,7 @@ export function CardTile({
               showCardPreview({
                 name: card.name,
                 scryfallId: card.scryfall_id,
+                foil: card.foil,
                 imageUrl: url,
                 open: () => onOpen(card),
               });

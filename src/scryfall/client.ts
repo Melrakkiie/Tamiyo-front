@@ -46,6 +46,12 @@ export interface ScryfallCard {
   artist?: string;
   legalities?: Record<string, string>;
   image_uris?: ImageUris;
+  prices?: {
+    eur?: string | null;
+    eur_foil?: string | null;
+    usd?: string | null;
+    usd_foil?: string | null;
+  };
   card_faces?: {
     image_uris?: ImageUris;
     colors?: string[];
@@ -215,9 +221,7 @@ export async function fetchFrenchPrinting(card: ScryfallCard): Promise<ScryfallC
 }
 
 export async function autocompleteCardNames(query: string): Promise<string[]> {
-  const result = await scryfall<ScryfallList<string>>(
-    `/cards/autocomplete?q=${encodeURIComponent(query)}`,
-  );
+  const result = await scryfall<ScryfallList<string>>(`/cards/autocomplete?q=${encodeURIComponent(query)}`);
   return result?.data ?? [];
 }
 

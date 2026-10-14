@@ -23,6 +23,7 @@ export type ComparedDeck = components['schemas']['ComparedDeck'];
 export type DeckTags = components['schemas']['DeckTags'];
 export type DeckView = components['schemas']['DeckView'];
 export type DeckStats = components['schemas']['DeckStats'];
+export type Value = components['schemas']['Value'];
 export type DeckFolder = components['schemas']['DeckFolder'];
 export type PublicDeckFolder = components['schemas']['PublicDeckFolder'];
 export type ManaCurveBucket = components['schemas']['ManaCurveBucket'];
