@@ -6,7 +6,7 @@ import { errorMessage } from '../api/errors';
 import type { Card, Deck, DeckBoard, PendingCard } from '../api/types';
 import { useImportIntoDeck } from '../bulk/api';
 import { copyIds, useCreateCards } from '../cards/api';
-import { CardCopyItems, FoilToggleItem } from '../cards/CardContextMenu';
+import { CardCopyItems, FoilToggleItem, ProxyToggleItem } from '../cards/CardContextMenu';
 import { commanderEligibility } from '../scryfall/commander';
 import { useScryfallCard } from '../scryfall/hooks';
 import { AddCopiesToDeckModal, deckLineFile } from './AddCopiesToDeckModal';
@@ -17,6 +17,7 @@ import {
   useRemovePendingCard,
   useSetPendingQuantity,
   useSwitchFoil,
+  useSwitchProxy,
   useUpdateDeck,
 } from './api';
 import { BOARDS } from './boards';
@@ -37,6 +38,7 @@ function notifyError(err: unknown) {
 
 export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions: DeckCardActions) {
   const switchFoil = useSwitchFoil();
+  const switchProxy = useSwitchProxy();
   const importLine = useImportIntoDeck();
   const removeOwned = useRemoveCardFromDeck();
   const removePending = useRemovePendingCard();
@@ -67,6 +69,24 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
           notifications.show({
             color: 'green',
             message: `${card.name} est maintenant ${finish} dans ce deck${summaryDetails(summary)}. Ta collection n'a pas changé.`,
+          }),
+        onError: notifyError,
+      },
+    );
+  }
+
+  function toggleProxy(card: Card, proxy: boolean) {
+    const pendingId = isPendingCard(card) ? pendingIdOf(card) : null;
+    const state = proxy ? 'est maintenant proxy' : "n'est plus proxy";
+    switchProxy.mutate(
+      pendingId !== null
+        ? { deckId: deck.id, pendingIds: [pendingId], proxy }
+        : { deckId: deck.id, cardIds: copyIds(card), proxy },
+      {
+        onSuccess: (summary) =>
+          notifications.show({
+            color: 'green',
+            message: `${card.name} ${state} dans ce deck${summaryDetails(summary)}. Ta collection n'a pas changé.`,
           }),
         onError: notifyError,
       },
@@ -160,7 +180,9 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
     const quantity = card.quantity ?? 1;
     return (
       <>
-        <FoilToggleItem card={card} onToggle={(foil) => toggleFoil(card, foil)} />
+        <FoilToggleItem card={card} onToggle={(foil) => toggleFoil(card, foil)} divider={false} />
+        <ProxyToggleItem card={card} onToggle={(proxy) => toggleProxy(card, proxy)} />
+        <Menu.Divider />
         {quantity >= 2 && !commander && <Menu.Item onClick={() => setSplitCard(card)}>Séparer les éditions…</Menu.Item>}
         <Menu.Item onClick={() => addOne(card, board)}>Ajouter un exemplaire</Menu.Item>
         <Menu.Item onClick={() => removeOne(card)} disabled={commander && quantity <= 1}>

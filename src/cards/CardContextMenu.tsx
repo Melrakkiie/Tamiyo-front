@@ -122,7 +122,23 @@ export function CardCopyItems({ card, imageUrl }: { card: Card; imageUrl: string
   );
 }
 
-export function FoilToggleItem({ card, onToggle }: { card: Card; onToggle: (foil: boolean) => void }) {
+export function ProxyToggleItem({ card, onToggle }: { card: Card; onToggle: (proxy: boolean) => void }) {
+  return (
+    <Menu.Item onClick={() => onToggle(!card.proxy)}>
+      {card.proxy ? 'Passer en non-proxy' : 'Passer en proxy'}
+    </Menu.Item>
+  );
+}
+
+export function FoilToggleItem({
+  card,
+  onToggle,
+  divider = true,
+}: {
+  card: Card;
+  onToggle: (foil: boolean) => void;
+  divider?: boolean;
+}) {
   const printing = useScryfallCard(card.scryfall_id);
   if (printing.isLoading) {
     return <Menu.Item disabled>{card.foil ? 'Passer en non-foil' : 'Passer en foil'}</Menu.Item>;
@@ -137,7 +153,7 @@ export function FoilToggleItem({ card, onToggle }: { card: Card; onToggle: (foil
   return (
     <>
       <Menu.Item onClick={() => onToggle(!card.foil)}>{card.foil ? 'Passer en non-foil' : 'Passer en foil'}</Menu.Item>
-      <Menu.Divider />
+      {divider && <Menu.Divider />}
     </>
   );
 }

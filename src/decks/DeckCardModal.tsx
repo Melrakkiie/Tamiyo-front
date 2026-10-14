@@ -1,4 +1,4 @@
-import { Alert, Button, Divider, Grid, Modal, Select, Stack, Switch, Text, Title } from '@mantine/core';
+import { Alert, Button, Divider, Grid, Modal, Select, Stack, Text, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useRef, useState } from 'react';
 
@@ -106,7 +106,6 @@ function DeckCardDetail({
   const storages = useAllStorages();
   const updateCard = useUpdateCard();
   const [storageId, setStorageId] = useState<string | null>(card.storage_id ? String(card.storage_id) : null);
-  const [proxy, setProxy] = useState(card.proxy);
 
   function moveToStorage(next: string | null) {
     const previous = storageId;
@@ -122,21 +121,6 @@ function DeckCardDetail({
           });
         },
         onError: () => setStorageId(previous),
-      },
-    );
-  }
-
-  function toggleProxy(next: boolean) {
-    setProxy(next);
-    updateCard.mutate(
-      { id: card.id, changes: { proxy: next } },
-      {
-        onSuccess: () =>
-          notifications.show({
-            color: 'green',
-            message: next ? `${card.name} est marquée comme proxy.` : `${card.name} n'est plus marquée comme proxy.`,
-          }),
-        onError: () => setProxy(!next),
       },
     );
   }
@@ -182,14 +166,14 @@ function DeckCardDetail({
               <Text size="sm" c="dimmed">
                 {card.set_code.toUpperCase()} · #{card.collector_number}
                 {card.foil ? ' · foil' : ''}
-                {proxy ? ' · proxy' : ''}
+                {card.proxy ? ' · proxy' : ''}
               </Text>
             </div>
 
             {(card.quantity ?? 1) > 1 && (
               <Text size="sm" c="dimmed">
-                {card.quantity} exemplaires identiques dans ce deck (même édition, même rangement) : le rangement et le
-                proxy ne changent que pour l'un d'eux.
+                {card.quantity} exemplaires identiques dans ce deck (même édition, même rangement) : le rangement ne
+                change que pour l'un d'eux.
               </Text>
             )}
 
@@ -251,13 +235,6 @@ function DeckCardDetail({
               onChange={moveToStorage}
               clearable
               searchable
-              disabled={updateCard.isPending}
-            />
-            <Switch
-              label="Proxy"
-              description="Une impression de remplacement, pas une vraie carte."
-              checked={proxy}
-              onChange={(event) => toggleProxy(event.currentTarget.checked)}
               disabled={updateCard.isPending}
             />
             <Divider />

@@ -12,7 +12,7 @@ export function pendingToCards(pending: PendingCard[]): DeckCard[] {
       set_code: item.set_code,
       collector_number: item.collector_number,
       foil: item.foil,
-      proxy: false,
+      proxy: item.proxy,
       storage_id: null,
       mana_value: item.mana_value,
       colors: item.colors,
