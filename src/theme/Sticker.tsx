@@ -1,3 +1,4 @@
+import { UnstyledButton } from '@mantine/core';
 import type { ReactNode } from 'react';
 
 export type StickerTone = 'prune' | 'lune' | 'ocelle' | 'paper';
@@ -9,9 +10,10 @@ interface StickerProps {
   size?: 'xs' | 'sm' | 'md';
   tilt?: number;
   title?: string;
+  action?: ReactNode;
 }
 
-export function Sticker({ tone, icon, children, size = 'sm', tilt = 0, title }: StickerProps) {
+export function Sticker({ tone, icon, children, size = 'sm', tilt = 0, title, action }: StickerProps) {
   return (
     <span
       className="tamiyo-sticker"
@@ -19,12 +21,13 @@ export function Sticker({ tone, icon, children, size = 'sm', tilt = 0, title }: 
       data-size={size}
       data-round={children ? undefined : true}
       title={title}
-      aria-label={title}
-      role={title ? 'img' : undefined}
+      aria-label={action ? undefined : title}
+      role={title && !action ? 'img' : undefined}
       style={{ transform: tilt ? `rotate(${tilt}deg)` : undefined }}
     >
       {icon}
-      {children && <span>{children}</span>}
+      {children && <span className="tamiyo-sticker-text">{children}</span>}
+      {action}
     </span>
   );
 }
@@ -99,6 +102,68 @@ export function CrownStickerIcon() {
     <StickerIcon>
       <path d="M12 6l4 6l5 -4l-2 10h-14l-2 -10l5 4z" />
     </StickerIcon>
+  );
+}
+
+export function TagIcon() {
+  return (
+    <StickerIcon>
+      <path d="M3 12V4h8l10 10-7 7z" />
+      <path d="M7.5 7.5h.01" />
+    </StickerIcon>
+  );
+}
+
+function CrossIcon() {
+  return (
+    <StickerIcon>
+      <path d="M7 7l10 10M17 7L7 17" />
+    </StickerIcon>
+  );
+}
+
+const TAG_TONES: StickerTone[] = ['lune', 'ocelle', 'prune', 'paper'];
+const TAG_TILTS = [-3, -1, 2, 3];
+
+function tagHash(tag: string) {
+  let hash = 0;
+  for (const char of tag.toLocaleLowerCase('fr')) {
+    hash = (hash * 31 + char.codePointAt(0)!) >>> 0;
+  }
+  return hash;
+}
+
+interface TagStickerProps {
+  tag: string;
+  size?: 'xs' | 'sm' | 'md';
+  onRemove?: () => void;
+  disabled?: boolean;
+}
+
+export function TagSticker({ tag, size = 'sm', onRemove, disabled }: TagStickerProps) {
+  const hash = tagHash(tag);
+  return (
+    <Sticker
+      tone={TAG_TONES[hash % 4]}
+      tilt={TAG_TILTS[(hash >> 2) % 4]}
+      size={size}
+      icon={<TagIcon />}
+      title={tag}
+      action={
+        onRemove && (
+          <UnstyledButton
+            className="tamiyo-sticker-remove"
+            onClick={onRemove}
+            disabled={disabled}
+            aria-label={`Retirer le tag ${tag}`}
+          >
+            <CrossIcon />
+          </UnstyledButton>
+        )
+      }
+    >
+      {tag}
+    </Sticker>
   );
 }
 

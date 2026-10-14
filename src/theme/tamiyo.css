@@ -180,6 +180,40 @@ h6,
   border-color: #a79f92;
 }
 
+.tamiyo-sticker-text {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-block: 0.15em;
+  margin-block: -0.15em;
+}
+
+.tamiyo-sticker-remove {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 1px;
+  padding: 0;
+  border-radius: 999px;
+  color: inherit;
+  background: none;
+  opacity: 0.7;
+}
+
+.tamiyo-sticker-remove:hover,
+.tamiyo-sticker-remove:focus-visible {
+  opacity: 1;
+}
+
+.tamiyo-sticker-remove:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+
+.tamiyo-sticker-remove:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 [data-mantine-color-scheme='light'] .tamiyo-favorite-star[data-favorite] {
   color: var(--mantine-color-lune-3);
 }

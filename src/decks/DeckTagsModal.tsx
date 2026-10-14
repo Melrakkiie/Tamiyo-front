@@ -1,7 +1,8 @@
-import { Alert, Badge, Button, Group, Modal, Stack, Text, TextInput } from '@mantine/core';
+import { Alert, Button, Group, Modal, Stack, Text, TextInput } from '@mantine/core';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
+import { TagSticker } from '../theme/Sticker';
 import { useDeckTags, useDeleteDeckTag, useRenameDeckTag } from './tags';
 
 interface DeckTagsModalProps {
@@ -90,9 +91,7 @@ function TagRow({ deckId, tag, count }: { deckId: string; tag: string; count: nu
     <Stack gap={4}>
       <Group justify="space-between" wrap="nowrap">
         <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
-          <Badge variant="light" size="lg" style={{ textTransform: 'none' }} maw={240}>
-            {tag}
-          </Badge>
+          <TagSticker tag={tag} />
           <Text size="sm" c="dimmed">
             {count} carte{count > 1 ? 's' : ''}
           </Text>
