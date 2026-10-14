@@ -53,7 +53,8 @@ function useUsdPerEur(enabled: boolean) {
 
 function finishPrices(card: ScryfallCard, foil: boolean, currency: PriceCurrency) {
   const regular = parsePrice(card.prices?.[currency]);
-  const foiled = parsePrice(card.prices?.[`${currency}_foil`]);
+  const etched = currency === 'usd' ? parsePrice(card.prices?.usd_etched) : null;
+  const foiled = parsePrice(card.prices?.[`${currency}_foil`]) ?? etched;
   return foil ? [foiled, regular] : [regular, foiled];
 }
 

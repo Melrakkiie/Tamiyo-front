@@ -52,6 +52,7 @@ export interface ScryfallCard {
     eur_foil?: string | null;
     usd?: string | null;
     usd_foil?: string | null;
+    usd_etched?: string | null;
   };
   card_faces?: {
     image_uris?: ImageUris;
