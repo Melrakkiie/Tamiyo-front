@@ -14,7 +14,7 @@ import {
 } from '@mantine/core';
 import { useDebouncedValue, useLocalStorage } from '@mantine/hooks';
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router';
+import { useLocation, useSearchParams } from 'react-router';
 
 import { errorMessage } from '../api/errors';
 import type { Card, CardSort } from '../api/types';
@@ -22,6 +22,7 @@ import { useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hook
 import { DropOverlay } from '../scryfall/DropOverlay';
 import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
 import { useScryfallDrop } from '../scryfall/useScryfallDrop';
+import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import { FilterIcon } from '../layout/FilterIcon';
 import { usePreferences, useUpdatePreferences } from '../auth/preferences';
 import { useAllStorages } from '../storages/api';
@@ -88,6 +89,7 @@ interface CardBrowserProps {
 
 export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize }: CardBrowserProps) {
   const [params, setParams] = useSearchParams();
+  const { pathname } = useLocation();
   const page = Math.max(1, Number(params.get('page')) || 1);
   const preferences = usePreferences();
   const updatePreferences = useUpdatePreferences();
@@ -137,6 +139,25 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const manaCosts = useManaCosts(pageCards.map((card) => card.scryfall_id));
   const showMissingDetails =
     (grouping === 'type' || grouping === 'color' || sortsNeedingDetails.includes(sort)) && hasMissingDetails(pageCards);
+
+  const groups = grouping ? groupCards(pageCards, grouping) : null;
+  const firstCard = groups ? groups[0]?.cards[0] : pageCards[0];
+  const firstImage = firstCard ? images.data?.[firstCard.scryfall_id] : undefined;
+  useEffect(() => {
+    setDefaultCardPreview(
+      firstCard
+        ? {
+            name: firstCard.name,
+            scryfallId: firstCard.scryfall_id,
+            imageUrl: firstImage,
+            open: () => setOpenedCard(firstCard),
+          }
+        : null,
+      pathname,
+    );
+  });
+  useEffect(() => () => setDefaultCardPreview(null), []);
+  useEffect(() => showCardPreview(null), [page]);
 
   function renderTile(card: Card) {
     return (
@@ -341,10 +362,10 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
           }
           arrow={filtered ? undefined : 'up'}
         />
-      ) : grouping ? (
+      ) : groups ? (
         <CardGroupsLayout
           display={display}
-          groups={groupCards(pageCards, grouping).map((group, index) => ({
+          groups={groups.map((group, index) => ({
             key: `${index}-${group.label}`,
             cards: group.cards,
             header: (
