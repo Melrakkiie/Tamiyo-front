@@ -754,6 +754,12 @@ export interface paths {
                     color_mode?: "exact" | "include" | "within";
                     mana_value?: number;
                     mana_value_op?: "eq" | "lt" | "lte" | "gt" | "gte";
+                    /** @description Compared with power_op. A card matches if any of its faces does; only numeric powers are compared (*, 1+*, X never match). */
+                    power?: number;
+                    power_op?: "eq" | "lt" | "lte" | "gt" | "gte";
+                    /** @description Compared with toughness_op. A card matches if any of its faces does; only numeric toughnesses are compared (*, 1+*, X never match). */
+                    toughness?: number;
+                    toughness_op?: "eq" | "lt" | "lte" | "gt" | "gte";
                     /** @description Matches the primary type and any type of the card's type line (fetched from Scryfall in the background). */
                     type?: "Creature" | "Planeswalker" | "Battle" | "Instant" | "Sorcery" | "Artifact" | "Enchantment" | "Land";
                     /** @description Part of the subtypes, after the dash of the type line, case-insensitive. */

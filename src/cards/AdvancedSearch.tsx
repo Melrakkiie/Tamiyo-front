@@ -19,7 +19,7 @@ import { COMMON_FORMATS } from '../decks/api';
 import { withSymbols } from '../scryfall/manaSymbols';
 import { useStorageOptions, useStorageTypes } from '../storages/api';
 import { StorageFieldLabel } from '../storages/StorageLabel';
-import { type AdvancedFilters, COLORLESS, type ColorMode, type ManaValueOp, type TypeFilter } from './advancedFilters';
+import { type AdvancedFilters, COLORLESS, type ColorMode, type ComparisonOp, type TypeFilter } from './advancedFilters';
 import { typeLabels } from './grouping';
 
 const colorLetters = ['W', 'U', 'B', 'R', 'G'];
@@ -30,7 +30,7 @@ const colorModes: { value: ColorMode; label: string }[] = [
   { value: 'within', label: 'Au plus' },
 ];
 
-const manaValueOps: { value: ManaValueOp; label: string }[] = [
+const comparisonOps: { value: ComparisonOp; label: string }[] = [
   { value: 'eq', label: '=' },
   { value: 'lt', label: '<' },
   { value: 'lte', label: '≤' },
@@ -103,6 +103,50 @@ export function ColorChips({
   );
 }
 
+function ComparisonInput({
+  label,
+  placeholder,
+  op,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  placeholder: string;
+  op: ComparisonOp;
+  value: number | null;
+  min: number;
+  max: number;
+  onChange: (op: ComparisonOp, value: number | null) => void;
+}) {
+  return (
+    <Input.Wrapper label={label}>
+      <Group gap="xs" wrap="nowrap" mt={4}>
+        <Select
+          data={comparisonOps}
+          value={op}
+          onChange={(next) => next && onChange(next as ComparisonOp, value)}
+          allowDeselect={false}
+          w={80}
+          aria-label="Comparaison"
+        />
+        <NumberInput
+          placeholder={placeholder}
+          min={min}
+          max={max}
+          allowDecimal={false}
+          allowNegative={min < 0}
+          value={value ?? ''}
+          onChange={(next) => onChange(op, typeof next === 'number' ? next : null)}
+          aria-label={label}
+          style={{ flex: 1 }}
+        />
+      </Group>
+    </Input.Wrapper>
+  );
+}
+
 export function AdvancedSearch({ filters, showStorage, onChange, onReset }: AdvancedSearchProps) {
   const storageOptions = useStorageOptions();
   const storageTypes = useStorageTypes();
@@ -147,28 +191,35 @@ export function AdvancedSearch({ filters, showStorage, onChange, onReset }: Adva
             </Stack>
           </Input.Wrapper>
 
-          <Input.Wrapper label="Coût de mana">
-            <Group gap="xs" wrap="nowrap" mt={4}>
-              <Select
-                data={manaValueOps}
-                value={filters.manaValueOp}
-                onChange={(value) => value && onChange({ manaValueOp: value as ManaValueOp })}
-                allowDeselect={false}
-                w={80}
-                aria-label="Comparaison"
-              />
-              <NumberInput
-                placeholder="Tous"
-                min={0}
-                max={20}
-                allowDecimal={false}
-                value={filters.manaValue ?? ''}
-                onChange={(value) => onChange({ manaValue: typeof value === 'number' ? value : null })}
-                aria-label="Coût de mana"
-                style={{ flex: 1 }}
-              />
-            </Group>
-          </Input.Wrapper>
+          <ComparisonInput
+            label="Coût de mana"
+            placeholder="Tous"
+            op={filters.manaValueOp}
+            value={filters.manaValue}
+            min={0}
+            max={20}
+            onChange={(manaValueOp, manaValue) => onChange({ manaValueOp, manaValue })}
+          />
+
+          <ComparisonInput
+            label="Force"
+            placeholder="Toutes"
+            op={filters.powerOp}
+            value={filters.power}
+            min={-20}
+            max={99}
+            onChange={(powerOp, power) => onChange({ powerOp, power })}
+          />
+
+          <ComparisonInput
+            label="Endurance"
+            placeholder="Toutes"
+            op={filters.toughnessOp}
+            value={filters.toughness}
+            min={-20}
+            max={99}
+            onChange={(toughnessOp, toughness) => onChange({ toughnessOp, toughness })}
+          />
 
           <Select
             label="Type"
@@ -244,7 +295,7 @@ export function AdvancedSearch({ filters, showStorage, onChange, onReset }: Adva
         <Group justify="space-between" align="center">
           <Text size="xs" c="dimmed">
             Le sous-type se cherche en anglais, comme sur les cartes. Une carte ajoutée il y a moins de quelques minutes
-            peut encore manquer aux recherches par type, sous-type ou format.
+            peut encore manquer aux recherches par type, sous-type, format, force ou endurance.
           </Text>
           <Button variant="subtle" size="xs" onClick={onReset}>
             Réinitialiser les filtres

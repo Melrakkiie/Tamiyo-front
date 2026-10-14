@@ -3,7 +3,7 @@ import type { paths } from '../api/schema';
 type CardsQuery = NonNullable<paths['/cards']['get']['parameters']['query']>;
 
 export type ColorMode = NonNullable<CardsQuery['color_mode']>;
-export type ManaValueOp = NonNullable<CardsQuery['mana_value_op']>;
+export type ComparisonOp = NonNullable<CardsQuery['mana_value_op']>;
 export type TypeFilter = NonNullable<CardsQuery['type']>;
 
 export const COLORLESS = 'C';
@@ -12,7 +12,11 @@ export interface AdvancedFilters {
   colors: string;
   colorMode: ColorMode;
   manaValue: number | null;
-  manaValueOp: ManaValueOp;
+  manaValueOp: ComparisonOp;
+  power: number | null;
+  powerOp: ComparisonOp;
+  toughness: number | null;
+  toughnessOp: ComparisonOp;
   type: TypeFilter | null;
   subtype: string;
   legalIn: string | null;
@@ -28,6 +32,10 @@ const keys = {
   colorMode: 'mode',
   manaValue: 'cmc',
   manaValueOp: 'cmcop',
+  power: 'force',
+  powerOp: 'forceop',
+  toughness: 'endurance',
+  toughnessOp: 'enduranceop',
   type: 'type',
   subtype: 'soustype',
   legalIn: 'format',
@@ -41,7 +49,7 @@ const keys = {
 export const advancedFilterKeys: string[] = Object.values(keys);
 
 const colorModes: ColorMode[] = ['exact', 'include', 'within'];
-const manaValueOps: ManaValueOp[] = ['eq', 'lt', 'lte', 'gt', 'gte'];
+const comparisonOps: ComparisonOp[] = ['eq', 'lt', 'lte', 'gt', 'gte'];
 const typeFilters: TypeFilter[] = [
   'Creature',
   'Planeswalker',
@@ -67,6 +75,10 @@ function numberOrNull(raw: string | null) {
   return Number.isFinite(value) ? value : null;
 }
 
+function comparisonOp(raw: string | null) {
+  return comparisonOps.find((op) => op === raw) ?? 'eq';
+}
+
 export function parseAdvancedFilters(params: URLSearchParams): AdvancedFilters {
   const colors = letters(params.get(keys.colors), 'WUBRGC');
   const colorCount = numberOrNull(params.get(keys.colorCount));
@@ -75,7 +87,11 @@ export function parseAdvancedFilters(params: URLSearchParams): AdvancedFilters {
     colors: colors.includes(COLORLESS) ? COLORLESS : colors,
     colorMode: colorModes.find((mode) => mode === params.get(keys.colorMode)) ?? 'exact',
     manaValue: numberOrNull(params.get(keys.manaValue)),
-    manaValueOp: manaValueOps.find((op) => op === params.get(keys.manaValueOp)) ?? 'eq',
+    manaValueOp: comparisonOp(params.get(keys.manaValueOp)),
+    power: numberOrNull(params.get(keys.power)),
+    powerOp: comparisonOp(params.get(keys.powerOp)),
+    toughness: numberOrNull(params.get(keys.toughness)),
+    toughnessOp: comparisonOp(params.get(keys.toughnessOp)),
     type: typeFilters.find((type) => type === params.get(keys.type)) ?? null,
     subtype: params.get(keys.subtype)?.trim() ?? '',
     legalIn: params.get(keys.legalIn) || null,
@@ -99,7 +115,7 @@ export function advancedFilterParams(filters: Partial<AdvancedFilters>): Record<
       value === null ||
       value === '' ||
       (field === 'colorMode' && value === 'exact') ||
-      (field === 'manaValueOp' && value === 'eq')
+      ((field === 'manaValueOp' || field === 'powerOp' || field === 'toughnessOp') && value === 'eq')
     ) {
       changes[key] = null;
     } else if (field === 'foil') {
@@ -115,6 +131,8 @@ export function activeFilterCount(filters: AdvancedFilters, withStorage: boolean
   return [
     filters.colors !== '',
     filters.manaValue !== null,
+    filters.power !== null,
+    filters.toughness !== null,
     filters.type !== null,
     filters.subtype !== '',
     filters.legalIn !== null,
@@ -132,6 +150,10 @@ export function cardsQueryFilters(filters: AdvancedFilters): Partial<CardsQuery>
     color_mode: filters.colors === '' ? undefined : filters.colors === COLORLESS ? 'exact' : filters.colorMode,
     mana_value: filters.manaValue ?? undefined,
     mana_value_op: filters.manaValue === null ? undefined : filters.manaValueOp,
+    power: filters.power ?? undefined,
+    power_op: filters.power === null ? undefined : filters.powerOp,
+    toughness: filters.toughness ?? undefined,
+    toughness_op: filters.toughness === null ? undefined : filters.toughnessOp,
     type: filters.type ?? undefined,
     subtype: filters.subtype || undefined,
     legal_in: filters.legalIn ?? undefined,
