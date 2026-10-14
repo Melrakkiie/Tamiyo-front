@@ -76,7 +76,7 @@ export function groupByStorage(cards: Card[], storageNames: Map<number, string>)
     groups.push({ label: 'Sans rangement', cards: withoutStorage, storage: true });
   }
   if (notOwned.length > 0) {
-    groups.push({ label: 'Pas encore dans ta collection', cards: notOwned });
+    groups.unshift({ label: 'Pas encore dans ta collection', cards: notOwned });
   }
   return groups;
 }
