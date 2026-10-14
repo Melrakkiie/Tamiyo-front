@@ -26,6 +26,7 @@ import { canBeFoil, canBeNonFoil, foilFor, printingDetails } from '../scryfall/p
 import { PrintingGrid } from '../scryfall/PrintingGrid';
 import { useStorageOptions } from '../storages/api';
 import { StorageFieldLabel } from '../storages/StorageLabel';
+import { FoilSticker, ProxySticker } from '../theme/Sticker';
 import { copyIds, useUpdateCopies } from './api';
 import { CardImage } from './CardImage';
 import { CollectionQuantityControl } from './CollectionQuantityControl';
@@ -140,6 +141,12 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
                   ? `${card.set_code.toUpperCase()} · #${card.collector_number} → ${printing.set.toUpperCase()} · #${printing.collector_number}`
                   : `${card.set_code.toUpperCase()} · #${card.collector_number}`}
               </Text>
+              {(card.foil || card.proxy) && (
+                <Group gap={6} mt={6}>
+                  {card.foil && <FoilSticker size="sm" />}
+                  {card.proxy && <ProxySticker size="sm" />}
+                </Group>
+              )}
             </div>
 
             <CardRulesText scryfallId={printing?.id ?? card.scryfall_id} />
