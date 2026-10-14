@@ -45,7 +45,8 @@ function useUsdPerEur(enabled: boolean) {
     queryKey: ['exchange-rate'],
     queryFn: async () => unwrap(await api.GET('/exchange-rate')),
     enabled,
-    staleTime: 60 * 60 * 1000,
+    staleTime: (query) => (query.state.data?.usd_per_eur == null ? 0 : 60 * 60 * 1000),
+    refetchInterval: (query) => (query.state.data?.usd_per_eur == null ? 5 * 60 * 1000 : false),
   });
   return rate.data?.usd_per_eur ?? null;
 }
