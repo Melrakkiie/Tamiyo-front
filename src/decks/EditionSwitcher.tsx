@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { errorMessage } from '../api/errors';
 import type { Card, DeckBoard, PendingCard } from '../api/types';
 import { useCollectionCopies } from '../cards/api';
+import { PrintingPrice } from '../cards/price';
 import type { ScryfallCard } from '../scryfall/client';
 import { useCardImages, usePrintings } from '../scryfall/hooks';
 import { EditionSearchInput, NoEditionMatch } from '../scryfall/EditionSearchInput';
@@ -71,9 +72,9 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
   const closedCount = owned.filter(isClosed).length;
   const [showClosed, setShowClosed] = useState(false);
   const unlocked = showClosed ? owned : owned.filter((copy) => !isClosed(copy));
-  const setNames = new Map((printings.data ?? []).map((printing) => [printing.id, printing.set_name]));
+  const byId = new Map((printings.data ?? []).map((printing) => [printing.id, printing]));
   const [query, setQuery] = useState('');
-  const shown = unlocked.filter((copy) => matchesEdition(query, setNames.get(copy.scryfall_id), copy.set_code));
+  const shown = unlocked.filter((copy) => matchesEdition(query, byId.get(copy.scryfall_id)?.set_name, copy.set_code));
 
   const swap = useSwapDeckCard();
   const swapPending = useReplacePendingWithOwned();
@@ -148,28 +149,32 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
             {unlocked.length > 0 && <EditionSearchInput value={query} onChange={setQuery} />}
             {unlocked.length > 0 && shown.length === 0 && <NoEditionMatch />}
             <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
-              {shown.map((copy) => (
-                <UnstyledButton key={copy.id} onClick={() => chooseOwned(copy)} disabled={busy}>
-                  <Paper withBorder p={4} radius="md" style={busy ? { opacity: 0.5 } : undefined}>
-                    <Image src={images.data?.[copy.scryfall_id]} alt={copy.name} radius="sm" loading="lazy" />
-                    <Group gap={4} mt={4} wrap="nowrap">
-                      <Text size="xs">
-                        {copy.set_code.toUpperCase()} · #{copy.collector_number}
-                      </Text>
-                      {copy.foil && <FoilSticker />}
-                      {copy.proxy && <ProxySticker />}
-                    </Group>
-                    <Group gap={4} justify="space-between" align="center" wrap="nowrap">
-                      <StorageLabel
-                        name={copy.storage_id ? (storageNames.get(copy.storage_id) ?? null) : null}
-                        unknown={copy.storage_id != null && !storageNames.has(copy.storage_id)}
-                        locked={isClosed(copy)}
-                      />
-                      <SetIcon setCode={copy.set_code} size={22} />
-                    </Group>
-                  </Paper>
-                </UnstyledButton>
-              ))}
+              {shown.map((copy) => {
+                const printing = byId.get(copy.scryfall_id);
+                return (
+                  <UnstyledButton key={copy.id} onClick={() => chooseOwned(copy)} disabled={busy}>
+                    <Paper withBorder p={4} radius="md" style={busy ? { opacity: 0.5 } : undefined}>
+                      <Image src={images.data?.[copy.scryfall_id]} alt={copy.name} radius="sm" loading="lazy" />
+                      <Group gap={4} mt={4} wrap="nowrap">
+                        <Text size="xs">
+                          {copy.set_code.toUpperCase()} · #{copy.collector_number}
+                        </Text>
+                        {copy.foil && <FoilSticker />}
+                        {copy.proxy && <ProxySticker />}
+                      </Group>
+                      <Group gap={4} justify="space-between" align="center" wrap="nowrap">
+                        <StorageLabel
+                          name={copy.storage_id ? (storageNames.get(copy.storage_id) ?? null) : null}
+                          unknown={copy.storage_id != null && !storageNames.has(copy.storage_id)}
+                          locked={isClosed(copy)}
+                        />
+                        <SetIcon setCode={copy.set_code} size={22} />
+                      </Group>
+                      {printing && <PrintingPrice printing={printing} foil={copy.foil} size="sm" />}
+                    </Paper>
+                  </UnstyledButton>
+                );
+              })}
             </SimpleGrid>
           </>
         )}
@@ -197,7 +202,7 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
                 : "L'édition choisie remplace celle-ci dans le deck, toujours en orange."}
               {isCommander ? ' Elle deviendra aussi le commandant.' : ''}
             </Text>
-            <PrintingGrid printings={others} disabled={busy} onSelect={choosePrinting} />
+            <PrintingGrid printings={others} disabled={busy} foil={current.foil} onSelect={choosePrinting} />
           </>
         )}
       </Stack>

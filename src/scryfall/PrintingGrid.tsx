@@ -1,19 +1,21 @@
 import { Group, Image, Paper, ScrollArea, SimpleGrid, Stack, Text, UnstyledButton } from '@mantine/core';
 import { useState } from 'react';
 
+import { PrintingPrice } from '../cards/price';
 import { imageUrl, type ScryfallCard } from './client';
 import { EditionSearchInput, NoEditionMatch } from './EditionSearchInput';
-import { matchesEdition } from './printing';
+import { foilFor, matchesEdition } from './printing';
 import { SetIcon } from './SetIcon';
 
 interface PrintingGridProps {
   printings: ScryfallCard[];
   selectedId?: string | null;
   disabled?: boolean;
+  foil?: boolean;
   onSelect: (printing: ScryfallCard) => void;
 }
 
-export function PrintingGrid({ printings, selectedId, disabled, onSelect }: PrintingGridProps) {
+export function PrintingGrid({ printings, selectedId, disabled, foil = false, onSelect }: PrintingGridProps) {
   const [query, setQuery] = useState('');
   const shown = printings.filter((printing) => matchesEdition(query, printing.set_name, printing.set));
 
@@ -48,6 +50,7 @@ export function PrintingGrid({ printings, selectedId, disabled, onSelect }: Prin
                     </Text>
                     <SetIcon setCode={printing.set} size={22} />
                   </Group>
+                  <PrintingPrice printing={printing} foil={foilFor(printing, foil)} size="sm" />
                 </Paper>
               </UnstyledButton>
             ))}

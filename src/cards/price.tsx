@@ -57,6 +57,25 @@ export function PriceText({ onImage = false, children, ...props }: PriceTextProp
   );
 }
 
+interface PrintingPriceProps extends TextProps {
+  printing: ScryfallCard;
+  foil?: boolean;
+}
+
+export function PrintingPrice({ printing, foil = false, ...props }: PrintingPriceProps) {
+  const currency = usePriceCurrency();
+  if (!currency) {
+    return null;
+  }
+  const amount = printPrice(printing, foil, currency);
+  return (
+    <PriceText {...props}>
+      {amount === null ? 'Prix inconnu' : formatPrice(amount, currency)}
+      {foil && amount !== null ? ' (foil)' : ''}
+    </PriceText>
+  );
+}
+
 interface PrintPriceProps extends TextProps {
   scryfallId: string;
   foil?: boolean;
@@ -65,14 +84,8 @@ interface PrintPriceProps extends TextProps {
 export function PrintPrice({ scryfallId, foil = false, ...props }: PrintPriceProps) {
   const currency = usePriceCurrency();
   const card = useScryfallCard(currency ? scryfallId : null);
-  if (!currency || !card.data) {
+  if (!card.data) {
     return null;
   }
-  const amount = printPrice(card.data, foil, currency);
-  return (
-    <PriceText {...props}>
-      {amount === null ? 'Prix inconnu' : formatPrice(amount, currency)}
-      {foil && amount !== null ? ' (foil)' : ''}
-    </PriceText>
-  );
+  return <PrintingPrice printing={card.data} foil={foil} {...props} />;
 }

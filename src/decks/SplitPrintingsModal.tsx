@@ -19,6 +19,7 @@ import { useState } from 'react';
 import { errorMessage } from '../api/errors';
 import type { Card, ImportSummary } from '../api/types';
 import { copyIds } from '../cards/api';
+import { PrintingPrice } from '../cards/price';
 import { imageUrl, type ScryfallCard } from '../scryfall/client';
 import { usePrintings } from '../scryfall/hooks';
 import { canBeFoil, canBeNonFoil, foilFor } from '../scryfall/printing';
@@ -136,12 +137,18 @@ function SplitPrintingsForm({ deckId, card, onClose }: { deckId: string; card: C
                 searchable
                 allowDeselect={false}
                 nothingFoundMessage="Aucune édition"
-                renderOption={({ option }) => (
-                  <Group gap="xs" wrap="nowrap">
-                    <SetIcon setCode={byId.get(option.value)?.set ?? ''} />
-                    <Text size="sm">{option.label}</Text>
-                  </Group>
-                )}
+                renderOption={({ option }) => {
+                  const choice = byId.get(option.value);
+                  return (
+                    <Group gap="xs" wrap="nowrap" w="100%">
+                      <SetIcon setCode={choice?.set ?? ''} />
+                      <Text size="sm">{option.label}</Text>
+                      {choice && (
+                        <PrintingPrice printing={choice} foil={foilFor(choice, row.foil)} size="sm" ml="auto" />
+                      )}
+                    </Group>
+                  );
+                }}
                 style={{ flex: 1 }}
               />
               <Switch

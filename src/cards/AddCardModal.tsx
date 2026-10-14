@@ -183,7 +183,7 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
             Aucune édition papier trouvée pour cette carte sur Scryfall.
           </Text>
         ) : (
-          <PrintingGrid printings={candidates} selectedId={printing?.id} onSelect={selectPrinting} />
+          <PrintingGrid printings={candidates} selectedId={printing?.id} foil={foil} onSelect={selectPrinting} />
         )}
       </Stack>
 

@@ -240,7 +240,7 @@ function CardDetail({ card, imageUrl, onUpdated, onClose }: CardDetailProps) {
               Choisis l'édition de ton exemplaire puis enregistre : la carte garde son rangement et reste dans ses
               decks.
             </Text>
-            <PrintingGrid printings={otherPrintings} selectedId={printing?.id} onSelect={selectPrinting} />
+            <PrintingGrid printings={otherPrintings} selectedId={printing?.id} foil={foil} onSelect={selectPrinting} />
           </>
         )}
       </Stack>
