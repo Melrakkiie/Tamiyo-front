@@ -11,6 +11,7 @@ import { commanderEligibility } from '../scryfall/commander';
 import { useBackImage, useScryfallCard } from '../scryfall/hooks';
 import { useStorageOptions } from '../storages/api';
 import { StorageFieldLabel } from '../storages/StorageLabel';
+import { FoilSticker, ProxySticker } from '../theme/Sticker';
 import type { DeckBoard } from '../api/types';
 import { isCommanderFormat, useCommitPendingCards, useMovePendingCard, useUpdateDeck } from './api';
 import { movedMessage } from './boards';
@@ -99,11 +100,12 @@ export function PendingCardModal({
                   </Title>
                   <Text size="sm" c="dimmed">
                     {shown.card.set_code.toUpperCase()} · #{shown.card.collector_number}
-                    {shown.card.foil ? ' · foil' : ''}
                   </Text>
-                  {status && (
-                    <Group mt={6}>
-                      <PendingBadge status={status} />
+                  {(status || shown.card.foil || shown.card.proxy) && (
+                    <Group gap={6} mt={6}>
+                      {status && <PendingBadge status={status} />}
+                      {shown.card.foil && <FoilSticker size="sm" />}
+                      {shown.card.proxy && <ProxySticker size="sm" />}
                     </Group>
                   )}
                 </div>

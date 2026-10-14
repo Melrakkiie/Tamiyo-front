@@ -1,4 +1,4 @@
-import { Alert, Button, Divider, Grid, Modal, Select, Stack, Text, Title } from '@mantine/core';
+import { Alert, Button, Divider, Grid, Group, Modal, Select, Stack, Text, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useRef, useState } from 'react';
 
@@ -11,6 +11,7 @@ import { commanderEligibility } from '../scryfall/commander';
 import { useBackImage, useScryfallCard } from '../scryfall/hooks';
 import { useAllStorages, useStorageOptions } from '../storages/api';
 import { StorageFieldLabel } from '../storages/StorageLabel';
+import { FoilSticker, ProxySticker } from '../theme/Sticker';
 import { isCommanderFormat, useMoveDeckCards, useUpdateDeck } from './api';
 import { movedMessage } from './boards';
 import { BoardPicker } from './BoardSection';
@@ -165,9 +166,13 @@ function DeckCardDetail({
               </Title>
               <Text size="sm" c="dimmed">
                 {card.set_code.toUpperCase()} · #{card.collector_number}
-                {card.foil ? ' · foil' : ''}
-                {card.proxy ? ' · proxy' : ''}
               </Text>
+              {(card.foil || card.proxy) && (
+                <Group gap={6} mt={6}>
+                  {card.foil && <FoilSticker size="sm" />}
+                  {card.proxy && <ProxySticker size="sm" />}
+                </Group>
+              )}
             </div>
 
             {(card.quantity ?? 1) > 1 && (
