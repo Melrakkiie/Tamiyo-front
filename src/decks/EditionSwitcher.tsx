@@ -19,7 +19,8 @@ import type { Card, DeckBoard, PendingCard } from '../api/types';
 import { useCollectionCopies } from '../cards/api';
 import type { ScryfallCard } from '../scryfall/client';
 import { useCardImages, usePrintings } from '../scryfall/hooks';
-import { foilFor, printingDetails } from '../scryfall/printing';
+import { EditionSearchInput, NoEditionMatch } from '../scryfall/EditionSearchInput';
+import { foilFor, matchesEdition, printingDetails } from '../scryfall/printing';
 import { PrintingGrid } from '../scryfall/PrintingGrid';
 import { SetIcon } from '../scryfall/SetIcon';
 import { isOpenTo, useAllStorages } from '../storages/api';
@@ -69,7 +70,10 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
   const isClosed = (copy: Card) => copy.storage_id != null && closedStorageIds.has(copy.storage_id);
   const closedCount = owned.filter(isClosed).length;
   const [showClosed, setShowClosed] = useState(false);
-  const shown = showClosed ? owned : owned.filter((copy) => !isClosed(copy));
+  const unlocked = showClosed ? owned : owned.filter((copy) => !isClosed(copy));
+  const setNames = new Map((printings.data ?? []).map((printing) => [printing.id, printing.set_name]));
+  const [query, setQuery] = useState('');
+  const shown = unlocked.filter((copy) => matchesEdition(query, setNames.get(copy.scryfall_id), copy.set_code));
 
   const swap = useSwapDeckCard();
   const swapPending = useReplacePendingWithOwned();
@@ -132,7 +136,7 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
         ) : (
           <>
             <Text size="xs" c="dimmed">
-              {shown.length === 0
+              {unlocked.length === 0
                 ? 'Tous les autres exemplaires de ta collection sont dans des rangements verrouillés pour ce deck.'
                 : `Dans ta collection : clique sur un exemplaire pour le mettre dans le deck à la place de celui-ci.${isCommander ? ' Il deviendra aussi le commandant.' : ''}`}
             </Text>
@@ -141,6 +145,8 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
                 Voir {closedCount} exemplaire{closedCount > 1 ? 's' : ''} dans des rangements verrouillés
               </Anchor>
             )}
+            {unlocked.length > 0 && <EditionSearchInput value={query} onChange={setQuery} />}
+            {unlocked.length > 0 && shown.length === 0 && <NoEditionMatch />}
             <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
               {shown.map((copy) => (
                 <UnstyledButton key={copy.id} onClick={() => chooseOwned(copy)} disabled={busy}>

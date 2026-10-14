@@ -28,3 +28,18 @@ export function printingDetails(printing: ScryfallCard) {
     color_identity: printing.color_identity ? colorCode(printing.color_identity) : null,
   };
 }
+
+function normalize(text: string) {
+  return text
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
+}
+
+export function matchesEdition(query: string, setName: string | undefined, setCode: string) {
+  const wanted = normalize(query.trim());
+  if (!wanted) {
+    return true;
+  }
+  return normalize(setName ?? '').includes(wanted) || normalize(setCode).includes(wanted);
+}

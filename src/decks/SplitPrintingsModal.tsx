@@ -64,7 +64,7 @@ function SplitPrintingsForm({ deckId, card, onClose }: { deckId: string; card: C
   const byId = new Map((printings.data ?? []).map((printing) => [printing.id, printing]));
   const options = (printings.data ?? []).map((printing) => ({
     value: printing.id,
-    label: `${printing.set_name} (${printing.collector_number})`,
+    label: `${printing.set_name} · ${printing.set.toUpperCase()} #${printing.collector_number}`,
   }));
   const changed = rows.some((row) => row.scryfallId !== card.scryfall_id || row.foil !== card.foil);
 

@@ -19,9 +19,11 @@ import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Deck } from '../api/types';
+import { EditionSearchInput, NoEditionMatch } from '../scryfall/EditionSearchInput';
 import { useCardArts, usePrintings } from '../scryfall/hooks';
-import { useDeckCards, usePendingCards, useUpdateDeck } from './api';
+import { matchesEdition } from '../scryfall/printing';
 import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
+import { useDeckCards, usePendingCards, useUpdateDeck } from './api';
 
 interface ArtPickerModalProps {
   deck: Deck;
@@ -58,6 +60,7 @@ function uniquePrintings(cards: DeckPrinting[]): DeckPrinting[] {
 function ArtPicker({ deck, onClose }: { deck: Deck; onClose: () => void }) {
   const [activeTab, setActiveTab] = useState<'deck' | 'scryfall'>('deck');
   const [selectedCardName, setSelectedCardName] = useState<string | null>(null);
+  const [editionQuery, setEditionQuery] = useState('');
 
   const owned = useDeckCards(deck.id, 'name');
   const pending = usePendingCards(deck.id);
@@ -65,8 +68,9 @@ function ArtPicker({ deck, onClose }: { deck: Deck; onClose: () => void }) {
   const deckArts = useCardArts(deckPrintings.map((card) => card.scryfall_id));
 
   const scryfallPrintings = usePrintings(selectedCardName);
-  const scryfallArts = useCardArts(
-    (scryfallPrintings.data ?? []).map((card) => card.id)
+  const scryfallArts = useCardArts((scryfallPrintings.data ?? []).map((card) => card.id));
+  const shownPrintings = (scryfallPrintings.data ?? []).filter((card) =>
+    matchesEdition(editionQuery, card.set_name, card.set),
   );
 
   const update = useUpdateDeck();
@@ -128,7 +132,9 @@ function ArtPicker({ deck, onClose }: { deck: Deck; onClose: () => void }) {
                         withBorder
                         p={4}
                         radius="md"
-                        style={selected ? { borderColor: 'var(--mantine-primary-color-filled)', borderWidth: 2 } : undefined}
+                        style={
+                          selected ? { borderColor: 'var(--mantine-primary-color-filled)', borderWidth: 2 } : undefined
+                        }
                       >
                         <Image src={art.url} alt={card.name} radius="sm" loading="lazy" />
                         <Text size="xs" mt={4} lineClamp={1}>
@@ -153,6 +159,7 @@ function ArtPicker({ deck, onClose }: { deck: Deck; onClose: () => void }) {
               placeholder="Nom de la carte..."
               onSelect={(name) => {
                 setSelectedCardName(name);
+                setEditionQuery('');
               }}
             />
 
@@ -169,42 +176,46 @@ function ArtPicker({ deck, onClose }: { deck: Deck; onClose: () => void }) {
                     Aucune édition trouvée pour cette carte.
                   </Text>
                 ) : (
-                  <ScrollArea.Autosize mah={480} type="auto">
-                    <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="sm">
-                      {(scryfallPrintings.data ?? []).map((card) => {
-                        const art = scryfallArts.data?.[card.id];
-                        if (!art) {
-                          return null;
-                        }
-                        const selected = deck.background_scryfall_id === card.id;
-                        return (
-                          <UnstyledButton
-                            key={card.id}
-                            onClick={() => choose(card.id)}
-                            disabled={update.isPending}
-                          >
-                            <Paper
-                              withBorder
-                              p={4}
-                              radius="md"
-                              style={selected ? { borderColor: 'var(--mantine-primary-color-filled)', borderWidth: 2 } : undefined}
-                            >
-                              <Image src={art.url} alt={card.name} radius="sm" loading="lazy" />
-                              <Text size="xs" mt={4} lineClamp={1}>
-                                {card.name}
-                              </Text>
-                              <Text size="xs" c="dimmed" lineClamp={1}>
-                                {card.set_name} ({card.set})
-                              </Text>
-                              <Text size="xs" c="dimmed" lineClamp={1}>
-                                {art.artist ?? ' '}
-                              </Text>
-                            </Paper>
-                          </UnstyledButton>
-                        );
-                      })}
-                    </SimpleGrid>
-                  </ScrollArea.Autosize>
+                  <>
+                    <EditionSearchInput value={editionQuery} onChange={setEditionQuery} />
+                    {shownPrintings.length === 0 && <NoEditionMatch />}
+                    <ScrollArea.Autosize mah={480} type="auto">
+                      <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="sm">
+                        {shownPrintings.map((card) => {
+                          const art = scryfallArts.data?.[card.id];
+                          if (!art) {
+                            return null;
+                          }
+                          const selected = deck.background_scryfall_id === card.id;
+                          return (
+                            <UnstyledButton key={card.id} onClick={() => choose(card.id)} disabled={update.isPending}>
+                              <Paper
+                                withBorder
+                                p={4}
+                                radius="md"
+                                style={
+                                  selected
+                                    ? { borderColor: 'var(--mantine-primary-color-filled)', borderWidth: 2 }
+                                    : undefined
+                                }
+                              >
+                                <Image src={art.url} alt={card.name} radius="sm" loading="lazy" />
+                                <Text size="xs" mt={4} lineClamp={1}>
+                                  {card.name}
+                                </Text>
+                                <Text size="xs" c="dimmed" lineClamp={1}>
+                                  {card.set_name} ({card.set})
+                                </Text>
+                                <Text size="xs" c="dimmed" lineClamp={1}>
+                                  {art.artist ?? ' '}
+                                </Text>
+                              </Paper>
+                            </UnstyledButton>
+                          );
+                        })}
+                      </SimpleGrid>
+                    </ScrollArea.Autosize>
+                  </>
                 )}
               </>
             )}
