@@ -1,4 +1,4 @@
-import { Badge } from '@mantine/core';
+import { GaugeStickerIcon, Sticker, type StickerTone } from '../theme/Sticker';
 
 export const BRACKETS = [1, 2, 3, 4, 5] as const;
 
@@ -10,12 +10,12 @@ const bracketNames: Record<number, string> = {
   5: 'cEDH',
 };
 
-const bracketColors: Record<number, string> = {
-  1: 'teal',
-  2: 'green',
-  3: 'yellow',
+const bracketTones: Record<number, StickerTone> = {
+  1: 'paper',
+  2: 'lune',
+  3: 'ocelle',
   4: 'prune',
-  5: 'red',
+  5: 'prune',
 };
 
 export function bracketName(bracket: number) {
@@ -49,26 +49,24 @@ export function GaugeIcon({ size = 14 }: { size?: number }) {
   );
 }
 
-interface BracketBadgeProps {
+interface BracketStickerProps {
   bracket: number | null | undefined;
-  onImage?: boolean;
   size?: 'xs' | 'sm' | 'md';
 }
 
-export function BracketBadge({ bracket, onImage = false, size = 'sm' }: BracketBadgeProps) {
+export function BracketSticker({ bracket, size = 'sm' }: BracketStickerProps) {
   if (!bracket) {
     return null;
   }
   return (
-    <Badge
+    <Sticker
+      tone={bracketTones[bracket] ?? 'paper'}
+      icon={<GaugeStickerIcon level={bracket} />}
       size={size}
-      variant={onImage ? 'white' : 'light'}
-      color={bracketColors[bracket]}
-      leftSection={<GaugeIcon size={size === 'md' ? 14 : 12} />}
+      tilt={2}
       title={`Bracket ${bracket} · ${bracketNames[bracket]}`}
-      style={{ flexShrink: 0 }}
     >
-      Bracket {bracket}
-    </Badge>
+      bracket {bracket}
+    </Sticker>
   );
 }

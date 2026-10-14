@@ -114,6 +114,52 @@ export function TagIcon() {
   );
 }
 
+export function CardsIcon() {
+  return (
+    <StickerIcon>
+      <path d="M5.5 8h9a1.5 1.5 0 0 1 1.5 1.5v10a1.5 1.5 0 0 1 -1.5 1.5h-9a1.5 1.5 0 0 1 -1.5 -1.5v-10a1.5 1.5 0 0 1 1.5 -1.5z" />
+      <path d="M8 4h10.5a1.5 1.5 0 0 1 1.5 1.5v11" />
+    </StickerIcon>
+  );
+}
+
+export function LockStickerIcon() {
+  return (
+    <StickerIcon>
+      <path d="M7 11h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6a2 2 0 0 1 2 -2z" />
+      <path d="M8 11v-4a4 4 0 0 1 8 0v4" />
+    </StickerIcon>
+  );
+}
+
+export function LinkIcon() {
+  return (
+    <StickerIcon>
+      <path d="M10 14a4 4 0 0 0 5.66 0l3 -3a4 4 0 0 0 -5.66 -5.66l-1 1" />
+      <path d="M14 10a4 4 0 0 0 -5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1 -1" />
+    </StickerIcon>
+  );
+}
+
+export function GlobeIcon() {
+  return (
+    <StickerIcon>
+      <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+      <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+    </StickerIcon>
+  );
+}
+
+export function GaugeStickerIcon({ level }: { level: number }) {
+  return (
+    <StickerIcon>
+      <path d="M3 17a9 9 0 0 1 18 0" />
+      <path d="M12 17h-6.5" transform={`rotate(${(level - 1) * 45} 12 17)`} />
+      <circle cx={12} cy={17} r={1.6} fill={level >= 5 ? 'currentColor' : 'none'} />
+    </StickerIcon>
+  );
+}
+
 function CrossIcon() {
   return (
     <StickerIcon>

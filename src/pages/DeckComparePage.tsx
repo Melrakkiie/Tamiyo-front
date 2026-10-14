@@ -26,6 +26,7 @@ import { CardTile } from '../cards/CardTile';
 import { useDeckComparison } from '../decks/api';
 import { DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
 import { compareUrl } from '../decks/CompareDeckModal';
+import { FormatSticker } from '../decks/FormatSticker';
 import { sortDeckCards } from '../decks/pendingCards';
 import { SharedCardModal } from '../decks/SharedCardModal';
 import { type SharedDeckSort, sharedDeckSortOptions } from '../decks/shared';
@@ -176,7 +177,7 @@ function DeckSummary({ deck, color }: { deck: ComparedDeck; color: string }) {
           {deck.name}
         </Anchor>
         <Group gap="xs">
-          <Badge variant="light">{deck.format}</Badge>
+          <FormatSticker format={deck.format} size="xs" />
           <Text size="sm" c="dimmed">
             {deck.card_count} carte{deck.card_count > 1 ? 's' : ''}
             {deck.mine ? '' : ` · deck de ${deck.owner.display_name ?? "quelqu'un d'autre"}`}

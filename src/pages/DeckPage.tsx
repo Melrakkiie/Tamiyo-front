@@ -1,7 +1,6 @@
 import {
   Alert,
   Anchor,
-  Badge,
   Box,
   Button,
   Center,
@@ -71,7 +70,8 @@ import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckTagsModal } from '../decks/DeckTagsModal';
 import { DeckLegalityWarning } from '../decks/DeckLegalityWarning';
 import { usePriceCurrency } from '../cards/price';
-import { BracketBadge } from '../decks/bracket';
+import { BracketSticker } from '../decks/bracket';
+import { FormatSticker } from '../decks/FormatSticker';
 import { DeckValue } from '../decks/DeckValue';
 import { BulkEditModal } from '../decks/BulkEditModal';
 import { MoveDeckToFolderModal } from '../decks/FolderModals';
@@ -94,7 +94,7 @@ import { ShareDeckModal } from '../decks/ShareDeckModal';
 import { type DeckCardGrouping, deckGroupingOptions, parseDeckGrouping } from '../decks/storageGrouping';
 import { tagsByName, tagsOf, useDeckTags } from '../decks/tags';
 import { useDeckView, useSaveDeckView } from '../decks/view';
-import { visibilityOption } from '../decks/visibility';
+import { VisibilitySticker } from '../decks/visibility';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import { SettingsMenu } from '../layout/SettingsMenu';
 import { useCardArts, useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
@@ -251,17 +251,9 @@ function DeckView({ id }: { id: string }) {
             {current.name}
           </Title>
           <Group gap="xs">
-            <Badge variant={art ? 'white' : 'light'}>{current.format}</Badge>
-            <Badge
-              variant={art ? 'white' : 'light'}
-              color={visibilityOption(current.visibility).color}
-              title={visibilityOption(current.visibility).description}
-            >
-              {visibilityOption(current.visibility).label}
-            </Badge>
-            {isCommanderFormat(current.format) && (
-              <BracketBadge bracket={current.bracket} onImage={art !== null} size="md" />
-            )}
+            <FormatSticker format={current.format} size="md" />
+            <VisibilitySticker visibility={current.visibility} size="md" />
+            {isCommanderFormat(current.format) && <BracketSticker bracket={current.bracket} size="md" />}
             <LikeButton deckId={current.id} canLike={false} onImage={art !== null} />
             {currency && stats.data && (
               <DeckValue value={stats.data.value} currency={currency} onImage={art !== null} />

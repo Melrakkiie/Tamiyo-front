@@ -1,4 +1,4 @@
-import { Alert, Anchor, Badge, Center, Group, Loader, Paper, Stack, Text, Title } from '@mantine/core';
+import { Alert, Anchor, Center, Group, Loader, Paper, Stack, Text, Title } from '@mantine/core';
 import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router';
 
@@ -10,6 +10,7 @@ import type { Deck } from '../api/types';
 import { DeckFormatGroups, FolderTreeView } from '../decks/DeckFolderTree';
 import { DeckTile } from '../decks/DeckTile';
 import { buildFolderTree, usePublicFolders } from '../decks/folders';
+import { CheckIcon, Sticker } from '../theme/Sticker';
 import { useCardArts } from '../scryfall/hooks';
 import { connectionsUrl, useFollowStatus, usePublicDecks, useProfile } from '../users/api';
 import { FollowButton } from '../users/FollowButton';
@@ -90,9 +91,9 @@ export function ProfilePage() {
                 {name}
               </Title>
               {!own && follow.data?.follows_me && (
-                <Badge variant="light" color="gray">
-                  Te suit
-                </Badge>
+                <Sticker tone="lune" icon={<CheckIcon />} tilt={-2}>
+                  te suit
+                </Sticker>
               )}
             </Group>
             {follow.data && (

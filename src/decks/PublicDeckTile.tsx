@@ -1,4 +1,4 @@
-import { Badge, Card, Group, Stack, Text } from '@mantine/core';
+import { Card, Group, Stack, Text } from '@mantine/core';
 import { Link } from 'react-router';
 
 import type { PublicDeck } from '../api/types';
@@ -7,8 +7,9 @@ import type { CardArt } from '../scryfall/client';
 import { isCommanderFormat } from './api';
 import { artBackground } from './art';
 import { tapeProps } from '../theme/tape';
-import { BracketBadge } from './bracket';
+import { BracketSticker } from './bracket';
 import { ColorIdentity } from './ColorIdentity';
+import { FormatSticker } from './FormatSticker';
 import { LikeCount } from './LikeButton';
 
 export function PublicDeckTile({ deck, art }: { deck: PublicDeck; art: CardArt | null }) {
@@ -28,9 +29,9 @@ export function PublicDeckTile({ deck, art }: { deck: PublicDeck; art: CardArt |
                 </Text>
                 <ColorIdentity identity={deck.color_identity} />
               </Stack>
-              <Stack gap={4} align="flex-end" style={{ flexShrink: 0 }}>
-                <Badge variant={art ? 'white' : 'light'}>{deck.format}</Badge>
-                {isCommanderFormat(deck.format) && <BracketBadge bracket={deck.bracket} onImage={art !== null} />}
+              <Stack gap={6} align="flex-end" style={{ flexShrink: 0 }}>
+                <FormatSticker format={deck.format} />
+                {isCommanderFormat(deck.format) && <BracketSticker bracket={deck.bracket} />}
               </Stack>
             </Group>
             {deck.commander_name && (

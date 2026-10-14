@@ -1,4 +1,4 @@
-import { Alert, Anchor, Badge, Button, Center, Group, Loader, Menu, Stack, Text, Title } from '@mantine/core';
+import { Alert, Anchor, Button, Center, Group, Loader, Menu, Stack, Text, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -9,6 +9,7 @@ import { CollectionImportModal } from '../bulk/CollectionImportModal';
 import { CardBrowser } from '../cards/CardBrowser';
 import { formatPrice, PriceText, usePriceCurrency } from '../cards/price';
 import { useAllDecks } from '../decks/api';
+import { Sticker } from '../theme/Sticker';
 import { SettingsMenu } from '../layout/SettingsMenu';
 import { StorageFormModal } from '../storages/StorageFormModal';
 import { LockIcon } from '../storages/StorageLabel';
@@ -98,7 +99,9 @@ function StorageView({ id }: { id: number }) {
         <div style={{ minWidth: 0 }}>
           <Group gap="sm">
             <Title order={2}>{current.name}</Title>
-            <Badge variant="light">{current.type}</Badge>
+            <Sticker tone="paper" tilt={-2}>
+              {current.type}
+            </Sticker>
           </Group>
           {currency && <PriceText mt={4}>Valeur : {formatPrice(current.value[currency], currency)}</PriceText>}
           {current.locked && (

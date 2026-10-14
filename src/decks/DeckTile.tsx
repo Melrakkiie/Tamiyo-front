@@ -1,4 +1,4 @@
-import { Badge, Card, Group, Stack, Text } from '@mantine/core';
+import { Card, Group, Stack, Text } from '@mantine/core';
 import { Link } from 'react-router';
 
 import type { Deck } from '../api/types';
@@ -7,11 +7,12 @@ import type { CardArt } from '../scryfall/client';
 import { isCommanderFormat } from './api';
 import { artBackground } from './art';
 import { tapeProps } from '../theme/tape';
-import { BracketBadge } from './bracket';
+import { BracketSticker } from './bracket';
 import { ColorIdentity } from './ColorIdentity';
 import { FavoriteToggle } from './FavoriteStar';
+import { FormatSticker } from './FormatSticker';
 import { LikeCount } from './LikeButton';
-import { visibilityOption } from './visibility';
+import { VisibilitySticker } from './visibility';
 
 const TILE_HEIGHT = 152;
 
@@ -52,19 +53,10 @@ export function DeckTile({
             </Group>
             {deck.color_identity != null && <ColorIdentity identity={deck.color_identity} />}
           </Stack>
-          <Stack gap={4} align="flex-end" style={{ flexShrink: 0 }}>
-            <Badge variant={art ? 'white' : 'light'}>{deck.format}</Badge>
-            {isCommanderFormat(deck.format) && <BracketBadge bracket={deck.bracket} onImage={art !== null} />}
-            {showVisibility && (
-              <Badge
-                variant={art ? 'white' : 'light'}
-                color={visibilityOption(deck.visibility).color}
-                size="sm"
-                title={visibilityOption(deck.visibility).description}
-              >
-                {visibilityOption(deck.visibility).label}
-              </Badge>
-            )}
+          <Stack gap={6} align="flex-end" style={{ flexShrink: 0 }}>
+            <FormatSticker format={deck.format} />
+            {isCommanderFormat(deck.format) && <BracketSticker bracket={deck.bracket} />}
+            {showVisibility && <VisibilitySticker visibility={deck.visibility} />}
           </Stack>
         </Group>
         <Group gap="xs">

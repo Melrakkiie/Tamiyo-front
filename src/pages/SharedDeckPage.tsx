@@ -1,7 +1,6 @@
 import {
   Alert,
   Anchor,
-  Badge,
   Box,
   Center,
   Group,
@@ -35,7 +34,8 @@ import { type DeckCardGrouped, DeckCardGroups, useDeckCardGroups } from '../deck
 import { LegalityWarning } from '../decks/DeckLegalityWarning';
 import { isCommanderFormat } from '../decks/api';
 import { usePriceCurrency } from '../cards/price';
-import { BracketBadge } from '../decks/bracket';
+import { BracketSticker } from '../decks/bracket';
+import { FormatSticker } from '../decks/FormatSticker';
 import { DeckValue } from '../decks/DeckValue';
 import { LikeButton, LikeCount } from '../decks/LikeButton';
 import { CollectionToggle } from '../decks/CollectionToggle';
@@ -57,7 +57,7 @@ import { SharedCardModal } from '../decks/SharedCardModal';
 import { useSharedCardMenu } from '../decks/useSharedCardMenu';
 import { parseSharedGrouping, type SharedCardGrouping, sharedGroupingOptions } from '../decks/storageGrouping';
 import { cardNameKey, tagsByName, tagsOf } from '../decks/tags';
-import { visibilityOption } from '../decks/visibility';
+import { VisibilitySticker } from '../decks/visibility';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import { SettingsMenu } from '../layout/SettingsMenu';
 import { useCardArts, useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
@@ -133,15 +133,9 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
             {deck.name}
           </Title>
           <Group gap="xs">
-            <Badge variant={art ? 'white' : 'light'}>{deck.format}</Badge>
-            <Badge
-              variant={art ? 'white' : 'light'}
-              color={visibilityOption(deck.visibility).color}
-              title={visibilityOption(deck.visibility).description}
-            >
-              {visibilityOption(deck.visibility).label}
-            </Badge>
-            {isCommanderFormat(deck.format) && <BracketBadge bracket={deck.bracket} onImage={art !== null} size="md" />}
+            <FormatSticker format={deck.format} size="md" />
+            <VisibilitySticker visibility={deck.visibility} size="md" />
+            {isCommanderFormat(deck.format) && <BracketSticker bracket={deck.bracket} size="md" />}
             {signedIn ? (
               <SharedDeckLike deckId={deck.id} ownerId={owner.id} onImage={art !== null} />
             ) : (
