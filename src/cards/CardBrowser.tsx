@@ -36,7 +36,7 @@ import {
   cardsQueryFilters,
   parseAdvancedFilters,
 } from './advancedFilters';
-import { copyCount, useCard, useCards } from './api';
+import { copyCount, copyIds, useCard, useCards } from './api';
 import { useCardContextMenu } from './CardContextMenu';
 import { CardDetailModal } from './CardDetailModal';
 import { CardDisplayControls, placement, useCardDisplay } from './CardDisplay';
@@ -110,11 +110,9 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const [cardToAdd, setCardToAdd] = useState<CardToAdd | null>(null);
   const drop = useScryfallDrop((printing) => setCardToAdd({ name: printing.name, printing }));
   const [searchKey, setSearchKey] = useState(0);
-  const [openedCard, setOpenedCard] = useState<Card | null>(null);
+  const [opened, setOpened] = useState<{ card: Card; ids: number[] } | null>(null);
   const linkedCardId = Number(params.get('carte')) || null;
   const linkedCard = useCard(linkedCardId);
-  const detailCard = openedCard ?? (linkedCardId ? (linkedCard.data ?? null) : null);
-  const detailImage = useCardImages(detailCard ? [detailCard.scryfall_id] : []);
   const contextMenu = useCardContextMenu();
   const cardMenu = useCollectionCardMenu();
 
@@ -134,6 +132,16 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const copies = useCards({ page: 1, limit: 1, sort: '-updated', name, storageId, advanced: queryFilters });
   const copiesTotal = copies.data?.total;
   const pageCards = cards.data?.data ?? [];
+  const openedOnPage = opened ? pageCards.find((stack) => copyIds(stack).includes(opened.ids[0])) : undefined;
+  const openedElsewhere = useCard(opened && !openedOnPage ? opened.ids[0] : null);
+  const openedCard = opened
+    ? (openedOnPage ??
+      (openedElsewhere.data
+        ? { ...openedElsewhere.data, copy_ids: opened.ids, quantity: opened.ids.length }
+        : opened.card))
+    : null;
+  const detailCard = openedCard ?? (linkedCardId ? (linkedCard.data ?? null) : null);
+  const detailImage = useCardImages(detailCard ? [detailCard.scryfall_id] : []);
   const images = useCardImages(pageCards.map((card) => card.scryfall_id));
   const backImages = useCardBackImages(pageCards.map((card) => card.scryfall_id));
   const manaCosts = useManaCosts(pageCards.map((card) => card.scryfall_id));
@@ -150,7 +158,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
             name: firstCard.name,
             scryfallId: firstCard.scryfall_id,
             imageUrl: firstImage,
-            open: () => setOpenedCard(firstCard),
+            open: () => openCard(firstCard),
           }
         : null,
       pathname,
@@ -158,6 +166,10 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   });
   useEffect(() => () => setDefaultCardPreview(null), []);
   useEffect(() => showCardPreview(null), [page]);
+
+  function openCard(card: Card) {
+    setOpened({ card, ids: copyIds(card) });
+  }
 
   function renderTile(card: Card) {
     return (
@@ -175,7 +187,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
           !display.showManaCost || manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)
         }
         storageName={showStorage ? (card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null) : undefined}
-        onOpen={setOpenedCard}
+        onOpen={openCard}
         onContextMenu={(event, clicked) =>
           contextMenu.open(event, cardMenu.menuFor(clicked, images.data?.[clicked.scryfall_id]))
         }
@@ -410,8 +422,9 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
       <CardDetailModal
         card={detailCard}
         imageUrl={detailCard ? detailImage.data?.[detailCard.scryfall_id] : undefined}
+        onUpdated={(ids) => detailCard && setOpened({ card: detailCard, ids })}
         onClose={() => {
-          setOpenedCard(null);
+          setOpened(null);
           if (linkedCardId) {
             updateParams({ carte: null });
           }

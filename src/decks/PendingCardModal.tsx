@@ -116,7 +116,6 @@ export function PendingCardModal({
                     deckId={deckId}
                     item={shown.item}
                     isCommander={commanderPendingId === shown.item.id}
-                    onMoved={onClose}
                   />
                 )}
                 {isCommanderFormat(deckFormat) && shown.item && (
@@ -124,7 +123,6 @@ export function PendingCardModal({
                     deckId={deckId}
                     item={shown.item}
                     isCommander={commanderPendingId === shown.item.id}
-                    onDone={onClose}
                   />
                 )}
                 <Divider />
@@ -205,22 +203,20 @@ interface PendingBoardPickerProps {
   deckId: string;
   item: PendingCard;
   isCommander: boolean;
-  onMoved: () => void;
 }
 
-function PendingBoardPicker({ deckId, item, isCommander, onMoved }: PendingBoardPickerProps) {
+function PendingBoardPicker({ deckId, item, isCommander }: PendingBoardPickerProps) {
   const move = useMovePendingCard();
 
+  function ignore() {}
+
   function moveTo(board: DeckBoard) {
-    move.mutate(
-      { deckId, pendingId: item.id, board },
-      {
-        onSuccess: () => {
-          notifications.show({ color: 'green', message: movedMessage(item.name, item.quantity, board) });
-          onMoved();
-        },
-      },
-    );
+    move
+      .mutateAsync({ deckId, pendingId: item.id, board })
+      .then(
+        () => notifications.show({ color: 'green', message: movedMessage(item.name, item.quantity, board) }),
+        ignore,
+      );
   }
 
   return (
@@ -255,10 +251,9 @@ interface PendingCommanderControlProps {
   deckId: string;
   item: PendingCard;
   isCommander: boolean;
-  onDone: () => void;
 }
 
-function PendingCommanderControl({ deckId, item, isCommander, onDone }: PendingCommanderControlProps) {
+function PendingCommanderControl({ deckId, item, isCommander }: PendingCommanderControlProps) {
   const scryfallCard = useScryfallCard(isCommander ? null : item.scryfall_id);
   const eligibility = scryfallCard.data ? commanderEligibility(scryfallCard.data) : null;
   const update = useUpdateDeck();
@@ -267,16 +262,15 @@ function PendingCommanderControl({ deckId, item, isCommander, onDone }: PendingC
     return <Text size="sm">C'est le commandant de ce deck.</Text>;
   }
 
+  function ignore() {}
+
   function makeCommander() {
-    update.mutate(
-      { id: deckId, changes: { commander_pending_id: item.id } },
-      {
-        onSuccess: () => {
-          notifications.show({ color: 'green', message: `${item.name} est maintenant le commandant du deck.` });
-          onDone();
-        },
-      },
-    );
+    update
+      .mutateAsync({ id: deckId, changes: { commander_pending_id: item.id } })
+      .then(
+        () => notifications.show({ color: 'green', message: `${item.name} est maintenant le commandant du deck.` }),
+        ignore,
+      );
   }
 
   if (scryfallCard.isLoading) {

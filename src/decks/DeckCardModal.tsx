@@ -126,28 +126,21 @@ function DeckCardDetail({
     );
   }
 
+  function ignore() {}
+
   function moveToBoard(next: DeckBoard) {
-    move.mutate(
-      { deckId, cardIds: ids, board: next },
-      {
-        onSuccess: () => {
-          notifications.show({ color: 'green', message: movedMessage(card.name, ids.length, next) });
-          onClose();
-        },
-      },
-    );
+    move
+      .mutateAsync({ deckId, cardIds: ids, board: next })
+      .then(() => notifications.show({ color: 'green', message: movedMessage(card.name, ids.length, next) }), ignore);
   }
 
   function makeCommander() {
-    update.mutate(
-      { id: deckId, changes: { commander_id: card.id } },
-      {
-        onSuccess: () => {
-          notifications.show({ color: 'green', message: `${card.name} est maintenant le commandant du deck.` });
-          onClose();
-        },
-      },
-    );
+    update
+      .mutateAsync({ id: deckId, changes: { commander_id: card.id } })
+      .then(
+        () => notifications.show({ color: 'green', message: `${card.name} est maintenant le commandant du deck.` }),
+        ignore,
+      );
   }
 
   const error = update.error ?? updateCard.error ?? move.error;

@@ -34,10 +34,11 @@ import { CollectionQuantityControl } from './CollectionQuantityControl';
 interface CardDetailModalProps {
   card: Card | null;
   imageUrl: string | undefined;
+  onUpdated: (ids: number[]) => void;
   onClose: () => void;
 }
 
-export function CardDetailModal({ card, imageUrl, onClose }: CardDetailModalProps) {
+export function CardDetailModal({ card, imageUrl, onUpdated, onClose }: CardDetailModalProps) {
   const lastShown = useRef<{ card: Card; imageUrl: string | undefined } | null>(null);
   if (card) {
     lastShown.current = { card, imageUrl };
@@ -46,7 +47,15 @@ export function CardDetailModal({ card, imageUrl, onClose }: CardDetailModalProp
 
   return (
     <Modal opened={card !== null} onClose={onClose} title={shown?.card.name} size="xl">
-      {shown && <CardDetail key={shown.card.id} card={shown.card} imageUrl={shown.imageUrl} onClose={onClose} />}
+      {shown && (
+        <CardDetail
+          key={`${shown.card.id}-${shown.card.updated}-${shown.card.quantity}`}
+          card={shown.card}
+          imageUrl={shown.imageUrl}
+          onUpdated={onUpdated}
+          onClose={onClose}
+        />
+      )}
     </Modal>
   );
 }
@@ -56,7 +65,14 @@ function printingChanges(printing: ScryfallCard): UpdateCardInput {
   return { ...details, card_type: card_type ?? undefined, color_identity: color_identity ?? undefined };
 }
 
-function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string | undefined; onClose: () => void }) {
+interface CardDetailProps {
+  card: Card;
+  imageUrl: string | undefined;
+  onUpdated: (ids: number[]) => void;
+  onClose: () => void;
+}
+
+function CardDetail({ card, imageUrl, onUpdated, onClose }: CardDetailProps) {
   const storageOptions = useStorageOptions();
   const [foil, setFoil] = useState(card.foil);
   const [proxy, setProxy] = useState(card.proxy);
@@ -89,9 +105,11 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
     setFoil(foilFor(next, card.foil));
   }
 
+  function ignore() {}
+
   function save() {
-    update.mutate(
-      {
+    update
+      .mutateAsync({
         ids: selectedIds,
         changes: {
           ...(printing ? printingChanges(printing) : {}),
@@ -99,21 +117,18 @@ function CardDetail({ card, imageUrl, onClose }: { card: Card; imageUrl: string 
           ...(proxy !== card.proxy ? { proxy } : {}),
           ...(storageChanged ? { storage_id: storageId ? Number(storageId) : null } : {}),
         },
-      },
-      {
-        onSuccess: () => {
-          notifications.show({
-            color: 'green',
-            message: printing
-              ? `${card.name} : ${several ? `${selectedCount} exemplaires sont` : 'ton exemplaire est'} maintenant en édition ${printing.set.toUpperCase()} #${printing.collector_number}.`
-              : several
-                ? `${selectedCount} exemplaires mis à jour.`
-                : 'Carte mise à jour.',
-          });
-          onClose();
-        },
-      },
-    );
+      })
+      .then(() => {
+        notifications.show({
+          color: 'green',
+          message: printing
+            ? `${card.name} : ${several ? `${selectedCount} exemplaires sont` : 'ton exemplaire est'} maintenant en édition ${printing.set.toUpperCase()} #${printing.collector_number}.`
+            : several
+              ? `${selectedCount} exemplaires mis à jour.`
+              : 'Carte mise à jour.',
+        });
+        onUpdated(selectedIds);
+      }, ignore);
   }
 
   const error = update.error;
