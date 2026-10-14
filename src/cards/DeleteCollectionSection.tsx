@@ -45,6 +45,7 @@ export function DeleteCollectionSection() {
         {remove.error && <Alert color="red">{errorMessage(remove.error)}</Alert>}
 
         <TextInput
+          maw={480}
           label={`Pour confirmer, tape ${CONFIRMATION_WORD}`}
           value={confirmation}
           onChange={(event) => setConfirmation(event.currentTarget.value)}

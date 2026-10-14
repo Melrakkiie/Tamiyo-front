@@ -1,99 +1,66 @@
-import { Alert, Button, Paper, PasswordInput, Stack, Text, Title } from '@mantine/core';
-import { hasLength, isNotEmpty, matchesField, useForm } from '@mantine/form';
-import { notifications } from '@mantine/notifications';
-import { useMutation } from '@tanstack/react-query';
+import { SimpleGrid, Stack, Tabs, Title, useMatches } from '@mantine/core';
+import { useSearchParams } from 'react-router';
 
-import { errorMessage } from '../api/errors';
-import { changePassword } from '../auth/actions';
 import { AppearanceSection } from '../auth/AppearanceSection';
 import { AvatarSection } from '../auth/AvatarSection';
 import { ChangeEmailSection } from '../auth/ChangeEmailSection';
+import { ChangePasswordSection } from '../auth/ChangePasswordSection';
 import { DisplayNameSection } from '../auth/DisplayNameSection';
 import { DeleteCollectionSection } from '../cards/DeleteCollectionSection';
 import { usePageTitle } from '../layout/usePageTitle';
 
-type ChangePasswordValues = { currentPassword: string; newPassword: string; confirmPassword: string };
+const sections = ['profil', 'apparence', 'compte', 'danger'] as const;
+type Section = (typeof sections)[number];
+
+function parseSection(raw: string | null): Section {
+  return sections.find((section) => section === raw) ?? 'profil';
+}
 
 export function SettingsPage() {
   usePageTitle('Paramètres');
-  const form = useForm<ChangePasswordValues>({
-    mode: 'uncontrolled',
-    initialValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
-    validate: {
-      currentPassword: isNotEmpty('Mot de passe actuel requis'),
-      newPassword: hasLength({ min: 8 }, '8 caractères minimum'),
-      confirmPassword: matchesField('newPassword', 'Les mots de passe ne correspondent pas'),
-    },
-  });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const section = parseSection(searchParams.get('section'));
+  const vertical = useMatches({ base: false, md: true });
 
-  const mutation = useMutation({
-    mutationFn: (values: ChangePasswordValues) =>
-      changePassword(values.currentPassword, values.newPassword),
-    onSuccess: () => {
-      notifications.show({
-        color: 'green',
-        title: 'Mot de passe modifié',
-        message: 'Toutes tes sessions ont été fermées. Reconnecte-toi avec ton nouveau mot de passe.',
-      });
-    },
-  });
+  function changeSection(value: string | null) {
+    setSearchParams({ section: parseSection(value) }, { replace: true });
+  }
 
   return (
-    <Stack maw={480}>
+    <Stack gap="xl" maw={1100}>
       <Title order={2}>Paramètres</Title>
 
-      <AvatarSection />
+      <Tabs value={section} onChange={changeSection} orientation={vertical ? 'vertical' : 'horizontal'}>
+        <Tabs.List miw={vertical ? 180 : undefined}>
+          <Tabs.Tab value="profil">Profil</Tabs.Tab>
+          <Tabs.Tab value="apparence">Apparence</Tabs.Tab>
+          <Tabs.Tab value="compte">Compte</Tabs.Tab>
+          <Tabs.Tab value="danger" color="red">
+            Zone de danger
+          </Tabs.Tab>
+        </Tabs.List>
 
-      <DisplayNameSection />
-
-      <ChangeEmailSection />
-
-      <AppearanceSection />
-
-      <Paper withBorder p="lg">
-        <form onSubmit={form.onSubmit((values) => mutation.mutate(values))}>
-          <Stack>
-            <Title order={3} size="h4">
-              Changer de mot de passe
-            </Title>
-            <Text size="sm" c="dimmed">
-              Toutes tes sessions seront fermées, y compris celle-ci : il faudra te reconnecter.
-            </Text>
-
-            {mutation.error && (
-              <Alert color="red">
-                {errorMessage(mutation.error, { 401: 'Mot de passe actuel incorrect.' })}
-              </Alert>
-            )}
-
-            <PasswordInput
-              label="Mot de passe actuel"
-              autoComplete="current-password"
-              key={form.key('currentPassword')}
-              {...form.getInputProps('currentPassword')}
-            />
-            <PasswordInput
-              label="Nouveau mot de passe"
-              description="8 caractères minimum"
-              autoComplete="new-password"
-              key={form.key('newPassword')}
-              {...form.getInputProps('newPassword')}
-            />
-            <PasswordInput
-              label="Confirmer le nouveau mot de passe"
-              autoComplete="new-password"
-              key={form.key('confirmPassword')}
-              {...form.getInputProps('confirmPassword')}
-            />
-
-            <Button type="submit" loading={mutation.isPending} w="fit-content">
-              Changer mon mot de passe
-            </Button>
+        <Tabs.Panel value="profil" pl={vertical ? 'xl' : 0} pt={vertical ? 0 : 'lg'}>
+          <Stack maw={560}>
+            <AvatarSection />
+            <DisplayNameSection />
           </Stack>
-        </form>
-      </Paper>
-
-      <DeleteCollectionSection />
+        </Tabs.Panel>
+        <Tabs.Panel value="apparence" pl={vertical ? 'xl' : 0} pt={vertical ? 0 : 'lg'}>
+          <Stack maw={560}>
+            <AppearanceSection />
+          </Stack>
+        </Tabs.Panel>
+        <Tabs.Panel value="compte" pl={vertical ? 'xl' : 0} pt={vertical ? 0 : 'lg'}>
+          <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="xl" verticalSpacing="lg">
+            <ChangeEmailSection />
+            <ChangePasswordSection />
+          </SimpleGrid>
+        </Tabs.Panel>
+        <Tabs.Panel value="danger" pl={vertical ? 'xl' : 0} pt={vertical ? 0 : 'lg'}>
+          <DeleteCollectionSection />
+        </Tabs.Panel>
+      </Tabs>
     </Stack>
   );
 }
