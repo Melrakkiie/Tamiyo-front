@@ -180,6 +180,10 @@ h6,
   border-color: #a79f92;
 }
 
+[data-mantine-color-scheme='light'] .tamiyo-favorite-star[data-favorite] {
+  color: var(--mantine-color-lune-3);
+}
+
 .tamiyo-flight {
   flex: 1;
   min-width: 24px;
