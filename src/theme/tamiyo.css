@@ -249,6 +249,167 @@ h6,
   text-underline-offset: 7px;
 }
 
+.tamiyo-nav-perch {
+  position: relative;
+}
+
+.tamiyo-nav-moth {
+  position: absolute;
+  top: var(--tamiyo-moth-top, -0.5em);
+  left: var(--tamiyo-moth-left, 0);
+  pointer-events: none;
+  transform-origin: 50% 53%;
+  transform: translate(0, 0) rotate(-20deg);
+}
+
+.tamiyo-nav-moth-wings {
+  display: block;
+  animation: tamiyo-moth-breathe 3s ease-in-out infinite;
+}
+
+.tamiyo-nav-moth[data-phase='land'] {
+  animation: tamiyo-moth-land 1.1s ease-in-out;
+}
+
+.tamiyo-nav-moth[data-phase='flown'] {
+  animation: tamiyo-moth-flight 1.2s ease-in forwards;
+}
+
+.tamiyo-nav-moth[data-phase='land'] .tamiyo-nav-moth-wings {
+  animation: tamiyo-moth-settle 1.1s linear;
+}
+
+.tamiyo-nav-moth[data-phase='travel'] .tamiyo-nav-moth-wings {
+  animation: tamiyo-moth-settle var(--tamiyo-moth-duration, 1s) linear;
+}
+
+.tamiyo-nav-moth[data-phase='flown'] .tamiyo-nav-moth-wings {
+  animation: tamiyo-moth-flap 120ms ease-in-out infinite;
+}
+
+@keyframes tamiyo-moth-land {
+  0% {
+    opacity: 0;
+    transform: translate(34px, -32px) rotate(-6deg);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(22px, -26px) rotate(8deg);
+  }
+  45% {
+    transform: translate(9px, -20px) rotate(-14deg);
+  }
+  65% {
+    transform: translate(14px, -9px) rotate(2deg);
+  }
+  82% {
+    transform: translate(3px, -3px) rotate(-10deg);
+  }
+  92% {
+    transform: translate(0, 1px) rotate(-24deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(-20deg);
+  }
+}
+
+@keyframes tamiyo-moth-flight {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(-20deg);
+  }
+  25% {
+    transform: translate(4px, -8px) rotate(6deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(14px, -12px) rotate(-14deg);
+  }
+  75% {
+    opacity: 0.7;
+    transform: translate(24px, -22px) rotate(4deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(36px, -30px) rotate(-10deg);
+  }
+}
+
+@keyframes tamiyo-moth-breathe {
+  0%,
+  100% {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(0.85);
+  }
+}
+
+@keyframes tamiyo-moth-flap {
+  0%,
+  100% {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(0.3);
+  }
+}
+
+@keyframes tamiyo-moth-settle {
+  0%,
+  10%,
+  20%,
+  30%,
+  40%,
+  50% {
+    transform: scaleX(1);
+  }
+  5%,
+  15%,
+  25%,
+  35%,
+  45% {
+    transform: scaleX(0.3);
+  }
+  56% {
+    transform: scaleX(0.3);
+  }
+  62% {
+    transform: scaleX(1);
+  }
+  69% {
+    transform: scaleX(0.35);
+  }
+  76% {
+    transform: scaleX(1);
+  }
+  85% {
+    transform: scaleX(0.55);
+  }
+  94%,
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tamiyo-nav-moth,
+  .tamiyo-nav-moth[data-phase],
+  .tamiyo-nav-moth-wings,
+  .tamiyo-nav-moth[data-phase] .tamiyo-nav-moth-wings {
+    animation: none;
+  }
+
+  .tamiyo-nav-moth {
+    transition: opacity 200ms ease;
+  }
+
+  .tamiyo-nav-moth[data-phase='flown'] {
+    opacity: 0;
+  }
+}
+
 .tamiyo-taped {
   position: relative;
   transform: rotate(var(--tamiyo-tilt, 0deg));

@@ -10,6 +10,7 @@ import { showCardPreview } from './cardPreview';
 import { LunaMoth } from '../theme/LunaMoth';
 import { CardPreviewPanel } from './CardPreviewPanel';
 import { FanContentNotice } from './FanContentNotice';
+import { NavMoth } from './NavMoth';
 
 interface NavItem {
   label: string;
@@ -74,7 +75,17 @@ export function AppLayout() {
                   data-active={isActive(item, pathname) || undefined}
                   aria-current={isActive(item, pathname) ? 'page' : undefined}
                 >
-                  {item.label}
+                  {isActive(item, pathname) ? (
+                    <>
+                      {item.label.slice(0, -1)}
+                      <span className="tamiyo-nav-perch">
+                        {item.label.slice(-1)}
+                        <NavMoth />
+                      </span>
+                    </>
+                  ) : (
+                    item.label
+                  )}
                 </UnstyledButton>
               ))}
             </Group>
