@@ -35,6 +35,10 @@ function useScryfallCardsByIds<T>(scryfallIds: string[], select: (cards: Record<
   });
 }
 
+export function useScryfallCards(scryfallIds: string[]) {
+  return useScryfallCardsByIds(scryfallIds, (byId) => byId);
+}
+
 export function useCardImages(scryfallIds: string[], size: 'small' | 'normal' = 'normal') {
   return useScryfallCardsByIds(scryfallIds, (cards) => {
     const urls: Record<string, string | undefined> = {};

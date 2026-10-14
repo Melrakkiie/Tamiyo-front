@@ -24,7 +24,7 @@ import { typeLabels } from './grouping';
 
 const colorLetters = ['W', 'U', 'B', 'R', 'G'];
 
-const colorModes: { value: ColorMode; label: string }[] = [
+export const colorModes: { value: ColorMode; label: string }[] = [
   { value: 'exact', label: 'Exactement' },
   { value: 'include', label: 'Au moins' },
   { value: 'within', label: 'Au plus' },
@@ -38,7 +38,7 @@ const comparisonOps: { value: ComparisonOp; label: string }[] = [
   { value: 'gte', label: '≥' },
 ];
 
-const typeOptions: { value: TypeFilter; label: string }[] = (
+export const typeOptions: { value: TypeFilter; label: string }[] = (
   ['Creature', 'Planeswalker', 'Battle', 'Instant', 'Sorcery', 'Artifact', 'Enchantment', 'Land'] as TypeFilter[]
 ).map((type) => ({ value: type, label: typeLabels[type] }));
 
@@ -103,7 +103,7 @@ export function ColorChips({
   );
 }
 
-function ComparisonInput({
+export function ComparisonInput({
   label,
   placeholder,
   op,

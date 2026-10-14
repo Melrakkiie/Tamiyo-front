@@ -2,10 +2,13 @@ import {
   ActionIcon,
   Box,
   Button,
+  Collapse,
   Group,
+  Input,
   Menu,
   Modal,
   SegmentedControl,
+  Select,
   SimpleGrid,
   Stack,
   Text,
@@ -14,7 +17,17 @@ import {
 } from '@mantine/core';
 import { useState } from 'react';
 
+import { COLORLESS, type ColorMode, type TypeFilter } from '../cards/advancedFilters';
+import { ColorChips, ComparisonInput, colorModes, typeOptions } from '../cards/AdvancedSearch';
+import { useScryfallCards } from '../scryfall/hooks';
 import type { Zone } from './engine';
+import {
+  activeLibraryFilterCount,
+  emptyLibraryFilters,
+  type LibraryFilters,
+  matchesLibraryFilters,
+  normalized,
+} from './libraryFilters';
 import { CardFace } from './PlaytestCard';
 import { useTable } from './table';
 
@@ -37,25 +50,32 @@ const destinations: { zone: Zone; position?: 'top' | 'bottom'; label: string }[]
 
 const THUMB_WIDTH = 145;
 
-function normalized(text: string) {
-  return text
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase();
-}
-
 export function ZoneModal({ zone, onClose }: { zone: ViewedZone | null; onClose: () => void }) {
   const { state, act } = useTable();
   const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState(emptyLibraryFilters);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const shownZone = zone ?? 'graveyard';
   const searching = shownZone === 'library';
+  const cards = useScryfallCards(searching ? Object.values(state.cards).map((card) => card.scryfallId) : []);
   const query = normalized(search.trim());
-  const ids = state.zones[shownZone].filter((id) => !query || normalized(state.cards[id].name).includes(query));
+  const ids = state.zones[shownZone].filter(
+    (id) =>
+      (!query || normalized(state.cards[id].name).includes(query)) &&
+      (!searching || matchesLibraryFilters(cards.data?.[state.cards[id].scryfallId], filters)),
+  );
+  const filterCount = activeLibraryFilterCount(filters);
   const shown = searching ? [...ids].sort((a, b) => state.cards[a].name.localeCompare(state.cards[b].name, 'fr')) : ids;
 
   function close() {
     setSearch('');
+    setFilters(emptyLibraryFilters);
+    setFiltersOpen(false);
     onClose();
+  }
+
+  function updateFilters(changes: Partial<LibraryFilters>) {
+    setFilters((current) => ({ ...current, ...changes }));
   }
 
   function moveTo(id: string, to: Zone, position?: 'top' | 'bottom') {
@@ -69,12 +89,90 @@ export function ZoneModal({ zone, onClose }: { zone: ViewedZone | null; onClose:
   return (
     <Modal opened={zone !== null} onClose={close} title={zoneTitles[shownZone]} size="xl">
       <Stack>
-        <TextInput
-          placeholder="Nom de la carte"
-          value={search}
-          onChange={(event) => setSearch(event.currentTarget.value)}
-          data-autofocus
-        />
+        <Group gap="xs" wrap="nowrap">
+          <TextInput
+            placeholder="Nom de la carte"
+            value={search}
+            onChange={(event) => setSearch(event.currentTarget.value)}
+            data-autofocus
+            style={{ flex: 1 }}
+          />
+          {searching && (
+            <Button variant={filtersOpen ? 'light' : 'default'} onClick={() => setFiltersOpen((open) => !open)}>
+              {filterCount > 0 ? `Filtres (${filterCount})` : 'Filtres'}
+            </Button>
+          )}
+        </Group>
+        {searching && (
+          <Collapse in={filtersOpen}>
+            <Stack gap="sm">
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md" verticalSpacing="sm">
+                <Input.Wrapper label="Couleurs" style={{ gridColumn: '1 / -1' }}>
+                  <Stack gap={6} mt={4}>
+                    <ColorChips value={filters.colors} onChange={(colors) => updateFilters({ colors })} withColorless />
+                    {filters.colors !== '' && filters.colors !== COLORLESS && (
+                      <SegmentedControl
+                        size="xs"
+                        data={colorModes}
+                        value={filters.colorMode}
+                        onChange={(value) => updateFilters({ colorMode: value as ColorMode })}
+                      />
+                    )}
+                  </Stack>
+                </Input.Wrapper>
+                <ComparisonInput
+                  label="Coût de mana"
+                  placeholder="Tous"
+                  op={filters.manaValueOp}
+                  value={filters.manaValue}
+                  min={0}
+                  max={20}
+                  onChange={(manaValueOp, manaValue) => updateFilters({ manaValueOp, manaValue })}
+                />
+                <ComparisonInput
+                  label="Force"
+                  placeholder="Toutes"
+                  op={filters.powerOp}
+                  value={filters.power}
+                  min={-20}
+                  max={99}
+                  onChange={(powerOp, power) => updateFilters({ powerOp, power })}
+                />
+                <ComparisonInput
+                  label="Endurance"
+                  placeholder="Toutes"
+                  op={filters.toughnessOp}
+                  value={filters.toughness}
+                  min={-20}
+                  max={99}
+                  onChange={(toughnessOp, toughness) => updateFilters({ toughnessOp, toughness })}
+                />
+                <Select
+                  label="Type"
+                  placeholder="Tous les types"
+                  data={typeOptions}
+                  value={filters.type}
+                  onChange={(value) => updateFilters({ type: (value as TypeFilter | null) ?? null })}
+                  clearable
+                />
+                <TextInput
+                  label="Sous-type"
+                  placeholder="Elf, Vehicle, Equipment…"
+                  value={filters.subtype}
+                  onChange={(event) => updateFilters({ subtype: event.currentTarget.value })}
+                  maxLength={50}
+                />
+              </SimpleGrid>
+              {filterCount > 0 && (
+                <Group justify="flex-end">
+                  <Button variant="subtle" size="xs" onClick={() => setFilters(emptyLibraryFilters)}>
+                    Réinitialiser
+                  </Button>
+                </Group>
+              )}
+            </Stack>
+          </Collapse>
+        )}
         {searching && (
           <Text size="sm" c="dimmed">
             Ta bibliothèque est mélangée après chaque carte que tu prends.
