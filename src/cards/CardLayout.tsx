@@ -1,5 +1,6 @@
-import { Box, SimpleGrid, Stack, useMatches } from '@mantine/core';
-import type { ReactNode } from 'react';
+import { Box, px, SimpleGrid, Stack, useMantineTheme, useMatches } from '@mantine/core';
+import { useElementSize } from '@mantine/hooks';
+import { type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 
 import type { Card } from '../api/types';
 import type { CardDisplay } from './CardDisplay';
@@ -85,10 +86,12 @@ interface CardGridProps {
   display: CardDisplay;
   cards: Card[];
   renderTile: (card: Card) => ReactNode;
+  columns?: number;
 }
 
-export function CardGrid({ display, cards, renderTile }: CardGridProps) {
-  const columns = useColumnCount(display.columns);
+export function CardGrid({ display, cards, renderTile, columns: fixedColumns }: CardGridProps) {
+  const responsiveColumns = useColumnCount(display.columns);
+  const columns = fixedColumns ?? responsiveColumns;
   if (display.mode === 'grid') {
     return <OverlappingGrid cards={cards} columns={columns} renderTile={renderTile} />;
   }
@@ -102,7 +105,63 @@ export function CardGrid({ display, cards, renderTile }: CardGridProps) {
       </SimpleGrid>
     );
   }
-  return <SimpleGrid {...display.gridProps}>{cards.map((card) => renderTile(card))}</SimpleGrid>;
+  return (
+    <SimpleGrid {...display.gridProps} cols={fixedColumns ?? display.gridProps.cols}>
+      {cards.map((card) => renderTile(card))}
+    </SimpleGrid>
+  );
+}
+
+function packRows<G extends LayoutGroup>(
+  groups: G[],
+  columns: number,
+  separator: number,
+  span: (group: G) => number,
+): G[][] {
+  const rows: G[][] = [];
+  let row: G[] = [];
+  let used = 0;
+  for (const group of groups) {
+    const size = span(group);
+    if (row.length > 0 && used + separator + size > columns + 1e-6) {
+      rows.push(row);
+      row = [];
+      used = 0;
+    }
+    used += row.length > 0 ? separator + size : size;
+    row.push(group);
+  }
+  if (row.length > 0) {
+    rows.push(row);
+  }
+  return rows;
+}
+
+function useHeaderWidths() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [widths, setWidths] = useState<Map<string, number>>(new Map());
+
+  useLayoutEffect(() => {
+    const container = ref.current;
+    if (!container) {
+      return;
+    }
+    const elements = Array.from(container.children) as HTMLElement[];
+    const read = () => {
+      const next = new Map(
+        elements.map((element) => [element.dataset.key ?? '', Math.ceil(element.getBoundingClientRect().width)]),
+      );
+      setWidths((previous) =>
+        previous.size === next.size && [...next].every(([key, width]) => previous.get(key) === width) ? previous : next,
+      );
+    };
+    read();
+    const observer = new ResizeObserver(read);
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  });
+
+  return { ref, widths };
 }
 
 function stackHeight(cards: number) {
@@ -135,6 +194,9 @@ interface CardGroupsLayoutProps<G extends LayoutGroup> {
 
 export function CardGroupsLayout<G extends LayoutGroup>({ display, groups, renderTile }: CardGroupsLayoutProps<G>) {
   const columns = useColumnCount(display.columns);
+  const theme = useMantineTheme();
+  const { ref, width } = useElementSize();
+  const headers = useHeaderWidths();
   const wrap = (group: G, content: ReactNode) => (group.wrap ? group.wrap(content) : content);
 
   if (display.mode === 'stacks') {
@@ -167,19 +229,75 @@ export function CardGroupsLayout<G extends LayoutGroup>({ display, groups, rende
     );
   }
 
+  const cardGap = display.mode === 'grid' ? GAP : Number(px(theme.spacing[display.gridProps.spacing]));
+  const groupGap = Number(px(theme.spacing.xl));
+  const cardWidth = (width - (columns - 1) * cardGap) / columns;
+  const renderGroup = (group: G, packed = false) =>
+    wrap(
+      group,
+      <Stack gap="sm">
+        {group.header}
+        <Box maw={packed && width > 0 ? group.cards.length * (cardWidth + cardGap) - cardGap : undefined}>
+          <CardGrid
+            display={display}
+            cards={group.cards}
+            columns={packed ? group.cards.length : undefined}
+            renderTile={(card) => renderTile(card, group)}
+          />
+        </Box>
+      </Stack>,
+    );
+
+  if (display.mode === 'text') {
+    return (
+      <Stack gap="lg">
+        {groups.map((group) => (
+          <div key={group.key}>{renderGroup(group)}</div>
+        ))}
+      </Stack>
+    );
+  }
+
+  const separator = width > 0 ? (groupGap - cardGap) / (cardWidth + cardGap) : 1;
+  const headerWidth = (group: G) => headers.widths.get(group.key) ?? 0;
+  const span = (group: G) =>
+    width > 0
+      ? Math.max(group.cards.length, (headerWidth(group) + cardGap) / (cardWidth + cardGap))
+      : group.cards.length;
+  const groupWidth = (cards: number) =>
+    `calc((100% - ${(columns - 1) * cardGap}px) / ${columns} * ${cards} + ${(cards - 1) * cardGap}px)`;
+
   return (
-    <Stack gap="lg">
-      {groups.map((group) => (
-        <div key={group.key}>
-          {wrap(
-            group,
-            <Stack gap="sm">
-              {group.header}
-              <CardGrid display={display} cards={group.cards} renderTile={(card) => renderTile(card, group)} />
-            </Stack>,
-          )}
-        </div>
-      ))}
-    </Stack>
+    <Box pos="relative">
+      <div
+        ref={headers.ref}
+        aria-hidden
+        style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', visibility: 'hidden' }}
+      >
+        {groups.map((group) => (
+          <div key={group.key} data-key={group.key} style={{ width: 'max-content' }}>
+            {group.header}
+          </div>
+        ))}
+      </div>
+      <Stack ref={ref} gap="lg">
+        {packRows(groups, columns, separator, span).map((row) =>
+          row.length === 1 ? (
+            <div key={row[0].key}>{renderGroup(row[0])}</div>
+          ) : (
+            <Box key={row[0].key} style={{ display: 'flex', columnGap: groupGap, alignItems: 'flex-start' }}>
+              {row.map((group) => (
+                <div
+                  key={group.key}
+                  style={{ width: groupWidth(group.cards.length), minWidth: headerWidth(group), flexShrink: 0 }}
+                >
+                  {renderGroup(group, true)}
+                </div>
+              ))}
+            </Box>
+          ),
+        )}
+      </Stack>
+    </Box>
   );
 }

@@ -78,7 +78,7 @@ export function cardDisplay(settings: DisplaySettings, change: (next: Partial<Di
             sm: Math.min(columns, 6),
             md: columns,
           },
-          spacing: dense ? 'xs' : 'md',
+          spacing: dense ? 'xs' : 'sm',
           verticalSpacing: dense ? 'sm' : 'lg',
         },
   };
