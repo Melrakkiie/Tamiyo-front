@@ -41,9 +41,10 @@ interface DragDropOptions<T> {
   sameItem: (a: T, b: T) => boolean;
   Ghost: (props: { item: T }) => ReactNode;
   centerGhost?: boolean;
+  touch?: boolean;
 }
 
-export function createDragDrop<T>({ sameItem, Ghost, centerGhost = false }: DragDropOptions<T>) {
+export function createDragDrop<T>({ sameItem, Ghost, centerGhost = false, touch = false }: DragDropOptions<T>) {
   const DragContext = createContext<DragContextValue<T> | null>(null);
 
   function DragProvider({ children }: { children: ReactNode }) {
@@ -64,9 +65,9 @@ export function createDragDrop<T>({ sameItem, Ghost, centerGhost = false }: Drag
     }, []);
 
     const begin = useCallback((event: PointerStart, item: T) => {
-      const touch = event.pointerType === 'touch';
+      const fromTouch = event.pointerType === 'touch';
       const mouse = event.pointerType === 'mouse';
-      if ((!touch && event.button !== 0) || cleanupRef.current) {
+      if ((fromTouch && !touch) || (!fromTouch && event.button !== 0) || cleanupRef.current) {
         return;
       }
       const pointerId = event.pointerId;
@@ -148,7 +149,7 @@ export function createDragDrop<T>({ sameItem, Ghost, centerGhost = false }: Drag
           if (distance <= MOUSE_THRESHOLD) {
             return;
           }
-          if (touch) {
+          if (fromTouch) {
             cleanup();
             return;
           }
@@ -219,7 +220,7 @@ export function createDragDrop<T>({ sameItem, Ghost, centerGhost = false }: Drag
       };
 
       const onContextMenu = (menuEvent: Event) => {
-        if (touch) {
+        if (fromTouch) {
           menuEvent.preventDefault();
         } else {
           cancel();
@@ -263,7 +264,7 @@ export function createDragDrop<T>({ sameItem, Ghost, centerGhost = false }: Drag
       window.addEventListener('contextmenu', onContextMenu);
       window.addEventListener('blur', cancel);
       document.addEventListener('visibilitychange', onVisibility);
-      if (touch) {
+      if (fromTouch) {
         holdTimer = window.setTimeout(startDrag, TOUCH_HOLD_MS);
       }
       cleanupRef.current = cleanup;

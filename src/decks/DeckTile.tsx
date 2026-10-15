@@ -76,7 +76,16 @@ export function DeckTile({
 
   return (
     <div {...tapeProps(deck.id)}>
-      <Card withBorder shadow="sm" component={Link} to={to} h={TILE_HEIGHT} style={style} onContextMenu={onContextMenu}>
+      <Card
+        withBorder
+        shadow="sm"
+        component={Link}
+        to={to}
+        h={TILE_HEIGHT}
+        style={style}
+        className="tamiyo-touch-menu"
+        onContextMenu={onContextMenu}
+      >
         {content}
       </Card>
     </div>

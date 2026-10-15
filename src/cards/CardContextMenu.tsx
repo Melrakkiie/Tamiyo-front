@@ -23,15 +23,11 @@ export interface ContextMenuEvent {
 
 export type OpenCardMenu = (event: ContextMenuEvent, content: ReactNode) => void;
 
-function fromTouch(event: ContextMenuEvent) {
-  return (event.nativeEvent as Partial<PointerEvent>).pointerType === 'touch';
-}
-
 export function useCardContextMenu() {
   const [opened, setOpened] = useState<OpenedMenu | null>(null);
 
   const open: OpenCardMenu = (event, content) => {
-    if (event.shiftKey || fromTouch(event)) {
+    if (event.shiftKey) {
       return;
     }
     event.preventDefault();

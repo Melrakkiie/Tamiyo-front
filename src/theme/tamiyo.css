@@ -708,3 +708,11 @@ h6,
 .tamiyo-playtest-hand-card:hover {
   z-index: 1;
 }
+
+@media (pointer: coarse) {
+  .tamiyo-touch-menu {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}

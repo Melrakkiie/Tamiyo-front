@@ -27,6 +27,7 @@ const playtestDrag = createDragDrop<DragItem>({
   sameItem: (a, b) => a.id === b.id,
   Ghost: CardGhost,
   centerGhost: true,
+  touch: true,
 });
 
 export const PlaytestDragProvider = playtestDrag.DragProvider;

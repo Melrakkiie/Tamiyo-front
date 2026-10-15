@@ -83,6 +83,7 @@ export function StoragesPage() {
                       h="100%"
                       component={Link}
                       to={`/storages/${storage.id}`}
+                      className="tamiyo-touch-menu"
                       onContextMenu={(event) => contextMenu.open(event, storageMenu.menuFor(storage))}
                     >
                       <Group gap="md" wrap="nowrap">

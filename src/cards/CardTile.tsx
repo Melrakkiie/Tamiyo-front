@@ -73,6 +73,7 @@ function CardRow({
   return (
     <UnstyledButton
       onClick={() => onOpen(card)}
+      className="tamiyo-touch-menu"
       onContextMenu={onContextMenu && ((event) => onContextMenu(event, card))}
       onMouseEnter={onPreview}
       onFocus={onPreview}
@@ -156,6 +157,7 @@ export function CardTile({
   return (
     <UnstyledButton
       onClick={() => onOpen(card)}
+      className="tamiyo-touch-menu"
       onContextMenu={onContextMenu && ((event) => onContextMenu(event, card))}
       onMouseEnter={onPreview}
       onFocus={onPreview}

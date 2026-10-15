@@ -132,7 +132,9 @@ const sections: HelpSection[] = [
         </Text>
         <Text>
           Range tes decks dans des dossiers et des sous-dossiers : glisse un deck sur le nom d'un dossier pour l'y
-          mettre, ou utilise <b>Ranger dans un dossier</b> depuis le deck. L'étoile ajoute un deck à tes favoris.
+          mettre, ou utilise <b>Ranger dans un dossier</b> depuis le deck. L'étoile ajoute un deck à tes favoris. Sur
+          téléphone, le glisser-déposer n'est pas disponible : un appui long sur un deck, une carte ou un rangement
+          ouvre le même menu que le clic droit.
         </Text>
       </>
     ),
@@ -186,7 +188,8 @@ const sections: HelpSection[] = [
         <Text>
           Double-clique une carte de ta main pour la jouer, une carte en jeu pour l'engager. Le clic droit ouvre les
           autres actions (retourner, transformer, <b>Marqueurs</b>, <b>Copier (jeton)</b>…) et le glisser-déposer
-          déplace une carte. <b>Jeton</b> crée des jetons, en proposant d'abord ceux des cartes du deck.
+          déplace une carte. Sur téléphone, touche une carte pour ouvrir ses actions et garde le doigt appuyé pour la
+          déplacer. <b>Jeton</b> crée des jetons, en proposant d'abord ceux des cartes du deck.
         </Text>
         <Text>
           Le menu de la bibliothèque sert à <b>Piocher plusieurs cartes…</b>, <b>Meuler…</b>, <b>Mélanger</b>,{' '}
