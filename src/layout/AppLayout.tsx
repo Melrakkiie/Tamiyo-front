@@ -1,6 +1,6 @@
-import { AppShell, Box, Burger, Drawer, Group, Menu, NavLink, Text, Title, UnstyledButton } from '@mantine/core';
+import { AppShell, Box, Burger, Divider, Drawer, Group, Menu, NavLink, Text, Title, UnstyledButton } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { useEffect } from 'react';
+import { Fragment, useEffect } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
 
 import { useAccount } from '../auth/account';
@@ -15,6 +15,7 @@ import { NavMoth } from './NavMoth';
 interface NavItem {
   label: string;
   to: string;
+  separated?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -22,7 +23,7 @@ const navItems: NavItem[] = [
   { label: 'Collection', to: '/cards' },
   { label: 'Rangements', to: '/storages' },
   { label: 'Decks', to: '/decks' },
-  { label: 'Explorer', to: '/explorer' },
+  { label: 'Explorer', to: '/explorer', separated: true },
 ];
 
 const pagesWithCards = /^\/(cards|storages\/[^/]+|decks\/[^/]+(\/comparer\/[^/]+)?)\/?$/;
@@ -67,26 +68,28 @@ export function AppLayout() {
             </Group>
             <Group gap={4} visibleFrom="sm" wrap="nowrap">
               {navItems.map((item) => (
-                <UnstyledButton
-                  key={item.to}
-                  component={Link}
-                  to={item.to}
-                  className="tamiyo-nav-link"
-                  data-active={isActive(item, pathname) || undefined}
-                  aria-current={isActive(item, pathname) ? 'page' : undefined}
-                >
-                  {isActive(item, pathname) ? (
-                    <>
-                      {item.label.slice(0, -1)}
-                      <span className="tamiyo-nav-perch">
-                        {item.label.slice(-1)}
-                        <NavMoth />
-                      </span>
-                    </>
-                  ) : (
-                    item.label
-                  )}
-                </UnstyledButton>
+                <Fragment key={item.to}>
+                  {item.separated && <Divider orientation="vertical" mx={6} my={4} />}
+                  <UnstyledButton
+                    component={Link}
+                    to={item.to}
+                    className="tamiyo-nav-link"
+                    data-active={isActive(item, pathname) || undefined}
+                    aria-current={isActive(item, pathname) ? 'page' : undefined}
+                  >
+                    {isActive(item, pathname) ? (
+                      <>
+                        {item.label.slice(0, -1)}
+                        <span className="tamiyo-nav-perch">
+                          {item.label.slice(-1)}
+                          <NavMoth />
+                        </span>
+                      </>
+                    ) : (
+                      item.label
+                    )}
+                  </UnstyledButton>
+                </Fragment>
               ))}
             </Group>
           </Group>
@@ -134,14 +137,16 @@ export function AppLayout() {
 
       <Drawer opened={opened} onClose={close} title="Tamiyo" size={260}>
         {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            component={Link}
-            to={item.to}
-            label={item.label}
-            active={isActive(item, pathname)}
-            onClick={close}
-          />
+          <Fragment key={item.to}>
+            {item.separated && <Divider my="xs" />}
+            <NavLink
+              component={Link}
+              to={item.to}
+              label={item.label}
+              active={isActive(item, pathname)}
+              onClick={close}
+            />
+          </Fragment>
         ))}
       </Drawer>
 
