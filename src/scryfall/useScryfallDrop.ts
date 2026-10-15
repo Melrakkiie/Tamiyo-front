@@ -20,8 +20,8 @@ export function useScryfallDrop(onCard: (card: ScryfallCard) => void) {
     let depth = 0;
     let internalDrag = false;
 
-    function onDragStart() {
-      internalDrag = true;
+    function onDragStart(event: DragEvent) {
+      internalDrag = !event.defaultPrevented;
     }
     function onDragEnd() {
       internalDrag = false;
@@ -54,7 +54,9 @@ export function useScryfallDrop(onCard: (card: ScryfallCard) => void) {
     async function onDrop(event: DragEvent) {
       depth = 0;
       setDragging(false);
-      if (internalDrag || !event.dataTransfer) {
+      const wasInternal = internalDrag;
+      internalDrag = false;
+      if (wasInternal || !event.dataTransfer) {
         return;
       }
       const ref = scryfallRefFromDrop(event.dataTransfer);
