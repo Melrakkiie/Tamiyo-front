@@ -1,4 +1,4 @@
-import { Alert, Anchor, Button, Center, Group, Loader, Menu, Stack, Text, Title } from '@mantine/core';
+import { Alert, Anchor, Center, Group, Loader, Menu, Stack, Text, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -11,11 +11,12 @@ import { formatPrice, PriceText, usePriceCurrency } from '../cards/price';
 import { useAllDecks } from '../decks/api';
 import { Sticker } from '../theme/Sticker';
 import { SettingsMenu } from '../layout/SettingsMenu';
+import { StorageDeleteModal } from '../storages/StorageDeleteModal';
 import { StorageFormModal } from '../storages/StorageFormModal';
 import { LockIcon } from '../storages/StorageLabel';
 import { StorageLockModal } from '../storages/StorageLockModal';
 import { StorageTransferModal } from '../storages/StorageTransferModal';
-import { useDeleteStorage, useStorage, useUpdateStorage } from '../storages/api';
+import { useStorage, useUpdateStorage } from '../storages/api';
 import { usePageTitle } from '../layout/usePageTitle';
 
 const DECK_PAGE_SIZE = 96;
@@ -30,7 +31,6 @@ function StorageView({ id }: { id: number }) {
   const storage = useStorage(id);
   usePageTitle(storage.data?.name ?? 'Rangement');
   const update = useUpdateStorage();
-  const remove = useDeleteStorage();
   const [editOpened, setEditOpened] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [importOpened, setImportOpened] = useState(false);
@@ -48,18 +48,6 @@ function StorageView({ id }: { id: number }) {
   function runExport(kind: CollectionExport) {
     exportStorage.mutate(kind, {
       onError: (err) => notifications.show({ color: 'red', message: errorMessage(err) }),
-    });
-  }
-
-  function deleteStorage() {
-    remove.mutate(id, {
-      onSuccess: () => {
-        notifications.show({
-          color: 'green',
-          message: `${storage.data?.name ?? 'Le rangement'} a été supprimé. Ses cartes restent dans ta collection.`,
-        });
-        navigate('/storages', { replace: true });
-      },
     });
   }
 
@@ -142,23 +130,6 @@ function StorageView({ id }: { id: number }) {
         </SettingsMenu>
       </Group>
 
-      {confirmingDelete && (
-        <Alert color="orange" title="Supprimer ce rangement ?">
-          <Stack gap="sm">
-            <Text size="sm">Ses cartes ne sont pas supprimées : elles restent dans ta collection, sans rangement.</Text>
-            <Group gap="xs">
-              <Button color="red" onClick={deleteStorage} loading={remove.isPending}>
-                Confirmer la suppression
-              </Button>
-              <Button variant="default" onClick={() => setConfirmingDelete(false)}>
-                Annuler
-              </Button>
-            </Group>
-          </Stack>
-        </Alert>
-      )}
-      {remove.error && <Alert color="red">{errorMessage(remove.error)}</Alert>}
-
       <CardBrowser
         storageId={current.id}
         pageSize={current.type.trim().toLowerCase() === 'deckbox' ? DECK_PAGE_SIZE : undefined}
@@ -173,6 +144,13 @@ function StorageView({ id }: { id: number }) {
       <StorageLockModal storage={current} opened={lockOpened} onClose={() => setLockOpened(false)} />
 
       <StorageTransferModal storage={current} opened={transferOpened} onClose={() => setTransferOpened(false)} />
+
+      <StorageDeleteModal
+        storage={current}
+        opened={confirmingDelete}
+        onClose={() => setConfirmingDelete(false)}
+        onDeleted={() => navigate('/storages', { replace: true })}
+      />
 
       <StorageFormModal
         opened={editOpened}

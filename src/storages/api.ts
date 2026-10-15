@@ -89,15 +89,24 @@ export function useDeleteStorage() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: number) => {
-      unwrap(await api.DELETE('/storage/{id}', { params: { path: { id } } }));
+    mutationFn: async ({ id, withCards }: { id: number; withCards: boolean }) => {
+      unwrap(
+        await api.DELETE('/storage/{id}', {
+          params: { path: { id }, query: withCards ? { with_cards: true } : undefined },
+        }),
+      );
     },
-    onSettled: (_data, _error, id) => {
+    onSettled: (_data, _error, { id, withCards }) => {
       void queryClient.invalidateQueries({
         queryKey: ['storages'],
         predicate: (query) => !(query.queryKey[1] === 'detail' && query.queryKey[2] === id),
       });
-      void queryClient.invalidateQueries({ queryKey: ['cards'], refetchType: 'inactive' });
+      if (withCards) {
+        void queryClient.invalidateQueries({ queryKey: ['cards'] });
+        void queryClient.invalidateQueries({ queryKey: ['decks'] });
+      } else {
+        void queryClient.invalidateQueries({ queryKey: ['cards'], refetchType: 'inactive' });
+      }
     },
   });
 }

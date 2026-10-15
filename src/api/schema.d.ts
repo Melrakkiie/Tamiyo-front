@@ -1297,11 +1297,14 @@ export interface paths {
         post?: never;
         /**
          * Delete a storage
-         * @description Any card currently in this storage has its storage_id set to null. Cards are never deleted as a side effect.
+         * @description By default, any card currently in this storage has its storage_id set to null and stays in the collection. With with_cards=true, the storage's cards are deleted in the same transaction: the decks they were in get them in their pending list, and a deck whose commander one was keeps it as its pending commander (commander_pending_id).
          */
         delete: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Also delete the cards of the storage. */
+                    with_cards?: boolean;
+                };
                 header?: never;
                 path: {
                     /** @description Storage ID */
@@ -1318,7 +1321,15 @@ export interface paths {
                     };
                     content?: never;
                 };
-                400: components["responses"]["InvalidID"];
+                /** @description Invalid id or invalid with_cards */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
                 401: components["responses"]["Unauthorized"];
                 /** @description Storage not found, or not owned by the authenticated user */
                 404: {

@@ -1,17 +1,16 @@
-import { Button, Group, Menu, Modal, Text } from '@mantine/core';
+import { Menu } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
-import { errorMessage } from '../api/errors';
 import type { Storage } from '../api/types';
-import { useDeleteStorage, useUpdateStorage } from './api';
+import { useUpdateStorage } from './api';
+import { StorageDeleteModal } from './StorageDeleteModal';
 import { StorageFormModal } from './StorageFormModal';
 import { StorageLockModal } from './StorageLockModal';
 import { StorageTransferModal } from './StorageTransferModal';
 
 export function useStorageTileMenu() {
   const update = useUpdateStorage();
-  const remove = useDeleteStorage();
   const [editing, setEditing] = useState<Storage | null>(null);
   const [locking, setLocking] = useState<Storage | null>(null);
   const [transferring, setTransferring] = useState<Storage | null>(null);
@@ -62,37 +61,7 @@ export function useStorageTileMenu() {
       />
       {locking && <StorageLockModal storage={locking} opened onClose={() => setLocking(null)} />}
       {transferring && <StorageTransferModal storage={transferring} opened onClose={() => setTransferring(null)} />}
-      <Modal
-        opened={deleting !== null}
-        onClose={() => setDeleting(null)}
-        title={deleting ? `Supprimer ${deleting.name} ?` : undefined}
-      >
-        <Text size="sm">Ses cartes ne sont pas supprimées : elles restent dans ta collection, sans rangement.</Text>
-        <Group justify="flex-end" mt="md">
-          <Button variant="default" onClick={() => setDeleting(null)}>
-            Annuler
-          </Button>
-          <Button
-            color="red"
-            loading={remove.isPending}
-            onClick={() =>
-              deleting &&
-              remove.mutate(deleting.id, {
-                onSuccess: () => {
-                  notifications.show({
-                    color: 'green',
-                    message: `${deleting.name} a été supprimé. Ses cartes restent dans ta collection.`,
-                  });
-                  setDeleting(null);
-                },
-                onError: (err) => notifications.show({ color: 'red', message: errorMessage(err) }),
-              })
-            }
-          >
-            Supprimer le rangement
-          </Button>
-        </Group>
-      </Modal>
+      {deleting && <StorageDeleteModal storage={deleting} opened onClose={() => setDeleting(null)} />}
     </>
   );
 
