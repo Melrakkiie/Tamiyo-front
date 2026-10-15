@@ -10,6 +10,7 @@ import {
   Switch,
   Text,
   Textarea,
+  useMatches,
 } from '@mantine/core';
 import { useState } from 'react';
 
@@ -91,6 +92,7 @@ interface ExportDeckModalProps {
 
 export function ExportDeckModal({ deckId, deckName, opened, onClose, shared = false }: ExportDeckModalProps) {
   const [format, setFormat] = useState<DeckExportFormat>('plain');
+  const orientation = useMatches<'vertical' | 'horizontal'>({ base: 'vertical', sm: 'horizontal' });
   const [withTags, setWithTags] = useState(true);
   const [cardmarketCards, setCardmarketCards] = useState<CardmarketCards>('all');
   const [cardmarketPrintings, setCardmarketPrintings] = useState<CardmarketPrintings>('name');
@@ -122,6 +124,7 @@ export function ExportDeckModal({ deckId, deckName, opened, onClose, shared = fa
           value={format}
           onChange={(value) => setFormat(value as DeckExportFormat)}
           fullWidth
+          orientation={orientation}
         />
         <Text size="xs" c="dimmed">
           {option.description} {exportNotes(format, shared, printings)}
@@ -130,6 +133,7 @@ export function ExportDeckModal({ deckId, deckName, opened, onClose, shared = fa
           <Stack gap="xs">
             <SegmentedControl
               fullWidth
+              orientation={orientation}
               aria-label="Cartes exportées"
               data={cardmarketCardsOptions}
               value={cardmarketCards}
@@ -137,6 +141,7 @@ export function ExportDeckModal({ deckId, deckName, opened, onClose, shared = fa
             />
             <SegmentedControl
               fullWidth
+              orientation={orientation}
               aria-label="Éditions"
               data={cardmarketPrintingsOptions}
               value={cardmarketPrintings}
