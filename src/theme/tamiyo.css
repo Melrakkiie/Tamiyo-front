@@ -249,6 +249,47 @@ h6,
   text-underline-offset: 7px;
 }
 
+.tamiyo-toc-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 8px;
+  border-radius: var(--mantine-radius-sm);
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-sm);
+  text-decoration: none;
+}
+
+.tamiyo-toc-link:hover {
+  color: var(--mantine-color-text);
+  background: var(--mantine-color-default-hover);
+}
+
+.tamiyo-toc-link[data-active] {
+  color: var(--mantine-color-text);
+  font-weight: 700;
+}
+
+.tamiyo-toc-link[data-active] .tamiyo-toc-title {
+  text-decoration: underline wavy var(--tamiyo-eyespot) 2px;
+  text-underline-offset: 5px;
+}
+
+.tamiyo-toc-title {
+  display: inline-flex;
+  flex: 1;
+  flex-direction: column;
+  white-space: nowrap;
+}
+
+.tamiyo-toc-title::after {
+  content: attr(data-text);
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-weight: 700;
+}
+
 .tamiyo-nav-perch {
   position: relative;
 }

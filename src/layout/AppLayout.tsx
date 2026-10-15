@@ -1,4 +1,16 @@
-import { AppShell, Box, Burger, Divider, Drawer, Group, Menu, NavLink, Text, Title, UnstyledButton } from '@mantine/core';
+import {
+  AppShell,
+  Box,
+  Burger,
+  Divider,
+  Drawer,
+  Group,
+  Menu,
+  NavLink,
+  Text,
+  Title,
+  UnstyledButton,
+} from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Fragment, useEffect } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
@@ -24,6 +36,7 @@ const navItems: NavItem[] = [
   { label: 'Rangements', to: '/storages' },
   { label: 'Decks', to: '/decks' },
   { label: 'Explorer', to: '/explorer', separated: true },
+  { label: 'Aide', to: '/aide' },
 ];
 
 const pagesWithCards = /^\/(cards|storages\/[^/]+|decks\/[^/]+(\/comparer\/[^/]+)?)\/?$/;
@@ -123,6 +136,9 @@ export function AppLayout() {
               )}
               <Menu.Item component={Link} to="/decks-aimes">
                 Decks aimés
+              </Menu.Item>
+              <Menu.Item component={Link} to="/aide">
+                Aide
               </Menu.Item>
               <Menu.Item component={Link} to="/settings">
                 Paramètres

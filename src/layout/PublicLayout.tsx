@@ -27,6 +27,9 @@ export function PublicLayout() {
             <Title order={3}>Tamiyo</Title>
           </Group>
           <Group gap="xs" wrap="nowrap">
+            <Button component={Link} to="/aide" variant="subtle" size="compact-md">
+              Aide
+            </Button>
             <Button component={Link} to="/login" state={{ from: location }} variant="default" size="compact-md">
               Se connecter
             </Button>

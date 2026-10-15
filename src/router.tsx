@@ -1,7 +1,6 @@
 import { createBrowserRouter } from 'react-router';
 
 import { GuestOnly, RequireAuth } from './auth/guards';
-import { AppLayout } from './layout/AppLayout';
 import { AuthLayout } from './layout/AuthLayout';
 import { SharedLayout } from './layout/SharedLayout';
 import { CollectionPage } from './pages/CollectionPage';
@@ -14,6 +13,7 @@ import { DecksPage } from './pages/DecksPage';
 import { ExplorePage } from './pages/ExplorePage';
 import { LikedDecksPage } from './pages/LikedDecksPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { HelpPage } from './pages/HelpPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -47,10 +47,10 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    element: <RequireAuth />,
+    element: <SharedLayout />,
     children: [
       {
-        element: <AppLayout />,
+        element: <RequireAuth />,
         children: [
           { path: '/', element: <HomePage /> },
           { path: '/cards', element: <CollectionPage /> },
@@ -64,14 +64,10 @@ export const router = createBrowserRouter([
           { path: '/users/:id/connexions', element: <ConnectionsPage /> },
         ],
       },
-    ],
-  },
-  {
-    element: <SharedLayout />,
-    children: [
       { path: '/decks/:id', element: <DeckPage /> },
       { path: '/decks/:id/comparer/:otherId', element: <DeckComparePage /> },
       { path: '/shared/:id', element: <SharedDeckRedirect /> },
+      { path: '/aide', element: <HelpPage /> },
     ],
   },
   { path: '/decks/:id/playtest', element: <DeckPlaytestPage /> },
