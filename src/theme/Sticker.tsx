@@ -52,7 +52,8 @@ function StickerIcon({ children }: { children: ReactNode }) {
 export function HourglassIcon() {
   return (
     <StickerIcon>
-      <path d="M7 3h10M7 21h10M8 3c0 5 8 6 8 9s-8 4-8 9M16 3c0 5-8 6-8 9" />
+      <path d="M5 3h14M5 21h14" />
+      <path d="M7 3v3l5 6l-5 6v3h10v-3l-5 -6l5 -6v-3" />
     </StickerIcon>
   );
 }
