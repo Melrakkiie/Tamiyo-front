@@ -62,7 +62,7 @@ export function AddCardModal({ card, onClose, defaultStorageId, target = { kind:
   );
 }
 
-const MAX_QUANTITY = 20;
+const MAX_QUANTITY = 100;
 
 function clampQuantity(value: number | string) {
   return Math.min(MAX_QUANTITY, Math.max(1, Math.floor(Number(value)) || 1));
