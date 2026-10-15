@@ -14,6 +14,7 @@ import { SettingsMenu } from '../layout/SettingsMenu';
 import { StorageFormModal } from '../storages/StorageFormModal';
 import { LockIcon } from '../storages/StorageLabel';
 import { StorageLockModal } from '../storages/StorageLockModal';
+import { StorageTransferModal } from '../storages/StorageTransferModal';
 import { useDeleteStorage, useStorage, useUpdateStorage } from '../storages/api';
 import { usePageTitle } from '../layout/usePageTitle';
 
@@ -34,6 +35,7 @@ function StorageView({ id }: { id: number }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [importOpened, setImportOpened] = useState(false);
   const [lockOpened, setLockOpened] = useState(false);
+  const [transferOpened, setTransferOpened] = useState(false);
   const decks = useAllDecks();
   const currency = usePriceCurrency();
   const exportStorage = useExportCollection(id);
@@ -129,6 +131,9 @@ function StorageView({ id }: { id: number }) {
             Pour Tamiyo
           </Menu.Item>
           <Menu.Divider />
+          <Menu.Item onClick={() => setTransferOpened(true)} disabled={current.card_count === 0}>
+            Transférer les cartes…
+          </Menu.Item>
           <Menu.Item onClick={() => setEditOpened(true)}>Modifier</Menu.Item>
           <Menu.Item onClick={() => setLockOpened(true)}>Verrouiller pour les decks…</Menu.Item>
           <Menu.Item color="red" onClick={() => setConfirmingDelete(true)}>
@@ -166,6 +171,8 @@ function StorageView({ id }: { id: number }) {
       />
 
       <StorageLockModal storage={current} opened={lockOpened} onClose={() => setLockOpened(false)} />
+
+      <StorageTransferModal storage={current} opened={transferOpened} onClose={() => setTransferOpened(false)} />
 
       <StorageFormModal
         opened={editOpened}

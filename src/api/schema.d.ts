@@ -1382,6 +1382,81 @@ export interface paths {
         };
         trace?: never;
     };
+    "/storage/{id}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Storage ID */
+                id: components["parameters"]["StorageID"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move every card of a storage into another storage
+         * @description Sets the storage of every card of the source storage to storage_id, in one statement. The source storage is kept, empty. Cards stay in the decks they are in, and the updated timestamp of both storages moves. A locked storage is accepted as target: locking only hides.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Storage ID */
+                    id: components["parameters"]["StorageID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description The target storage, other than the source. */
+                        storage_id: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Cards moved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Cards moved, 0 when the source was empty. */
+                            cards_moved: number;
+                        };
+                    };
+                };
+                /** @description Invalid id or body, missing or non-positive storage_id, storage_id equal to the source, or storage_id doesn't reference an existing storage */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Source storage not found, or not owned by the authenticated user */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/{id}": {
         parameters: {
             query?: never;

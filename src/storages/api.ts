@@ -38,9 +38,7 @@ export function useStorageOptions() {
 
 export function useStorageTypes() {
   const { data } = useAllStorages();
-  return [
-    ...new Set([...DEFAULT_STORAGE_TYPES, ...(data ?? []).map((storage) => storage.type.toLowerCase())]),
-  ].sort();
+  return [...new Set([...DEFAULT_STORAGE_TYPES, ...(data ?? []).map((storage) => storage.type.toLowerCase())])].sort();
 }
 
 export function useStorage(id: number) {
@@ -101,5 +99,25 @@ export function useDeleteStorage() {
       });
       void queryClient.invalidateQueries({ queryKey: ['cards'], refetchType: 'inactive' });
     },
+  });
+}
+
+export function useTransferStorage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ fromId, toId }: { fromId: number; toId: number }) =>
+      unwrap(
+        await api.POST('/storage/{id}/transfer', {
+          params: { path: { id: fromId } },
+          body: { storage_id: toId },
+        }),
+      ),
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['storages'] }),
+        queryClient.invalidateQueries({ queryKey: ['cards'] }),
+        queryClient.invalidateQueries({ queryKey: ['decks'] }),
+      ]),
   });
 }
