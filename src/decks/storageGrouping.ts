@@ -1,5 +1,5 @@
 import type { Card } from '../api/types';
-import { type CardGroup, type CardGrouping, groupingOptions } from '../cards/grouping';
+import { type CardGroup, type CardGrouping, groupingOptions, noSubtypeLabel } from '../cards/grouping';
 import { isPendingCard } from './pendingCards';
 
 export type DeckCardGrouping = CardGrouping | 'storage' | 'tag';
@@ -42,6 +42,27 @@ export function groupByTag(cards: Card[], tagsOf: (card: Card) => string[]): Car
     .sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }));
   if (untagged.length > 0) {
     groups.push({ label: 'Sans tag', cards: untagged, tag: null });
+  }
+  return groups;
+}
+
+export function groupBySubtype(cards: Card[], subtypesOf: (card: Card) => string[]): CardGroup[] {
+  const bySubtype = new Map<string, Card[]>();
+  const withoutSubtype: Card[] = [];
+  for (const card of cards) {
+    const subtypes = subtypesOf(card);
+    if (subtypes.length === 0) {
+      withoutSubtype.push(card);
+    }
+    for (const subtype of subtypes) {
+      bySubtype.set(subtype, [...(bySubtype.get(subtype) ?? []), card]);
+    }
+  }
+  const groups: CardGroup[] = [...bySubtype.entries()]
+    .map(([label, subtypeCards]) => ({ label, cards: subtypeCards }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'en', { sensitivity: 'base' }));
+  if (withoutSubtype.length > 0) {
+    groups.push({ label: noSubtypeLabel, cards: withoutSubtype });
   }
   return groups;
 }

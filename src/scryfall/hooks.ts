@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { ApiError } from '../api/errors';
 import { loadCards, rememberCards } from './cardCache';
-import { type FaceTypes, faceTypes } from './classify';
+import { type FaceTypes, faceTypes, subtypes } from './classify';
 import {
   autocompleteCardNames,
   backImageUrl,
@@ -76,6 +76,16 @@ export function useCardFaceTypes(scryfallIds: string[]) {
       types[id] = faceTypes(card);
     }
     return types;
+  });
+}
+
+export function useCardSubtypes(scryfallIds: string[]) {
+  return useScryfallCardsByIds(scryfallIds, (cards) => {
+    const byId: Record<string, string[]> = {};
+    for (const [id, card] of Object.entries(cards)) {
+      byId[id] = subtypes(card);
+    }
+    return byId;
   });
 }
 

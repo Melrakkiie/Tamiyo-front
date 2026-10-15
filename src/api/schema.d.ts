@@ -826,8 +826,8 @@ export interface paths {
                     storage_type?: string;
                     /** @description Only cards open to this deck: in no storage, in an unlocked storage, or in a locked storage whose allowed_deck_ids contain this deck. */
                     open_to_deck?: string;
-                    /** @description Order the cards by group first (primary type, color group as for sort=color, or mana value rounded down), then by sort within each group, so a client can show grouped pages sorted its way. "color" groups cards as white, blue, black, red, green, multicolor, colorless, lands, then cards whose colors aren't known yet; "type" by primary type (creature, planeswalker, battle, instant, sorcery, artifact, enchantment, land, other, unknown). Both sort by name within a group. */
-                    group?: "type" | "color" | "mana";
+                    /** @description Order the cards by group first (primary type, color group as for sort=color, mana value rounded down, or subtype), then by sort within each group, so a client can show grouped pages sorted its way. "subtype" returns a card once per subtype of its English type line (every face, after the dash, split on spaces), alphabetically, with the subtype in the card's subtype field, then once with no subtype if it has none or its printing isn't known yet; total, page and limit count those entries. "color" groups cards as white, blue, black, red, green, multicolor, colorless, lands, then cards whose colors aren't known yet; "type" by primary type (creature, planeswalker, battle, instant, sorcery, artifact, enchantment, land, other, unknown). Both sort by name within a group. */
+                    group?: "type" | "color" | "mana" | "subtype";
                     /** @description Return one entry per stack of identical copies (same printing, foil, proxy and storage) instead of one per card. Each entry is the stack's lowest-id copy with quantity and copy_ids set; total, page and limit then count stacks. added is the oldest copy's, updated the most recent one's. */
                     stack?: boolean;
                 };
@@ -5373,7 +5373,7 @@ export interface components {
              * @description How the collection and the storages group cards; null for no grouping.
              * @enum {string|null}
              */
-            collection_grouping: "type" | "color" | "mana" | null;
+            collection_grouping: "type" | "color" | "mana" | "subtype" | null;
             /**
              * @description How the collection and the storages sort cards.
              * @default -added
@@ -5422,7 +5422,7 @@ export interface components {
             show_mana_cost?: boolean;
             show_card_details?: boolean;
             /** @enum {string} */
-            collection_grouping?: "type" | "color" | "mana";
+            collection_grouping?: "type" | "color" | "mana" | "subtype";
             /** @description Set collection_grouping back to null (no grouping). */
             clear_collection_grouping?: boolean;
             /** @enum {string} */
@@ -5738,6 +5738,8 @@ export interface components {
             quantity?: number;
             /** @description Only with GET /cards?stack=true, the ids of the stack's copies, lowest first. */
             copy_ids?: number[];
+            /** @description Only with GET /cards?group=subtype, the subtype this entry is listed under; absent for the cards without a subtype. */
+            subtype?: string;
         };
         PendingCard: {
             id: number;
@@ -6031,10 +6033,10 @@ export interface components {
         };
         DeckView: {
             /**
-             * @description null for no grouping.
+             * @description null for no grouping. "subtype" lists a card under each of its subtypes.
              * @enum {string|null}
              */
-            grouping: "type" | "color" | "mana" | "storage" | "tag" | null;
+            grouping: "type" | "color" | "mana" | "storage" | "tag" | "subtype" | null;
             /** @enum {string} */
             sort: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "price" | "-price";
             /** @description The boards folded on the deck page, among sideboard and considering. Always returned; optional when saving, where leaving it out means [considering]. */

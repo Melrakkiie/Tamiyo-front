@@ -8,10 +8,10 @@ import { CardGroupsLayout } from '../cards/CardLayout';
 import { SectionTitle } from '../theme/SectionTitle';
 import { type CardGroup, groupCards, sortIntoGroups, typeLabels } from '../cards/grouping';
 import type { FaceTypes } from '../scryfall/classify';
-import { useCardFaceTypes } from '../scryfall/hooks';
+import { useCardFaceTypes, useCardSubtypes } from '../scryfall/hooks';
 import { type DragItem, useDropTarget } from './dragDrop';
 import { StorageIcon } from '../storages/StorageLabel';
-import { type DeckCardGrouping, groupByStorage, groupByTag } from './storageGrouping';
+import { type DeckCardGrouping, groupByStorage, groupBySubtype, groupByTag } from './storageGrouping';
 
 interface BackFaceEntry {
   name: string;
@@ -81,6 +81,7 @@ export function useDeckCardGroups(
   tagsOf: (card: Card) => string[] = () => [],
 ): DeckCardGrouped {
   const faceTypes = useCardFaceTypes(stacks.map((card) => card.scryfall_id));
+  const subtypes = useCardSubtypes(stacks.map((card) => card.scryfall_id));
   const groupedStacks =
     grouping === 'type'
       ? stacks.map((card) => {
@@ -105,9 +106,11 @@ export function useDeckCardGroups(
       ? groupByStorage(groupedStacks, storageNames)
       : grouping === 'tag'
         ? groupByTag(groupedStacks, tagsOf)
-        : grouping
-          ? groupCards(sortIntoGroups(groupedStacks, grouping), grouping)
-          : [];
+        : grouping === 'subtype'
+          ? groupBySubtype(groupedStacks, (card) => subtypes.data?.[card.scryfall_id] ?? [])
+          : grouping
+            ? groupCards(sortIntoGroups(groupedStacks, grouping), grouping)
+            : [];
   return { groups, backFaces };
 }
 

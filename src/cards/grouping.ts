@@ -1,12 +1,13 @@
 import type { Card } from '../api/types';
 import type { CardType } from '../scryfall/classify';
 
-export type CardGrouping = 'type' | 'color' | 'mana';
+export type CardGrouping = 'type' | 'color' | 'mana' | 'subtype';
 
 export const groupingOptions: { value: CardGrouping; label: string }[] = [
   { value: 'type', label: 'Type' },
   { value: 'color', label: 'Couleur' },
   { value: 'mana', label: 'Coût de mana' },
+  { value: 'subtype', label: 'Sous-type' },
 ];
 
 export function parseGrouping(raw: string | null): CardGrouping | null {
@@ -49,6 +50,8 @@ function colorGroup(card: Card): string {
   return colorLabels[card.colors] ?? 'Couleur inconnue';
 }
 
+export const noSubtypeLabel = 'Sans sous-type';
+
 export function groupLabel(card: Card, grouping: CardGrouping): string {
   switch (grouping) {
     case 'type':
@@ -57,6 +60,8 @@ export function groupLabel(card: Card, grouping: CardGrouping): string {
       return colorGroup(card);
     case 'mana':
       return `Coût de mana ${Math.floor(card.mana_value)}`;
+    case 'subtype':
+      return card.subtype ?? noSubtypeLabel;
   }
 }
 
@@ -119,6 +124,8 @@ function groupRank(card: Card, grouping: CardGrouping): number {
       return colorRank(card);
     case 'mana':
       return Math.floor(card.mana_value);
+    case 'subtype':
+      return 0;
   }
 }
 
