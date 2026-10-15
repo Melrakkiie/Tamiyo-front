@@ -1,5 +1,5 @@
 import { api, unwrap } from '../api/client';
-import { endSession, setAccessToken } from './session';
+import { clearSession, endSession, setAccessToken } from './session';
 
 export async function login(email: string, password: string) {
   const data = unwrap(await api.POST('/auth/login', { body: { email, password } }));
@@ -45,4 +45,9 @@ export async function requestEmailChange(currentPassword: string, newEmail: stri
 
 export async function confirmEmailChange(token: string) {
   unwrap(await api.POST('/auth/confirm-email', { body: { token } }));
+}
+
+export async function deleteAccount(password: string) {
+  unwrap(await api.DELETE('/auth/me', { body: { password } }));
+  clearSession();
 }

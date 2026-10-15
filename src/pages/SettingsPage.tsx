@@ -5,6 +5,7 @@ import { AppearanceSection } from '../auth/AppearanceSection';
 import { AvatarSection } from '../auth/AvatarSection';
 import { ChangeEmailSection } from '../auth/ChangeEmailSection';
 import { ChangePasswordSection } from '../auth/ChangePasswordSection';
+import { DeleteAccountSection } from '../auth/DeleteAccountSection';
 import { DisplayNameSection } from '../auth/DisplayNameSection';
 import { DeleteCollectionSection } from '../cards/DeleteCollectionSection';
 import { usePageTitle } from '../layout/usePageTitle';
@@ -58,7 +59,10 @@ export function SettingsPage() {
           </SimpleGrid>
         </Tabs.Panel>
         <Tabs.Panel value="danger" pl={vertical ? 'xl' : 0} pt={vertical ? 0 : 'lg'}>
-          <DeleteCollectionSection />
+          <Stack>
+            <DeleteCollectionSection />
+            <DeleteAccountSection />
+          </Stack>
         </Tabs.Panel>
       </Tabs>
     </Stack>
