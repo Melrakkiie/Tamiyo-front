@@ -50,7 +50,7 @@ function sourceDetails(source: EditionSource) {
 
 export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSwapped }: EditionSwitcherProps) {
   const current = sourceDetails(source);
-  const copies = useCollectionCopies(current.name);
+  const copies = useCollectionCopies(current.name, current.scryfall_id);
   const owned = (copies.data ?? []).filter(
     (copy) => !(source.kind === 'card' && copy.id === source.card.id) && !deckCardIds.has(copy.id),
   );

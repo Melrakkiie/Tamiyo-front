@@ -790,6 +790,8 @@ export interface paths {
                 query?: {
                     /** @description Only return cards belonging to this storage. */
                     storage_id?: number;
+                    /** @description Only copies of this printing, whatever name they were saved with (case-insensitive). */
+                    scryfall_id?: string;
                     /** @description Case-insensitive partial match on the card name. */
                     name?: string;
                     /** @description Only return cards whose color identity fits inside these colors (e.g. a commander's identity), in any order. An empty value keeps colorless cards only. Cards whose color identity isn't known yet are left out. */

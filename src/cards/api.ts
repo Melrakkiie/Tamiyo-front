@@ -202,15 +202,23 @@ export function useRefreshCardDetails(onProgress: (progress: DetailsRefreshProgr
   });
 }
 
-export function useCollectionCopies(name: string | null) {
+export function useCollectionCopies(name: string | null, scryfallId?: string) {
   return useQuery({
-    queryKey: ['cards', 'copies', name],
+    queryKey: ['cards', 'copies', name, scryfallId],
     queryFn: async () => {
-      const result = unwrap(
-        await api.GET('/cards', { params: { query: { name: name ?? '', limit: 100, sort: 'name' } } }),
-      );
+      const [byName, byPrinting] = await Promise.all([
+        api.GET('/cards', { params: { query: { name: name ?? '', limit: 100, sort: 'name' } } }).then(unwrap),
+        scryfallId
+          ? api.GET('/cards', { params: { query: { scryfall_id: scryfallId, limit: 100, sort: 'name' } } }).then(unwrap)
+          : null,
+      ]);
       const wanted = (name ?? '').toLowerCase();
-      return result.data.filter((card) => card.name.toLowerCase() === wanted);
+      const copies = byName.data.filter((card) => card.name.toLowerCase() === wanted);
+      const seen = new Set(copies.map((card) => card.id));
+      for (const card of byPrinting?.data ?? []) {
+        if (!seen.has(card.id)) copies.push(card);
+      }
+      return copies;
     },
     enabled: !!name,
   });
