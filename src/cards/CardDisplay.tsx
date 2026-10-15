@@ -69,6 +69,7 @@ export function cardDisplay(settings: DisplaySettings, change: (next: Partial<Di
     textOnly,
     compact: !textOnly && columns >= 7,
     stacked: settings.mode === 'stacks',
+    overlapped: settings.mode === 'stacks' || settings.mode === 'grid',
     gridProps: textOnly
       ? { cols: { base: 1, sm: 2, lg: 3 }, spacing: 'xs', verticalSpacing: 'xs' }
       : {

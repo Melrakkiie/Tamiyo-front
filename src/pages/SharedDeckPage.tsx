@@ -380,6 +380,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
         collectionCount={showCollection ? ownedByName.get(cardNameKey(card.name)) : undefined}
         compact={display.compact}
         stacked={display.stacked}
+        overlapped={display.overlapped}
         hideDetails={!display.showDetails}
         onOpen={setOpenedCard}
         onContextMenu={(event, clicked) =>

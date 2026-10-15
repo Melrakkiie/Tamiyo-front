@@ -654,6 +654,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
           }
           compact={display.compact}
           stacked={display.stacked}
+          overlapped={display.overlapped}
           hideDetails={!display.showDetails}
           onOpen={notOwned ? openPending : (clicked) => openCard(clicked, board)}
           onContextMenu={(event, clicked) =>

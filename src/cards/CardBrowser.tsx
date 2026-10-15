@@ -193,6 +193,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
         textOnly={textOnly}
         compact={display.compact}
         stacked={display.stacked}
+        overlapped={display.overlapped}
         hideDetails={!display.showDetails}
         manaCost={
           !display.showManaCost || manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)

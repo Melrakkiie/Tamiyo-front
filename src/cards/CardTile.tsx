@@ -24,6 +24,7 @@ interface CardTileProps {
   textOnly?: boolean;
   hideDetails?: boolean;
   stacked?: boolean;
+  overlapped?: boolean;
   commander?: boolean;
   manaCost?: string | null;
   details?: ReactNode;
@@ -122,6 +123,7 @@ export function CardTile({
   textOnly,
   hideDetails = false,
   stacked = false,
+  overlapped = false,
   commander = false,
   manaCost,
   details,
@@ -154,6 +156,7 @@ export function CardTile({
     );
   }
   const quantity = card.quantity ?? 1;
+  const hasCollection = collectionCount !== undefined && collectionCount > 0;
   return (
     <UnstyledButton
       onClick={() => onOpen(card)}
@@ -183,9 +186,18 @@ export function CardTile({
               });
             }}
           />
+          {overlapped && (pendingStatus || hasCollection || commander) && (
+            <Group pos="absolute" top={4} left={4} gap={4} wrap="nowrap">
+              {pendingStatus ? (
+                <PendingBadge status={pendingStatus} size="sm" compact />
+              ) : (
+                hasCollection && <CollectionBadge owned={collectionCount} size="sm" compact />
+              )}
+              {commander && <CommanderBadge size="sm" />}
+            </Group>
+          )}
           {stacked ? (
             <Group pos="absolute" top={4} right={4} gap={4} wrap="nowrap">
-              {commander && <CommanderBadge size="sm" />}
               {quantity > 1 && (
                 <Badge
                   size="sm"
@@ -199,7 +211,7 @@ export function CardTile({
             </Group>
           ) : (
             <>
-              {commander && (
+              {commander && !overlapped && (
                 <Box pos="absolute" top={8} left={8}>
                   <CommanderBadge />
                 </Box>
@@ -219,12 +231,12 @@ export function CardTile({
               )}
             </>
           )}
-          {pendingStatus && (
+          {!overlapped && pendingStatus && (
             <Box pos="absolute" bottom={8} left={8}>
               <PendingBadge status={pendingStatus} compact={compact} />
             </Box>
           )}
-          {!pendingStatus && collectionCount !== undefined && collectionCount > 0 && (
+          {!overlapped && !pendingStatus && hasCollection && (
             <Box pos="absolute" bottom={8} left={8}>
               <CollectionBadge owned={collectionCount} compact={compact} />
             </Box>

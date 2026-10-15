@@ -306,6 +306,7 @@ function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps
         textOnly={options.display.textOnly}
         compact={options.display.compact}
         stacked={options.display.stacked}
+        overlapped={options.display.overlapped}
         hideDetails={!options.display.showDetails}
         commander={isCommander(card)}
         manaCost={
