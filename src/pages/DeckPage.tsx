@@ -16,7 +16,7 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
@@ -557,6 +557,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   const [importOpened, setImportOpened] = useState(false);
   const [opened, setOpened] = useState<OpenedCard | null>(null);
   const [openedPending, setOpenedPending] = useState<Card | null>(null);
+  const modalSession = useRef(0);
   const liveCard = opened ? liveOpenedCard(opened) : null;
   const openedCard = liveCard ?? opened;
   const openedCardImage = openedCard ? images.data?.[openedCard.card.scryfall_id] : undefined;
@@ -596,7 +597,21 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
     setOpenedPending(card);
   }
 
+  function closeCard() {
+    modalSession.current += 1;
+    setOpened(null);
+  }
+
+  function closePending() {
+    modalSession.current += 1;
+    setOpenedPending(null);
+  }
+
+  const session = modalSession.current;
   function showSwapped(next: EditionSource) {
+    if (modalSession.current !== session) {
+      return;
+    }
     if (next.kind === 'card') {
       openCard(next.card, next.board);
     } else {
@@ -831,7 +846,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
           board={openedCard?.board ?? 'main'}
           imageUrl={openedCardImage}
           loading={cardLoading}
-          onClose={() => setOpened(null)}
+          onClose={closeCard}
           onSwapped={showSwapped}
         />
         <PendingCardModal
@@ -843,7 +858,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
           item={pendingItem}
           imageUrl={pendingImage}
           loading={pendingLoading}
-          onClose={() => setOpenedPending(null)}
+          onClose={closePending}
           onSwapped={showSwapped}
         />
       </Stack>
