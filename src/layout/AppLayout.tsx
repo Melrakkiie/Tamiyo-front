@@ -13,7 +13,7 @@ import {
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Fragment, useEffect } from 'react';
-import { Link, Outlet, useLocation } from 'react-router';
+import { Link, useLocation } from 'react-router';
 
 import { useAccount } from '../auth/account';
 import { logout } from '../auth/actions';
@@ -21,8 +21,8 @@ import { UserAvatar } from '../auth/UserAvatar';
 import { showCardPreview } from './cardPreview';
 import { LunaMoth } from '../theme/LunaMoth';
 import { CardPreviewPanel } from './CardPreviewPanel';
-import { FanContentNotice } from './FanContentNotice';
 import { NavMoth } from './NavMoth';
+import { PageWithFooter } from './PageWithFooter';
 
 interface NavItem {
   label: string;
@@ -169,8 +169,7 @@ export function AppLayout() {
       <AppShell.Navbar p="md">{showPreview && <CardPreviewPanel />}</AppShell.Navbar>
 
       <AppShell.Main>
-        <Outlet />
-        <FanContentNotice />
+        <PageWithFooter />
       </AppShell.Main>
     </AppShell>
   );

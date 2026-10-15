@@ -1,11 +1,11 @@
 import { AppShell, Button, Group, Title } from '@mantine/core';
 import { useEffect } from 'react';
-import { Link, Outlet, useLocation } from 'react-router';
+import { Link, useLocation } from 'react-router';
 
 import { LunaMoth } from '../theme/LunaMoth';
 import { showCardPreview } from './cardPreview';
 import { CardPreviewPanel } from './CardPreviewPanel';
-import { FanContentNotice } from './FanContentNotice';
+import { PageWithFooter } from './PageWithFooter';
 
 export function PublicLayout() {
   const location = useLocation();
@@ -45,8 +45,7 @@ export function PublicLayout() {
       </AppShell.Navbar>
 
       <AppShell.Main>
-        <Outlet />
-        <FanContentNotice />
+        <PageWithFooter />
       </AppShell.Main>
     </AppShell>
   );
