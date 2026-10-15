@@ -95,11 +95,19 @@ export function ExportDeckModal({ deckId, deckName, opened, onClose, shared = fa
   const [cardmarketCards, setCardmarketCards] = useState<CardmarketCards>('all');
   const [cardmarketPrintings, setCardmarketPrintings] = useState<CardmarketPrintings>('name');
   const [cardmarketBoards, setCardmarketBoards] = useState<DeckBoard[]>(DEFAULT_CARDMARKET_BOARDS);
+  const [cardmarketBasicLands, setCardmarketBasicLands] = useState(false);
   const noBoards = format === 'cardmarket' && cardmarketBoards.length === 0;
   const printings = cardmarketPrintings === 'printings';
   const exported = useDeckExport(
     deckId,
-    { format, withTags, onlyPending: cardmarketCards === 'pending', printings, boards: cardmarketBoards },
+    {
+      format,
+      withTags,
+      onlyPending: cardmarketCards === 'pending',
+      printings,
+      boards: cardmarketBoards,
+      basicLands: cardmarketBasicLands,
+    },
     opened && !noBoards,
     shared,
   );
@@ -146,6 +154,11 @@ export function ExportDeckModal({ deckId, deckName, opened, onClose, shared = fa
                 ))}
               </Group>
             </Checkbox.Group>
+            <Switch
+              label="Inclure les terrains de base"
+              checked={cardmarketBasicLands}
+              onChange={(event) => setCardmarketBasicLands(event.currentTarget.checked)}
+            />
           </Stack>
         )}
         {(format === 'tamiyo' || format === 'moxfield') && (

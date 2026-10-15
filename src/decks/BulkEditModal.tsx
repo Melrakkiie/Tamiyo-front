@@ -28,7 +28,7 @@ function plural(count: number, word: string) {
 function BulkEditForm({ deckId, onClose }: { deckId: string; onClose: () => void }) {
   const current = useDeckExport(
     deckId,
-    { format: 'moxfield', withTags: true, onlyPending: false, printings: false, boards: [] },
+    { format: 'moxfield', withTags: true, onlyPending: false, printings: false, boards: [], basicLands: true },
     true,
   );
   const edit = useBulkEditDeck();

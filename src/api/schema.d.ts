@@ -4231,6 +4231,8 @@ export interface paths {
                     pending?: boolean;
                     /** @description With format=cardmarket, add each card's expansion name (Scryfall's), one line per card and expansion. */
                     printings?: boolean;
+                    /** @description With format=cardmarket, list the basic lands (the five basics, Wastes and their snow-covered versions); false leaves them out. */
+                    basic_lands?: boolean;
                 };
                 header?: never;
                 path: {
@@ -4252,7 +4254,7 @@ export interface paths {
                         "application/json": components["schemas"]["TamiyoFile"];
                     };
                 };
-                /** @description format is unknown, tags, pending or printings isn't a boolean, or boards lists an unknown board */
+                /** @description format is unknown, tags, pending, printings or basic_lands isn't a boolean, or boards lists an unknown board */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -5214,7 +5216,7 @@ export interface paths {
         };
         /**
          * Export one deck as text, in a chosen format
-         * @description Exports the deck's cards, pending ones included, as plain text, or as a Tamiyo deck file with format=tamiyo (with the deck's tags when tags=true). cardmarket: a list for a Cardmarket wants list, the cards of the boards listed in boards, main and sideboard by default (only the pending ones with pending=true), one line per card name, "4 Dark Ritual", or per card and expansion with printings=true, "2 Dark Confidant (Modern Masters)", expansion names being Scryfall's. moxfield: one line per printing, "1 Sol Ring (SLD) 1011 *F*", the commander's line first with its full quantity, the rest sorted alphabetically, so importing the file back reconstructs the same commander. plain: one line per card name, "4 Lightning Bolt", the commander first. arena: MTG Arena's format, a "Commander" section (when the deck has one) then a "Deck" section, one line per card name, split cards written with " // ". The sideboard follows in a section of its own ("SIDEBOARD:" in moxfield, "Sideboard" otherwise), then the considered cards ("MAYBEBOARD:" in moxfield, "Maybeboard" in plain, left out of arena), each section only when it has cards.
+         * @description Exports the deck's cards, pending ones included, as plain text, or as a Tamiyo deck file with format=tamiyo (with the deck's tags when tags=true). cardmarket: a list for a Cardmarket wants list, the cards of the boards listed in boards, main and sideboard by default (only the pending ones with pending=true), one line per card name, "4 Dark Ritual", or per card and expansion with printings=true, "2 Dark Confidant (Modern Masters)", expansion names being Scryfall's, without the basic lands with basic_lands=false. moxfield: one line per printing, "1 Sol Ring (SLD) 1011 *F*", the commander's line first with its full quantity, the rest sorted alphabetically, so importing the file back reconstructs the same commander. plain: one line per card name, "4 Lightning Bolt", the commander first. arena: MTG Arena's format, a "Commander" section (when the deck has one) then a "Deck" section, one line per card name, split cards written with " // ". The sideboard follows in a section of its own ("SIDEBOARD:" in moxfield, "Sideboard" otherwise), then the considered cards ("MAYBEBOARD:" in moxfield, "Maybeboard" in plain, left out of arena), each section only when it has cards.
          */
         get: {
             parameters: {
@@ -5228,6 +5230,8 @@ export interface paths {
                     pending?: boolean;
                     /** @description With format=cardmarket, add each card's expansion name (Scryfall's), one line per card and expansion. */
                     printings?: boolean;
+                    /** @description With format=cardmarket, list the basic lands (the five basics, Wastes and their snow-covered versions); false leaves them out. */
+                    basic_lands?: boolean;
                 };
                 header?: never;
                 path: {
@@ -5249,7 +5253,7 @@ export interface paths {
                         "application/json": components["schemas"]["TamiyoFile"];
                     };
                 };
-                /** @description id is not a UUID, format is unknown, tags, pending or printings isn't a boolean, or boards lists an unknown board */
+                /** @description id is not a UUID, format is unknown, tags, pending, printings or basic_lands isn't a boolean, or boards lists an unknown board */
                 400: {
                     headers: {
                         [name: string]: unknown;

@@ -142,9 +142,10 @@ export interface DeckExportOptions {
   onlyPending: boolean;
   printings: boolean;
   boards: DeckBoard[];
+  basicLands: boolean;
 }
 
-function deckExportQuery({ format, withTags, onlyPending, printings, boards }: DeckExportOptions) {
+function deckExportQuery({ format, withTags, onlyPending, printings, boards, basicLands }: DeckExportOptions) {
   const params = new URLSearchParams({ format });
   if ((format === 'tamiyo' || format === 'moxfield') && withTags) {
     params.set('tags', 'true');
@@ -154,6 +155,9 @@ function deckExportQuery({ format, withTags, onlyPending, printings, boards }: D
   }
   if (format === 'cardmarket' && printings) {
     params.set('printings', 'true');
+  }
+  if (format === 'cardmarket' && !basicLands) {
+    params.set('basic_lands', 'false');
   }
   if (format === 'cardmarket') {
     params.set('boards', boards.join(','));
