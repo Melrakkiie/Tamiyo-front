@@ -74,12 +74,21 @@ const sortOptions: { value: CardSort; label: string }[] = [
   { value: 'type', label: 'Type' },
 ];
 
+const priceSortOptions: { value: CardSort; label: string }[] = [
+  { value: '-price', label: 'Prix décroissant' },
+  { value: 'price', label: 'Prix croissant' },
+];
+
 const sortsNeedingDetails: CardSort[] = ['color', '-color', 'type', '-type'];
 
 const DEFAULT_SORT: CardSort = '-added';
 
-function parseSort(raw: string | null): CardSort {
-  return sortOptions.find((option) => option.value === raw)?.value ?? DEFAULT_SORT;
+function sortChoices(showPrices: boolean) {
+  return showPrices ? [...sortOptions, ...priceSortOptions] : sortOptions;
+}
+
+function parseSort(raw: string | null, showPrices: boolean): CardSort {
+  return sortChoices(showPrices).find((option) => option.value === raw)?.value ?? DEFAULT_SORT;
 }
 
 interface CardBrowserProps {
@@ -93,7 +102,8 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const page = Math.max(1, Number(params.get('page')) || 1);
   const preferences = usePreferences();
   const updatePreferences = useUpdatePreferences();
-  const sort = parseSort(preferences.data?.collection_sort ?? null);
+  const showPrices = preferences.data?.show_prices ?? false;
+  const sort = parseSort(preferences.data?.collection_sort ?? null, showPrices);
   const grouping = parseGrouping(preferences.data?.collection_grouping ?? null);
   const { chosen: chosenPageSize, setChosen: setChosenPageSize } = usePageSize();
   const pageSize = chosenPageSize ?? fixedPageSize ?? (grouping ? GROUPED_PAGE_SIZE : PAGE_SIZE);
@@ -305,10 +315,10 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
                 />
                 <Select
                   label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
-                  data={sortOptions}
+                  data={sortChoices(showPrices)}
                   value={sort}
                   onChange={(value) => {
-                    updatePreferences.mutate({ collection_sort: parseSort(value) });
+                    updatePreferences.mutate({ collection_sort: parseSort(value, showPrices) });
                     updateParams({ page: null });
                   }}
                   allowDeselect={false}

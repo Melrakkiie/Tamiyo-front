@@ -110,6 +110,11 @@ const sortOptions: { value: DeckCardSort; label: string }[] = [
   { value: '-added', label: 'Ajoutées récemment' },
 ];
 
+const priceSortOptions: { value: DeckCardSort; label: string }[] = [
+  { value: '-price', label: 'Prix décroissant' },
+  { value: 'price', label: 'Prix croissant' },
+];
+
 export function DeckPage() {
   const id = useParams().id ?? '';
   return <DeckRoute key={id} id={id} />;
@@ -434,7 +439,10 @@ function DeckCardsWithView({ deck }: { deck: Deck }) {
   }
 
   const saved = view.data;
-  const initialSort = saved && sortOptions.some((option) => option.value === saved.sort) ? saved.sort : 'mana_value';
+  const initialSort =
+    saved && [...sortOptions, ...priceSortOptions].some((option) => option.value === saved.sort)
+      ? saved.sort
+      : 'mana_value';
   const initialGrouping = saved ? parseDeckGrouping(saved.grouping) : 'type';
   const initialCollapsed = saved?.collapsed_boards ?? DEFAULT_COLLAPSED_BOARDS;
   return (
@@ -479,6 +487,9 @@ const emptyBoardMessages: Record<CollapsibleBoard, string> = {
 function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initialDisplay }: DeckCardsProps) {
   const { pathname } = useLocation();
   const [sort, setSort] = useState<DeckCardSort>(initialSort);
+  const showPrices = usePriceCurrency() !== null;
+  const sortChoices = showPrices ? [...sortOptions, ...priceSortOptions] : sortOptions;
+  const shownSort = sortChoices.some((option) => option.value === sort) ? sort : 'mana_value';
   const [grouping, setGrouping] = useState<DeckCardGrouping | null>(initialGrouping);
   const [collapsed, setCollapsed] = useState<CollapsibleBoard[]>(initialCollapsed);
   const [displaySettings, setDisplaySettings] = useState<DisplaySettings>(initialDisplay);
@@ -514,11 +525,11 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   const display = cardDisplay(displaySettings, (next) => changeView({ display: next }));
   const { textOnly } = display;
   const showCollection = useShowCollectionInDecks();
-  const cards = useDeckCards(deck.id, sort);
+  const cards = useDeckCards(deck.id, shownSort);
   const deckCards = cards.data ?? [];
   const pending = usePendingCards(deck.id);
   const pendingItems = pending.data ?? [];
-  const allCards = sortDeckCards<DeckCard>([...deckCards, ...pendingToCards(pendingItems)], sort);
+  const allCards = sortDeckCards<DeckCard>([...deckCards, ...pendingToCards(pendingItems)], shownSort);
   const mainCards = inBoard(allCards, 'main');
   const sideboardCards = inBoard(allCards, 'sideboard');
   const consideringCards = inBoard(allCards, 'considering');
@@ -719,8 +730,8 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
                   />
                   <Select
                     label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
-                    data={sortOptions}
-                    value={sort}
+                    data={sortChoices}
+                    value={shownSort}
                     onChange={(value) => value && changeView({ sort: value as DeckCardSort })}
                     allowDeselect={false}
                     {...placement(inside, 240)}

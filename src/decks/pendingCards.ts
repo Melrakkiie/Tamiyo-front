@@ -21,6 +21,7 @@ export function pendingToCards(pending: PendingCard[]): DeckCard[] {
       added: item.added,
       updated: item.added,
       board: item.board,
+      price: item.price,
     })),
   );
 }
@@ -43,11 +44,20 @@ export function pendingIdOf(card: Card) {
   return Math.floor((-card.id - 1) / COPIES_PER_ITEM);
 }
 
-function compare(a: Card, b: Card, sort: DeckCardSort) {
+type SortableCard = Card & { price?: number | null };
+
+function compare(a: SortableCard, b: SortableCard, sort: DeckCardSort) {
   const descending = sort.startsWith('-');
   const field = descending ? sort.slice(1) : sort;
   let result = 0;
-  if (field === 'name') {
+  if (field === 'price') {
+    const aPrice = a.price ?? null;
+    const bPrice = b.price ?? null;
+    if (aPrice === null || bPrice === null) {
+      return (aPrice === null ? 1 : 0) - (bPrice === null ? 1 : 0) || a.name.localeCompare(b.name);
+    }
+    result = aPrice - bPrice;
+  } else if (field === 'name') {
     result = a.name.localeCompare(b.name);
   } else if (field === 'mana_value') {
     result = a.mana_value - b.mana_value;
@@ -57,7 +67,7 @@ function compare(a: Card, b: Card, sort: DeckCardSort) {
   return (descending ? -result : result) || (field === 'name' ? 0 : a.name.localeCompare(b.name));
 }
 
-export function sortDeckCards<T extends Card>(cards: T[], sort: DeckCardSort): T[] {
+export function sortDeckCards<T extends SortableCard>(cards: T[], sort: DeckCardSort): T[] {
   return cards
     .map((card, index) => ({ card, index }))
     .sort((a, b) => compare(a.card, b.card, sort) || a.index - b.index)

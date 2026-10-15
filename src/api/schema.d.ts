@@ -798,8 +798,8 @@ export interface paths {
                     page?: number;
                     /** @description Number of cards per page (max 100). */
                     limit?: number;
-                    /** @description Sort field, with an optional "-" prefix for descending order. id is always used as a secondary tie-breaker for a stable order. */
-                    sort?: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "color" | "-color" | "type" | "-type";
+                    /** @description Sort field, with an optional "-" prefix for descending order. id is always used as a secondary tie-breaker for a stable order. price uses the price_currency preference, and cards without a known price come last in both directions. */
+                    sort?: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "color" | "-color" | "type" | "-type" | "price" | "-price";
                     /** @description WUBRG letters, read with color_mode. Cards whose colors aren't known are left out. */
                     colors?: string;
                     /** @description exact (exactly these colors; an empty colors keeps colorless cards), include (at least these colors) or within (only colors among these, colorless included). */
@@ -2460,8 +2460,8 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    /** @description Sort field, with an optional "-" prefix for descending order. id is always used as a secondary tie-breaker for a stable order. */
-                    sort?: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value";
+                    /** @description Sort field, with an optional "-" prefix for descending order. id is always used as a secondary tie-breaker for a stable order. price uses the price_currency preference, and cards without a known price come last in both directions. */
+                    sort?: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "price" | "-price";
                 };
                 header?: never;
                 path: {
@@ -5377,7 +5377,7 @@ export interface components {
              * @default -added
              * @enum {string}
              */
-            collection_sort: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "color" | "-color" | "type" | "-type";
+            collection_sort: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "color" | "-color" | "type" | "-type" | "price" | "-price";
             /**
              * @description Whether the app shows its day or its night colors; auto follows the time of day.
              * @default auto
@@ -5424,7 +5424,7 @@ export interface components {
             /** @description Set collection_grouping back to null (no grouping). */
             clear_collection_grouping?: boolean;
             /** @enum {string} */
-            collection_sort?: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "color" | "-color" | "type" | "-type";
+            collection_sort?: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "color" | "-color" | "type" | "-type" | "price" | "-price";
             /** @enum {string} */
             theme?: "day" | "night" | "auto";
             night_starts_at?: number;
@@ -5483,6 +5483,8 @@ export interface components {
         DeckBoard: "main" | "sideboard" | "considering";
         DeckCard: components["schemas"]["Card"] & {
             board: components["schemas"]["DeckBoard"];
+            /** @description Price of one copy in the price_currency preference, with the same fallbacks as the collection value. null when unknown. */
+            price: number | null;
         };
         LegalityIssue: {
             card_id?: number;
@@ -5753,6 +5755,8 @@ export interface components {
             card_type?: "Creature" | "Planeswalker" | "Battle" | "Instant" | "Sorcery" | "Artifact" | "Enchantment" | "Land" | "Other" | null;
             color_identity?: string | null;
             board: components["schemas"]["DeckBoard"];
+            /** @description Price of one copy in the price_currency preference, with the same fallbacks as the collection value. null when unknown. */
+            price: number | null;
             added: string;
             /** @description Cards of the same name in the collection, any printing, outside this deck (copies in other decks count), leaving out the storages locked against this deck. Only computed by GET /deck/{id}/pending, 0 elsewhere. */
             owned_copies: number;
@@ -6030,7 +6034,7 @@ export interface components {
              */
             grouping: "type" | "color" | "mana" | "storage" | "tag" | null;
             /** @enum {string} */
-            sort: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value";
+            sort: "name" | "-name" | "added" | "-added" | "updated" | "-updated" | "mana_value" | "-mana_value" | "price" | "-price";
             /** @description The boards folded on the deck page, among sideboard and considering. Always returned; optional when saving, where leaving it out means [considering]. */
             collapsed_boards?: ("sideboard" | "considering")[];
             /**
