@@ -19,11 +19,26 @@ export function tagsOf(byName: TagsByName | undefined, name: string): string[] {
 
 const tagsKey = (deckId: string) => ['decks', 'tags', deckId];
 
-export function useDeckTags(deckId: string) {
-  return useQuery({
+function deckTagsQuery(deckId: string) {
+  return {
     queryKey: tagsKey(deckId),
     queryFn: async () => unwrap(await api.GET('/deck/{id}/tags', { params: { path: { id: deckId } } })),
-  });
+  };
+}
+
+export function useDeckTags(deckId: string | null) {
+  return useQuery({ ...deckTagsQuery(deckId ?? ''), enabled: deckId !== null });
+}
+
+export function mergeTags(current: string[], added: string[]): string[] {
+  const merged = [...current];
+  for (const tag of added) {
+    const lower = tag.toLocaleLowerCase('fr');
+    if (!merged.some((other) => other.toLocaleLowerCase('fr') === lower)) {
+      merged.push(tag);
+    }
+  }
+  return merged;
 }
 
 function sortedTags(tags: Iterable<string>) {
@@ -68,6 +83,24 @@ export function useSetCardTags() {
     },
     onSettled: (_data, _err, { deckId }) => invalidate(deckId),
   });
+}
+
+export function useAddTagsToCard(deckId: string | null) {
+  const queryClient = useQueryClient();
+  const deckTags = useDeckTags(deckId);
+  const setTags = useSetCardTags();
+
+  function addTags(name: string, tags: string[]) {
+    if (deckId === null || tags.length === 0) {
+      return;
+    }
+    queryClient.ensureQueryData(deckTagsQuery(deckId)).then(
+      (current) => setTags.mutate({ deckId, name, tags: mergeTags(tagsOf(tagsByName(current.cards), name), tags) }),
+      () => undefined,
+    );
+  }
+
+  return { suggestions: deckTags.data?.tags ?? [], addTags, error: setTags.error };
 }
 
 export function useRenameDeckTag() {

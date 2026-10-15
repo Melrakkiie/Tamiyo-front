@@ -1,5 +1,5 @@
 import { Combobox, Pill, PillsInput, useCombobox } from '@mantine/core';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import { TagSticker } from '../theme/Sticker';
@@ -7,6 +7,9 @@ import { tagsByName, tagsOf, useDeckTags, useSetCardTags } from './tags';
 
 const MAX_TAGS = 20;
 const MAX_TAG_LENGTH = 40;
+
+export const ADDED_TAGS_DESCRIPTION =
+  'Ajoutés aux tags que la carte a déjà dans le deck. Entrée ou virgule pour valider.';
 
 interface CardTagsInputProps {
   deckId: string;
@@ -16,20 +19,54 @@ interface CardTagsInputProps {
 export function CardTagsInput({ deckId, cardName }: CardTagsInputProps) {
   const deckTags = useDeckTags(deckId);
   const setTags = useSetCardTags();
-  const value = tagsOf(tagsByName(deckTags.data?.cards ?? []), cardName);
+
+  return (
+    <TagsField
+      value={tagsOf(tagsByName(deckTags.data?.cards ?? []), cardName)}
+      onChange={(tags) => setTags.mutate({ deckId, name: cardName, tags })}
+      suggestions={deckTags.data?.tags ?? []}
+      description="Partagés par tous les exemplaires de cette carte dans le deck. Entrée ou virgule pour valider."
+      disabled={deckTags.isLoading}
+      error={
+        setTags.error
+          ? errorMessage(setTags.error, { 400: `Un tag fait au plus ${MAX_TAG_LENGTH} caractères.` })
+          : undefined
+      }
+    />
+  );
+}
+
+interface TagsFieldProps {
+  value: string[];
+  onChange: (tags: string[]) => void;
+  suggestions: string[];
+  label?: ReactNode;
+  description?: ReactNode;
+  disabled?: boolean;
+  error?: ReactNode;
+}
+
+export function TagsField({
+  value,
+  onChange,
+  suggestions,
+  label = 'Tags',
+  description,
+  disabled = false,
+  error,
+}: TagsFieldProps) {
   const [search, setSearch] = useState('');
   const [tooLong, setTooLong] = useState(false);
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
-  const disabled = deckTags.isLoading;
 
   function change(next: string[]) {
     const cleaned = next.map((tag) => tag.trim().split(/\s+/).join(' ')).filter((tag) => tag.length > 0);
     if (cleaned.some((tag) => tag.length > MAX_TAG_LENGTH)) {
       return;
     }
-    setTags.mutate({ deckId, name: cardName, tags: cleaned });
+    onChange(cleaned);
   }
 
   function add(candidates: string[]): boolean {
@@ -78,15 +115,9 @@ export function CardTagsInput({ deckId, cardName }: CardTagsInputProps) {
 
   const query = search.trim().toLocaleLowerCase('fr');
   const picked = new Set(value.map((tag) => tag.toLocaleLowerCase('fr')));
-  const options = (deckTags.data?.tags ?? []).filter(
+  const options = suggestions.filter(
     (tag) => !picked.has(tag.toLocaleLowerCase('fr')) && tag.toLocaleLowerCase('fr').includes(query),
   );
-
-  const error = tooLong
-    ? `Un tag fait au plus ${MAX_TAG_LENGTH} caractères.`
-    : setTags.error
-      ? errorMessage(setTags.error, { 400: `Un tag fait au plus ${MAX_TAG_LENGTH} caractères.` })
-      : undefined;
 
   return (
     <Combobox
@@ -99,10 +130,10 @@ export function CardTagsInput({ deckId, cardName }: CardTagsInputProps) {
     >
       <Combobox.DropdownTarget>
         <PillsInput
-          label="Tags"
-          description="Partagés par tous les exemplaires de cette carte dans le deck. Entrée ou virgule pour valider."
+          label={label}
+          description={description}
           disabled={disabled}
-          error={error}
+          error={tooLong ? `Un tag fait au plus ${MAX_TAG_LENGTH} caractères.` : error}
           onClick={() => combobox.openDropdown()}
           rightSection={
             value.length > 0 && !disabled ? (

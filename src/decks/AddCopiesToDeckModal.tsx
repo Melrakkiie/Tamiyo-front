@@ -7,21 +7,28 @@ import { useImportIntoDeck } from '../bulk/api';
 import { useAllDecks } from './api';
 import { withBoardHeader } from './boards';
 import { BoardPicker } from './BoardSection';
+import { ADDED_TAGS_DESCRIPTION, TagsField } from './CardTagsInput';
 import { deckListErrorMessage, deckListSummary } from './DeckListInput';
+import { useDeckTags } from './tags';
 
 const MAX_COPIES = 100;
 
 type DeckLinePrinting = Pick<Card, 'name' | 'set_code' | 'collector_number' | 'foil'>;
 
-export function deckLine(card: DeckLinePrinting, count: number, board: DeckBoard) {
+export function deckLine(card: DeckLinePrinting, count: number, board: DeckBoard, tags: string[] = []) {
+  const tagSuffix = tags
+    .map((tag) => tag.replaceAll('#', '').trim())
+    .filter((tag) => tag.length > 0)
+    .map((tag) => ` #${tag}`)
+    .join('');
   return withBoardHeader(
-    `${count} ${card.name} (${card.set_code}) ${card.collector_number}${card.foil ? ' *F*' : ''}\n`,
+    `${count} ${card.name} (${card.set_code}) ${card.collector_number}${card.foil ? ' *F*' : ''}${tagSuffix}\n`,
     board,
   );
 }
 
-export function deckLineFile(card: DeckLinePrinting, count: number, board: DeckBoard) {
-  return new File([deckLine(card, count, board)], 'deck.txt', { type: 'text/plain' });
+export function deckLineFile(card: DeckLinePrinting, count: number, board: DeckBoard, tags: string[] = []) {
+  return new File([deckLine(card, count, board, tags)], 'deck.txt', { type: 'text/plain' });
 }
 
 interface AddCopiesToDeckModalProps {
@@ -56,6 +63,8 @@ function AddCopiesForm({
   const add = useImportIntoDeck();
   const [deckId, setDeckId] = useState<string | null>(null);
   const [board, setBoard] = useState<DeckBoard>('main');
+  const [tags, setTags] = useState<string[]>([]);
+  const deckTags = useDeckTags(deckId);
   const [count, setCount] = useState<number | string>(1);
   const options = [...(decks.data ?? [])]
     .filter((deck) => deck.id !== excludedDeckId)
@@ -69,7 +78,12 @@ function AddCopiesForm({
     const copies = Math.min(MAX_COPIES, Math.max(1, Math.floor(Number(count)) || 1));
     const deckName = options.find((option) => option.value === deckId)?.label ?? 'le deck';
     add.mutate(
-      { deckId, file: deckLineFile(card, copies, board), commanderFromFirstLine: false, includeLockedStorages: true },
+      {
+        deckId,
+        file: deckLineFile(card, copies, board, tags),
+        commanderFromFirstLine: false,
+        includeLockedStorages: true,
+      },
       {
         onSuccess: (summary) => {
           notifications.show({
@@ -95,6 +109,12 @@ function AddCopiesForm({
         data-autofocus
       />
       <BoardPicker value={board} onChange={setBoard} />
+      <TagsField
+        value={tags}
+        onChange={setTags}
+        suggestions={deckTags.data?.tags ?? []}
+        description={ADDED_TAGS_DESCRIPTION}
+      />
       <NumberInput
         label="Exemplaires"
         min={1}

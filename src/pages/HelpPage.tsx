@@ -156,10 +156,10 @@ const sections: HelpSection[] = [
           attente et le rangement de chaque exemplaire.
         </Text>
         <Text>
-          Les tags (Ramp, Pioche, Removal…) se posent sur une carte et sont partagés par tous ses exemplaires du deck.{' '}
-          <b>Gérer les tags</b> les renomme ou les supprime, et <b>Grouper par</b> → <b>Tag</b> ou <b>Rangement</b>{' '}
-          réorganise la liste. En glissant une carte, une barre apparaît pour la déposer dans une section, lui ajouter
-          un tag ou la retirer du deck.
+          Les tags (Ramp, Pioche, Removal…) se posent sur une carte et sont partagés par tous ses exemplaires du deck.
+          Tu peux les choisir dès l'ajout d'une carte au deck. <b>Gérer les tags</b> les renomme ou les supprime, et{' '}
+          <b>Grouper par</b> → <b>Tag</b> ou <b>Rangement</b> réorganise la liste. En glissant une carte, une barre
+          apparaît pour la déposer dans une section, lui ajouter un tag ou la retirer du deck.
         </Text>
         <Text>
           <b>Édition en masse</b> modifie le deck sous forme de liste texte. Dans une carte, tu peux changer d'édition

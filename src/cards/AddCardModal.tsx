@@ -8,7 +8,9 @@ import { useImportIntoDeck } from '../bulk/api';
 import { deckLineFile } from '../decks/AddCopiesToDeckModal';
 import { useAddPendingCard } from '../decks/api';
 import { BoardPicker } from '../decks/BoardSection';
+import { ADDED_TAGS_DESCRIPTION, TagsField } from '../decks/CardTagsInput';
 import { deckListErrorMessage, deckListSummary } from '../decks/DeckListInput';
+import { useAddTagsToCard, useDeckTags } from '../decks/tags';
 import type { ScryfallCard } from '../scryfall/client';
 import { usePrintings } from '../scryfall/hooks';
 import { canBeFoil, canBeNonFoil, printingDetails } from '../scryfall/printing';
@@ -24,7 +26,7 @@ export interface CardToAdd {
 
 export type AddTarget =
   | { kind: 'collection' }
-  | { kind: 'pending'; deckId: string; board: DeckBoard }
+  | { kind: 'pending'; deckId: string; board: DeckBoard; tags?: string[] }
   | { kind: 'deck'; deckId: string; deckName: string };
 
 interface AddCardModalProps {
@@ -94,6 +96,9 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
   const addPending = useAddPendingCard();
   const importLine = useImportIntoDeck();
   const [board, setBoard] = useState<DeckBoard>('main');
+  const [tags, setTags] = useState<string[]>([]);
+  const deckTags = useDeckTags(target.kind === 'deck' ? target.deckId : null);
+  const pendingTags = useAddTagsToCard(target.kind === 'pending' ? target.deckId : null);
   const pending = target.kind === 'pending';
   const toDeck = target.kind === 'pending' || target.kind === 'deck';
 
@@ -112,7 +117,7 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
 
     if (target.kind === 'deck') {
       importLine.mutate(
-        { deckId: target.deckId, file: deckLineFile(details, copies, board), commanderFromFirstLine: false },
+        { deckId: target.deckId, file: deckLineFile(details, copies, board, tags), commanderFromFirstLine: false },
         {
           onSuccess: (summary) => {
             notifications.show({
@@ -131,6 +136,7 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
         { deckId: target.deckId, card: { ...details, quantity: copies, board: target.board } },
         {
           onSuccess: () => {
+            pendingTags.addTags(printing.name, target.tags ?? []);
             notifications.show({
               color: 'green',
               message: `${copies > 1 ? `${copies} × ` : ''}${printing.name} ajoutée au deck, en attendant d'être dans ta collection.`,
@@ -190,6 +196,12 @@ function AddCardForm({ name, initialPrinting, onClose, defaultStorageId, target 
       {printing && target.kind === 'deck' && (
         <Stack gap={4}>
           <BoardPicker value={board} onChange={setBoard} />
+          <TagsField
+            value={tags}
+            onChange={setTags}
+            suggestions={deckTags.data?.tags ?? []}
+            description={ADDED_TAGS_DESCRIPTION}
+          />
           <Text size="xs" c="dimmed">
             Les exemplaires viennent de ta collection s'il t'en reste de libres dans cette édition, sinon ils sont
             ajoutés en attente.

@@ -16,7 +16,7 @@ import { useDebouncedValue } from '@mantine/hooks';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import type { Deck, DeckBoard } from '../api/types';
+import type { Card, Deck, DeckBoard } from '../api/types';
 import { AddCardModal } from '../cards/AddCardModal';
 import { useCards } from '../cards/api';
 import { hasMissingDetails } from '../cards/grouping';
@@ -28,7 +28,9 @@ import { StorageLabel } from '../storages/StorageLabel';
 import { FoilSticker } from '../theme/Sticker';
 import { isCommanderFormat, useAddCardToDeck } from './api';
 import { BoardPicker } from './BoardSection';
+import { ADDED_TAGS_DESCRIPTION, TagsField } from './CardTagsInput';
 import { ScryfallFallback } from './ScryfallFallback';
+import { useAddTagsToCard } from './tags';
 
 interface AddToDeckModalProps {
   deck: Deck;
@@ -91,12 +93,17 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
   const someIdentitiesUnknown = identityFilter !== undefined && hasMissingDetails(unfiltered.data?.data ?? []);
   const add = useAddCardToDeck();
   const [board, setBoard] = useState<DeckBoard>('main');
+  const [tags, setTags] = useState<string[]>([]);
+  const cardTags = useAddTagsToCard(deckId);
   const [pendingCardId, setPendingCardId] = useState<number | null>(null);
   const [scryfallPick, setScryfallPick] = useState<string | null>(null);
 
-  function addCard(cardId: number) {
-    setPendingCardId(cardId);
-    add.mutate({ deckId, cardId, board }, { onSettled: () => setPendingCardId(null) });
+  function addCard(card: Card) {
+    setPendingCardId(card.id);
+    add.mutate(
+      { deckId, cardId: card.id, board },
+      { onSuccess: () => cardTags.addTags(card.name, tags), onSettled: () => setPendingCardId(null) },
+    );
   }
 
   const results = cards.data?.data ?? [];
@@ -104,6 +111,12 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
   return (
     <Stack>
       <BoardPicker label="Ajouter dans" value={board} onChange={setBoard} />
+      <TagsField
+        value={tags}
+        onChange={setTags}
+        suggestions={cardTags.suggestions}
+        description={ADDED_TAGS_DESCRIPTION}
+      />
       <TextInput
         placeholder="Rechercher dans ta collection"
         value={search}
@@ -126,6 +139,7 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
       )}
       {someIdentitiesUnknown && <MissingDetailsAlert />}
       {add.error && <Alert color="red">{errorMessage(add.error)}</Alert>}
+      {cardTags.error && <Alert color="red">{errorMessage(cardTags.error)}</Alert>}
       {cards.error && <Alert color="red">{errorMessage(cards.error)}</Alert>}
 
       {cards.isLoading ? (
@@ -180,7 +194,7 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
                     <Button
                       size="xs"
                       variant="light"
-                      onClick={() => addCard(card.id)}
+                      onClick={() => addCard(card)}
                       loading={pendingCardId === card.id}
                       disabled={pendingCardId !== null && pendingCardId !== card.id}
                     >
@@ -202,7 +216,7 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
         card={scryfallPick ? { name: scryfallPick } : null}
         onClose={() => setScryfallPick(null)}
         defaultStorageId={undefined}
-        target={{ kind: 'pending', deckId, board }}
+        target={{ kind: 'pending', deckId, board, tags }}
       />
     </Stack>
   );
