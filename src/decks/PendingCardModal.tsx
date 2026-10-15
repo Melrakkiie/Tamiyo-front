@@ -1,4 +1,18 @@
-import { Alert, Button, Divider, Grid, Group, Modal, NumberInput, Select, Stack, Text, Title } from '@mantine/core';
+import {
+  Alert,
+  Button,
+  Center,
+  Divider,
+  Grid,
+  Group,
+  Loader,
+  Modal,
+  NumberInput,
+  Select,
+  Stack,
+  Text,
+  Title,
+} from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useRef, useState } from 'react';
 
@@ -30,6 +44,7 @@ interface PendingCardModalProps {
   card: Card | null;
   item: PendingCard | undefined;
   imageUrl: string | undefined;
+  loading: boolean;
   onClose: () => void;
   onSwapped: (next: EditionSource) => void;
 }
@@ -42,11 +57,12 @@ export function PendingCardModal({
   card,
   item,
   imageUrl,
+  loading,
   onClose,
   onSwapped,
 }: PendingCardModalProps) {
   const lastShown = useRef<{ card: Card; item: PendingCard | undefined; imageUrl: string | undefined } | null>(null);
-  if (card) {
+  if (card && !loading) {
     lastShown.current = { card, item, imageUrl };
   }
   const shown = lastShown.current;
@@ -86,116 +102,127 @@ export function PendingCardModal({
   }
 
   return (
-    <Modal opened={card !== null} onClose={onClose} title={shown?.card.name} size="xl">
-      {shown && (
-        <Stack gap="lg">
-          <Grid gutter="lg">
-            <Grid.Col span={{ base: 12, sm: 5 }}>
-              <PendingCardImage card={shown.card} imageUrl={shown.imageUrl} />
-              <PrintPrice scryfallId={shown.card.scryfall_id} foil={shown.card.foil} ta="center" mt="xs" />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 7 }}>
-              <Stack>
-                <div>
-                  <Title order={3} size="h4">
-                    {shown.card.name}
-                  </Title>
-                  <Text size="sm" c="dimmed">
-                    {shown.card.set_code.toUpperCase()} · #{shown.card.collector_number}
-                  </Text>
-                  {(status || shown.card.foil || shown.card.proxy) && (
-                    <Group gap={6} mt={6}>
-                      {status && <PendingBadge status={status} />}
-                      {shown.card.foil && <FoilSticker size="sm" />}
-                      {shown.card.proxy && <ProxySticker size="sm" />}
-                    </Group>
-                  )}
-                </div>
-                <CardRulesText scryfallId={shown.card.scryfall_id} />
-                <CardTagsInput deckId={deckId} cardName={shown.card.name} />
-                {shown.item && (
-                  <PendingBoardPicker
-                    deckId={deckId}
-                    item={shown.item}
-                    isCommander={commanderPendingId === shown.item.id}
-                  />
-                )}
-                {isCommanderFormat(deckFormat) && shown.item && (
-                  <PendingCommanderControl
-                    deckId={deckId}
-                    item={shown.item}
-                    isCommander={commanderPendingId === shown.item.id}
-                  />
-                )}
-                <Divider />
-                {shown.item && (
-                  <DeckQuantityControl
-                    key={`${shown.item.id}-${shown.item.quantity}`}
-                    deckId={deckId}
-                    card={shown.card}
-                    board={shown.item.board}
-                    source={{ kind: 'pending', item: shown.item }}
-                    onChanged={(removedAll) => removedAll && onClose()}
-                  />
-                )}
-                <Divider />
-                <Text size="sm">
-                  {total > 1
-                    ? `Ces ${total} exemplaires ne sont pas encore dans ta collection.`
-                    : "Cette carte n'est pas encore dans ta collection."}
-                </Text>
-                {status && status.kind !== 'missing' && (
-                  <Text size="sm" c="teal">
-                    {pendingStatusDescription(status)} : choisis-en un dans « Changer d'édition » ci-dessous pour
-                    l'utiliser à la place.
-                  </Text>
-                )}
-                <Group align="flex-end" grow>
-                  {total > 1 && (
-                    <NumberInput
-                      label="Combien en ajouter"
-                      min={1}
-                      max={total}
-                      allowDecimal={false}
-                      value={count === '' ? total : count}
-                      onChange={setCount}
+    <Modal opened={card !== null} onClose={onClose} title={card?.name ?? shown?.card.name} size="xl">
+      {loading ? (
+        <Center mih={400}>
+          <Stack align="center" gap="xs">
+            <Loader />
+            <Text size="sm" c="dimmed">
+              Changement d'édition…
+            </Text>
+          </Stack>
+        </Center>
+      ) : (
+        shown && (
+          <Stack gap="lg">
+            <Grid gutter="lg">
+              <Grid.Col span={{ base: 12, sm: 5 }}>
+                <PendingCardImage card={shown.card} imageUrl={shown.imageUrl} />
+                <PrintPrice scryfallId={shown.card.scryfall_id} foil={shown.card.foil} ta="center" mt="xs" />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 7 }}>
+                <Stack>
+                  <div>
+                    <Title order={3} size="h4">
+                      {shown.card.name}
+                    </Title>
+                    <Text size="sm" c="dimmed">
+                      {shown.card.set_code.toUpperCase()} · #{shown.card.collector_number}
+                    </Text>
+                    {(status || shown.card.foil || shown.card.proxy) && (
+                      <Group gap={6} mt={6}>
+                        {status && <PendingBadge status={status} />}
+                        {shown.card.foil && <FoilSticker size="sm" />}
+                        {shown.card.proxy && <ProxySticker size="sm" />}
+                      </Group>
+                    )}
+                  </div>
+                  <CardRulesText scryfallId={shown.card.scryfall_id} />
+                  <CardTagsInput deckId={deckId} cardName={shown.card.name} />
+                  {shown.item && (
+                    <PendingBoardPicker
+                      deckId={deckId}
+                      item={shown.item}
+                      isCommander={commanderPendingId === shown.item.id}
                     />
                   )}
-                  <Select
-                    label={<StorageFieldLabel>Rangement</StorageFieldLabel>}
-                    placeholder="Aucun rangement"
-                    data={storageOptions}
-                    value={storageId}
-                    onChange={setStorageId}
-                    clearable
-                    searchable
-                  />
-                </Group>
-                <Button color="orange" onClick={addToCollection} loading={commit.isPending} disabled={!shown.item}>
-                  {selected < total ? `Ajouter ${selected} sur ${total} à ma collection` : 'Ajouter à ma collection'}
-                </Button>
-                {commit.error && (
-                  <Alert color="red">
-                    {errorMessage(commit.error, { 400: "Le rangement choisi n'existe plus. Choisis-en un autre." })}
-                  </Alert>
-                )}
-              </Stack>
-            </Grid.Col>
-          </Grid>
-          {shown.item && (
-            <>
-              <Divider />
-              <EditionSwitcher
-                key={shown.item.id}
-                deckId={deckId}
-                source={{ kind: 'pending', item: shown.item }}
-                deckCardIds={deckCardIds}
-                isCommander={commanderPendingId === shown.item.id}
-                onSwapped={onSwapped}
-              />
-            </>
-          )}
-        </Stack>
+                  {isCommanderFormat(deckFormat) && shown.item && (
+                    <PendingCommanderControl
+                      deckId={deckId}
+                      item={shown.item}
+                      isCommander={commanderPendingId === shown.item.id}
+                    />
+                  )}
+                  <Divider />
+                  {shown.item && (
+                    <DeckQuantityControl
+                      key={`${shown.item.id}-${shown.item.quantity}`}
+                      deckId={deckId}
+                      card={shown.card}
+                      board={shown.item.board}
+                      source={{ kind: 'pending', item: shown.item }}
+                      onChanged={(removedAll) => removedAll && onClose()}
+                    />
+                  )}
+                  <Divider />
+                  <Text size="sm">
+                    {total > 1
+                      ? `Ces ${total} exemplaires ne sont pas encore dans ta collection.`
+                      : "Cette carte n'est pas encore dans ta collection."}
+                  </Text>
+                  {status && status.kind !== 'missing' && (
+                    <Text size="sm" c="teal">
+                      {pendingStatusDescription(status)} : choisis-en un dans « Changer d'édition » ci-dessous pour
+                      l'utiliser à la place.
+                    </Text>
+                  )}
+                  <Group align="flex-end" grow>
+                    {total > 1 && (
+                      <NumberInput
+                        label="Combien en ajouter"
+                        min={1}
+                        max={total}
+                        allowDecimal={false}
+                        value={count === '' ? total : count}
+                        onChange={setCount}
+                      />
+                    )}
+                    <Select
+                      label={<StorageFieldLabel>Rangement</StorageFieldLabel>}
+                      placeholder="Aucun rangement"
+                      data={storageOptions}
+                      value={storageId}
+                      onChange={setStorageId}
+                      clearable
+                      searchable
+                    />
+                  </Group>
+                  <Button color="orange" onClick={addToCollection} loading={commit.isPending} disabled={!shown.item}>
+                    {selected < total ? `Ajouter ${selected} sur ${total} à ma collection` : 'Ajouter à ma collection'}
+                  </Button>
+                  {commit.error && (
+                    <Alert color="red">
+                      {errorMessage(commit.error, { 400: "Le rangement choisi n'existe plus. Choisis-en un autre." })}
+                    </Alert>
+                  )}
+                </Stack>
+              </Grid.Col>
+            </Grid>
+            {shown.item && (
+              <>
+                <Divider />
+                <EditionSwitcher
+                  key={shown.item.id}
+                  deckId={deckId}
+                  source={{ kind: 'pending', item: shown.item }}
+                  deckCardIds={deckCardIds}
+                  isCommander={commanderPendingId === shown.item.id}
+                  onSwapped={onSwapped}
+                />
+              </>
+            )}
+          </Stack>
+        )
       )}
     </Modal>
   );

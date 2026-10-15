@@ -557,15 +557,21 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   const [importOpened, setImportOpened] = useState(false);
   const [opened, setOpened] = useState<OpenedCard | null>(null);
   const [openedPending, setOpenedPending] = useState<Card | null>(null);
-  const openedCard = opened ? liveOpenedCard(opened) : null;
+  const liveCard = opened ? liveOpenedCard(opened) : null;
+  const openedCard = liveCard ?? opened;
+  const openedCardImage = openedCard ? images.data?.[openedCard.card.scryfall_id] : undefined;
+  const cardLoading = opened !== null && (!liveCard || (!openedCardImage && images.isFetching));
   const openedPendingId = openedPending ? pendingIdOf(openedPending) : null;
   const pendingCard = openedPending
     ? ([...mainStacks, ...sideboardStacks, ...consideringStacks].find(
         (stack) => isPendingCard(stack) && pendingIdOf(stack) === openedPendingId,
       ) ?? openedPending)
     : null;
+  const pendingItem = pendingItems.find((item) => item.id === openedPendingId);
+  const pendingImage = pendingCard ? images.data?.[pendingCard.scryfall_id] : undefined;
+  const pendingLoading = pendingCard !== null && (!pendingItem || (!pendingImage && images.isFetching));
 
-  function liveOpenedCard(current: OpenedCard): OpenedCard {
+  function liveOpenedCard(current: OpenedCard): OpenedCard | null {
     const boards: [DeckBoard, Card[]][] = [
       ['main', mainStacks],
       ['sideboard', sideboardStacks],
@@ -577,7 +583,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
         return { card, board, ids: current.ids };
       }
     }
-    return current;
+    return null;
   }
 
   function openCard(card: Card, board: DeckBoard) {
@@ -823,7 +829,8 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
           deckCardIds={new Set(deckCards.map((card) => card.id))}
           card={openedCard?.card ?? null}
           board={openedCard?.board ?? 'main'}
-          imageUrl={openedCard ? images.data?.[openedCard.card.scryfall_id] : undefined}
+          imageUrl={openedCardImage}
+          loading={cardLoading}
           onClose={() => setOpened(null)}
           onSwapped={showSwapped}
         />
@@ -833,8 +840,9 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
           commanderPendingId={deck.commander_pending_id}
           deckCardIds={new Set(deckCards.map((card) => card.id))}
           card={pendingCard}
-          item={pendingItems.find((item) => item.id === openedPendingId)}
-          imageUrl={pendingCard ? images.data?.[pendingCard.scryfall_id] : undefined}
+          item={pendingItem}
+          imageUrl={pendingImage}
+          loading={pendingLoading}
           onClose={() => setOpenedPending(null)}
           onSwapped={showSwapped}
         />

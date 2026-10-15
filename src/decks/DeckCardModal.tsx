@@ -1,4 +1,4 @@
-import { Alert, Button, Divider, Grid, Group, Modal, Select, Stack, Text, Title } from '@mantine/core';
+import { Alert, Button, Center, Divider, Grid, Group, Loader, Modal, Select, Stack, Text, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useRef, useState } from 'react';
 
@@ -28,6 +28,7 @@ interface DeckCardModalProps {
   card: Card | null;
   board: DeckBoard;
   imageUrl: string | undefined;
+  loading: boolean;
   onClose: () => void;
   onSwapped: (next: EditionSource) => void;
 }
@@ -40,30 +41,42 @@ export function DeckCardModal({
   card,
   board,
   imageUrl,
+  loading,
   onClose,
   onSwapped,
 }: DeckCardModalProps) {
   const lastShown = useRef<{ card: Card; board: DeckBoard; imageUrl: string | undefined } | null>(null);
-  if (card) {
+  if (card && !loading) {
     lastShown.current = { card, board, imageUrl };
   }
   const shown = lastShown.current;
 
   return (
-    <Modal opened={card !== null} onClose={onClose} title={shown?.card.name} size="xl">
-      {shown && (
-        <DeckCardDetail
-          key={shown.card.id}
-          deckId={deckId}
-          commanderFormat={isCommanderFormat(deckFormat)}
-          isCommander={commanderId === shown.card.id}
-          deckCardIds={deckCardIds}
-          card={shown.card}
-          board={shown.board}
-          imageUrl={shown.imageUrl}
-          onClose={onClose}
-          onSwapped={onSwapped}
-        />
+    <Modal opened={card !== null} onClose={onClose} title={card?.name ?? shown?.card.name} size="xl">
+      {loading ? (
+        <Center mih={400}>
+          <Stack align="center" gap="xs">
+            <Loader />
+            <Text size="sm" c="dimmed">
+              Changement d'édition…
+            </Text>
+          </Stack>
+        </Center>
+      ) : (
+        shown && (
+          <DeckCardDetail
+            key={shown.card.id}
+            deckId={deckId}
+            commanderFormat={isCommanderFormat(deckFormat)}
+            isCommander={commanderId === shown.card.id}
+            deckCardIds={deckCardIds}
+            card={shown.card}
+            board={shown.board}
+            imageUrl={shown.imageUrl}
+            onClose={onClose}
+            onSwapped={onSwapped}
+          />
+        )
       )}
     </Modal>
   );
