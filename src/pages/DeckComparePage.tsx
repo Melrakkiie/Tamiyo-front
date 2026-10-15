@@ -2,7 +2,6 @@ import {
   Alert,
   Anchor,
   Badge,
-  Button,
   Center,
   Group,
   Loader,
@@ -25,7 +24,6 @@ import { CardGrid } from '../cards/CardLayout';
 import { CardTile } from '../cards/CardTile';
 import { useDeckComparison } from '../decks/api';
 import { DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
-import { compareUrl } from '../decks/CompareDeckModal';
 import { FormatSticker } from '../decks/FormatSticker';
 import { sortDeckCards } from '../decks/pendingCards';
 import { SharedCardModal } from '../decks/SharedCardModal';
@@ -94,12 +92,7 @@ export function DeckComparePage() {
         ← {deck.name}
       </Anchor>
 
-      <Group justify="space-between" align="flex-start">
-        <Title order={2}>Comparaison</Title>
-        <Button variant="default" component={Link} to={compareUrl(other.id, deck.id)}>
-          Inverser
-        </Button>
-      </Group>
+      <Title order={2}>Comparaison</Title>
 
       <SimpleGrid cols={{ base: 1, sm: 2 }}>
         <DeckSummary deck={deck} color={sideColors.deck} />
