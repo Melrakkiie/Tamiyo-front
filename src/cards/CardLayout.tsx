@@ -54,9 +54,14 @@ function OverlappingGrid({
             columnGap: GAP,
             marginBottom: index < rows.length - 1 ? overlap(columns, GRID_VISIBLE) : undefined,
             position: 'relative',
+            pointerEvents: 'none',
           }}
         >
-          {row.map((card) => renderTile(card))}
+          {row.map((card) => (
+            <Box key={card.id} style={{ pointerEvents: 'auto', minWidth: 0 }}>
+              {renderTile(card)}
+            </Box>
+          ))}
         </Box>
       ))}
     </div>
