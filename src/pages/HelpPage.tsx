@@ -124,10 +124,11 @@ const sections: HelpSection[] = [
       <>
         <Text>
           Sur la page <PageLink to="/decks">Decks</PageLink>, <b>Nouveau deck</b> demande un nom, un format (le nom
-          Scryfall : commander, modern, pauper…), une visibilité et, en Commander, un bracket. Tu peux coller une liste
-          (« 4 Lightning Bolt », une carte par ligne) ou choisir un fichier texte : les cartes que tu possèdes sont
-          reprises de ta collection, les autres arrivent en attente. Coche <b>La première ligne est le commandant</b> si
-          besoin.
+          Scryfall : commander, modern, pauper…), une visibilité et, en Commander, un bracket. En Commander, tu peux
+          aussi chercher ton commandant parmi les cartes qui peuvent l'être : s'il n'est pas dans ta collection, il
+          arrive en attente. Tu peux coller une liste (« 4 Lightning Bolt », une carte par ligne) ou choisir un fichier
+          texte : les cartes que tu possèdes sont reprises de ta collection, les autres arrivent en attente. Coche{' '}
+          <b>La première ligne est le commandant</b> si besoin.
         </Text>
         <Text>
           Range tes decks dans des dossiers et des sous-dossiers : glisse un deck sur le nom d'un dossier pour l'y

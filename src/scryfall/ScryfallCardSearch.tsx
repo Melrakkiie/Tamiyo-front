@@ -10,15 +10,17 @@ interface ScryfallCardSearchProps {
   label: string;
   placeholder: string;
   onSelect: (name: string) => void;
+  hiddenQuery?: string;
 }
 
-export function ScryfallCardSearch({ label, placeholder, onSelect }: ScryfallCardSearchProps) {
+export function ScryfallCardSearch({ label, placeholder, onSelect, hiddenQuery }: ScryfallCardSearchProps) {
   const [search, setSearch] = useState('');
   const [debouncedSearch] = useDebouncedValue(search, 300);
-  const suggestions = useCardNameSuggestions(debouncedSearch);
+  const query = debouncedSearch.trim() && hiddenQuery ? `${debouncedSearch.trim()} ${hiddenQuery}` : debouncedSearch;
+  const suggestions = useCardNameSuggestions(query);
   const typeLines = new Map((suggestions.data ?? []).map((suggestion) => [suggestion.name, suggestion.typeLine]));
   const names = [...new Set((suggestions.data ?? []).map((suggestion) => suggestion.name))];
-  const advanced = isAdvancedQuery(debouncedSearch.trim());
+  const advanced = isAdvancedQuery(query.trim());
   const noResult =
     advanced && !suggestions.isFetching && suggestions.isSuccess && names.length === 0
       ? 'Aucune carte ne correspond à cette recherche.'

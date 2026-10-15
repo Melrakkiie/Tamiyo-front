@@ -3,6 +3,7 @@ import {
   Anchor,
   Autocomplete,
   Button,
+  CloseButton,
   Collapse,
   Group,
   Modal,
@@ -17,6 +18,7 @@ import { useEffect, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Deck } from '../api/types';
+import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
 import { isCommanderFormat, useDeckFormats, type DeckInput } from './api';
 import { bracketOptions, GaugeIcon } from './bracket';
 import { FolderIcon } from './DeckFolderTree';
@@ -64,6 +66,7 @@ function DeckForm({
   const list = useDeckList();
   const [listOpened, setListOpened] = useState(false);
   const [commanderFromFirstLine, setCommanderFromFirstLine] = useState(true);
+  const [commanderName, setCommanderName] = useState<string | null>(null);
   const form = useForm<DeckInput>({
     mode: 'uncontrolled',
     initialValues: {
@@ -94,6 +97,20 @@ function DeckForm({
     .sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }));
   const commander = isCommanderFormat(format.trim().toLowerCase());
   const tamiyoFile = useTamiyoDeckFile(withList ? list.source : null);
+  const commanderPicker = withList && commander && !listOpened;
+
+  function listSubmission(): DeckListSubmission | undefined {
+    if (listOpened && list.source) {
+      return { file: list.source, commanderFromFirstLine };
+    }
+    if (commanderPicker && commanderName) {
+      return {
+        file: new File([`1 ${commanderName}\n`], 'commander.txt', { type: 'text/plain' }),
+        commanderFromFirstLine: true,
+      };
+    }
+    return undefined;
+  }
 
   useEffect(() => {
     if (!tamiyoFile) {
@@ -116,7 +133,7 @@ function DeckForm({
             bracket: commander && bracket ? Number(bracket) : undefined,
             folder_id: !initial && folderId ? Number(folderId) : undefined,
           },
-          listOpened && list.source ? { file: list.source, commanderFromFirstLine } : undefined,
+          listSubmission(),
         ),
       )}
     >
@@ -130,6 +147,28 @@ function DeckForm({
           key={form.key('format')}
           {...form.getInputProps('format')}
         />
+        {commanderPicker && (
+          <Stack gap={4}>
+            {commanderName ? (
+              <Group gap="xs" wrap="nowrap">
+                <Text size="sm">
+                  Commandant : <b>{commanderName}</b>
+                </Text>
+                <CloseButton size="sm" aria-label="Changer de commandant" onClick={() => setCommanderName(null)} />
+              </Group>
+            ) : (
+              <ScryfallCardSearch
+                label="Commandant"
+                placeholder="Cherche ton commandant (ex. Atraxa)"
+                hiddenQuery="is:commander"
+                onSelect={setCommanderName}
+              />
+            )}
+            <Text size="xs" c="dimmed">
+              Facultatif. Si tu ne l'as pas dans ta collection, il est ajouté aux cartes en attente.
+            </Text>
+          </Stack>
+        )}
         {commander && (
           <Select
             label={
