@@ -270,7 +270,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
         onSelect={(selected) => setCardToAdd({ name: selected })}
       />
       <Text size="xs" c="dimmed" mt={-8}>
-        Tu peux aussi glisser-déposer une carte depuis scryfall.com, directement dans l'édition voulue.
+        Tu peux aussi glisser-déposer une carte depuis scryfall.com ou edhrec.com, directement dans l'édition voulue.
       </Text>
       <DropOverlay dragging={drop.dragging} resolving={drop.resolving} />
 

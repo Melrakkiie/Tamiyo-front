@@ -46,7 +46,7 @@ const sections: HelpSection[] = [
           La page <PageLink to="/cards">Collection</PageLink> liste toutes tes cartes. Pour en ajouter une, cherche-la
           dans <b>Ajouter une carte</b> (la syntaxe de Scryfall marche aussi, comme <code>t:creature c:g</code>), puis
           choisis l'édition, le nombre d'exemplaires, le foil, le proxy et le rangement. Tu peux aussi glisser-déposer
-          une carte depuis scryfall.com, directement dans l'édition voulue.
+          une carte depuis scryfall.com ou edhrec.com, directement dans l'édition voulue.
         </Text>
         <Text>
           Le menu d'import accepte un fichier Tamiyo (.json), un export ManaBox ou un CSV Moxfield. L'export propose
@@ -164,7 +164,7 @@ const sections: HelpSection[] = [
         <Text>
           <b>Édition en masse</b> modifie le deck sous forme de liste texte. Dans une carte, tu peux changer d'édition
           ou <b>Séparer les éditions…</b> de plusieurs exemplaires. <b>Illustration</b> choisit l'image de couverture du
-          deck. Tu peux aussi glisser-déposer une carte depuis scryfall.com sur la page du deck.
+          deck. Tu peux aussi glisser-déposer une carte depuis scryfall.com ou edhrec.com sur la page du deck.
         </Text>
         <Text>
           <b>Statistiques</b> montre la courbe de mana, la répartition par couleur et par type, et le prix. La valeur du

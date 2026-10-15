@@ -63,7 +63,8 @@ export function useScryfallDrop(onCard: (card: ScryfallCard) => void) {
           event.preventDefault();
           notifications.show({
             color: 'orange',
-            message: "Ce n'est pas une carte Scryfall. Glisse l'image ou le lien d'une carte depuis scryfall.com.",
+            message:
+              "Ce n'est pas une carte reconnue. Glisse l'image ou le lien d'une carte depuis scryfall.com, ou son image depuis edhrec.com.",
           });
         }
         return;

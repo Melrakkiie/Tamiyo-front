@@ -1,7 +1,10 @@
 export type ScryfallRef = { id: string } | { set: string; number: string };
 
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
-const imagePattern = new RegExp(`scryfall\\.(?:io|com)/[^\\s"'<>]*?(${UUID})\\.(?:jpg|jpeg|png)`, 'i');
+const imagePattern = new RegExp(
+  `(?:scryfall\\.(?:io|com)|card-images\\.edhrec\\.com)/[^\\s"'<>]*?(${UUID})\\.(?:jpg|jpeg|png)`,
+  'i',
+);
 const apiPattern = new RegExp(`api\\.scryfall\\.com/cards/(${UUID})`, 'i');
 const pagePattern = /scryfall\.com\/card\/([a-z0-9]+)\/([^/\s"'<>?#]+)/i;
 
@@ -29,7 +32,8 @@ export function scryfallRefFromText(text: string): ScryfallRef | null {
   return null;
 }
 
-const anyUuidNearScryfall = new RegExp(`scryfall[\\s\\S]*?(${UUID})|(${UUID})[\\s\\S]*?scryfall`, 'i');
+const cardHost = '(?:scryfall|card-images\\.edhrec\\.com)';
+const anyUuidNearCardHost = new RegExp(`${cardHost}[\\s\\S]*?(${UUID})|(${UUID})[\\s\\S]*?${cardHost}`, 'i');
 const fileNamePattern = new RegExp(`^(${UUID})\\.(?:jpg|jpeg|png|webp)$`, 'i');
 
 function texts(data: DataTransfer): string[] {
@@ -60,7 +64,7 @@ export function scryfallRefFromDrop(data: DataTransfer): ScryfallRef | null {
     }
   }
   for (const text of contents) {
-    const match = anyUuidNearScryfall.exec(text);
+    const match = anyUuidNearCardHost.exec(text);
     if (match) {
       return { id: (match[1] ?? match[2]).toLowerCase() };
     }
