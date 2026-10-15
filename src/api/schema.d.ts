@@ -6048,6 +6048,7 @@ export interface components {
             card_display?: "text" | "images" | "grid" | "stacks";
             card_columns?: number;
             show_mana_cost?: boolean;
+            /** @description Whether card images show the card's details below them. False until the deck's settings are saved, unlike the collection, which shows them by default. */
             show_card_details?: boolean;
         };
         TaggedCard: {

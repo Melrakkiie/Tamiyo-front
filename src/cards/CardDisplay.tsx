@@ -85,19 +85,30 @@ export function cardDisplay(settings: DisplaySettings, change: (next: Partial<Di
   };
 }
 
-export function useCardDisplay() {
+export function useCardDisplay(options?: { showDetails?: boolean }) {
   const { status } = useSession();
   const signedIn = status === 'authenticated';
   const preferences = usePreferences(signedIn);
   const update = useUpdatePreferences();
   const [local, setLocal] = useState(DEFAULT_DISPLAY);
-  const settings = signedIn && preferences.data ? displayFromStored(preferences.data) : local;
+  const [ownDetails, setOwnDetails] = useState(options?.showDetails);
+  const stored = signedIn && preferences.data ? displayFromStored(preferences.data) : local;
+  const settings = ownDetails === undefined ? stored : { ...stored, showDetails: ownDetails };
 
   return cardDisplay(settings, (next) => {
+    let saved = next;
+    if (ownDetails !== undefined && next.showDetails !== undefined) {
+      const { showDetails, ...others } = next;
+      setOwnDetails(showDetails);
+      saved = others;
+    }
+    if (Object.keys(saved).length === 0) {
+      return;
+    }
     if (signedIn) {
-      update.mutate(displayToStored(next));
+      update.mutate(displayToStored(saved));
     } else {
-      setLocal((current) => ({ ...current, ...next }));
+      setLocal((current) => ({ ...current, ...saved }));
     }
   });
 }

@@ -54,7 +54,7 @@ export function DeckComparePage() {
   const [tab, setTab] = useState<string | null>('common');
   const [sort, setSort] = useState<SharedDeckSort>('mana_value');
   const [grouping, setGrouping] = useState<SharedCardGrouping | null>('type');
-  const display = useCardDisplay();
+  const display = useCardDisplay({ showDetails: false });
 
   if (comparison.isLoading) {
     return (
