@@ -55,11 +55,13 @@ export interface ScryfallCard {
     usd_etched?: string | null;
   };
   card_faces?: {
+    oracle_id?: string;
     image_uris?: ImageUris;
     colors?: string[];
     artist?: string;
     name?: string;
     mana_cost?: string;
+    cmc?: number;
     type_line?: string;
     oracle_text?: string;
     flavor_text?: string;
@@ -178,10 +180,87 @@ export function cardColors(card: ScryfallCard): string[] {
   return card.colors ?? card.card_faces?.flatMap((face) => face.colors ?? []) ?? [];
 }
 
+export function cardManaValue(card: ScryfallCard): number {
+  return card.cmc ?? card.card_faces?.[0]?.cmc ?? 0;
+}
+
+export function withSingleReversibleName(card: ScryfallCard): ScryfallCard {
+  if (card.layout !== 'reversible_card') {
+    return card;
+  }
+  return { ...card, name: [...new Set(card.name.split(' // '))].join(' // ') };
+}
+
+export function hasMisprintedFaces(card: ScryfallCard) {
+  const faces = card.card_faces ?? [];
+  return (
+    card.layout === 'reversible_card' &&
+    faces.length > 1 &&
+    new Set(faces.map((face) => face.name)).size > 1 &&
+    new Set(faces.map((face) => face.oracle_text)).size === 1 &&
+    !!faces[0].oracle_id
+  );
+}
+
+async function fetchCollection(identifiers: Record<string, string>[]): Promise<ScryfallCard[]> {
+  const cards: ScryfallCard[] = [];
+  for (let start = 0; start < identifiers.length; start += COLLECTION_BATCH_SIZE) {
+    const result = await scryfall<ScryfallList<ScryfallCard>>('/cards/collection', {
+      method: 'POST',
+      body: JSON.stringify({ identifiers: identifiers.slice(start, start + COLLECTION_BATCH_SIZE) }),
+    });
+    cards.push(...(result?.data ?? []));
+  }
+  return cards;
+}
+
+function withOracleFaces(card: ScryfallCard, oracle: ScryfallCard | undefined): ScryfallCard {
+  if (!oracle?.card_faces) {
+    return card;
+  }
+  return {
+    ...card,
+    card_faces: card.card_faces?.map((face, index) => {
+      const text = oracle.card_faces?.[index];
+      if (!text) {
+        return face;
+      }
+      return {
+        ...face,
+        name: text.name,
+        mana_cost: text.mana_cost,
+        cmc: text.cmc,
+        type_line: text.type_line,
+        oracle_text: text.oracle_text,
+        power: text.power,
+        toughness: text.toughness,
+        loyalty: text.loyalty,
+        defense: text.defense,
+      };
+    }),
+  };
+}
+
+async function repairCards(cards: ScryfallCard[]): Promise<ScryfallCard[]> {
+  const named = cards.map(withSingleReversibleName);
+  const oracleIds = [
+    ...new Set(named.filter(hasMisprintedFaces).map((card) => card.card_faces?.[0]?.oracle_id ?? '')),
+  ];
+  if (oracleIds.length === 0) {
+    return named;
+  }
+  const fetched = await fetchCollection(oracleIds.map((oracle_id) => ({ oracle_id })));
+  const oracles = new Map(fetched.map((oracle) => [oracle.oracle_id, oracle]));
+  return named.map((card) =>
+    hasMisprintedFaces(card) ? withOracleFaces(card, oracles.get(card.card_faces?.[0]?.oracle_id)) : card,
+  );
+}
+
 export async function fetchCard(ref: ScryfallRef): Promise<ScryfallCard | null> {
   const path =
     'id' in ref ? `/cards/${ref.id}` : `/cards/${encodeURIComponent(ref.set)}/${encodeURIComponent(ref.number)}`;
-  return scryfall<ScryfallCard>(path);
+  const card = await scryfall<ScryfallCard>(path);
+  return card ? (await repairCards([card]))[0] : null;
 }
 
 export interface CardSuggestion {
@@ -216,10 +295,11 @@ export async function fetchFrenchPrinting(card: ScryfallCard): Promise<ScryfallC
   if (sameEdition) {
     return sameEdition;
   }
-  if (!card.oracle_id) {
+  const oracleId = card.oracle_id ?? card.card_faces?.[0]?.oracle_id;
+  if (!oracleId) {
     return null;
   }
-  const query = encodeURIComponent(`oracleid:${card.oracle_id} lang:fr`);
+  const query = encodeURIComponent(`oracleid:${oracleId} lang:fr`);
   const other = await scryfall<ScryfallList<ScryfallCard>>(
     `/cards/search?q=${query}&unique=prints&order=released&dir=desc`,
   );
@@ -247,18 +327,9 @@ export async function searchPrintings(name: string): Promise<ScryfallCard[]> {
     next = result?.has_more ? result.next_page : undefined;
   }
 
-  return printings;
+  return repairCards(printings);
 }
 
 export async function fetchCardsByIds(ids: string[]): Promise<ScryfallCard[]> {
-  const cards: ScryfallCard[] = [];
-  for (let start = 0; start < ids.length; start += COLLECTION_BATCH_SIZE) {
-    const identifiers = ids.slice(start, start + COLLECTION_BATCH_SIZE).map((id) => ({ id }));
-    const result = await scryfall<ScryfallList<ScryfallCard>>('/cards/collection', {
-      method: 'POST',
-      body: JSON.stringify({ identifiers }),
-    });
-    cards.push(...(result?.data ?? []));
-  }
-  return cards;
+  return repairCards(await fetchCollection(ids.map((id) => ({ id }))));
 }

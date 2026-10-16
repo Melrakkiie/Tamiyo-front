@@ -1,5 +1,5 @@
 import { type AdvancedFilters, COLORLESS, type ComparisonOp } from '../cards/advancedFilters';
-import { cardColors, type ScryfallCard } from '../scryfall/client';
+import { cardColors, cardManaValue, type ScryfallCard } from '../scryfall/client';
 
 export type LibraryFilters = Pick<
   AdvancedFilters,
@@ -102,7 +102,7 @@ export function matchesLibraryFilters(card: ScryfallCard | undefined, filters: L
   if (filters.colors !== '' && !colorsMatch(card, filters)) {
     return false;
   }
-  if (filters.manaValue !== null && !compare(card.cmc ?? 0, filters.manaValueOp, filters.manaValue)) {
+  if (filters.manaValue !== null && !compare(cardManaValue(card), filters.manaValueOp, filters.manaValue)) {
     return false;
   }
   const faces = card.card_faces ?? [];

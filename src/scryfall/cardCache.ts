@@ -1,4 +1,4 @@
-import { fetchCardsByIds, type ScryfallCard } from './client';
+import { fetchCardsByIds, hasMisprintedFaces, type ScryfallCard, withSingleReversibleName } from './client';
 
 const DATABASE = 'tamiyo-scryfall';
 const STORE = 'cards';
@@ -65,7 +65,8 @@ async function readStored(ids: string[]): Promise<ScryfallCard[]> {
     const entries = await Promise.all(ids.map((id) => request(store.get(id) as IDBRequest<StoredCard | undefined>)));
     return entries
       .filter((entry): entry is StoredCard => !!entry && Date.now() - entry.storedAt <= MAX_AGE_MS)
-      .map((entry) => entry.card);
+      .map((entry) => withSingleReversibleName(entry.card))
+      .filter((card) => !hasMisprintedFaces(card));
   } catch {
     return [];
   }

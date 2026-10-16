@@ -1,5 +1,5 @@
 import { colorCode, primaryType } from './classify';
-import { cardColors, type ScryfallCard } from './client';
+import { cardColors, cardManaValue, type ScryfallCard } from './client';
 
 export function canBeNonFoil(printing: ScryfallCard) {
   return printing.finishes ? printing.finishes.includes('nonfoil') : true;
@@ -17,14 +17,15 @@ export function foilFor(printing: ScryfallCard, wanted: boolean) {
 }
 
 export function printingDetails(printing: ScryfallCard) {
+  const typeLine = printing.type_line ?? printing.card_faces?.[0]?.type_line;
   return {
     name: printing.name,
     scryfall_id: printing.id,
     set_code: printing.set,
     collector_number: printing.collector_number,
-    mana_value: printing.cmc ?? 0,
+    mana_value: cardManaValue(printing),
     colors: colorCode(cardColors(printing)),
-    card_type: printing.type_line ? primaryType(printing.type_line) : null,
+    card_type: typeLine ? primaryType(typeLine) : null,
     color_identity: printing.color_identity ? colorCode(printing.color_identity) : null,
   };
 }
