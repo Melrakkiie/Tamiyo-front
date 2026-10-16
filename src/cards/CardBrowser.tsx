@@ -260,6 +260,41 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
     updateParams({ ...Object.fromEntries(advancedFilterKeys.map((key) => [key, null])), page: null });
   }
 
+  function groupingSelect(inside: boolean) {
+    return (
+      <Select
+        label="Grouper par"
+        placeholder="Aucun regroupement"
+        data={groupingOptions}
+        value={grouping}
+        onChange={(value) => {
+          const next = parseGrouping(value);
+          updatePreferences.mutate(next ? { collection_grouping: next } : { clear_collection_grouping: true });
+          updateParams({ page: null });
+        }}
+        clearable
+        {...placement(inside, 200)}
+      />
+    );
+  }
+
+  function sortSelect(inside: boolean) {
+    return (
+      <Select
+        label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
+        data={sortChoices(showPrices)}
+        value={sort}
+        onChange={(value) => {
+          updatePreferences.mutate({ collection_sort: parseSort(value, showPrices) });
+          updateParams({ page: null });
+        }}
+        allowDeselect={false}
+        {...placement(inside, 240)}
+        {...(inside ? {} : { miw: 0 })}
+      />
+    );
+  }
+
   return (
     <Stack>
       <ScryfallCardSearch
@@ -271,8 +306,8 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
       />
       <DropOverlay dragging={drop.dragging} resolving={drop.resolving} />
 
-      <Group justify="flex-end" align="flex-end">
-        <Group gap="md" align="flex-end">
+      <Group justify="flex-end" align="flex-end" gap="md">
+        <Group gap="md" align="flex-end" wrap="nowrap">
           <Select
             label="Cartes par page"
             data={PAGE_SIZE_OPTIONS}
@@ -286,40 +321,22 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
             allowDeselect={false}
             w={130}
           />
-          <CardDisplayControls
-            display={display}
-            options={(inside) => (
-              <>
-                <Select
-                  label="Grouper par"
-                  placeholder="Aucun regroupement"
-                  data={groupingOptions}
-                  value={grouping}
-                  onChange={(value) => {
-                    const next = parseGrouping(value);
-                    updatePreferences.mutate(
-                      next ? { collection_grouping: next } : { clear_collection_grouping: true },
-                    );
-                    updateParams({ page: null });
-                  }}
-                  clearable
-                  {...placement(inside, 200)}
-                />
-                <Select
-                  label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
-                  data={sortChoices(showPrices)}
-                  value={sort}
-                  onChange={(value) => {
-                    updatePreferences.mutate({ collection_sort: parseSort(value, showPrices) });
-                    updateParams({ page: null });
-                  }}
-                  allowDeselect={false}
-                  {...placement(inside, 240)}
-                />
-              </>
-            )}
-          />
+          {groupingSelect(false)}
         </Group>
+        <CardDisplayControls
+          display={display}
+          wrap="nowrap"
+          options={(inside) =>
+            inside ? (
+              <>
+                {groupingSelect(true)}
+                {sortSelect(true)}
+              </>
+            ) : (
+              sortSelect(false)
+            )
+          }
+        />
       </Group>
 
       <Group grow align="flex-end">

@@ -29,7 +29,7 @@ export function CollectionPage() {
           <Title order={2}>Collection</Title>
           {summary && <PriceText>{summary}</PriceText>}
         </div>
-        <Group gap="xs">
+        <Group gap="xs" ml="auto">
           <Button variant="default" onClick={() => setImportOpened(true)}>
             Importer
           </Button>

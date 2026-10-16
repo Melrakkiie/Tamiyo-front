@@ -1,4 +1,4 @@
-import { ActionIcon, Group, Popover, Select, Slider, Stack, Switch, Text } from '@mantine/core';
+import { ActionIcon, Group, type GroupProps, Popover, Select, Slider, Stack, Switch, Text } from '@mantine/core';
 import { type ReactNode, useState } from 'react';
 
 import { usePreferences, useUpdatePreferences } from '../auth/preferences';
@@ -159,11 +159,12 @@ function ModeSelect({ display, inside = false }: { display: CardDisplay; inside?
 interface CardDisplayControlsProps {
   display: CardDisplay;
   options?: (inside: boolean) => ReactNode;
+  wrap?: GroupProps['wrap'];
 }
 
-export function CardDisplayControls({ display, options }: CardDisplayControlsProps) {
+export function CardDisplayControls({ display, options, wrap = 'wrap' }: CardDisplayControlsProps) {
   return (
-    <Group gap="xs" align="flex-end">
+    <Group gap="xs" align="flex-end" wrap={wrap}>
       {options?.(false)}
       <ModeSelect display={display} />
       <Popover position="bottom-end" width={300} shadow="md" withArrow trapFocus>
