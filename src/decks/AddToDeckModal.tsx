@@ -64,6 +64,8 @@ export function AddToDeckModal({
   );
 }
 
+const FEW_MATCHES = 5;
+
 const colorNames: Record<string, string> = {
   W: "blanc",
   U: "bleu",
@@ -138,6 +140,7 @@ function AddToDeckList({
   const cardTags = useAddTagsToCard(deckId);
   const [pendingCardId, setPendingCardId] = useState<number | null>(null);
   const [scryfallPick, setScryfallPick] = useState<string | null>(null);
+  const [scryfallRequested, setScryfallRequested] = useState(false);
 
   function addCard(card: Card) {
     setPendingCardId(card.id);
@@ -153,6 +156,13 @@ function AddToDeckList({
   const results = cards.data?.data ?? [];
   const scryfallOnly = isScryfallOnlySearch(cards.error);
   const searchError = scryfallOnly ? null : searchSyntaxError(cards.error);
+  const canSearchScryfall = query.length >= 2 && !searchError;
+  const showScryfall =
+    canSearchScryfall &&
+    (results.length === 0 ||
+      (cards.data?.total ?? 0) <= FEW_MATCHES ||
+      scryfallRequested);
+  const ownedNames = new Set(results.map((card) => card.name));
 
   return (
     <Stack>
@@ -208,83 +218,82 @@ function AddToDeckList({
           <Loader />
         </Center>
       ) : searchError ? null : results.length === 0 ? (
-        <Stack gap="md">
-          <Text c="dimmed" ta="center" pt="md">
-            {scryfallOnly
-              ? "Cette recherche utilise une syntaxe que seul Scryfall comprend."
-              : identityFilter !== undefined
-                ? "Aucune carte de ta collection dans l'identité de couleur du commandant ne correspond."
-                : query
-                  ? "Aucune carte de ta collection ne correspond."
-                  : "Ta collection est vide : cherche une carte pour la trouver sur Scryfall."}
-          </Text>
-          {query.length >= 2 && (
-            <ScryfallFallback
-              search={query}
-              identity={identityFilter}
-              onPick={setScryfallPick}
-            />
-          )}
-        </Stack>
+        <Text c="dimmed" ta="center" pt="md">
+          {scryfallOnly
+            ? "Cette recherche utilise une syntaxe que seul Scryfall comprend."
+            : identityFilter !== undefined
+              ? "Aucune carte de ta collection dans l'identité de couleur du commandant ne correspond."
+              : query
+                ? "Aucune carte de ta collection ne correspond."
+                : "Ta collection est vide : cherche une carte pour la trouver sur Scryfall."}
+        </Text>
       ) : (
-        <ScrollArea.Autosize mah={420} type="auto">
+        <Paper withBorder p="sm">
           <Stack gap="xs">
-            {results.map((card) => {
-              const inDeck = deckCardIds.has(card.id);
-              const storageName = card.storage_id
-                ? storageNames.get(card.storage_id)
-                : undefined;
-              return (
-                <Group key={card.id} justify="space-between" wrap="nowrap">
-                  <div style={{ minWidth: 0 }}>
-                    <Group gap={6} wrap="nowrap">
-                      <CardHoverPreview
-                        scryfallId={card.scryfall_id}
-                        name={card.name}
-                      >
-                        <Text size="sm" fw={500} lineClamp={1}>
-                          {card.name}
-                        </Text>
-                      </CardHoverPreview>
-                      {card.foil && <FoilSticker />}
-                    </Group>
-                    <Group gap={8} wrap="nowrap">
-                      <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>
-                        {card.set_code.toUpperCase()} · #{card.collector_number}
-                      </Text>
-                      {storageName && (
-                        <StorageLabel
-                          name={storageName}
-                          locked={
-                            card.storage_id != null &&
-                            closedStorageIds.has(card.storage_id)
+            <Text size="sm" fw={600}>
+              Dans ta collection
+            </Text>
+            <ScrollArea.Autosize mah={420} type="auto">
+              <Stack gap="xs">
+                {results.map((card) => {
+                  const inDeck = deckCardIds.has(card.id);
+                  const storageName = card.storage_id
+                    ? storageNames.get(card.storage_id)
+                    : undefined;
+                  return (
+                    <Group key={card.id} justify="space-between" wrap="nowrap">
+                      <div style={{ minWidth: 0 }}>
+                        <Group gap={6} wrap="nowrap">
+                          <CardHoverPreview
+                            scryfallId={card.scryfall_id}
+                            name={card.name}
+                          >
+                            <Text size="sm" fw={500} lineClamp={1}>
+                              {card.name}
+                            </Text>
+                          </CardHoverPreview>
+                          {card.foil && <FoilSticker />}
+                        </Group>
+                        <Group gap={8} wrap="nowrap">
+                          <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>
+                            {card.set_code.toUpperCase()} · #
+                            {card.collector_number}
+                          </Text>
+                          {storageName && (
+                            <StorageLabel
+                              name={storageName}
+                              locked={
+                                card.storage_id != null &&
+                                closedStorageIds.has(card.storage_id)
+                              }
+                            />
+                          )}
+                        </Group>
+                      </div>
+                      {inDeck ? (
+                        <Badge variant="light" color="gray">
+                          Dans le deck
+                        </Badge>
+                      ) : (
+                        <Button
+                          size="xs"
+                          variant="light"
+                          onClick={() => addCard(card)}
+                          loading={pendingCardId === card.id}
+                          disabled={
+                            pendingCardId !== null && pendingCardId !== card.id
                           }
-                        />
+                        >
+                          Ajouter
+                        </Button>
                       )}
                     </Group>
-                  </div>
-                  {inDeck ? (
-                    <Badge variant="light" color="gray">
-                      Dans le deck
-                    </Badge>
-                  ) : (
-                    <Button
-                      size="xs"
-                      variant="light"
-                      onClick={() => addCard(card)}
-                      loading={pendingCardId === card.id}
-                      disabled={
-                        pendingCardId !== null && pendingCardId !== card.id
-                      }
-                    >
-                      Ajouter
-                    </Button>
-                  )}
-                </Group>
-              );
-            })}
+                  );
+                })}
+              </Stack>
+            </ScrollArea.Autosize>
           </Stack>
-        </ScrollArea.Autosize>
+        </Paper>
       )}
       {cards.data && cards.data.total > results.length && (
         <Text size="xs" c="dimmed">
@@ -292,6 +301,27 @@ function AddToDeckList({
           recherche pour les voir.
         </Text>
       )}
+      {!cards.isLoading &&
+        (showScryfall ? (
+          <ScryfallFallback
+            search={query}
+            identity={identityFilter}
+            excludeNames={ownedNames}
+            onPick={setScryfallPick}
+          />
+        ) : (
+          canSearchScryfall && (
+            <Group>
+              <Button
+                variant="subtle"
+                size="xs"
+                onClick={() => setScryfallRequested(true)}
+              >
+                Chercher aussi sur Scryfall
+              </Button>
+            </Group>
+          )
+        ))}
       <AddCardModal
         card={scryfallPick ? { name: scryfallPick } : null}
         onClose={() => setScryfallPick(null)}
