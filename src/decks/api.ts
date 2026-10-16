@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api, unwrap } from '../api/client';
 import type { AddPendingCardInput, Deck, DeckBoard, DeckCardSort, PendingCard, UpdateDeckInput } from '../api/types';
+import { clearSlotChanges, type CommanderSlot, setSlotChanges } from './commanders';
 import type { DeckVisibility } from './visibility';
 
 export const COMMON_FORMATS = [
@@ -169,9 +170,19 @@ export function useRemoveCardFromDeck() {
   const invalidate = useInvalidateDecks();
 
   return useMutation({
-    mutationFn: async ({ deckId, cardId, isCommander }: { deckId: string; cardId: number; isCommander: boolean }) => {
-      if (isCommander) {
-        unwrap(await api.PATCH('/deck/{id}', { params: { path: { id: deckId } }, body: { clear_commander_id: true } }));
+    mutationFn: async ({
+      deckId,
+      cardId,
+      commanderSlot,
+    }: {
+      deckId: string;
+      cardId: number;
+      commanderSlot: CommanderSlot | null;
+    }) => {
+      if (commanderSlot) {
+        unwrap(
+          await api.PATCH('/deck/{id}', { params: { path: { id: deckId } }, body: clearSlotChanges(commanderSlot) }),
+        );
       }
       unwrap(await api.DELETE('/deck/{id}/cards/{card_id}', { params: { path: { id: deckId, card_id: cardId } } }));
     },
@@ -201,13 +212,13 @@ export function useSwapDeckCard() {
       fromCardId,
       toCardId,
       board,
-      isCommander,
+      commanderSlot,
     }: {
       deckId: string;
       fromCardId: number;
       toCardId: number;
       board: DeckBoard;
-      isCommander: boolean;
+      commanderSlot: CommanderSlot | null;
     }) => {
       unwrap(
         await api.PUT('/deck/{id}/cards/{card_id}', {
@@ -215,8 +226,13 @@ export function useSwapDeckCard() {
           body: { board },
         }),
       );
-      if (isCommander) {
-        unwrap(await api.PATCH('/deck/{id}', { params: { path: { id: deckId } }, body: { commander_id: toCardId } }));
+      if (commanderSlot) {
+        unwrap(
+          await api.PATCH('/deck/{id}', {
+            params: { path: { id: deckId } },
+            body: setSlotChanges(commanderSlot, { cardId: toCardId }),
+          }),
+        );
       }
       unwrap(await api.DELETE('/deck/{id}/cards/{card_id}', { params: { path: { id: deckId, card_id: fromCardId } } }));
     },
@@ -497,20 +513,20 @@ export function useReplaceDeckCardWithPending() {
     mutationFn: async ({
       deckId,
       fromCardId,
-      isCommander,
+      commanderSlot,
       card,
     }: {
       deckId: string;
       fromCardId: number;
-      isCommander: boolean;
+      commanderSlot: CommanderSlot | null;
       card: AddPendingCardInput;
     }) => {
       const added = unwrap(await api.POST('/deck/{id}/pending', { params: { path: { id: deckId } }, body: card }));
-      if (isCommander) {
+      if (commanderSlot) {
         unwrap(
           await api.PATCH('/deck/{id}', {
             params: { path: { id: deckId } },
-            body: { commander_pending_id: added.id },
+            body: setSlotChanges(commanderSlot, { pendingId: added.id }),
           }),
         );
       }
@@ -528,12 +544,12 @@ export function useReplacePendingCard() {
     mutationFn: async ({
       deckId,
       from,
-      isCommander,
+      commanderSlot,
       card,
     }: {
       deckId: string;
       from: PendingCard;
-      isCommander: boolean;
+      commanderSlot: CommanderSlot | null;
       card: AddPendingCardInput;
     }) => {
       const added = unwrap(
@@ -542,11 +558,11 @@ export function useReplacePendingCard() {
           body: { ...card, quantity: from.quantity, board: from.board },
         }),
       );
-      if (isCommander) {
+      if (commanderSlot) {
         unwrap(
           await api.PATCH('/deck/{id}', {
             params: { path: { id: deckId } },
-            body: { commander_pending_id: added.id },
+            body: setSlotChanges(commanderSlot, { pendingId: added.id }),
           }),
         );
       }
@@ -569,12 +585,12 @@ export function useReplacePendingWithOwned() {
       deckId,
       from,
       toCardId,
-      isCommander,
+      commanderSlot,
     }: {
       deckId: string;
       from: PendingCard;
       toCardId: number;
-      isCommander: boolean;
+      commanderSlot: CommanderSlot | null;
     }) => {
       unwrap(
         await api.PUT('/deck/{id}/cards/{card_id}', {
@@ -582,8 +598,13 @@ export function useReplacePendingWithOwned() {
           body: { board: from.board },
         }),
       );
-      if (isCommander) {
-        unwrap(await api.PATCH('/deck/{id}', { params: { path: { id: deckId } }, body: { commander_id: toCardId } }));
+      if (commanderSlot) {
+        unwrap(
+          await api.PATCH('/deck/{id}', {
+            params: { path: { id: deckId } },
+            body: setSlotChanges(commanderSlot, { cardId: toCardId }),
+          }),
+        );
       }
       unwrap(
         await api.DELETE('/deck/{id}/pending/{pending_id}', {

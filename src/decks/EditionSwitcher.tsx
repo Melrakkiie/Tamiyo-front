@@ -33,6 +33,7 @@ import {
   useReplacePendingWithOwned,
   useSwapDeckCard,
 } from './api';
+import type { CommanderSlot } from './commanders';
 
 export type EditionSource = { kind: 'card'; card: Card; board: DeckBoard } | { kind: 'pending'; item: PendingCard };
 
@@ -40,7 +41,7 @@ interface EditionSwitcherProps {
   deckId: string;
   source: EditionSource;
   deckCardIds: Set<number>;
-  isCommander: boolean;
+  commanderSlot: CommanderSlot | null;
   onSwapped: (next: EditionSource) => void;
 }
 
@@ -48,7 +49,8 @@ function sourceDetails(source: EditionSource) {
   return source.kind === 'card' ? source.card : source.item;
 }
 
-export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSwapped }: EditionSwitcherProps) {
+export function EditionSwitcher({ deckId, source, deckCardIds, commanderSlot, onSwapped }: EditionSwitcherProps) {
+  const becomes = commanderSlot === 'partner' ? 'le second commandant' : 'le commandant';
   const current = sourceDetails(source);
   const copies = useCollectionCopies(current.name, current.scryfall_id);
   const owned = (copies.data ?? []).filter(
@@ -94,11 +96,11 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
     const message = `${current.name} : l'exemplaire ${copy.set_code.toUpperCase()} #${copy.collector_number}${copy.foil ? ' foil' : ''} de ta collection est maintenant dans le deck.`;
     if (source.kind === 'card') {
       swap
-        .mutateAsync({ deckId, fromCardId: source.card.id, toCardId: copy.id, board: source.board, isCommander })
+        .mutateAsync({ deckId, fromCardId: source.card.id, toCardId: copy.id, board: source.board, commanderSlot })
         .then(() => done(message, { kind: 'card', card: copy, board: source.board }), ignore);
     } else {
       swapPending
-        .mutateAsync({ deckId, from: source.item, toCardId: copy.id, isCommander })
+        .mutateAsync({ deckId, from: source.item, toCardId: copy.id, commanderSlot })
         .then(() => done(message, { kind: 'card', card: copy, board: source.item.board }), ignore);
     }
   }
@@ -111,10 +113,10 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
         ? toPending.mutateAsync({
             deckId,
             fromCardId: source.card.id,
-            isCommander,
+            commanderSlot,
             card: { ...card, board: source.board },
           })
-        : replacePending.mutateAsync({ deckId, from: source.item, isCommander, card });
+        : replacePending.mutateAsync({ deckId, from: source.item, commanderSlot, card });
     swapped.then((item) => done(message, { kind: 'pending', item }), ignore);
   }
 
@@ -139,7 +141,7 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
             <Text size="xs" c="dimmed">
               {unlocked.length === 0
                 ? 'Tous les autres exemplaires de ta collection sont dans des rangements verrouillés pour ce deck.'
-                : `Dans ta collection : clique sur un exemplaire pour le mettre dans le deck à la place de celui-ci.${isCommander ? ' Il deviendra aussi le commandant.' : ''}`}
+                : `Dans ta collection : clique sur un exemplaire pour le mettre dans le deck à la place de celui-ci.${commanderSlot ? ` Il deviendra aussi ${becomes}.` : ''}`}
             </Text>
             {closedCount > 0 && !showClosed && (
               <Anchor component="button" type="button" size="xs" ta="left" onClick={() => setShowClosed(true)}>
@@ -200,7 +202,7 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
               {source.kind === 'card'
                 ? "La carte actuelle sort du deck (elle reste dans ta collection) et l'édition choisie y entre en orange, à ajouter à ta collection plus tard."
                 : "L'édition choisie remplace celle-ci dans le deck, toujours en orange."}
-              {isCommander ? ' Elle deviendra aussi le commandant.' : ''}
+              {commanderSlot ? ` Elle deviendra aussi ${becomes}.` : ''}
             </Text>
             <PrintingGrid printings={others} disabled={busy} foil={current.foil} onSelect={choosePrinting} />
           </>

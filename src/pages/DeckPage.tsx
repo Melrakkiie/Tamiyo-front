@@ -53,6 +53,7 @@ import {
   usePendingCards,
   useUpdateDeck,
 } from '../decks/api';
+import { clearSlotChanges, type CommanderSlot, commanderSlotOf, hasCommander, hasPartner } from '../decks/commanders';
 import { type CollapsibleBoard, COLLAPSIBLE_BOARDS, DEFAULT_COLLAPSED_BOARDS, inBoard } from '../decks/boards';
 import { BoardSection } from '../decks/BoardSection';
 import { type DeckCardGrouped, DeckCardGroups, type GroupDrop, useDeckCardGroups } from '../decks/DeckCardGroups';
@@ -368,24 +369,40 @@ function DeckView({ id }: { id: string }) {
 }
 
 function CommanderSection({ deck }: { deck: Deck }) {
-  const showCollection = useShowCollectionInDecks();
-  const commander = useCard(deck.commander_id);
-  const pending = usePendingCards(deck.id);
-  const pendingCommander = deck.commander_pending_id
-    ? pending.data?.find((item) => item.id === deck.commander_pending_id)
-    : undefined;
-  const commanderName = commander.data?.name ?? pendingCommander?.name;
-  const commanderScryfallId = commander.data?.scryfall_id ?? pendingCommander?.scryfall_id;
-  const image = useCardImages(commanderScryfallId ? [commanderScryfallId] : [], 'small');
-  const update = useUpdateDeck();
-
-  if (!deck.commander_id && !deck.commander_pending_id) {
+  if (!hasCommander(deck)) {
     return isCommanderFormat(deck.format) ? (
       <Text size="sm" c="dimmed">
         Pas encore de commandant : ouvre une carte du deck, même entourée en orange, pour la définir comme commandant.
       </Text>
     ) : null;
   }
+
+  return (
+    <Group align="stretch" gap="sm">
+      <CommanderPanel deck={deck} slot="commander" cardId={deck.commander_id} pendingId={deck.commander_pending_id} />
+      {hasPartner(deck) && (
+        <CommanderPanel deck={deck} slot="partner" cardId={deck.partner_id} pendingId={deck.partner_pending_id} />
+      )}
+    </Group>
+  );
+}
+
+interface CommanderPanelProps {
+  deck: Deck;
+  slot: CommanderSlot;
+  cardId: number | null | undefined;
+  pendingId: number | null | undefined;
+}
+
+function CommanderPanel({ deck, slot, cardId, pendingId }: CommanderPanelProps) {
+  const showCollection = useShowCollectionInDecks();
+  const commander = useCard(cardId);
+  const pending = usePendingCards(deck.id);
+  const pendingCommander = pendingId ? pending.data?.find((item) => item.id === pendingId) : undefined;
+  const commanderName = commander.data?.name ?? pendingCommander?.name;
+  const commanderScryfallId = commander.data?.scryfall_id ?? pendingCommander?.scryfall_id;
+  const image = useCardImages(commanderScryfallId ? [commanderScryfallId] : [], 'small');
+  const update = useUpdateDeck();
 
   function previewCommander() {
     if (commanderScryfallId) {
@@ -405,7 +422,7 @@ function CommanderSection({ deck }: { deck: Deck }) {
         </Box>
         <Stack gap={4} style={{ minWidth: 0 }}>
           <Text size="xs" c="dimmed">
-            Commandant
+            {slot === 'commander' ? 'Commandant' : 'Second commandant'}
           </Text>
           <Text fw={600} lineClamp={1}>
             {commanderName ?? '…'}
@@ -424,9 +441,9 @@ function CommanderSection({ deck }: { deck: Deck }) {
             component="button"
             size="xs"
             ta="left"
-            onClick={() => update.mutate({ id: deck.id, changes: { clear_commander_id: true } })}
+            onClick={() => update.mutate({ id: deck.id, changes: clearSlotChanges(slot) })}
           >
-            Retirer le commandant
+            {slot === 'commander' ? 'Retirer le commandant' : 'Retirer le second commandant'}
           </Anchor>
         </Stack>
       </Group>
@@ -559,9 +576,10 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   const manaCosts = useManaCosts(allCards.map((card) => card.scryfall_id));
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
-  const mainStacks = stackCards(mainCards, deck.commander_id, !showCollection);
-  const sideboardStacks = stackCards(sideboardCards, deck.commander_id, !showCollection);
-  const consideringStacks = stackCards(consideringCards, deck.commander_id, !showCollection);
+  const commanderIds = [deck.commander_id, deck.partner_id];
+  const mainStacks = stackCards(mainCards, commanderIds, !showCollection);
+  const sideboardStacks = stackCards(sideboardCards, commanderIds, !showCollection);
+  const consideringStacks = stackCards(consideringCards, commanderIds, !showCollection);
   const deckTags = useDeckTags(deck.id);
   const cardTags = tagsByName(deckTags.data?.cards ?? []);
   const cardTagsOf = (card: Card) => tagsOf(cardTags, card.name);
@@ -680,10 +698,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
           backImageUrl={backImages.data?.[card.scryfall_id]}
           imageLoading={images.isLoading}
           textOnly={textOnly}
-          commander={
-            board === 'main' &&
-            (notOwned ? pendingIdOf(card) === deck.commander_pending_id : card.id === deck.commander_id)
-          }
+          commander={board === 'main' && commanderSlotOf(deck, card) !== null}
           manaCost={
             !display.showManaCost || manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)
           }
@@ -860,9 +875,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
           onClose={() => setAddOpened(false)}
         />
         <DeckCardModal
-          deckId={deck.id}
-          deckFormat={deck.format}
-          commanderId={deck.commander_id}
+          deck={deck}
           deckCardIds={new Set(deckCards.map((card) => card.id))}
           card={openedCard?.card ?? null}
           board={openedCard?.board ?? 'main'}
@@ -872,9 +885,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
           onSwapped={showSwapped}
         />
         <PendingCardModal
-          deckId={deck.id}
-          deckFormat={deck.format}
-          commanderPendingId={deck.commander_pending_id}
+          deck={deck}
           deckCardIds={new Set(deckCards.map((card) => card.id))}
           card={pendingCard}
           item={pendingItem}

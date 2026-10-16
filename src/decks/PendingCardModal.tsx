@@ -17,29 +17,28 @@ import { notifications } from '@mantine/notifications';
 import { useRef, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import type { Card, PendingCard } from '../api/types';
+import type { Card, Deck, PendingCard } from '../api/types';
 import { CardImage } from '../cards/CardImage';
 import { PendingBadge, pendingStatusDescription } from '../cards/PendingBadge';
 import { PrintPrice } from '../cards/price';
 import { CardRulesText } from '../scryfall/CardRulesText';
-import { commanderEligibility } from '../scryfall/commander';
-import { useBackImage, useScryfallCard } from '../scryfall/hooks';
+import { useBackImage } from '../scryfall/hooks';
 import { useStorageOptions } from '../storages/api';
 import { StorageFieldLabel } from '../storages/StorageLabel';
 import { FoilSticker, ProxySticker } from '../theme/Sticker';
 import type { DeckBoard } from '../api/types';
-import { isCommanderFormat, useCommitPendingCards, useMovePendingCard, useUpdateDeck } from './api';
+import { isCommanderFormat, useCommitPendingCards, useMovePendingCard } from './api';
 import { movedMessage } from './boards';
 import { BoardPicker } from './BoardSection';
 import { CardTagsInput } from './CardTagsInput';
+import { CommanderControl } from './CommanderControl';
+import { pendingSlot } from './commanders';
 import { pendingStatus } from './pendingCards';
 import { DeckQuantityControl } from './DeckQuantityControl';
 import { type EditionSource, EditionSwitcher } from './EditionSwitcher';
 
 interface PendingCardModalProps {
-  deckId: string;
-  deckFormat: string;
-  commanderPendingId: number | null | undefined;
+  deck: Deck;
   deckCardIds: Set<number>;
   card: Card | null;
   item: PendingCard | undefined;
@@ -50,9 +49,7 @@ interface PendingCardModalProps {
 }
 
 export function PendingCardModal({
-  deckId,
-  deckFormat,
-  commanderPendingId,
+  deck,
   deckCardIds,
   card,
   item,
@@ -66,6 +63,8 @@ export function PendingCardModal({
     lastShown.current = { card, item, imageUrl };
   }
   const shown = lastShown.current;
+  const deckId = deck.id;
+  const commanderSlot = shown?.item ? pendingSlot(deck, shown.item.id) : null;
   const commit = useCommitPendingCards();
   const storageOptions = useStorageOptions();
   const [storageId, setStorageId] = useState<string | null>(null);
@@ -140,17 +139,15 @@ export function PendingCardModal({
                   <CardRulesText scryfallId={shown.card.scryfall_id} />
                   <CardTagsInput deckId={deckId} cardName={shown.card.name} />
                   {shown.item && (
-                    <PendingBoardPicker
-                      deckId={deckId}
-                      item={shown.item}
-                      isCommander={commanderPendingId === shown.item.id}
-                    />
+                    <PendingBoardPicker deckId={deckId} item={shown.item} isCommander={commanderSlot !== null} />
                   )}
-                  {isCommanderFormat(deckFormat) && shown.item && (
-                    <PendingCommanderControl
-                      deckId={deckId}
-                      item={shown.item}
-                      isCommander={commanderPendingId === shown.item.id}
+                  {shown.item && (commanderSlot !== null || isCommanderFormat(deck.format)) && (
+                    <CommanderControl
+                      deck={deck}
+                      name={shown.item.name}
+                      scryfallId={shown.item.scryfall_id}
+                      slot={commanderSlot}
+                      target={{ pendingId: shown.item.id }}
                     />
                   )}
                   <Divider />
@@ -216,7 +213,7 @@ export function PendingCardModal({
                   deckId={deckId}
                   source={{ kind: 'pending', item: shown.item }}
                   deckCardIds={deckCardIds}
-                  isCommander={commanderPendingId === shown.item.id}
+                  commanderSlot={commanderSlot}
                   onSwapped={onSwapped}
                 />
               </>
@@ -268,71 +265,4 @@ function PendingBoardPicker({ deckId, item, isCommander }: PendingBoardPickerPro
 function PendingCardImage({ card, imageUrl }: { card: Card; imageUrl: string | undefined }) {
   const backImage = useBackImage(card.scryfall_id);
   return <CardImage key={card.id} name={card.name} url={imageUrl} backUrl={backImage} loading={false} />;
-}
-
-const ineligibilityMessages = {
-  not_eligible:
-    "Cette carte ne peut pas être commandant : il faut une créature légendaire, un véhicule légendaire avec force et endurance, ou une carte qui précise qu'elle peut être ton commandant.",
-  banned: 'Cette carte est bannie en Commander.',
-} as const;
-
-interface PendingCommanderControlProps {
-  deckId: string;
-  item: PendingCard;
-  isCommander: boolean;
-}
-
-function PendingCommanderControl({ deckId, item, isCommander }: PendingCommanderControlProps) {
-  const scryfallCard = useScryfallCard(isCommander ? null : item.scryfall_id);
-  const eligibility = scryfallCard.data ? commanderEligibility(scryfallCard.data) : null;
-  const update = useUpdateDeck();
-
-  if (isCommander) {
-    return <Text size="sm">C'est le commandant de ce deck.</Text>;
-  }
-
-  function ignore() {}
-
-  function makeCommander() {
-    update
-      .mutateAsync({ id: deckId, changes: { commander_pending_id: item.id } })
-      .then(
-        () => notifications.show({ color: 'green', message: `${item.name} est maintenant le commandant du deck.` }),
-        ignore,
-      );
-  }
-
-  if (scryfallCard.isLoading) {
-    return (
-      <Button variant="light" loading disabled>
-        Définir comme commandant
-      </Button>
-    );
-  }
-  if (!scryfallCard.data) {
-    return (
-      <Text size="sm" c="dimmed">
-        Impossible de vérifier sur Scryfall si cette carte peut être commandant. Réessaie plus tard.
-      </Text>
-    );
-  }
-  if (eligibility !== 'eligible') {
-    return eligibility ? (
-      <Text size="sm" c="dimmed">
-        {ineligibilityMessages[eligibility]}
-      </Text>
-    ) : null;
-  }
-  return (
-    <Stack gap={4}>
-      <Button variant="light" onClick={makeCommander} loading={update.isPending}>
-        Définir comme commandant
-      </Button>
-      {update.error && (
-        <Text size="xs" c="red">
-          {errorMessage(update.error)}
-        </Text>
-      )}
-    </Stack>
-  );
 }

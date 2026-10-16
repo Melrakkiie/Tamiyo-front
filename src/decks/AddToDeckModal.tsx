@@ -91,11 +91,18 @@ function AddToDeckList({
   deckCardIds: Set<number>;
 }) {
   const deckId = deck.id;
+  const commanderFormat = isCommanderFormat(deck.format);
   const commander = useScryfallCard(
-    isCommanderFormat(deck.format) ? deck.commander_scryfall_id : null,
+    commanderFormat ? deck.commander_scryfall_id : null,
+  );
+  const partner = useScryfallCard(
+    commanderFormat ? deck.partner_scryfall_id : null,
   );
   const commanderIdentity = commander.data?.color_identity
-    ? colorCode(commander.data.color_identity)
+    ? colorCode([
+        ...commander.data.color_identity,
+        ...(partner.data?.color_identity ?? []),
+      ])
     : null;
   const [restrictToIdentity, setRestrictToIdentity] = useState(true);
   const identityFilter =

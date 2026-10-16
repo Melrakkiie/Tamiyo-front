@@ -1,29 +1,28 @@
-import { Alert, Button, Center, Divider, Grid, Group, Loader, Modal, Select, Stack, Text, Title } from '@mantine/core';
+import { Alert, Center, Divider, Grid, Group, Loader, Modal, Select, Stack, Text, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useRef, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import type { Card, DeckBoard } from '../api/types';
+import type { Card, Deck, DeckBoard } from '../api/types';
 import { copyIds, useUpdateCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
 import { PrintPrice } from '../cards/price';
 import { CardRulesText } from '../scryfall/CardRulesText';
-import { commanderEligibility } from '../scryfall/commander';
-import { useBackImage, useScryfallCard } from '../scryfall/hooks';
+import { useBackImage } from '../scryfall/hooks';
 import { useAllStorages, useStorageOptions } from '../storages/api';
 import { StorageFieldLabel } from '../storages/StorageLabel';
 import { FoilSticker, ProxySticker } from '../theme/Sticker';
-import { isCommanderFormat, useMoveDeckCards, useUpdateDeck } from './api';
+import { isCommanderFormat, useMoveDeckCards } from './api';
 import { movedMessage } from './boards';
 import { BoardPicker } from './BoardSection';
 import { CardTagsInput } from './CardTagsInput';
+import { CommanderControl } from './CommanderControl';
+import { cardSlot, type CommanderSlot } from './commanders';
 import { DeckQuantityControl } from './DeckQuantityControl';
 import { type EditionSource, EditionSwitcher } from './EditionSwitcher';
 
 interface DeckCardModalProps {
-  deckId: string;
-  deckFormat: string;
-  commanderId: number | null | undefined;
+  deck: Deck;
   deckCardIds: Set<number>;
   card: Card | null;
   board: DeckBoard;
@@ -34,9 +33,7 @@ interface DeckCardModalProps {
 }
 
 export function DeckCardModal({
-  deckId,
-  deckFormat,
-  commanderId,
+  deck,
   deckCardIds,
   card,
   board,
@@ -66,9 +63,8 @@ export function DeckCardModal({
         shown && (
           <DeckCardDetail
             key={shown.card.id}
-            deckId={deckId}
-            commanderFormat={isCommanderFormat(deckFormat)}
-            isCommander={commanderId === shown.card.id}
+            deck={deck}
+            commanderSlot={cardSlot(deck, shown.card.id)}
             deckCardIds={deckCardIds}
             card={shown.card}
             board={shown.board}
@@ -82,16 +78,9 @@ export function DeckCardModal({
   );
 }
 
-const ineligibilityMessages = {
-  not_eligible:
-    "Cette carte ne peut pas être commandant : il faut une créature légendaire, un véhicule légendaire avec force et endurance, ou une carte qui précise qu'elle peut être ton commandant.",
-  banned: 'Cette carte est bannie en Commander.',
-} as const;
-
 interface DeckCardDetailProps {
-  deckId: string;
-  commanderFormat: boolean;
-  isCommander: boolean;
+  deck: Deck;
+  commanderSlot: CommanderSlot | null;
   deckCardIds: Set<number>;
   card: Card;
   board: DeckBoard;
@@ -101,9 +90,8 @@ interface DeckCardDetailProps {
 }
 
 function DeckCardDetail({
-  deckId,
-  commanderFormat,
-  isCommander,
+  deck,
+  commanderSlot,
   deckCardIds,
   card,
   board,
@@ -111,12 +99,11 @@ function DeckCardDetail({
   onClose,
   onSwapped,
 }: DeckCardDetailProps) {
-  const update = useUpdateDeck();
+  const deckId = deck.id;
+  const isCommander = commanderSlot !== null;
   const move = useMoveDeckCards();
   const ids = copyIds(card);
-  const scryfallCard = useScryfallCard(commanderFormat ? card.scryfall_id : null);
   const backImage = useBackImage(card.scryfall_id);
-  const eligibility = scryfallCard.data ? commanderEligibility(scryfallCard.data) : null;
   const storageOptions = useStorageOptions();
   const storages = useAllStorages();
   const updateCard = useUpdateCard();
@@ -148,16 +135,7 @@ function DeckCardDetail({
       .then(() => notifications.show({ color: 'green', message: movedMessage(card.name, ids.length, next) }), ignore);
   }
 
-  function makeCommander() {
-    update
-      .mutateAsync({ id: deckId, changes: { commander_id: card.id } })
-      .then(
-        () => notifications.show({ color: 'green', message: `${card.name} est maintenant le commandant du deck.` }),
-        ignore,
-      );
-  }
-
-  const error = update.error ?? updateCard.error ?? move.error;
+  const error = updateCard.error ?? move.error;
 
   return (
     <Stack gap="lg">
@@ -209,36 +187,14 @@ function DeckCardDetail({
               }
             />
 
-            {isCommander ? (
-              <Stack gap={4}>
-                <Text size="sm">C'est le commandant de ce deck.</Text>
-                {commanderFormat && eligibility && eligibility !== 'eligible' && (
-                  <Text size="sm" c="orange">
-                    {ineligibilityMessages[eligibility]}
-                  </Text>
-                )}
-              </Stack>
-            ) : (
-              commanderFormat &&
-              (scryfallCard.isLoading ? (
-                <Button variant="light" loading disabled>
-                  Définir comme commandant
-                </Button>
-              ) : scryfallCard.error || !scryfallCard.data ? (
-                <Text size="sm" c="dimmed">
-                  Impossible de vérifier sur Scryfall si cette carte peut être commandant. Réessaie plus tard.
-                </Text>
-              ) : eligibility === 'eligible' ? (
-                <Button variant="light" onClick={makeCommander} loading={update.isPending}>
-                  Définir comme commandant
-                </Button>
-              ) : (
-                eligibility && (
-                  <Text size="sm" c="dimmed">
-                    {ineligibilityMessages[eligibility]}
-                  </Text>
-                )
-              ))
+            {(isCommander || isCommanderFormat(deck.format)) && (
+              <CommanderControl
+                deck={deck}
+                name={card.name}
+                scryfallId={card.scryfall_id}
+                slot={commanderSlot}
+                target={{ cardId: card.id }}
+              />
             )}
             <Select
               label={<StorageFieldLabel>Rangement</StorageFieldLabel>}
@@ -255,7 +211,7 @@ function DeckCardDetail({
               deckId={deckId}
               card={card}
               board={board}
-              source={{ kind: 'owned', copyIds: ids, isCommander }}
+              source={{ kind: 'owned', copyIds: ids, commanderSlot }}
               onChanged={onClose}
             />
           </Stack>
@@ -266,7 +222,7 @@ function DeckCardDetail({
         deckId={deckId}
         source={{ kind: 'card', card, board }}
         deckCardIds={deckCardIds}
-        isCommander={isCommander}
+        commanderSlot={commanderSlot}
         onSwapped={onSwapped}
       />
     </Stack>

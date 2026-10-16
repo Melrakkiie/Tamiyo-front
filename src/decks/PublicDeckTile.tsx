@@ -36,7 +36,7 @@ export function PublicDeckTile({ deck, art }: { deck: PublicDeck; art: CardArt |
             </Group>
             {deck.commander_name && (
               <Text size="sm" c={dimmed} lineClamp={1}>
-                {deck.commander_name}
+                {deck.partner_name ? `${deck.commander_name} et ${deck.partner_name}` : deck.commander_name}
               </Text>
             )}
             <Group gap="xs" mt={4}>

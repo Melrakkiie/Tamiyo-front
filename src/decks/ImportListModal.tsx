@@ -5,6 +5,7 @@ import type { Deck, ImportSummary } from '../api/types';
 import { useImportIntoDeck } from '../bulk/api';
 import { ImportResult } from '../bulk/ImportResult';
 import { isCommanderFormat } from './api';
+import { hasCommander } from './commanders';
 import { DeckListInput, deckListErrorMessage, useDeckList, useTamiyoDeckFile } from './DeckListInput';
 
 interface ImportListModalProps {
@@ -26,8 +27,10 @@ function ImportListForm({ deck, onClose }: { deck: Deck; onClose: () => void }) 
   const tamiyoFile = useTamiyoDeckFile(list.source);
   const mutation = useImportIntoDeck();
   const [summary, setSummary] = useState<ImportSummary | null>(null);
-  const hasCommander = deck.commander_id != null || deck.commander_pending_id != null;
-  const [commanderFromFirstLine, setCommanderFromFirstLine] = useState(isCommanderFormat(deck.format) && !hasCommander);
+  const deckHasCommander = hasCommander(deck);
+  const [commanderFromFirstLine, setCommanderFromFirstLine] = useState(
+    isCommanderFormat(deck.format) && !deckHasCommander,
+  );
 
   function submit() {
     if (!list.source) {
@@ -35,7 +38,7 @@ function ImportListForm({ deck, onClose }: { deck: Deck; onClose: () => void }) 
     }
     setSummary(null);
     mutation.mutate(
-      { deckId: deck.id, file: list.source, commanderFromFirstLine: commanderFromFirstLine && !hasCommander },
+      { deckId: deck.id, file: list.source, commanderFromFirstLine: commanderFromFirstLine && !deckHasCommander },
       {
         onSuccess: (result) => {
           setSummary(result);
@@ -48,7 +51,7 @@ function ImportListForm({ deck, onClose }: { deck: Deck; onClose: () => void }) 
   return (
     <Stack>
       <DeckListInput list={list} />
-      {!hasCommander && !tamiyoFile && (
+      {!deckHasCommander && !tamiyoFile && (
         <Switch
           label="La première ligne est le commandant"
           checked={commanderFromFirstLine}

@@ -7,7 +7,7 @@ import type { Card, Deck, DeckBoard, PendingCard } from '../api/types';
 import { useImportIntoDeck } from '../bulk/api';
 import { copyIds, useCreateCards } from '../cards/api';
 import { CardCopyItems, FoilToggleItem, ProxyToggleItem } from '../cards/CardContextMenu';
-import { commanderEligibility } from '../scryfall/commander';
+import { canPair, commanderEligibility } from '../scryfall/commander';
 import { useScryfallCard } from '../scryfall/hooks';
 import { AddCopiesToDeckModal, deckLineFile } from './AddCopiesToDeckModal';
 import {
@@ -21,6 +21,7 @@ import {
   useUpdateDeck,
 } from './api';
 import { BOARDS } from './boards';
+import { type CommanderSlot, commanderSlotOf, hasCommander, hasPartner, setSlotChanges } from './commanders';
 import { deckListErrorMessage, deckListSummary } from './DeckListInput';
 import { isPendingCard, pendingIdOf } from './pendingCards';
 import { SplitPrintingsModal, summaryDetails } from './SplitPrintingsModal';
@@ -50,8 +51,6 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
   const [splitCard, setSplitCard] = useState<Card | null>(null);
 
   const pendingOf = (card: Card) => pendingItems.find((item) => item.id === pendingIdOf(card));
-  const isCommander = (card: Card) =>
-    isPendingCard(card) ? pendingIdOf(card) === deck.commander_pending_id : card.id === deck.commander_id;
   const done = (message: string) => ({
     onSuccess: () => notifications.show({ color: 'green', message }),
     onError: notifyError,
@@ -112,7 +111,7 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
     if (!isPendingCard(card)) {
       const ids = copyIds(card);
       removeOwned.mutate(
-        { deckId: deck.id, cardId: ids[ids.length - 1], isCommander: isCommander(card) },
+        { deckId: deck.id, cardId: ids[ids.length - 1], commanderSlot: commanderSlotOf(deck, card) },
         done(message),
       );
       return;
@@ -128,9 +127,13 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
     }
   }
 
-  function makeCommander(card: Card) {
-    const changes = isPendingCard(card) ? { commander_pending_id: pendingIdOf(card) } : { commander_id: card.id };
-    updateDeck.mutate({ id: deck.id, changes }, done(`${card.name} est maintenant le commandant du deck.`));
+  function makeCommander(card: Card, slot: CommanderSlot) {
+    const target = isPendingCard(card) ? { pendingId: pendingIdOf(card) } : { cardId: card.id };
+    const role = slot === 'commander' ? 'le commandant' : 'le second commandant';
+    updateDeck.mutate(
+      { id: deck.id, changes: setSlotChanges(slot, target) },
+      done(`${card.name} est maintenant ${role} du deck.`),
+    );
   }
 
   function addToCollection(card: Card) {
@@ -176,7 +179,7 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
 
   function menuFor(card: Card, board: DeckBoard, imageUrl: string | undefined) {
     const item = { card, board, tag: null, imageUrl };
-    const commander = isCommander(card);
+    const commander = commanderSlotOf(deck, card) !== null;
     const quantity = card.quantity ?? 1;
     return (
       <>
@@ -198,7 +201,11 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
           </Menu.Item>
         ))}
         {isCommanderFormat(deck.format) && !commander && board === 'main' && (
-          <CommanderItem card={card} onClick={() => makeCommander(card)} />
+          <CommanderItem
+            card={card}
+            pairWith={hasCommander(deck) && !hasPartner(deck) ? deck.commander_scryfall_id : null}
+            onClick={(slot) => makeCommander(card, slot)}
+          />
         )}
         <Menu.Item onClick={() => setOtherDeckCard(card)}>Ajouter à un autre deck</Menu.Item>
         <Menu.Item onClick={() => addToCollection(card)}>
@@ -223,14 +230,26 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
   return { menuFor, modals };
 }
 
-function CommanderItem({ card, onClick }: { card: Card; onClick: () => void }) {
+interface CommanderItemProps {
+  card: Card;
+  pairWith: string | null | undefined;
+  onClick: (slot: CommanderSlot) => void;
+}
+
+function CommanderItem({ card, pairWith, onClick }: CommanderItemProps) {
   const scryfallCard = useScryfallCard(card.scryfall_id);
-  const eligibility = scryfallCard.data ? commanderEligibility(scryfallCard.data) : null;
-  if (scryfallCard.isLoading) {
+  const commander = useScryfallCard(pairWith ?? null);
+  if (scryfallCard.isLoading || commander.isLoading) {
     return <Menu.Item disabled>Définir comme commandant</Menu.Item>;
   }
-  if (eligibility !== 'eligible') {
+  if (!scryfallCard.data) {
     return null;
   }
-  return <Menu.Item onClick={onClick}>Définir comme commandant</Menu.Item>;
+  if (commander.data && canPair(commander.data, scryfallCard.data)) {
+    return <Menu.Item onClick={() => onClick('partner')}>Définir comme second commandant</Menu.Item>;
+  }
+  if (commanderEligibility(scryfallCard.data) !== 'eligible') {
+    return null;
+  }
+  return <Menu.Item onClick={() => onClick('commander')}>Définir comme commandant</Menu.Item>;
 }

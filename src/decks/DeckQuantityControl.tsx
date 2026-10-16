@@ -7,11 +7,11 @@ import type { Card, DeckBoard, PendingCard } from '../api/types';
 import { useImportIntoDeck } from '../bulk/api';
 import { useRemoveCardFromDeck, useRemoveCopiesFromDeck, useRemovePendingCard, useSetPendingQuantity } from './api';
 import { deckLineFile } from './AddCopiesToDeckModal';
+import type { CommanderSlot } from './commanders';
 import { deckListErrorMessage, deckListSummary } from './DeckListInput';
 
 export type QuantitySource =
-  | { kind: 'owned'; copyIds: number[]; isCommander: boolean }
-  | { kind: 'pending'; item: PendingCard };
+  { kind: 'owned'; copyIds: number[]; commanderSlot: CommanderSlot | null } | { kind: 'pending'; item: PendingCard };
 
 interface DeckQuantityControlProps {
   deckId: string;
@@ -78,7 +78,7 @@ export function DeckQuantityControl({ deckId, card, board, source, onChanged }: 
     }
     const ids = source.copyIds.slice(source.copyIds.length - count);
     if (ids.length === 1) {
-      removeOne.mutate({ deckId, cardId: ids[0], isCommander: source.isCommander }, { onSuccess });
+      removeOne.mutate({ deckId, cardId: ids[0], commanderSlot: source.commanderSlot }, { onSuccess });
     } else {
       removeCopies.mutate({ deckId, cardIds: ids }, { onSuccess });
     }

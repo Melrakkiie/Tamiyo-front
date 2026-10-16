@@ -147,7 +147,9 @@ const sections: HelpSection[] = [
         <Text>
           Un deck a trois sections : le <b>Deck principal</b>, le <b>Sideboard</b> et <b>Considering</b>, pour les
           cartes que tu envisages. <b>Ajouter des cartes</b> pioche dans ta collection ; ouvre une carte du deck pour la
-          déplacer d'une section à l'autre ou la <b>Définir comme commandant</b>.
+          déplacer d'une section à l'autre ou la <b>Définir comme commandant</b>. Si ton commandant a un partenaire
+          (Partner, Friends forever, Choose a Background…), une carte qui peut l'accompagner propose{' '}
+          <b>Définir comme second commandant</b>.
         </Text>
         <Text>
           Une carte que tu n'as pas encore est <b>en attente</b>, en orange : elle compte dans le deck, mais pas dans ta

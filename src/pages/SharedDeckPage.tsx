@@ -291,7 +291,14 @@ function OwnDeckNotice({ ownerId, deckId }: { ownerId: string; deckId: string })
   );
 }
 
-function CommanderCard({ card, imageUrl, onOpen }: { card: Card; imageUrl: string | undefined; onOpen: () => void }) {
+interface CommanderCardProps {
+  card: Card;
+  label: string;
+  imageUrl: string | undefined;
+  onOpen: () => void;
+}
+
+function CommanderCard({ card, label, imageUrl, onOpen }: CommanderCardProps) {
   return (
     <Paper withBorder p="sm" maw={420} onMouseEnter={() => showCardPreview(null)}>
       <Group wrap="nowrap" align="center">
@@ -300,7 +307,7 @@ function CommanderCard({ card, imageUrl, onOpen }: { card: Card; imageUrl: strin
         </Box>
         <Stack gap={4} style={{ minWidth: 0 }}>
           <Text size="xs" c="dimmed">
-            Commandant
+            {label}
           </Text>
           <Text fw={600} lineClamp={1}>
             {card.name}
@@ -325,8 +332,14 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
   const currency = usePriceCurrency();
   const stats = useSharedDeckStats(shared.deck.id, currency !== null);
   const all = sharedCardsToCards(shared.cards);
-  const commanderIndex = shared.cards.findIndex((card) => card.commander);
-  const commander = commanderIndex >= 0 ? all[commanderIndex] : undefined;
+  const commanders = all
+    .filter((_, index) => shared.cards[index].commander)
+    .sort(
+      (a, b) =>
+        Number(b.scryfall_id === shared.deck.commander_scryfall_id) -
+        Number(a.scryfall_id === shared.deck.commander_scryfall_id),
+    );
+  const commander = commanders[0];
   const cards = sortDeckCards<DeckCard>(all, sort);
   const mainCards = inBoard(cards, 'main');
   const sideboardCards = inBoard(cards, 'sideboard');
@@ -391,7 +404,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
         backImageUrl={backImages.data?.[card.scryfall_id]}
         imageLoading={images.isLoading}
         textOnly={textOnly}
-        commander={commander !== undefined && card.id === commander.id}
+        commander={commanders.some((other) => other.id === card.id)}
         manaCost={
           !display.showManaCost || manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)
         }
@@ -418,8 +431,18 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
 
   return (
     <Stack>
-      {commander && (
-        <CommanderCard card={commander} imageUrl={commanderImage} onOpen={() => setOpenedCard(commander)} />
+      {commanders.length > 0 && (
+        <Group align="stretch" gap="sm">
+          {commanders.map((card, index) => (
+            <CommanderCard
+              key={card.id}
+              card={card}
+              label={index === 0 ? 'Commandant' : 'Second commandant'}
+              imageUrl={images.data?.[card.scryfall_id]}
+              onOpen={() => setOpenedCard(card)}
+            />
+          ))}
+        </Group>
       )}
 
       <Group gap="lg" align="stretch">

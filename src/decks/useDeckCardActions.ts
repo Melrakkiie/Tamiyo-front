@@ -11,6 +11,7 @@ import {
   useRemovePendingCard,
 } from './api';
 import { movedMessage } from './boards';
+import { commanderSlotOf } from './commanders';
 import type { DragItem } from './dragDrop';
 import { isPendingCard, pendingIdOf } from './pendingCards';
 import { useSetCardTags } from './tags';
@@ -28,12 +29,8 @@ export function useDeckCardActions(deck: Deck, tagsOfCard: (card: Card) => strin
     onError: (err: unknown) => notifications.show({ color: 'red', message: errorMessage(err) }),
   });
 
-  function isCommander(card: Card) {
-    return isPendingCard(card) ? pendingIdOf(card) === deck.commander_pending_id : card.id === deck.commander_id;
-  }
-
   function canMoveTo(item: DragItem, board: DeckBoard) {
-    return board !== item.board && !isCommander(item.card);
+    return board !== item.board && commanderSlotOf(deck, item.card) === null;
   }
 
   function moveToBoard({ card }: DragItem, board: DeckBoard) {
@@ -55,7 +52,10 @@ export function useDeckCardActions(deck: Deck, tagsOfCard: (card: Card) => strin
     }
     const ids = copyIds(card);
     if (ids.length === 1) {
-      removeOne.mutate({ deckId: deck.id, cardId: ids[0], isCommander: isCommander(card) }, callbacks(message));
+      removeOne.mutate(
+        { deckId: deck.id, cardId: ids[0], commanderSlot: commanderSlotOf(deck, card) },
+        callbacks(message),
+      );
     } else {
       removeCopies.mutate({ deckId: deck.id, cardIds: ids }, callbacks(message));
     }
