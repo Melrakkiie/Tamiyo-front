@@ -55,6 +55,10 @@ h6,
   box-shadow: 0 0 0 var(--tamiyo-ink);
 }
 
+.mantine-Alert-message {
+  overflow: visible;
+}
+
 [data-mantine-color-scheme='dark'] .mantine-Button-root[data-variant='filled']:not(:disabled, [data-disabled]) {
   border-color: transparent;
   box-shadow: 0 0 18px rgba(205, 227, 165, 0.3);
