@@ -1,6 +1,6 @@
 import { createBrowserRouter } from 'react-router';
 
-import { GuestOnly, RequireAuth } from './auth/guards';
+import { GuestOnly, RedirectGuests, RequireAuth } from './auth/guards';
 import { AuthLayout } from './layout/AuthLayout';
 import { SharedLayout } from './layout/SharedLayout';
 import { CollectionPage } from './pages/CollectionPage';
@@ -50,20 +50,23 @@ export const router = createBrowserRouter([
     element: <SharedLayout />,
     children: [
       {
+        element: <RedirectGuests to="/explorer" />,
+        children: [{ path: '/', element: <HomePage /> }],
+      },
+      {
         element: <RequireAuth />,
         children: [
-          { path: '/', element: <HomePage /> },
           { path: '/cards', element: <CollectionPage /> },
           { path: '/storages', element: <StoragesPage /> },
           { path: '/storages/:id', element: <StoragePage /> },
           { path: '/decks', element: <DecksPage /> },
-          { path: '/explorer', element: <ExplorePage /> },
           { path: '/decks-aimes', element: <LikedDecksPage /> },
           { path: '/settings', element: <SettingsPage /> },
           { path: '/users/:id', element: <ProfilePage /> },
           { path: '/users/:id/connexions', element: <ConnectionsPage /> },
         ],
       },
+      { path: '/explorer', element: <ExplorePage /> },
       { path: '/decks/:id', element: <DeckPage /> },
       { path: '/decks/:id/comparer/:otherId', element: <DeckComparePage /> },
       { path: '/shared/:id', element: <SharedDeckRedirect /> },

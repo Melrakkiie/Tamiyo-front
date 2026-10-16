@@ -18,10 +18,10 @@ import { Link, useLocation } from 'react-router';
 import { useAccount } from '../auth/account';
 import { logout } from '../auth/actions';
 import { UserAvatar } from '../auth/UserAvatar';
-import { showCardPreview } from './cardPreview';
+import { pagesWithCards, showCardPreview } from './cardPreview';
 import { LunaMoth } from '../theme/LunaMoth';
 import { CardPreviewPanel } from './CardPreviewPanel';
-import { NavMoth } from './NavMoth';
+import { HeaderNavLink } from './HeaderNavLink';
 import { PageWithFooter } from './PageWithFooter';
 
 interface NavItem {
@@ -38,8 +38,6 @@ const navItems: NavItem[] = [
   { label: 'Explorer', to: '/explorer', separated: true },
   { label: 'Aide', to: '/aide' },
 ];
-
-const pagesWithCards = /^\/(cards|storages\/[^/]+|decks\/[^/]+(\/comparer\/[^/]+)?)\/?$/;
 
 function isActive(item: NavItem, pathname: string) {
   return item.to === '/' ? pathname === '/' : pathname.startsWith(item.to);
@@ -83,25 +81,7 @@ export function AppLayout() {
               {navItems.map((item) => (
                 <Fragment key={item.to}>
                   {item.separated && <Divider orientation="vertical" mx={6} my={4} />}
-                  <UnstyledButton
-                    component={Link}
-                    to={item.to}
-                    className="tamiyo-nav-link"
-                    data-active={isActive(item, pathname) || undefined}
-                    aria-current={isActive(item, pathname) ? 'page' : undefined}
-                  >
-                    {isActive(item, pathname) ? (
-                      <>
-                        {item.label.slice(0, -1)}
-                        <span className="tamiyo-nav-perch">
-                          {item.label.slice(-1)}
-                          <NavMoth />
-                        </span>
-                      </>
-                    ) : (
-                      item.label
-                    )}
-                  </UnstyledButton>
+                  <HeaderNavLink label={item.label} to={item.to} active={isActive(item, pathname)} />
                 </Fragment>
               ))}
             </Group>

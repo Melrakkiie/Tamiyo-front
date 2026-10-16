@@ -37,3 +37,15 @@ export function GuestOnly() {
   }
   return <Outlet />;
 }
+
+export function RedirectGuests({ to }: { to: string }) {
+  const { status } = useSession();
+
+  if (status === 'unknown') {
+    return <FullPageLoader />;
+  }
+  if (status === 'anonymous') {
+    return <Navigate to={to} replace />;
+  }
+  return <Outlet />;
+}

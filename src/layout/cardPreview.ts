@@ -8,6 +8,8 @@ export interface PreviewCard {
   open?: () => void;
 }
 
+export const pagesWithCards = /^\/(cards|storages\/[^/]+|decks\/[^/]+(\/comparer\/[^/]+)?)\/?$/;
+
 let current: PreviewCard | null = null;
 let fallback: PreviewCard | null = null;
 let fallbackPath: string | null = null;

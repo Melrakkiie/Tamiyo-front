@@ -251,9 +251,9 @@ const sections: HelpSection[] = [
         </Text>
         <Text>
           <PageLink to="/explorer">Explorer</PageLink> liste les decks publics, avec des filtres par nom, format,
-          commandant, couleurs, carte contenue, joueur ou bracket. Le cœur aime un deck : tu le retrouves dans{' '}
-          <PageLink to="/decks-aimes">Decks aimés</PageLink>. <b>Comparer avec un autre deck</b> montre les cartes en
-          commun et celles qui ne sont que d'un côté.
+          commandant, couleurs, carte contenue, joueur ou bracket, même sans compte. Le cœur aime un deck : tu le
+          retrouves dans <PageLink to="/decks-aimes">Decks aimés</PageLink>. <b>Comparer avec un autre deck</b> montre
+          les cartes en commun et celles qui ne sont que d'un côté.
         </Text>
         <Text>
           Clique sur un pseudo pour voir un profil et ses decks publics, puis <b>Suivre</b> la personne. Tes abonnements
