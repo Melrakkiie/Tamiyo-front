@@ -1,4 +1,4 @@
-import { Alert, Anchor, Center, Group, Loader, Menu, Stack, Text, Title } from '@mantine/core';
+import { Alert, Anchor, Center, Group, Loader, Menu, Stack, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -8,13 +8,12 @@ import { type CollectionExport, useExportCollection } from '../bulk/api';
 import { CollectionImportModal } from '../bulk/CollectionImportModal';
 import { CardBrowser } from '../cards/CardBrowser';
 import { formatPrice, PriceText, usePriceCurrency } from '../cards/price';
-import { useAllDecks } from '../decks/api';
 import { Sticker } from '../theme/Sticker';
 import { SettingsMenu } from '../layout/SettingsMenu';
 import { StorageDeleteModal } from '../storages/StorageDeleteModal';
 import { StorageFormModal } from '../storages/StorageFormModal';
-import { LockIcon } from '../storages/StorageLabel';
 import { StorageLockModal } from '../storages/StorageLockModal';
+import { StorageLockSticker } from '../storages/StorageLockSticker';
 import { StorageTransferModal } from '../storages/StorageTransferModal';
 import { useStorage, useUpdateStorage } from '../storages/api';
 import { usePageTitle } from '../layout/usePageTitle';
@@ -40,7 +39,6 @@ function StorageView({ id }: { id: number }) {
   const [importOpened, setImportOpened] = useState(false);
   const [lockOpened, setLockOpened] = useState(false);
   const [transferOpened, setTransferOpened] = useState(false);
-  const decks = useAllDecks();
   const currency = usePriceCurrency();
   const exportStorage = useExportCollection(id);
 
@@ -79,8 +77,6 @@ function StorageView({ id }: { id: number }) {
   }
 
   const current = storage.data;
-  const deckNames = new Map((decks.data ?? []).map((deck) => [deck.id, deck.name]));
-  const allowedNames = current.allowed_deck_ids.flatMap((deckId) => deckNames.get(deckId) ?? []);
 
   return (
     <Stack>
@@ -96,21 +92,12 @@ function StorageView({ id }: { id: number }) {
             <Sticker tone="paper" tilt={-2}>
               {current.type}
             </Sticker>
+            <StorageLockSticker storage={current} />
           </Group>
           <PriceText mt={4}>
             {formatCardCount(current.card_count)}
             {currency && ` · Valeur : ${formatPrice(current.value[currency], currency)}`}
           </PriceText>
-          {current.locked && (
-            <Group gap={6} wrap="nowrap" c="dimmed" mt={4}>
-              <LockIcon size={14} />
-              <Text size="sm" c="dimmed">
-                {allowedNames.length > 0
-                  ? `Verrouillé · réservé à ${allowedNames.join(', ')}`
-                  : 'Verrouillé pour tous les decks'}
-              </Text>
-            </Group>
-          )}
         </div>
         <SettingsMenu label="Actions sur le rangement">
           <Menu.Item onClick={() => setImportOpened(true)}>Importer des cartes</Menu.Item>

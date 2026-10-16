@@ -10,11 +10,10 @@ import { capitalize, groupByRecent } from '../layout/groupByRecent';
 import { StorageFormModal } from '../storages/StorageFormModal';
 import { useAllStorages, useCreateStorage } from '../storages/api';
 import { StorageArt } from '../storages/StorageArt';
-import { LockIcon } from '../storages/StorageLabel';
+import { StorageLockSticker } from '../storages/StorageLockSticker';
 import { useStorageTileMenu } from '../storages/useStorageTileMenu';
 import { EmptyNote } from '../theme/EmptyNote';
 import { SectionTitle } from '../theme/SectionTitle';
-import { Sticker } from '../theme/Sticker';
 import { tapeProps } from '../theme/tape';
 import { usePageTitle } from '../layout/usePageTitle';
 
@@ -93,21 +92,7 @@ export function StoragesPage() {
                             <Text ff="heading" fw={600} size="lg" lineClamp={1}>
                               {storage.name}
                             </Text>
-                            {storage.locked && (
-                              <Sticker
-                                tone="prune"
-                                size="xs"
-                                tilt={-3}
-                                icon={<LockIcon size={13} />}
-                                title={
-                                  storage.allowed_deck_ids.length > 0
-                                    ? 'Verrouillé, sauf pour quelques decks'
-                                    : 'Verrouillé pour tous les decks'
-                                }
-                              >
-                                {storage.allowed_deck_ids.length > 0 ? 'réservé' : 'verrouillé'}
-                              </Sticker>
-                            )}
+                            <StorageLockSticker storage={storage} size="xs" />
                           </Group>
                           <Text className="tamiyo-hand" size="lg" c="dimmed">
                             {storage.card_count === 0
