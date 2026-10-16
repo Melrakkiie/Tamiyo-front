@@ -15,18 +15,20 @@ import {
   TextInput,
   UnstyledButton,
 } from '@mantine/core';
-import { useState } from 'react';
+import { useDebouncedValue } from '@mantine/hooks';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { COLORLESS, type ColorMode, type TypeFilter } from '../cards/advancedFilters';
 import { ColorChips, ComparisonInput, colorModes, typeOptions } from '../cards/AdvancedSearch';
+import { SearchSyntaxHelp } from '../cards/SearchSyntaxHelp';
 import { useScryfallCards } from '../scryfall/hooks';
+import { matchesScryfallQuery, parseScryfallQuery, type QueryNode } from '../scryfall/query';
 import type { Zone } from './engine';
 import {
   activeLibraryFilterCount,
   emptyLibraryFilters,
   type LibraryFilters,
   matchesLibraryFilters,
-  normalized,
 } from './libraryFilters';
 import { CardFace } from './PlaytestCard';
 import { useTable } from './table';
@@ -57,18 +59,29 @@ export function ZoneModal({ zone, onClose }: { zone: ViewedZone | null; onClose:
   const [filtersOpen, setFiltersOpen] = useState(false);
   const shownZone = zone ?? 'graveyard';
   const searching = shownZone === 'library';
-  const cards = useScryfallCards(searching ? Object.values(state.cards).map((card) => card.scryfallId) : []);
-  const query = normalized(search.trim());
-  const ids = state.zones[shownZone].filter(
-    (id) =>
-      (!query || normalized(state.cards[id].name).includes(query)) &&
-      (!searching || matchesLibraryFilters(cards.data?.[state.cards[id].scryfallId], filters)),
-  );
+  const cards = useScryfallCards(zone !== null ? Object.values(state.cards).map((card) => card.scryfallId) : []);
+  const parsed = useMemo(() => parseScryfallQuery(search), [search]);
+  const lastValid = useRef<QueryNode | null>(null);
+  useEffect(() => {
+    if (!parsed.error) {
+      lastValid.current = parsed.node;
+    }
+  }, [parsed]);
+  const query = parsed.error ? lastValid.current : parsed.node;
+  const [settledSearch] = useDebouncedValue(search, 400);
+  const searchError = settledSearch === search ? parsed.error : null;
+  const ids = state.zones[shownZone].filter((id) => {
+    const card = cards.data?.[state.cards[id].scryfallId];
+    return (
+      matchesScryfallQuery(query, card, state.cards[id].name) && (!searching || matchesLibraryFilters(card, filters))
+    );
+  });
   const filterCount = activeLibraryFilterCount(filters);
   const shown = searching ? [...ids].sort((a, b) => state.cards[a].name.localeCompare(state.cards[b].name, 'fr')) : ids;
 
   function close() {
     setSearch('');
+    lastValid.current = null;
     setFilters(emptyLibraryFilters);
     setFiltersOpen(false);
     onClose();
@@ -91,9 +104,12 @@ export function ZoneModal({ zone, onClose }: { zone: ViewedZone | null; onClose:
       <Stack>
         <Group gap="xs" wrap="nowrap">
           <TextInput
-            placeholder="Nom de la carte"
+            placeholder="Nom ou syntaxe Scryfall : t:creature mv<=3"
             value={search}
             onChange={(event) => setSearch(event.currentTarget.value)}
+            error={searchError && `Recherche invalide : ${searchError}`}
+            rightSection={<SearchSyntaxHelp scope="playtest" />}
+            rightSectionPointerEvents="all"
             data-autofocus
             style={{ flex: 1 }}
           />

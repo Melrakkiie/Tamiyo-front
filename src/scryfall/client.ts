@@ -43,6 +43,7 @@ export interface ScryfallCard {
   loyalty?: string;
   defense?: string;
   rarity?: string;
+  keywords?: string[];
   colors?: string[];
   color_identity?: string[];
   artist?: string;

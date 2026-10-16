@@ -12,17 +12,21 @@ import {
   Stack,
   Switch,
   Text,
-  TextInput,
 } from "@mantine/core";
-import { useDebouncedValue } from "@mantine/hooks";
 import { useState } from "react";
 
 import { errorMessage } from "../api/errors";
 import type { Card, Deck, DeckBoard } from "../api/types";
 import { AddCardModal } from "../cards/AddCardModal";
 import { useCards } from "../cards/api";
+import { CollectionSearchInput } from "../cards/CollectionSearchInput";
 import { hasMissingDetails } from "../cards/grouping";
 import { MissingDetailsAlert } from "../cards/MissingDetailsAlert";
+import {
+  isScryfallOnlySearch,
+  SearchSyntaxHelp,
+  searchSyntaxError,
+} from "../cards/SearchSyntaxHelp";
 import { colorCode } from "../scryfall/classify";
 import { useScryfallCard } from "../scryfall/hooks";
 import { isOpenTo, useAllStorages } from "../storages/api";
@@ -96,8 +100,7 @@ function AddToDeckList({
     commanderIdentity !== null && restrictToIdentity
       ? commanderIdentity
       : undefined;
-  const [search, setSearch] = useState("");
-  const [debouncedSearch] = useDebouncedValue(search.trim(), 300);
+  const [query, setQuery] = useState("");
   const storages = useAllStorages();
   const storageNames = new Map<number, string>(
     (storages.data ?? []).map((storage) => [storage.id, storage.name]),
@@ -113,7 +116,7 @@ function AddToDeckList({
     page: 1,
     limit: 30,
     sort: "name",
-    name: debouncedSearch,
+    query,
     storageId: undefined,
     colorIdentity: identityFilter,
     openToDeck,
@@ -122,7 +125,7 @@ function AddToDeckList({
     page: 1,
     limit: 30,
     sort: "name",
-    name: debouncedSearch,
+    query,
     storageId: undefined,
     openToDeck,
   });
@@ -148,6 +151,8 @@ function AddToDeckList({
   }
 
   const results = cards.data?.data ?? [];
+  const scryfallOnly = isScryfallOnlySearch(cards.error);
+  const searchError = scryfallOnly ? null : searchSyntaxError(cards.error);
 
   return (
     <Stack>
@@ -163,10 +168,14 @@ function AddToDeckList({
         </Stack>
       </Paper>
       <Divider label="Choisir les cartes" labelPosition="left" />
-      <TextInput
-        placeholder="Rechercher dans ta collection ou sur Scryfall"
-        value={search}
-        onChange={(event) => setSearch(event.currentTarget.value)}
+      <CollectionSearchInput
+        placeholder="Rechercher dans ta collection ou sur Scryfall (ex. t:creature c:g)"
+        value={query}
+        onSearch={setQuery}
+        error={searchError}
+        loading={cards.isFetching && cards.isPlaceholderData}
+        rightSection={<SearchSyntaxHelp />}
+        rightSectionPointerEvents="all"
         data-autofocus
       />
       {commanderIdentity !== null && (
@@ -190,24 +199,28 @@ function AddToDeckList({
       {cardTags.error && (
         <Alert color="red">{errorMessage(cardTags.error)}</Alert>
       )}
-      {cards.error && <Alert color="red">{errorMessage(cards.error)}</Alert>}
+      {cards.error && !searchError && !scryfallOnly && (
+        <Alert color="red">{errorMessage(cards.error)}</Alert>
+      )}
 
       {cards.isLoading ? (
         <Center p="lg">
           <Loader />
         </Center>
-      ) : results.length === 0 ? (
+      ) : searchError ? null : results.length === 0 ? (
         <Stack gap="md">
           <Text c="dimmed" ta="center" pt="md">
-            {identityFilter !== undefined
-              ? "Aucune carte de ta collection dans l'identité de couleur du commandant ne correspond."
-              : debouncedSearch
-                ? "Aucune carte de ta collection ne correspond."
-                : "Ta collection est vide : cherche une carte pour la trouver sur Scryfall."}
+            {scryfallOnly
+              ? "Cette recherche utilise une syntaxe que seul Scryfall comprend."
+              : identityFilter !== undefined
+                ? "Aucune carte de ta collection dans l'identité de couleur du commandant ne correspond."
+                : query
+                  ? "Aucune carte de ta collection ne correspond."
+                  : "Ta collection est vide : cherche une carte pour la trouver sur Scryfall."}
           </Text>
-          {debouncedSearch.length >= 2 && (
+          {query.length >= 2 && (
             <ScryfallFallback
-              search={debouncedSearch}
+              search={query}
               identity={identityFilter}
               onPick={setScryfallPick}
             />

@@ -168,7 +168,7 @@ export function HomePage() {
   const account = useAccount();
   const decks = useAllDecks();
   const storages = useAllStorages();
-  const cards = useCards({ page: 1, limit: 2 * RECENT_CARDS, sort: '-added', name: '', storageId: undefined });
+  const cards = useCards({ page: 1, limit: 2 * RECENT_CARDS, sort: '-added', query: '', storageId: undefined });
 
   const recentDecks = [...(decks.data ?? [])].sort((a, b) => b.updated.localeCompare(a.updated)).slice(0, RECENT_DECKS);
   const lastDeck = recentDecks[0];

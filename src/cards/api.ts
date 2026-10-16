@@ -10,7 +10,7 @@ export interface CardFilters {
   limit: number;
   sort: CardSort;
   group?: CardGrouping;
-  name: string;
+  query: string;
   storageId: number | undefined;
   colorIdentity?: string;
   stack?: boolean;
@@ -29,16 +29,17 @@ export function copyCount(card: Card): number {
 export function useCards(filters: CardFilters) {
   return useQuery({
     queryKey: ['cards', 'list', filters],
-    queryFn: async () =>
+    queryFn: async ({ signal }) =>
       unwrap(
         await api.GET('/cards', {
+          signal,
           params: {
             query: {
               page: filters.page,
               limit: filters.limit,
               sort: filters.sort,
               group: filters.group,
-              name: filters.name || undefined,
+              q: filters.query || undefined,
               storage_id: filters.storageId,
               color_identity: filters.colorIdentity,
               stack: filters.stack,

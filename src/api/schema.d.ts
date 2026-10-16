@@ -794,6 +794,11 @@ export interface paths {
                     scryfall_id?: string;
                     /** @description Case-insensitive partial match on the card name. */
                     name?: string;
+                    /**
+                     * @description Search in Scryfall syntax, evaluated on the user's own cards. Bare words match the name (each word separately); terms are ANDed, `or` / `OR` combines them, `-` negates, parentheses group, quotes keep spaces, `!"Name"` is an exact name. Keys: name, t/type, o/oracle (`~` stands for the card's name), c/color, id/identity/ci, mv/cmc/manavalue (also even/odd), pow/power, tou/toughness, m/mana, r/rarity, s/set/e/edition, cn/number, f/format/legal, kw/keyword, is/not (foil, nonfoil, proxy), usd, eur; operators `:` `=` `!=` `<` `<=` `>` `>=` where they make sense. At most 500 characters and 50 terms. An unknown key, a bad value or unbalanced parentheses is a 400 explaining the problem, e.g. `q: unknown keyword "foo"`. Oracle text, mana cost, rarity and keywords come from Scryfall in the background, like type lines: a new printing matches them within a few minutes. See doc/API.md for the details.
+                     * @example t:creature c:g mv<=3
+                     */
+                    q?: string;
                     /** @description Only return cards whose color identity fits inside these colors (e.g. a commander's identity), in any order. An empty value keeps colorless cards only. Cards whose color identity isn't known yet are left out. */
                     color_identity?: string;
                     /** @description 1-based page number. */
@@ -846,7 +851,7 @@ export interface paths {
                         "application/json": components["schemas"]["PaginatedCards"];
                     };
                 };
-                /** @description storage_id, page or limit is invalid, or sort is not one of the allowed values. */
+                /** @description storage_id, page or limit is invalid, sort is not one of the allowed values, a filter has an invalid value, or q is not a valid search (the message says why). */
                 400: {
                     headers: {
                         [name: string]: unknown;

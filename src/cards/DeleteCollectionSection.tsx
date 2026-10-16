@@ -8,7 +8,7 @@ import { useCards, useDeleteAllCards } from './api';
 const CONFIRMATION_WORD = 'SUPPRIMER';
 
 export function DeleteCollectionSection() {
-  const collection = useCards({ page: 1, limit: 1, sort: '-updated', name: '', storageId: undefined });
+  const collection = useCards({ page: 1, limit: 1, sort: '-updated', query: '', storageId: undefined });
   const remove = useDeleteAllCards();
   const [confirmation, setConfirmation] = useState('');
 

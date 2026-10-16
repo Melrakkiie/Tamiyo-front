@@ -17,7 +17,7 @@ export function CollectionPage() {
   const [importOpened, setImportOpened] = useState(false);
   const currency = usePriceCurrency();
   const value = useCollectionValue(currency !== null);
-  const copies = useCards({ page: 1, limit: 1, sort: '-updated', name: '', storageId: undefined, advanced: {} });
+  const copies = useCards({ page: 1, limit: 1, sort: '-updated', query: '', storageId: undefined, advanced: {} });
   const total = copies.data?.total;
   const valueText = currency && value.data ? `Valeur : ${formatPrice(value.data[currency], currency)}` : undefined;
   const summary = [total !== undefined ? formatCardCount(total) : undefined, valueText].filter(Boolean).join(' · ');

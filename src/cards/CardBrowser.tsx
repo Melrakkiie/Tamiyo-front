@@ -10,9 +10,8 @@ import {
   Select,
   Stack,
   Text,
-  TextInput,
 } from '@mantine/core';
-import { useDebouncedValue, useLocalStorage } from '@mantine/hooks';
+import { useLocalStorage } from '@mantine/hooks';
 import { useEffect, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router';
 
@@ -44,7 +43,9 @@ import { SectionTitle } from '../theme/SectionTitle';
 import { EmptyNote } from '../theme/EmptyNote';
 import { CardGrid, CardGroupsLayout } from './CardLayout';
 import { CardTile } from './CardTile';
+import { CollectionSearchInput } from './CollectionSearchInput';
 import { MissingDetailsAlert } from './MissingDetailsAlert';
+import { SearchSyntaxHelp, searchSyntaxError } from './SearchSyntaxHelp';
 import { groupCards, groupingOptions, hasMissingDetails, parseGrouping } from './grouping';
 import { useCollectionCardMenu } from './useCollectionCardMenu';
 
@@ -107,7 +108,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const grouping = parseGrouping(preferences.data?.collection_grouping ?? null);
   const { chosen: chosenPageSize, setChosen: setChosenPageSize } = usePageSize();
   const pageSize = chosenPageSize ?? fixedPageSize ?? (grouping ? GROUPED_PAGE_SIZE : PAGE_SIZE);
-  const name = params.get('q') ?? '';
+  const query = params.get('q') ?? '';
   const parsedFilters = parseAdvancedFilters(params);
   const advanced = fixedStorageId ? { ...parsedFilters, storageType: null, storageId: null } : parsedFilters;
   const storageId = fixedStorageId ?? advanced.storageId ?? undefined;
@@ -115,8 +116,6 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const queryFilters = cardsQueryFilters(advanced);
   const [advancedOpen, setAdvancedOpen] = useState(activeFilters > 0);
 
-  const [search, setSearch] = useState(name);
-  const [debouncedSearch] = useDebouncedValue(search.trim(), 300);
   const [cardToAdd, setCardToAdd] = useState<CardToAdd | null>(null);
   const drop = useScryfallDrop((printing) => setCardToAdd({ name: printing.name, printing }));
   const [searchKey, setSearchKey] = useState(0);
@@ -134,7 +133,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
     limit: pageSize,
     sort,
     group: grouping ?? undefined,
-    name,
+    query,
     storageId,
     stack: true,
     advanced: queryFilters,
@@ -225,16 +224,6 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
     );
   }
 
-  useEffect(() => {
-    if (debouncedSearch !== name) {
-      updateParams({ q: debouncedSearch || null, page: null });
-    }
-  }, [debouncedSearch]);
-
-  useEffect(() => {
-    setSearch((current) => (current.trim() === name ? current : name));
-  }, [name]);
-
   const filteredStorageMissing =
     !fixedStorageId && !!storageId && !!storages.data && !storages.data.some((storage) => storage.id === storageId);
   useEffect(() => {
@@ -250,7 +239,8 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
     }
   }, [page, totalPages, cards.isPlaceholderData]);
 
-  const filtered = !!name || activeFilters > 0;
+  const filtered = !!query || activeFilters > 0;
+  const searchError = searchSyntaxError(cards.error);
 
   function changeFilters(changes: Partial<AdvancedFilters>) {
     updateParams({ ...advancedFilterParams(changes), page: null });
@@ -328,11 +318,18 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
 
       <Group grow align="flex-end">
         <Group gap="xs" wrap="nowrap" align="flex-end">
-          <TextInput
-            label="Filtrer par nom"
-            placeholder="Nom d'une carte de ta collection"
-            value={search}
-            onChange={(event) => setSearch(event.currentTarget.value)}
+          <CollectionSearchInput
+            label={
+              <Group gap={8} component="span" display="inline-flex" mb={6}>
+                Rechercher
+                <SearchSyntaxHelp />
+              </Group>
+            }
+            placeholder="Nom ou syntaxe Scryfall : t:creature c:g mv<=3"
+            value={query}
+            onSearch={(next) => updateParams({ q: next || null, page: null })}
+            error={searchError}
+            loading={cards.isFetching && cards.isPlaceholderData}
             style={{ flex: 1 }}
           />
           <Indicator label={activeFilters} size={16} disabled={activeFilters === 0} offset={4}>
@@ -359,7 +356,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
         />
       </Collapse>
 
-      {cards.error && <Alert color="red">{errorMessage(cards.error)}</Alert>}
+      {cards.error && !searchError && <Alert color="red">{errorMessage(cards.error)}</Alert>}
 
       {showMissingDetails && <MissingDetailsAlert />}
 

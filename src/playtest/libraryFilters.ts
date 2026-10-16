@@ -1,5 +1,6 @@
 import { type AdvancedFilters, COLORLESS, type ComparisonOp } from '../cards/advancedFilters';
 import { cardColors, cardManaValue, type ScryfallCard } from '../scryfall/client';
+import { normalized } from '../scryfall/query';
 
 export type LibraryFilters = Pick<
   AdvancedFilters,
@@ -37,13 +38,6 @@ export function activeLibraryFilterCount(filters: LibraryFilters) {
     filters.type !== null,
     filters.subtype.trim() !== '',
   ].filter(Boolean).length;
-}
-
-export function normalized(text: string) {
-  return text
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase();
 }
 
 const NUMERIC_STAT = /^-?[0-9]*\.?[0-9]+$/;
