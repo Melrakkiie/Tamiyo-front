@@ -1,4 +1,4 @@
-import { Loader, createTheme, defaultVariantColorsResolver } from '@mantine/core';
+import { Button, Loader, createTheme, defaultVariantColorsResolver } from '@mantine/core';
 
 import { MoonLoader } from './MoonLoader';
 
@@ -111,6 +111,7 @@ export const theme = createTheme({
   defaultRadius: 'md',
   radius: { xs: '4px', sm: '6px', md: '10px', lg: '14px', xl: '20px' },
   components: {
+    Button: Button.extend({ defaultProps: { variant: 'filled' } }),
     Loader: Loader.extend({
       defaultProps: { loaders: { ...Loader.defaultLoaders, moon: MoonLoader }, type: 'moon' },
     }),
