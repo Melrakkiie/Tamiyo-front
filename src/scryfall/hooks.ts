@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 
-import { ApiError } from '../api/errors';
-import { loadCards, rememberCards } from './cardCache';
-import { type FaceTypes, faceTypes, subtypes } from './classify';
+import { ApiError } from "../api/errors";
+import { loadCards, rememberCards } from "./cardCache";
+import { type FaceTypes, faceTypes, subtypes } from "./classify";
 import {
   autocompleteCardNames,
   backImageUrl,
@@ -11,6 +11,7 @@ import {
   type CardArt,
   cardArt,
   type CardSuggestion,
+  fetchCardByName,
   fetchFrenchPrinting,
   fetchSetIcons,
   imageUrl,
@@ -19,15 +20,18 @@ import {
   type ScryfallCard,
   searchCards,
   searchPrintings,
-} from './client';
+} from "./client";
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
-function useScryfallCardsByIds<T>(scryfallIds: string[], select: (cards: Record<string, ScryfallCard>) => T) {
+function useScryfallCardsByIds<T>(
+  scryfallIds: string[],
+  select: (cards: Record<string, ScryfallCard>) => T,
+) {
   const ids = [...new Set(scryfallIds)].sort();
 
   return useQuery({
-    queryKey: ['scryfall', 'cards', ids],
+    queryKey: ["scryfall", "cards", ids],
     queryFn: () => loadCards(ids),
     select,
     enabled: ids.length > 0,
@@ -40,7 +44,10 @@ export function useScryfallCards(scryfallIds: string[]) {
   return useScryfallCardsByIds(scryfallIds, (byId) => byId);
 }
 
-export function useCardImages(scryfallIds: string[], size: 'small' | 'normal' = 'normal') {
+export function useCardImages(
+  scryfallIds: string[],
+  size: "small" | "normal" = "normal",
+) {
   const cards = useScryfallCardsByIds(scryfallIds, (byId) => byId);
   const settled = !cards.isLoading;
   const urls: Record<string, string | undefined> = {};
@@ -49,10 +56,17 @@ export function useCardImages(scryfallIds: string[], size: 'small' | 'normal' = 
     const url = card ? imageUrl(card, size) : undefined;
     urls[id] = url ?? (settled ? cdnImageUrl(id, size) : undefined);
   }
-  return { data: urls, isLoading: cards.isLoading, isFetching: cards.isFetching };
+  return {
+    data: urls,
+    isLoading: cards.isLoading,
+    isFetching: cards.isFetching,
+  };
 }
 
-export function useCardBackImages(scryfallIds: string[], size: 'small' | 'normal' = 'normal') {
+export function useCardBackImages(
+  scryfallIds: string[],
+  size: "small" | "normal" = "normal",
+) {
   const cards = useScryfallCardsByIds(scryfallIds, (byId) => byId);
   const byId: Record<string, ScryfallCard> = cards.data ?? {};
   const meldIds: Record<string, string> = {};
@@ -62,12 +76,19 @@ export function useCardBackImages(scryfallIds: string[], size: 'small' | 'normal
       meldIds[id] = meldId;
     }
   }
-  const meldResults = useScryfallCardsByIds(Object.values(meldIds), (byId) => byId);
+  const meldResults = useScryfallCardsByIds(
+    Object.values(meldIds),
+    (byId) => byId,
+  );
 
   const urls: Record<string, string | undefined> = {};
   for (const [id, card] of Object.entries(byId)) {
-    const meldResult: ScryfallCard | undefined = meldIds[id] ? meldResults.data?.[meldIds[id]] : undefined;
-    urls[id] = meldResult ? imageUrl(meldResult, size) : backImageUrl(card, size);
+    const meldResult: ScryfallCard | undefined = meldIds[id]
+      ? meldResults.data?.[meldIds[id]]
+      : undefined;
+    urls[id] = meldResult
+      ? imageUrl(meldResult, size)
+      : backImageUrl(card, size);
   }
   return { data: urls };
 }
@@ -96,7 +117,7 @@ export function useManaCosts(scryfallIds: string[]) {
   return useScryfallCardsByIds(scryfallIds, (cards) => {
     const costs: Record<string, string> = {};
     for (const [id, card] of Object.entries(cards)) {
-      costs[id] = card.mana_cost ?? card.card_faces?.[0]?.mana_cost ?? '';
+      costs[id] = card.mana_cost ?? card.card_faces?.[0]?.mana_cost ?? "";
     }
     return costs;
   });
@@ -112,7 +133,7 @@ export function useRelatedTokens(scryfallIds: string[]) {
     const ids = new Set<string>();
     for (const card of Object.values(cards)) {
       for (const part of card.all_parts ?? []) {
-        if (part.component === 'token' && part.id !== card.id) {
+        if (part.component === "token" && part.id !== card.id) {
           ids.add(part.id);
         }
       }
@@ -127,7 +148,9 @@ export function useRelatedTokens(scryfallIds: string[]) {
         byOracle.set(key, { id: card.id, name: card.name });
       }
     }
-    return [...byOracle.values()].sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+    return [...byOracle.values()].sort((a, b) =>
+      a.name.localeCompare(b.name, "fr"),
+    );
   });
   return { data: tokens.data, isLoading: parts.isLoading || tokens.isLoading };
 }
@@ -136,7 +159,7 @@ export function useTokenSearch(query: string) {
   const trimmed = query.trim();
 
   return useQuery({
-    queryKey: ['scryfall', 'tokens', trimmed.toLowerCase()],
+    queryKey: ["scryfall", "tokens", trimmed.toLowerCase()],
     queryFn: async (): Promise<RelatedToken[]> => {
       try {
         const cards = await searchCards(`t:token ${trimmed}`);
@@ -156,9 +179,26 @@ export function useTokenSearch(query: string) {
 
 export function useScryfallCard(scryfallId: string | null | undefined) {
   return useQuery({
-    queryKey: ['scryfall', 'card', scryfallId],
-    queryFn: async () => (scryfallId ? ((await loadCards([scryfallId]))[scryfallId] ?? null) : null),
+    queryKey: ["scryfall", "card", scryfallId],
+    queryFn: async () =>
+      scryfallId ? ((await loadCards([scryfallId]))[scryfallId] ?? null) : null,
     enabled: !!scryfallId,
+    staleTime: ONE_DAY,
+    gcTime: ONE_DAY,
+  });
+}
+
+export function useCardImageByName(name: string) {
+  return useQuery({
+    queryKey: ["scryfall", "named", name],
+    queryFn: async () => {
+      const card = await fetchCardByName(name);
+      if (!card) {
+        return null;
+      }
+      rememberCards([card]);
+      return imageUrl(card, "normal") ?? null;
+    },
     staleTime: ONE_DAY,
     gcTime: ONE_DAY,
   });
@@ -166,7 +206,7 @@ export function useScryfallCard(scryfallId: string | null | undefined) {
 
 export function useFrenchPrinting(card: ScryfallCard | null | undefined) {
   return useQuery({
-    queryKey: ['scryfall', 'french', card?.id],
+    queryKey: ["scryfall", "french", card?.id],
     queryFn: () => (card ? fetchFrenchPrinting(card) : null),
     enabled: !!card,
     staleTime: ONE_DAY,
@@ -176,10 +216,12 @@ export function useFrenchPrinting(card: ScryfallCard | null | undefined) {
 }
 
 export function useCardArts(scryfallIds: (string | null | undefined)[]) {
-  const ids = [...new Set(scryfallIds.filter((id): id is string => !!id))].sort();
+  const ids = [
+    ...new Set(scryfallIds.filter((id): id is string => !!id)),
+  ].sort();
 
   return useQuery({
-    queryKey: ['scryfall', 'arts', ids],
+    queryKey: ["scryfall", "arts", ids],
     queryFn: async () => {
       const arts: Record<string, CardArt | null> = {};
       for (const [id, card] of Object.entries(await loadCards(ids))) {
@@ -199,9 +241,14 @@ export function useCardNameSuggestions(query: string) {
   const advanced = isAdvancedQuery(trimmed);
 
   return useQuery({
-    queryKey: ['scryfall', advanced ? 'search' : 'autocomplete', trimmed.toLowerCase()],
+    queryKey: [
+      "scryfall",
+      advanced ? "search" : "autocomplete",
+      trimmed.toLowerCase(),
+    ],
     queryFn: async (): Promise<CardSuggestion[]> => {
-      const byName = async () => (await autocompleteCardNames(trimmed)).map((name) => ({ name }));
+      const byName = async () =>
+        (await autocompleteCardNames(trimmed)).map((name) => ({ name }));
       if (!advanced) {
         return byName();
       }
@@ -219,15 +266,16 @@ export function useCardNameSuggestions(query: string) {
     },
     enabled: trimmed.length >= 2,
     staleTime: ONE_DAY,
-    retry: (failureCount, error) => !(error instanceof ApiError && error.status === 400) && failureCount < 2,
+    retry: (failureCount, error) =>
+      !(error instanceof ApiError && error.status === 400) && failureCount < 2,
   });
 }
 
 export function usePrintings(name: string | null) {
   return useQuery({
-    queryKey: ['scryfall', 'printings', name],
+    queryKey: ["scryfall", "printings", name],
     queryFn: async () => {
-      const printings = await searchPrintings(name ?? '');
+      const printings = await searchPrintings(name ?? "");
       rememberCards(printings);
       return printings;
     },
@@ -242,9 +290,9 @@ export function useBackImageOf(card: ScryfallCard | null | undefined) {
     return undefined;
   }
   if (meldResultId(card)) {
-    return meldResult.data ? imageUrl(meldResult.data, 'normal') : undefined;
+    return meldResult.data ? imageUrl(meldResult.data, "normal") : undefined;
   }
-  return backImageUrl(card, 'normal');
+  return backImageUrl(card, "normal");
 }
 
 export function useBackImage(scryfallId: string | null | undefined) {
@@ -254,7 +302,7 @@ export function useBackImage(scryfallId: string | null | undefined) {
 
 export function useSetIcons() {
   return useQuery({
-    queryKey: ['scryfall', 'sets'],
+    queryKey: ["scryfall", "sets"],
     queryFn: fetchSetIcons,
     staleTime: ONE_DAY,
     gcTime: ONE_DAY,

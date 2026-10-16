@@ -1,7 +1,17 @@
-import { Alert, Button, Center, Group, Loader, ScrollArea, Stack, Text } from '@mantine/core';
+import {
+  Alert,
+  Button,
+  Center,
+  Group,
+  Loader,
+  ScrollArea,
+  Stack,
+  Text,
+} from "@mantine/core";
 
-import { errorMessage } from '../api/errors';
-import { useCardNameSuggestions } from '../scryfall/hooks';
+import { errorMessage } from "../api/errors";
+import { useCardNameSuggestions } from "../scryfall/hooks";
+import { CardHoverPreview } from "./CardHoverPreview";
 
 const MAX_RESULTS = 15;
 
@@ -15,10 +25,14 @@ function scryfallQuery(search: string, identity: string | undefined) {
   if (identity === undefined) {
     return search;
   }
-  return `${search} ${identity === '' ? 'id:c' : `id<=${identity}`}`;
+  return `${search} ${identity === "" ? "id:c" : `id<=${identity}`}`;
 }
 
-export function ScryfallFallback({ search, identity, onPick }: ScryfallFallbackProps) {
+export function ScryfallFallback({
+  search,
+  identity,
+  onPick,
+}: ScryfallFallbackProps) {
   const suggestions = useCardNameSuggestions(scryfallQuery(search, identity));
   const results = (suggestions.data ?? []).slice(0, MAX_RESULTS);
 
@@ -28,7 +42,8 @@ export function ScryfallFallback({ search, identity, onPick }: ScryfallFallbackP
         Sur Scryfall
       </Text>
       <Text size="xs" c="dimmed">
-        La carte apparaîtra dans le deck entourée en orange, en attendant que tu l'ajoutes à ta collection.
+        La carte apparaîtra dans le deck entourée en orange, en attendant que tu
+        l'ajoutes à ta collection.
       </Text>
       {suggestions.isLoading ? (
         <Center p="md">
@@ -37,7 +52,7 @@ export function ScryfallFallback({ search, identity, onPick }: ScryfallFallbackP
       ) : suggestions.error ? (
         <Alert color="red">
           {errorMessage(suggestions.error, {
-            400: 'Scryfall ne comprend pas cette recherche : vérifie la syntaxe.',
+            400: "Scryfall ne comprend pas cette recherche : vérifie la syntaxe.",
           })}
         </Alert>
       ) : results.length === 0 ? (
@@ -50,16 +65,23 @@ export function ScryfallFallback({ search, identity, onPick }: ScryfallFallbackP
             {results.map((result) => (
               <Group key={result.name} justify="space-between" wrap="nowrap">
                 <div style={{ minWidth: 0 }}>
-                  <Text size="sm" fw={500} lineClamp={1}>
-                    {result.name}
-                  </Text>
+                  <CardHoverPreview name={result.name}>
+                    <Text size="sm" fw={500} lineClamp={1}>
+                      {result.name}
+                    </Text>
+                  </CardHoverPreview>
                   {result.typeLine && (
                     <Text size="xs" c="dimmed" lineClamp={1}>
                       {result.typeLine}
                     </Text>
                   )}
                 </div>
-                <Button size="xs" variant="light" color="orange" onClick={() => onPick(result.name)}>
+                <Button
+                  size="xs"
+                  variant="light"
+                  color="orange"
+                  onClick={() => onPick(result.name)}
+                >
                   Ajouter au deck
                 </Button>
               </Group>

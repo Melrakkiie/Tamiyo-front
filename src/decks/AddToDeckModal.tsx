@@ -3,34 +3,37 @@ import {
   Badge,
   Button,
   Center,
+  Divider,
   Group,
   Loader,
   Modal,
+  Paper,
   ScrollArea,
   Stack,
   Switch,
   Text,
   TextInput,
-} from '@mantine/core';
-import { useDebouncedValue } from '@mantine/hooks';
-import { useState } from 'react';
+} from "@mantine/core";
+import { useDebouncedValue } from "@mantine/hooks";
+import { useState } from "react";
 
-import { errorMessage } from '../api/errors';
-import type { Card, Deck, DeckBoard } from '../api/types';
-import { AddCardModal } from '../cards/AddCardModal';
-import { useCards } from '../cards/api';
-import { hasMissingDetails } from '../cards/grouping';
-import { MissingDetailsAlert } from '../cards/MissingDetailsAlert';
-import { colorCode } from '../scryfall/classify';
-import { useScryfallCard } from '../scryfall/hooks';
-import { isOpenTo, useAllStorages } from '../storages/api';
-import { StorageLabel } from '../storages/StorageLabel';
-import { FoilSticker } from '../theme/Sticker';
-import { isCommanderFormat, useAddCardToDeck } from './api';
-import { BoardPicker } from './BoardSection';
-import { ADDED_TAGS_DESCRIPTION, TagsField } from './CardTagsInput';
-import { ScryfallFallback } from './ScryfallFallback';
-import { useAddTagsToCard } from './tags';
+import { errorMessage } from "../api/errors";
+import type { Card, Deck, DeckBoard } from "../api/types";
+import { AddCardModal } from "../cards/AddCardModal";
+import { useCards } from "../cards/api";
+import { hasMissingDetails } from "../cards/grouping";
+import { MissingDetailsAlert } from "../cards/MissingDetailsAlert";
+import { colorCode } from "../scryfall/classify";
+import { useScryfallCard } from "../scryfall/hooks";
+import { isOpenTo, useAllStorages } from "../storages/api";
+import { StorageLabel } from "../storages/StorageLabel";
+import { FoilSticker } from "../theme/Sticker";
+import { isCommanderFormat, useAddCardToDeck } from "./api";
+import { BoardPicker } from "./BoardSection";
+import { CardHoverPreview } from "./CardHoverPreview";
+import { ADDED_TAGS_DESCRIPTION, TagsField } from "./CardTagsInput";
+import { ScryfallFallback } from "./ScryfallFallback";
+import { useAddTagsToCard } from "./tags";
 
 interface AddToDeckModalProps {
   deck: Deck;
@@ -39,44 +42,77 @@ interface AddToDeckModalProps {
   onClose: () => void;
 }
 
-export function AddToDeckModal({ deck, deckCardIds, opened, onClose }: AddToDeckModalProps) {
+export function AddToDeckModal({
+  deck,
+  deckCardIds,
+  opened,
+  onClose,
+}: AddToDeckModalProps) {
   return (
-    <Modal opened={opened} onClose={onClose} title="Ajouter des cartes de ta collection" size="lg">
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title="Ajouter des cartes de ta collection"
+      size="lg"
+    >
       {opened && <AddToDeckList deck={deck} deckCardIds={deckCardIds} />}
     </Modal>
   );
 }
 
-const colorNames: Record<string, string> = { W: 'blanc', U: 'bleu', B: 'noir', R: 'rouge', G: 'vert' };
+const colorNames: Record<string, string> = {
+  W: "blanc",
+  U: "bleu",
+  B: "noir",
+  R: "rouge",
+  G: "vert",
+};
 
 function identityLabel(identity: string) {
-  return identity === ''
-    ? 'incolore'
+  return identity === ""
+    ? "incolore"
     : identity
-        .split('')
+        .split("")
         .map((color) => colorNames[color])
-        .join(', ');
+        .join(", ");
 }
 
-function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<number> }) {
+function AddToDeckList({
+  deck,
+  deckCardIds,
+}: {
+  deck: Deck;
+  deckCardIds: Set<number>;
+}) {
   const deckId = deck.id;
-  const commander = useScryfallCard(isCommanderFormat(deck.format) ? deck.commander_scryfall_id : null);
-  const commanderIdentity = commander.data?.color_identity ? colorCode(commander.data.color_identity) : null;
+  const commander = useScryfallCard(
+    isCommanderFormat(deck.format) ? deck.commander_scryfall_id : null,
+  );
+  const commanderIdentity = commander.data?.color_identity
+    ? colorCode(commander.data.color_identity)
+    : null;
   const [restrictToIdentity, setRestrictToIdentity] = useState(true);
-  const identityFilter = commanderIdentity !== null && restrictToIdentity ? commanderIdentity : undefined;
-  const [search, setSearch] = useState('');
+  const identityFilter =
+    commanderIdentity !== null && restrictToIdentity
+      ? commanderIdentity
+      : undefined;
+  const [search, setSearch] = useState("");
   const [debouncedSearch] = useDebouncedValue(search.trim(), 300);
   const storages = useAllStorages();
-  const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
+  const storageNames = new Map<number, string>(
+    (storages.data ?? []).map((storage) => [storage.id, storage.name]),
+  );
   const closedStorageIds = new Set(
-    (storages.data ?? []).filter((storage) => !isOpenTo(storage, deckId)).map((storage) => storage.id),
+    (storages.data ?? [])
+      .filter((storage) => !isOpenTo(storage, deckId))
+      .map((storage) => storage.id),
   );
   const [showLocked, setShowLocked] = useState(false);
   const openToDeck = showLocked ? undefined : deckId;
   const cards = useCards({
     page: 1,
     limit: 30,
-    sort: 'name',
+    sort: "name",
     name: debouncedSearch,
     storageId: undefined,
     colorIdentity: identityFilter,
@@ -85,14 +121,16 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
   const unfiltered = useCards({
     page: 1,
     limit: 30,
-    sort: 'name',
+    sort: "name",
     name: debouncedSearch,
     storageId: undefined,
     openToDeck,
   });
-  const someIdentitiesUnknown = identityFilter !== undefined && hasMissingDetails(unfiltered.data?.data ?? []);
+  const someIdentitiesUnknown =
+    identityFilter !== undefined &&
+    hasMissingDetails(unfiltered.data?.data ?? []);
   const add = useAddCardToDeck();
-  const [board, setBoard] = useState<DeckBoard>('main');
+  const [board, setBoard] = useState<DeckBoard>("main");
   const [tags, setTags] = useState<string[]>([]);
   const cardTags = useAddTagsToCard(deckId);
   const [pendingCardId, setPendingCardId] = useState<number | null>(null);
@@ -102,7 +140,10 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
     setPendingCardId(card.id);
     add.mutate(
       { deckId, cardId: card.id, board },
-      { onSuccess: () => cardTags.addTags(card.name, tags), onSettled: () => setPendingCardId(null) },
+      {
+        onSuccess: () => cardTags.addTags(card.name, tags),
+        onSettled: () => setPendingCardId(null),
+      },
     );
   }
 
@@ -110,15 +151,20 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
 
   return (
     <Stack>
-      <BoardPicker label="Ajouter dans" value={board} onChange={setBoard} />
-      <TagsField
-        value={tags}
-        onChange={setTags}
-        suggestions={cardTags.suggestions}
-        description={ADDED_TAGS_DESCRIPTION}
-      />
+      <Paper withBorder p="sm">
+        <Stack gap="sm">
+          <BoardPicker label="Ajouter dans" value={board} onChange={setBoard} />
+          <TagsField
+            value={tags}
+            onChange={setTags}
+            suggestions={cardTags.suggestions}
+            description={ADDED_TAGS_DESCRIPTION}
+          />
+        </Stack>
+      </Paper>
+      <Divider label="Choisir les cartes" labelPosition="left" />
       <TextInput
-        placeholder="Rechercher dans ta collection"
+        placeholder="Rechercher dans ta collection ou sur Scryfall"
         value={search}
         onChange={(event) => setSearch(event.currentTarget.value)}
         data-autofocus
@@ -127,7 +173,9 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
         <Switch
           label={`Seulement l'identité de couleur du commandant (${identityLabel(commanderIdentity)})`}
           checked={restrictToIdentity}
-          onChange={(event) => setRestrictToIdentity(event.currentTarget.checked)}
+          onChange={(event) =>
+            setRestrictToIdentity(event.currentTarget.checked)
+          }
         />
       )}
       {closedStorageIds.size > 0 && (
@@ -139,7 +187,9 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
       )}
       {someIdentitiesUnknown && <MissingDetailsAlert />}
       {add.error && <Alert color="red">{errorMessage(add.error)}</Alert>}
-      {cardTags.error && <Alert color="red">{errorMessage(cardTags.error)}</Alert>}
+      {cardTags.error && (
+        <Alert color="red">{errorMessage(cardTags.error)}</Alert>
+      )}
       {cards.error && <Alert color="red">{errorMessage(cards.error)}</Alert>}
 
       {cards.isLoading ? (
@@ -152,11 +202,15 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
             {identityFilter !== undefined
               ? "Aucune carte de ta collection dans l'identité de couleur du commandant ne correspond."
               : debouncedSearch
-                ? 'Aucune carte de ta collection ne correspond.'
-                : 'Ta collection est vide : cherche une carte pour la trouver sur Scryfall.'}
+                ? "Aucune carte de ta collection ne correspond."
+                : "Ta collection est vide : cherche une carte pour la trouver sur Scryfall."}
           </Text>
           {debouncedSearch.length >= 2 && (
-            <ScryfallFallback search={debouncedSearch} identity={identityFilter} onPick={setScryfallPick} />
+            <ScryfallFallback
+              search={debouncedSearch}
+              identity={identityFilter}
+              onPick={setScryfallPick}
+            />
           )}
         </Stack>
       ) : (
@@ -164,14 +218,21 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
           <Stack gap="xs">
             {results.map((card) => {
               const inDeck = deckCardIds.has(card.id);
-              const storageName = card.storage_id ? storageNames.get(card.storage_id) : undefined;
+              const storageName = card.storage_id
+                ? storageNames.get(card.storage_id)
+                : undefined;
               return (
                 <Group key={card.id} justify="space-between" wrap="nowrap">
                   <div style={{ minWidth: 0 }}>
                     <Group gap={6} wrap="nowrap">
-                      <Text size="sm" fw={500} lineClamp={1}>
-                        {card.name}
-                      </Text>
+                      <CardHoverPreview
+                        scryfallId={card.scryfall_id}
+                        name={card.name}
+                      >
+                        <Text size="sm" fw={500} lineClamp={1}>
+                          {card.name}
+                        </Text>
+                      </CardHoverPreview>
                       {card.foil && <FoilSticker />}
                     </Group>
                     <Group gap={8} wrap="nowrap">
@@ -181,7 +242,10 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
                       {storageName && (
                         <StorageLabel
                           name={storageName}
-                          locked={card.storage_id != null && closedStorageIds.has(card.storage_id)}
+                          locked={
+                            card.storage_id != null &&
+                            closedStorageIds.has(card.storage_id)
+                          }
                         />
                       )}
                     </Group>
@@ -196,7 +260,9 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
                       variant="light"
                       onClick={() => addCard(card)}
                       loading={pendingCardId === card.id}
-                      disabled={pendingCardId !== null && pendingCardId !== card.id}
+                      disabled={
+                        pendingCardId !== null && pendingCardId !== card.id
+                      }
                     >
                       Ajouter
                     </Button>
@@ -209,14 +275,15 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
       )}
       {cards.data && cards.data.total > results.length && (
         <Text size="xs" c="dimmed">
-          {cards.data.total - results.length} autres cartes : affine la recherche pour les voir.
+          {cards.data.total - results.length} autres cartes : affine la
+          recherche pour les voir.
         </Text>
       )}
       <AddCardModal
         card={scryfallPick ? { name: scryfallPick } : null}
         onClose={() => setScryfallPick(null)}
         defaultStorageId={undefined}
-        target={{ kind: 'pending', deckId, board, tags }}
+        target={{ kind: "pending", deckId, board, tags }}
       />
     </Stack>
   );
