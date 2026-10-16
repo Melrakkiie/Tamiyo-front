@@ -25,10 +25,6 @@ const modeOptions: { value: CardDisplayMode; label: string }[] = [
   { value: 'stacks', label: 'Piles' },
 ];
 
-export function placement(inside: boolean, width: number) {
-  return inside ? { comboboxProps: { withinPortal: false } } : { w: width };
-}
-
 function clampColumns(columns: number) {
   return Math.min(MAX_COLUMNS, Math.max(MIN_COLUMNS, Math.round(columns)));
 }
@@ -143,7 +139,7 @@ function ColumnsSlider({ value, onChange }: { value: number; onChange: (columns:
   );
 }
 
-function ModeSelect({ display, inside = false }: { display: CardDisplay; inside?: boolean }) {
+function ModeSelect({ display }: { display: CardDisplay }) {
   return (
     <Select
       label="Affichage"
@@ -151,21 +147,21 @@ function ModeSelect({ display, inside = false }: { display: CardDisplay; inside?
       value={display.mode}
       onChange={(value) => value && display.change({ mode: value as CardDisplayMode })}
       allowDeselect={false}
-      {...placement(inside, 130)}
+      w={130}
     />
   );
 }
 
 interface CardDisplayControlsProps {
   display: CardDisplay;
-  options?: (inside: boolean) => ReactNode;
+  options?: ReactNode;
   wrap?: GroupProps['wrap'];
 }
 
 export function CardDisplayControls({ display, options, wrap = 'wrap' }: CardDisplayControlsProps) {
   return (
     <Group gap="xs" align="flex-end" wrap={wrap} miw={wrap === 'nowrap' ? 0 : undefined}>
-      {options?.(false)}
+      {options}
       <ModeSelect display={display} />
       <Popover position="bottom-end" width={300} shadow="md" withArrow trapFocus>
         <Popover.Target>
@@ -178,8 +174,6 @@ export function CardDisplayControls({ display, options, wrap = 'wrap' }: CardDis
             <Text size="sm" fw={600}>
               Options d'affichage
             </Text>
-            <ModeSelect display={display} inside />
-            {options?.(true)}
             {display.textOnly ? (
               <Switch
                 label="Afficher le coût de mana"

@@ -31,7 +31,6 @@ import {
   type DisplaySettings,
   displayFromStored,
   displayToStored,
-  placement,
 } from '../cards/CardDisplay';
 import { CardGrid } from '../cards/CardLayout';
 import { useCardContextMenu } from '../cards/CardContextMenu';
@@ -757,7 +756,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
           <Group gap="lg" align="stretch">
             <CardDisplayControls
               display={display}
-              options={(inside) => (
+              options={
                 <>
                   <Select
                     label="Grouper par"
@@ -766,7 +765,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
                     value={grouping}
                     onChange={(value) => changeView({ grouping: parseDeckGrouping(value) })}
                     clearable
-                    {...placement(inside, 200)}
+                    w={200}
                   />
                   <Select
                     label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
@@ -774,10 +773,10 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
                     value={shownSort}
                     onChange={(value) => value && changeView({ sort: value as DeckCardSort })}
                     allowDeselect={false}
-                    {...placement(inside, 240)}
+                    w={240}
                   />
                 </>
-              )}
+              }
             />
             <CollectionToggle description="Les cartes en attente et le rangement de chaque exemplaire" />
           </Group>

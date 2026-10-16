@@ -19,7 +19,7 @@ import { Link, useParams } from 'react-router';
 import { ApiError, errorMessage } from '../api/errors';
 import type { Card, ComparedCard, ComparedDeck } from '../api/types';
 import { useSession } from '../auth/useSession';
-import { type CardDisplay, CardDisplayControls, placement, useCardDisplay } from '../cards/CardDisplay';
+import { type CardDisplay, CardDisplayControls, useCardDisplay } from '../cards/CardDisplay';
 import { CardGrid } from '../cards/CardLayout';
 import { CardTile } from '../cards/CardTile';
 import { useDeckComparison } from '../decks/api';
@@ -101,7 +101,7 @@ export function DeckComparePage() {
 
       <CardDisplayControls
         display={display}
-        options={(inside) => (
+        options={
           <>
             <Select
               label="Grouper par"
@@ -110,7 +110,7 @@ export function DeckComparePage() {
               value={grouping}
               onChange={(value) => setGrouping(parseSharedGrouping(value))}
               clearable
-              {...placement(inside, 200)}
+              w={200}
             />
             <Select
               label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
@@ -118,10 +118,10 @@ export function DeckComparePage() {
               value={sort}
               onChange={(value) => value && setSort(value as SharedDeckSort)}
               allowDeselect={false}
-              {...placement(inside, 240)}
+              w={240}
             />
           </>
-        )}
+        }
       />
 
       <Tabs value={tab} onChange={setTab} variant="pills" radius="md">

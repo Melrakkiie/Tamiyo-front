@@ -39,7 +39,7 @@ import {
 import { copyCount, copyIds, useCard, useCards } from './api';
 import { useCardContextMenu } from './CardContextMenu';
 import { CardDetailModal } from './CardDetailModal';
-import { CardDisplayControls, placement, useCardDisplay } from './CardDisplay';
+import { CardDisplayControls, useCardDisplay } from './CardDisplay';
 import { SectionTitle } from '../theme/SectionTitle';
 import { EmptyNote } from '../theme/EmptyNote';
 import { CardGrid, CardGroupsLayout } from './CardLayout';
@@ -260,7 +260,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
     updateParams({ ...Object.fromEntries(advancedFilterKeys.map((key) => [key, null])), page: null });
   }
 
-  function groupingSelect(inside: boolean) {
+  function groupingSelect() {
     return (
       <Select
         label="Grouper par"
@@ -273,12 +273,12 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
           updateParams({ page: null });
         }}
         clearable
-        {...placement(inside, 200)}
+        w={200}
       />
     );
   }
 
-  function sortSelect(inside: boolean) {
+  function sortSelect() {
     return (
       <Select
         label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
@@ -289,8 +289,8 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
           updateParams({ page: null });
         }}
         allowDeselect={false}
-        {...placement(inside, 240)}
-        {...(inside ? {} : { miw: 0 })}
+        w={240}
+        miw={0}
       />
     );
   }
@@ -321,22 +321,9 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
             allowDeselect={false}
             w={130}
           />
-          {groupingSelect(false)}
+          {groupingSelect()}
         </Group>
-        <CardDisplayControls
-          display={display}
-          wrap="nowrap"
-          options={(inside) =>
-            inside ? (
-              <>
-                {groupingSelect(true)}
-                {sortSelect(true)}
-              </>
-            ) : (
-              sortSelect(false)
-            )
-          }
-        />
+        <CardDisplayControls display={display} wrap="nowrap" options={sortSelect()} />
       </Group>
 
       <Group grow align="flex-end">

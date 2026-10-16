@@ -24,7 +24,7 @@ import { useShowCollectionInDecks } from '../auth/preferences';
 import { useSession } from '../auth/useSession';
 import { useCardContextMenu } from '../cards/CardContextMenu';
 import { CardImage } from '../cards/CardImage';
-import { CardDisplayControls, placement, useCardDisplay } from '../cards/CardDisplay';
+import { CardDisplayControls, useCardDisplay } from '../cards/CardDisplay';
 import { CardGrid } from '../cards/CardLayout';
 import { CardTile } from '../cards/CardTile';
 import { artBackground, artCredit, deckArtId } from '../decks/art';
@@ -420,7 +420,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
       <Group gap="lg" align="stretch">
         <CardDisplayControls
           display={display}
-          options={(inside) => (
+          options={
             <>
               <Select
                 label="Grouper par"
@@ -429,7 +429,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
                 value={grouping}
                 onChange={(value) => setGrouping(parseSharedGrouping(value))}
                 clearable
-                {...placement(inside, 200)}
+                w={200}
               />
               <Select
                 label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
@@ -437,10 +437,10 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
                 value={sort}
                 onChange={(value) => value && setSort(value as SharedDeckSort)}
                 allowDeselect={false}
-                {...placement(inside, 240)}
+                w={240}
               />
             </>
-          )}
+          }
         />
         {signedIn && <CollectionToggle description="Les cartes de ce deck que tu as dans ta collection" />}
       </Group>
