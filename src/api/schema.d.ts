@@ -5534,6 +5534,16 @@ export interface components {
             back_face_lands: components["schemas"]["BackFaceCard"][];
             /** @description Value of the main board, owned and pending cards, proxies left out, from Scryfall's current prices, rounded to the cent. */
             value: components["schemas"]["Value"];
+            /** @description Part of value coming from the cards the deck holds, rounded to the cent on its own. */
+            owned_value: components["schemas"]["Value"];
+            /** @description Part of value coming from the deck's pending cards, rounded to the cent on its own. */
+            pending_value: components["schemas"]["Value"];
+            board_values: components["schemas"]["BoardValues"];
+        };
+        /** @description Value of the side boards, owned and pending cards together, proxies left out, rounded to the cent. */
+        BoardValues: {
+            sideboard: components["schemas"]["Value"];
+            considering: components["schemas"]["Value"];
         };
         /** @description A sum of Scryfall prices, in euros (Cardmarket) and US dollars (TCGplayer). Proxies never count; a foil card counts its foil price, another card its regular price, and the other price when that one is missing; the foil dollar price falls back to the etched dollar price; a card without a euro price counts its dollar price converted with the rate of GET /exchange-rate, the dollar price of its own finish before the euro price of the other; a card without any price counts 0. */
         Value: {

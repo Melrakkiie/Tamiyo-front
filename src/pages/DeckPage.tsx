@@ -69,7 +69,7 @@ import { useDeckCopyActions } from '../decks/DeckCopyActions';
 import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckTagsModal } from '../decks/DeckTagsModal';
 import { DeckLegalityWarning } from '../decks/DeckLegalityWarning';
-import { usePriceCurrency } from '../cards/price';
+import { formatPrice, PriceText, usePriceCurrency } from '../cards/price';
 import { BracketSticker } from '../decks/bracket';
 import { FormatSticker } from '../decks/FormatSticker';
 import { DeckValue } from '../decks/DeckValue';
@@ -267,7 +267,12 @@ function DeckView({ id }: { id: string }) {
             {isCommanderFormat(current.format) && <BracketSticker bracket={current.bracket} size="md" />}
             <LikeButton deckId={current.id} canLike={false} onImage={art !== null} />
             {currency && stats.data && (
-              <DeckValue value={stats.data.value} currency={currency} onImage={art !== null} />
+              <DeckValue
+                value={stats.data.value}
+                currency={currency}
+                onImage={art !== null}
+                breakdown={{ owned: stats.data.owned_value, pending: stats.data.pending_value }}
+              />
             )}
           </Group>
         </Stack>
@@ -487,7 +492,9 @@ const emptyBoardMessages: Record<CollapsibleBoard, string> = {
 function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initialDisplay }: DeckCardsProps) {
   const { pathname } = useLocation();
   const [sort, setSort] = useState<DeckCardSort>(initialSort);
-  const showPrices = usePriceCurrency() !== null;
+  const currency = usePriceCurrency();
+  const showPrices = currency !== null;
+  const stats = useDeckStats(deck.id, showPrices);
   const sortChoices = showPrices ? [...sortOptions, ...priceSortOptions] : sortOptions;
   const shownSort = sortChoices.some((option) => option.value === sort) ? sort : 'mana_value';
   const [grouping, setGrouping] = useState<DeckCardGrouping | null>(initialGrouping);
@@ -520,6 +527,17 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   function toggleBoard(board: CollapsibleBoard) {
     const folded = collapsed.includes(board) ? collapsed.filter((other) => other !== board) : [...collapsed, board];
     changeView({ collapsed: COLLAPSIBLE_BOARDS.filter((candidate) => folded.includes(candidate)) });
+  }
+
+  function boardValue(board: CollapsibleBoard) {
+    if (!currency || !stats.data) {
+      return undefined;
+    }
+    return (
+      <PriceText span fz="md">
+        {formatPrice(stats.data.board_values[board][currency], currency)}
+      </PriceText>
+    );
   }
 
   const display = cardDisplay(displaySettings, (next) => changeView({ display: next }));
@@ -802,6 +820,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
               collapsed={collapsed.includes('sideboard')}
               onToggle={() => toggleBoard('sideboard')}
               emptyMessage={emptyBoardMessages.sideboard}
+              value={boardValue('sideboard')}
             >
               {renderBoard('sideboard', sideboardStacks, groupedSideboard)}
             </BoardSection>
@@ -811,6 +830,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
               collapsed={collapsed.includes('considering')}
               onToggle={() => toggleBoard('considering')}
               emptyMessage={emptyBoardMessages.considering}
+              value={boardValue('considering')}
             >
               {renderBoard('considering', consideringStacks, groupedConsidering)}
             </BoardSection>

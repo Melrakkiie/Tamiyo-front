@@ -29,10 +29,11 @@ interface BoardSectionProps {
   collapsed: boolean;
   onToggle: () => void;
   emptyMessage: string;
+  value?: ReactNode;
   children: ReactNode;
 }
 
-export function BoardSection({ board, count, collapsed, onToggle, emptyMessage, children }: BoardSectionProps) {
+export function BoardSection({ board, count, collapsed, onToggle, emptyMessage, value, children }: BoardSectionProps) {
   return (
     <Box pt="md" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
       <Stack gap="md">
@@ -44,6 +45,7 @@ export function BoardSection({ board, count, collapsed, onToggle, emptyMessage, 
               <Text span size="sm" c="dimmed">
                 ({count})
               </Text>
+              {count > 0 && value && <> {value}</>}
             </Title>
           </Group>
         </UnstyledButton>

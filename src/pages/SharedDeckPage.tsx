@@ -33,7 +33,7 @@ import { BoardSection } from '../decks/BoardSection';
 import { type DeckCardGrouped, DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
 import { LegalityWarning } from '../decks/DeckLegalityWarning';
 import { isCommanderFormat } from '../decks/api';
-import { usePriceCurrency } from '../cards/price';
+import { formatPrice, PriceText, usePriceCurrency } from '../cards/price';
 import { BracketSticker } from '../decks/bracket';
 import { FormatSticker } from '../decks/FormatSticker';
 import { DeckValue } from '../decks/DeckValue';
@@ -317,6 +317,8 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
   const { textOnly } = display;
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
   const [collapsed, setCollapsed] = useState<CollapsibleBoard[]>(DEFAULT_COLLAPSED_BOARDS);
+  const currency = usePriceCurrency();
+  const stats = useSharedDeckStats(shared.deck.id, currency !== null);
   const all = sharedCardsToCards(shared.cards);
   const commanderIndex = shared.cards.findIndex((card) => card.commander);
   const commander = commanderIndex >= 0 ? all[commanderIndex] : undefined;
@@ -340,6 +342,17 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
   function toggleBoard(board: CollapsibleBoard) {
     setCollapsed((current) =>
       current.includes(board) ? current.filter((other) => other !== board) : [...current, board],
+    );
+  }
+
+  function boardValue(board: CollapsibleBoard) {
+    if (!currency || !stats.data) {
+      return undefined;
+    }
+    return (
+      <PriceText span fz="md">
+        {formatPrice(stats.data.board_values[board][currency], currency)}
+      </PriceText>
     );
   }
 
@@ -448,6 +461,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
           collapsed={collapsed.includes('sideboard')}
           onToggle={() => toggleBoard('sideboard')}
           emptyMessage=""
+          value={boardValue('sideboard')}
         >
           {renderBoard(sideboardCards, groupedSideboard)}
         </BoardSection>
@@ -459,6 +473,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
           collapsed={collapsed.includes('considering')}
           onToggle={() => toggleBoard('considering')}
           emptyMessage=""
+          value={boardValue('considering')}
         >
           {renderBoard(consideringCards, groupedConsidering)}
         </BoardSection>
