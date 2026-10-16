@@ -10,7 +10,7 @@ import {
   meldResultId,
   type CardArt,
   cardArt,
-  type CardSuggestion,
+  type CardSuggestions,
   fetchCardByName,
   fetchFrenchPrinting,
   fetchSetIcons,
@@ -246,9 +246,14 @@ export function useCardNameSuggestions(query: string) {
       advanced ? "search" : "autocomplete",
       trimmed.toLowerCase(),
     ],
-    queryFn: async (): Promise<CardSuggestion[]> => {
-      const byName = async () =>
-        (await autocompleteCardNames(trimmed)).map((name) => ({ name }));
+    queryFn: async (): Promise<CardSuggestions> => {
+      const byName = async () => {
+        const names = await autocompleteCardNames(trimmed);
+        return {
+          suggestions: names.map((name) => ({ name })),
+          total: names.length,
+        };
+      };
       if (!advanced) {
         return byName();
       }
@@ -257,7 +262,7 @@ export function useCardNameSuggestions(query: string) {
       } catch (err) {
         if (err instanceof ApiError && err.status === 400) {
           const names = await byName();
-          if (names.length > 0) {
+          if (names.suggestions.length > 0) {
             return names;
           }
         }

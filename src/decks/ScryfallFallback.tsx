@@ -23,6 +23,12 @@ interface ScryfallFallbackProps {
   onPick: (name: string) => void;
 }
 
+export function hiddenCardsHint(count: number) {
+  return count === 1
+    ? "1 autre carte : affine la recherche pour la voir."
+    : `${count} autres cartes : affine la recherche pour les voir.`;
+}
+
 function scryfallQuery(search: string, identity: string | undefined) {
   if (identity === undefined) {
     return search;
@@ -37,10 +43,13 @@ export function ScryfallFallback({
   onPick,
 }: ScryfallFallbackProps) {
   const suggestions = useCardNameSuggestions(scryfallQuery(search, identity));
-  const found = suggestions.data ?? [];
-  const results = found
-    .filter((result) => !excludeNames?.has(result.name))
-    .slice(0, MAX_RESULTS);
+  const found = suggestions.data?.suggestions ?? [];
+  const filtered = found.filter((result) => !excludeNames?.has(result.name));
+  const results = filtered.slice(0, MAX_RESULTS);
+  const hidden =
+    (suggestions.data?.total ?? 0) -
+    found.length +
+    (filtered.length - results.length);
   const emptyMessage =
     found.length > 0
       ? "Les cartes trouvées sur Scryfall sont déjà dans ta collection."
@@ -51,9 +60,16 @@ export function ScryfallFallback({
   return (
     <Paper withBorder p="sm">
       <Stack gap="xs">
-        <Text size="sm" fw={600} c="orange">
-          Sur Scryfall, hors de ta collection
-        </Text>
+        <Group gap="xs" align="baseline" wrap="wrap">
+          <Text size="sm" fw={600} c="orange">
+            Sur Scryfall
+          </Text>
+          {hidden > 0 && results.length > 0 && (
+            <Text size="xs" c="orange">
+              {hiddenCardsHint(hidden)}
+            </Text>
+          )}
+        </Group>
         <Text size="xs" c="dimmed">
           La carte apparaîtra dans le deck entourée en orange, en attendant que
           tu l'ajoutes à ta collection.

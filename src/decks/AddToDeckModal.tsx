@@ -36,7 +36,7 @@ import { isCommanderFormat, useAddCardToDeck } from "./api";
 import { BoardPicker } from "./BoardSection";
 import { CardHoverPreview } from "./CardHoverPreview";
 import { ADDED_TAGS_DESCRIPTION, TagsField } from "./CardTagsInput";
-import { ScryfallFallback } from "./ScryfallFallback";
+import { hiddenCardsHint, ScryfallFallback } from "./ScryfallFallback";
 import { useAddTagsToCard } from "./tags";
 
 interface AddToDeckModalProps {
@@ -230,9 +230,16 @@ function AddToDeckList({
       ) : (
         <Paper withBorder p="sm">
           <Stack gap="xs">
-            <Text size="sm" fw={600}>
-              Dans ta collection
-            </Text>
+            <Group gap="xs" align="baseline" wrap="wrap">
+              <Text size="sm" fw={600}>
+                Dans ta collection
+              </Text>
+              {cards.data && cards.data.total > results.length && (
+                <Text size="xs" c="dimmed">
+                  {hiddenCardsHint(cards.data.total - results.length)}
+                </Text>
+              )}
+            </Group>
             <ScrollArea.Autosize mah={420} type="auto">
               <Stack gap="xs">
                 {results.map((card) => {
@@ -294,12 +301,6 @@ function AddToDeckList({
             </ScrollArea.Autosize>
           </Stack>
         </Paper>
-      )}
-      {cards.data && cards.data.total > results.length && (
-        <Text size="xs" c="dimmed">
-          {cards.data.total - results.length} autres cartes : affine la
-          recherche pour les voir.
-        </Text>
       )}
       {!cards.isLoading &&
         (showScryfall ? (

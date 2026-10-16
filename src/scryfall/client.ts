@@ -81,6 +81,7 @@ interface ScryfallList<T> {
   data: T[];
   has_more?: boolean;
   next_page?: string;
+  total_cards?: number;
 }
 
 function delay(ms: number) {
@@ -336,19 +337,33 @@ export function isAdvancedQuery(query: string) {
   return /[:<>=]/.test(query) || /^[!"(-]/.test(query.trim());
 }
 
+export interface CardSuggestions {
+  suggestions: CardSuggestion[];
+  total: number;
+}
+
+function searchByName(query: string) {
+  return scryfall<ScryfallList<ScryfallCard>>(
+    `/cards/search?q=${encodeURIComponent(query)}&unique=cards&order=name`,
+  );
+}
+
 export async function searchCardSuggestions(
   query: string,
-): Promise<CardSuggestion[]> {
-  return (await searchCards(query)).map((card) => ({
-    name: card.name,
-    typeLine: card.type_line ?? card.card_faces?.[0]?.type_line,
-  }));
+): Promise<CardSuggestions> {
+  const result = await searchByName(query);
+  const data = result?.data ?? [];
+  return {
+    suggestions: data.slice(0, MAX_SEARCH_SUGGESTIONS).map((card) => ({
+      name: card.name,
+      typeLine: card.type_line ?? card.card_faces?.[0]?.type_line,
+    })),
+    total: result?.total_cards ?? data.length,
+  };
 }
 
 export async function searchCards(query: string): Promise<ScryfallCard[]> {
-  const result = await scryfall<ScryfallList<ScryfallCard>>(
-    `/cards/search?q=${encodeURIComponent(query)}&unique=cards&order=name`,
-  );
+  const result = await searchByName(query);
   return (result?.data ?? []).slice(0, MAX_SEARCH_SUGGESTIONS);
 }
 
