@@ -139,8 +139,6 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
     stack: true,
     advanced: queryFilters,
   });
-  const copies = useCards({ page: 1, limit: 1, sort: '-updated', name, storageId, advanced: queryFilters });
-  const copiesTotal = copies.data?.total;
   const pageCards = cards.data?.data ?? [];
   const openedOnPage = opened ? pageCards.find((stack) => copyIds(stack).includes(opened.ids[0])) : undefined;
   const openedElsewhere = useCard(opened && !openedOnPage ? opened.ids[0] : null);
@@ -273,12 +271,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
       />
       <DropOverlay dragging={drop.dragging} resolving={drop.resolving} />
 
-      <Group justify="space-between" align="flex-end">
-        <Text size="sm" c="dimmed">
-          {copiesTotal !== undefined
-            ? `${copiesTotal} carte${copiesTotal > 1 ? 's' : ''}${filtered ? ' correspondant aux filtres' : ''}`
-            : ' '}
-        </Text>
+      <Group justify="flex-end" align="flex-end">
         <Group gap="md" align="flex-end">
           <Select
             label="Cartes par page"
