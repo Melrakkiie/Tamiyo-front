@@ -164,7 +164,7 @@ interface CardDisplayControlsProps {
 
 export function CardDisplayControls({ display, options, wrap = 'wrap' }: CardDisplayControlsProps) {
   return (
-    <Group gap="xs" align="flex-end" wrap={wrap}>
+    <Group gap="xs" align="flex-end" wrap={wrap} miw={wrap === 'nowrap' ? 0 : undefined}>
       {options?.(false)}
       <ModeSelect display={display} />
       <Popover position="bottom-end" width={300} shadow="md" withArrow trapFocus>
