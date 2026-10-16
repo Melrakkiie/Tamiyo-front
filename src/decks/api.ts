@@ -453,8 +453,23 @@ export function useDuplicateDeck() {
   const invalidate = useInvalidateDecks();
 
   return useMutation({
-    mutationFn: async (deckId: string) =>
-      unwrap(await api.POST('/deck/{id}/duplicate', { params: { path: { id: deckId } } })),
+    mutationFn: async ({
+      deckId,
+      name,
+      folderId,
+      visibility,
+    }: {
+      deckId: string;
+      name: string;
+      folderId: number | null;
+      visibility: DeckVisibility;
+    }) =>
+      unwrap(
+        await api.POST('/deck/{id}/duplicate', {
+          params: { path: { id: deckId } },
+          body: { name, folder_id: folderId ?? undefined, visibility },
+        }),
+      ),
     onSettled: invalidate,
   });
 }

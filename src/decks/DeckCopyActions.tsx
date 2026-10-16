@@ -1,4 +1,5 @@
-import { Alert, Button, Checkbox, Group, Menu, Modal, Radio, Select, Stack, Text } from '@mantine/core';
+import { Alert, Button, Checkbox, Group, Menu, Modal, Radio, Select, Stack, Text, TextInput } from '@mantine/core';
+import { isNotEmpty, useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -10,6 +11,9 @@ import { StorageFormModal } from '../storages/StorageFormModal';
 import { StorageFieldLabel } from '../storages/StorageLabel';
 import { type CollectMode, useCollectDeck, useDuplicateDeck, useStoreDeck } from './api';
 import { BOARDS, boardLabels } from './boards';
+import { FolderIcon } from './DeckFolderTree';
+import { useFolderOptions } from './folders';
+import { type DeckVisibility, visibilityOption, visibilityOptions } from './visibility';
 
 const DEFAULT_BOARDS: DeckBoard[] = ['main', 'sideboard'];
 
@@ -258,60 +262,142 @@ function StoreDeckModal({ deckId, opened, onClose }: StoreDeckModalProps) {
   );
 }
 
-export function useDeckCopyActions(deckId: string, mine: boolean) {
+export interface CopiedDeck {
+  id: string;
+  name: string;
+  folderId: number | null;
+}
+
+interface DuplicateDeckModalProps {
+  deck: CopiedDeck;
+  mine: boolean;
+  opened: boolean;
+  onClose: () => void;
+}
+
+function DuplicateDeckModal({ opened, onClose, ...formProps }: DuplicateDeckModalProps) {
+  return (
+    <Modal opened={opened} onClose={onClose} title="Dupliquer le deck">
+      {opened && <DuplicateDeckForm onClose={onClose} {...formProps} />}
+    </Modal>
+  );
+}
+
+function DuplicateDeckForm({ deck, mine, onClose }: Omit<DuplicateDeckModalProps, 'opened'>) {
   const navigate = useNavigate();
   const duplicate = useDuplicateDeck();
+  const folderOptions = useFolderOptions();
+  const [folderId, setFolderId] = useState<string | null>(mine && deck.folderId ? String(deck.folderId) : null);
+  const form = useForm({
+    mode: 'uncontrolled',
+    initialValues: { name: `${deck.name} (copie)`, visibility: 'private' as DeckVisibility },
+    validate: { name: isNotEmpty('Nom requis') },
+    transformValues: (values) => ({ name: values.name.trim(), visibility: values.visibility }),
+  });
+  const [visibility, setVisibility] = useState(form.getValues().visibility);
+  form.watch('visibility', ({ value }) => setVisibility(value));
+
+  function submit({ name, visibility }: { name: string; visibility: DeckVisibility }) {
+    const notification = notifications.show({ loading: true, autoClose: false, message: 'Copie du deck en cours…' });
+    duplicate.mutate(
+      { deckId: deck.id, name, folderId: folderId ? Number(folderId) : null, visibility },
+      {
+        onSuccess: ({ deck_id, summary }) => {
+          const linked = summary.cards_linked ?? 0;
+          const pending = summary.cards_pending ?? 0;
+          const skipped = summary.cards_skipped ?? 0;
+          notifications.update({
+            id: notification,
+            loading: false,
+            autoClose: true,
+            color: skipped > 0 ? 'orange' : 'green',
+            message: `Copie créée : ${plural(linked, 'carte')} de ta collection, ${plural(pending, 'carte')} en attente${
+              skipped > 0 ? `, ${plural(skipped, 'carte')} introuvable${skipped > 1 ? 's' : ''}` : ''
+            }.`,
+          });
+          onClose();
+          navigate(`/decks/${deck_id}`);
+        },
+        onError: (error) =>
+          notifications.update({
+            id: notification,
+            loading: false,
+            autoClose: true,
+            color: 'red',
+            message: errorMessage(error, {
+              400: "Le dossier choisi n'existe plus. Choisis-en un autre.",
+              502: 'Scryfall ne répond pas : réessaie dans un instant.',
+            }),
+          }),
+      },
+    );
+  }
+
+  return (
+    <form onSubmit={form.onSubmit(submit)}>
+      <Stack>
+        <TextInput label="Nom" data-autofocus key={form.key('name')} {...form.getInputProps('name')} />
+        <Select
+          label="Visibilité"
+          description={visibilityOption(visibility).description}
+          data={visibilityOptions.map(({ value, label }) => ({ value, label }))}
+          allowDeselect={false}
+          key={form.key('visibility')}
+          {...form.getInputProps('visibility')}
+        />
+        {folderOptions.length > 0 && (
+          <Select
+            label={
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <FolderIcon size={14} />
+                Dossier
+              </span>
+            }
+            placeholder="Aucun dossier"
+            data={folderOptions}
+            value={folderId}
+            onChange={setFolderId}
+            clearable
+            searchable
+            nothingFoundMessage="Aucun dossier"
+          />
+        )}
+        <Group justify="flex-end">
+          <Button variant="default" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button type="submit" loading={duplicate.isPending}>
+            Dupliquer
+          </Button>
+        </Group>
+      </Stack>
+    </form>
+  );
+}
+
+export function useDeckCopyActions(deck: CopiedDeck, mine: boolean) {
+  const [duplicateOpened, setDuplicateOpened] = useState(false);
   const [collectOpened, setCollectOpened] = useState(false);
   const [storeOpened, setStoreOpened] = useState(false);
 
-  function duplicateDeck() {
-    const notification = notifications.show({ loading: true, autoClose: false, message: 'Copie du deck en cours…' });
-    duplicate.mutate(deckId, {
-      onSuccess: ({ deck_id, summary }) => {
-        const linked = summary.cards_linked ?? 0;
-        const pending = summary.cards_pending ?? 0;
-        const skipped = summary.cards_skipped ?? 0;
-        notifications.update({
-          id: notification,
-          loading: false,
-          autoClose: true,
-          color: skipped > 0 ? 'orange' : 'green',
-          message: `Copie créée : ${plural(linked, 'carte')} de ta collection, ${plural(pending, 'carte')} en attente${
-            skipped > 0 ? `, ${plural(skipped, 'carte')} introuvable${skipped > 1 ? 's' : ''}` : ''
-          }.`,
-        });
-        navigate(`/decks/${deck_id}`);
-      },
-      onError: (error) =>
-        notifications.update({
-          id: notification,
-          loading: false,
-          autoClose: true,
-          color: 'red',
-          message: errorMessage(error, { 502: 'Scryfall ne répond pas : réessaie dans un instant.' }),
-        }),
-    });
-  }
-
   const menuItems = (
     <>
-      <Menu.Item onClick={duplicateDeck} disabled={duplicate.isPending}>
-        Dupliquer
-      </Menu.Item>
+      <Menu.Item onClick={() => setDuplicateOpened(true)}>Dupliquer</Menu.Item>
       <Menu.Item onClick={() => setCollectOpened(true)}>Ajouter à ma collection</Menu.Item>
       {mine && <Menu.Item onClick={() => setStoreOpened(true)}>Ranger les cartes…</Menu.Item>}
     </>
   );
   const modal = (
     <>
+      <DuplicateDeckModal deck={deck} mine={mine} opened={duplicateOpened} onClose={() => setDuplicateOpened(false)} />
       <CollectDeckModal
         key={String(mine)}
-        deckId={deckId}
+        deckId={deck.id}
         mine={mine}
         opened={collectOpened}
         onClose={() => setCollectOpened(false)}
       />
-      {mine && <StoreDeckModal deckId={deckId} opened={storeOpened} onClose={() => setStoreOpened(false)} />}
+      {mine && <StoreDeckModal deckId={deck.id} opened={storeOpened} onClose={() => setStoreOpened(false)} />}
     </>
   );
   return { menuItems, modal };

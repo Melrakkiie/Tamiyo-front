@@ -32,7 +32,7 @@ import { type CollapsibleBoard, DEFAULT_COLLAPSED_BOARDS, inBoard } from '../dec
 import { BoardSection } from '../decks/BoardSection';
 import { type DeckCardGrouped, DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
 import { LegalityWarning } from '../decks/DeckLegalityWarning';
-import { isCommanderFormat } from '../decks/api';
+import { isCommanderFormat, useAllDecks } from '../decks/api';
 import { formatPrice, PriceText, usePriceCurrency } from '../cards/price';
 import { BracketSticker } from '../decks/bracket';
 import { FormatSticker } from '../decks/FormatSticker';
@@ -246,7 +246,12 @@ function SharedDeckMenu({ deckId, deckName, cardCount, onImage, extraItems, extr
 
 function SignedInDeckMenu({ ownerId, ...props }: SharedDeckMenuProps & { ownerId: string }) {
   const account = useAccount();
-  const copyActions = useDeckCopyActions(props.deckId, account.data?.id === ownerId);
+  const mine = account.data?.id === ownerId;
+  const ownDeck = useAllDecks(mine).data?.find((deck) => deck.id === props.deckId);
+  const copyActions = useDeckCopyActions(
+    { id: props.deckId, name: props.deckName, folderId: ownDeck?.folder_id ?? null },
+    mine,
+  );
 
   return (
     <SharedDeckMenu

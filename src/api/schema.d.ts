@@ -3718,7 +3718,7 @@ export interface paths {
         put?: never;
         /**
          * Copy a deck into the authenticated user's decks
-         * @description Copies one of the user's decks, or someone else's public or unlisted deck, into a new private deck named "<name> (copie)", with the same format and background. Its cards, boards, commander and tags are added as POST /deck/{id}/import does with a Tamiyo deck file: owned copies go in the copy, missing ones become pending cards. If adding the cards fails, the copy is removed.
+         * @description Copies one of the user's decks, or someone else's public or unlisted deck, into a new deck with the same format and background, named after the body's name or "<name> (copie)" when it is absent or blank, in the body's folder_id or at the root, with the body's visibility or private. Its cards, boards, commander and tags are added as POST /deck/{id}/import does with a Tamiyo deck file: owned copies go in the copy, missing ones become pending cards. If adding the cards fails, the copy is removed.
          */
         post: {
             parameters: {
@@ -3730,7 +3730,11 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DuplicateDeckRequest"];
+                };
+            };
             responses: {
                 /** @description The copy was created. */
                 201: {
@@ -3745,7 +3749,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description id is not a UUID */
+                /** @description id is not a UUID, the body is invalid, visibility is unknown, or folder_id is not a positive integer or not one of the user's folders */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -6147,6 +6151,18 @@ export interface components {
             bracket?: number;
             /** @description One of your folders to create the deck in; at the root when absent. */
             folder_id?: number;
+        };
+        DuplicateDeckRequest: {
+            /** @description Name of the copy, trimmed; "<name> (copie)" when absent or blank. */
+            name?: string;
+            /** @description One of your folders to put the copy in; at the root when absent. */
+            folder_id?: number;
+            /**
+             * @description Visibility of the copy.
+             * @default private
+             * @enum {string}
+             */
+            visibility: "private" | "unlisted" | "public";
         };
         /** @description All fields optional; only included fields are modified. */
         UpdateDeckRequest: {

@@ -163,7 +163,10 @@ function DeckView({ id }: { id: string }) {
   const [tagsOpened, setTagsOpened] = useState(false);
   const [folderOpened, setFolderOpened] = useState(false);
   const setFavorite = useSetFavorite();
-  const copyActions = useDeckCopyActions(id, true);
+  const copyActions = useDeckCopyActions(
+    { id, name: deck.data?.name ?? '', folderId: deck.data?.folder_id ?? null },
+    true,
+  );
   const currency = usePriceCurrency();
   const stats = useDeckStats(id, currency !== null);
   const artId = deck.data ? deckArtId(deck.data) : null;

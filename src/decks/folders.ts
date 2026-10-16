@@ -22,6 +22,13 @@ export function useDeckFolders() {
   });
 }
 
+export function useFolderOptions() {
+  const folders = useDeckFolders().data ?? [];
+  return folders
+    .map((folder) => ({ value: String(folder.id), label: folderPath(folders, folder.id) }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }));
+}
+
 export function usePublicFolders(userId: string | undefined) {
   return useQuery({
     queryKey: ['users', userId, 'folders'],

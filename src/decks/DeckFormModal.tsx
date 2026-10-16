@@ -23,7 +23,7 @@ import { isCommanderFormat, useDeckFormats, type DeckInput } from './api';
 import { bracketOptions, GaugeIcon } from './bracket';
 import { FolderIcon } from './DeckFolderTree';
 import { DeckListInput, deckListErrorMessage, useDeckList, useTamiyoDeckFile } from './DeckListInput';
-import { folderPath, useDeckFolders } from './folders';
+import { useFolderOptions } from './folders';
 import { visibilityOption, visibilityOptions } from './visibility';
 
 interface DeckFormModalProps {
@@ -90,11 +90,7 @@ function DeckForm({
   form.watch('format', ({ value }) => setFormat(value));
   const [bracket, setBracket] = useState<string | null>(initial?.bracket ? String(initial.bracket) : null);
   const [folderId, setFolderId] = useState<string | null>(null);
-  const folders = useDeckFolders();
-  const allFolders = folders.data ?? [];
-  const folderOptions = allFolders
-    .map((folder) => ({ value: String(folder.id), label: folderPath(allFolders, folder.id) }))
-    .sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }));
+  const folderOptions = useFolderOptions();
   const commander = isCommanderFormat(format.trim().toLowerCase());
   const tamiyoFile = useTamiyoDeckFile(withList ? list.source : null);
   const commanderPicker = withList && commander && !listOpened;
