@@ -21,6 +21,10 @@ import { usePageTitle } from '../layout/usePageTitle';
 
 const DECK_PAGE_SIZE = 96;
 
+function formatCardCount(count: number) {
+  return `${count.toLocaleString('fr-FR')} carte${count > 1 ? 's' : ''}`;
+}
+
 export function StoragePage() {
   const id = Number(useParams().id);
   return <StorageView key={id} id={id} />;
@@ -93,7 +97,10 @@ function StorageView({ id }: { id: number }) {
               {current.type}
             </Sticker>
           </Group>
-          {currency && <PriceText mt={4}>Valeur : {formatPrice(current.value[currency], currency)}</PriceText>}
+          <PriceText mt={4}>
+            {formatCardCount(current.card_count)}
+            {currency && ` · Valeur : ${formatPrice(current.value[currency], currency)}`}
+          </PriceText>
           {current.locked && (
             <Group gap={6} wrap="nowrap" c="dimmed" mt={4}>
               <LockIcon size={14} />

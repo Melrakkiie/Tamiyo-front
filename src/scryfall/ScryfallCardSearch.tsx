@@ -1,8 +1,9 @@
-import { Anchor, Autocomplete, Group, Loader, Text } from '@mantine/core';
+import { Anchor, Autocomplete, Group, Loader, Stack, Text } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
+import { InfoHint } from '../theme/InfoHint';
 import { isAdvancedQuery } from './client';
 import { useCardNameSuggestions } from './hooks';
 
@@ -11,9 +12,10 @@ interface ScryfallCardSearchProps {
   placeholder: string;
   onSelect: (name: string) => void;
   hiddenQuery?: string;
+  hint?: ReactNode;
 }
 
-export function ScryfallCardSearch({ label, placeholder, onSelect, hiddenQuery }: ScryfallCardSearchProps) {
+export function ScryfallCardSearch({ label, placeholder, onSelect, hiddenQuery, hint }: ScryfallCardSearchProps) {
   const [search, setSearch] = useState('');
   const [debouncedSearch] = useDebouncedValue(search, 300);
   const query = debouncedSearch.trim() && hiddenQuery ? `${debouncedSearch.trim()} ${hiddenQuery}` : debouncedSearch;
@@ -28,17 +30,24 @@ export function ScryfallCardSearch({ label, placeholder, onSelect, hiddenQuery }
 
   return (
     <Autocomplete
-      label={label}
-      placeholder={placeholder}
-      description={
-        <>
-          Un nom de carte, ou une recherche avec la{' '}
-          <Anchor href="https://scryfall.com/docs/syntax" target="_blank" rel="noreferrer" size="xs">
-            syntaxe Scryfall
-          </Anchor>{' '}
-          (ex. t:creature c:g mv&lt;=2).
-        </>
+      label={
+        <Group gap={8} component="span" display="inline-flex" mb={6}>
+          {label}
+          <InfoHint label="Aide sur la recherche">
+            <Stack gap="xs">
+              <div>
+                Un nom de carte, ou une recherche avec la{' '}
+                <Anchor href="https://scryfall.com/docs/syntax" target="_blank" rel="noreferrer" inherit>
+                  syntaxe Scryfall
+                </Anchor>{' '}
+                (ex. t:creature c:g mv&lt;=2).
+              </div>
+              {hint && <div>{hint}</div>}
+            </Stack>
+          </InfoHint>
+        </Group>
       }
+      placeholder={placeholder}
       value={search}
       onChange={setSearch}
       onOptionSubmit={onSelect}

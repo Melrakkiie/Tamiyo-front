@@ -214,6 +214,22 @@ h6,
   cursor: not-allowed;
 }
 
+.tamiyo-info-hint {
+  cursor: pointer;
+  transform: rotate(-4deg);
+  transition: transform 120ms ease;
+}
+
+.tamiyo-info-hint:hover,
+.tamiyo-info-hint:focus-visible {
+  transform: translateY(-1px) rotate(-4deg);
+}
+
+.tamiyo-info-hint:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
 [data-mantine-color-scheme='light'] .tamiyo-favorite-star[data-favorite] {
   color: var(--mantine-color-lune-3);
 }

@@ -269,10 +269,8 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
         label="Ajouter une carte"
         placeholder="Cherche une carte sur Scryfall (ex. Lightning Bolt, ou t:creature c:g)"
         onSelect={(selected) => setCardToAdd({ name: selected })}
+        hint="Tu peux aussi glisser-déposer une carte depuis scryfall.com ou edhrec.com, directement dans l'édition voulue."
       />
-      <Text size="xs" c="dimmed" mt={-8}>
-        Tu peux aussi glisser-déposer une carte depuis scryfall.com ou edhrec.com, directement dans l'édition voulue.
-      </Text>
       <DropOverlay dragging={drop.dragging} resolving={drop.resolving} />
 
       <Group justify="space-between" align="flex-end">
