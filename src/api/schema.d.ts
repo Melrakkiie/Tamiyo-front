@@ -6082,10 +6082,6 @@ export interface components {
             other_quantity: number;
             commander: boolean;
             other_commander: boolean;
-            /** @description The card's tags in the first deck. */
-            tags: string[];
-            /** @description The card's tags in the other deck. */
-            other_tags: string[];
         };
         DeckComparison: {
             deck: components["schemas"]["ComparedDeck"];

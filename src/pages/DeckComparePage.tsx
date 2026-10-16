@@ -28,7 +28,7 @@ import { FormatSticker } from '../decks/FormatSticker';
 import { sortDeckCards } from '../decks/pendingCards';
 import { SharedCardModal } from '../decks/SharedCardModal';
 import { type SharedDeckSort, sharedDeckSortOptions } from '../decks/shared';
-import { parseSharedGrouping, type SharedCardGrouping, sharedGroupingOptions } from '../decks/storageGrouping';
+import { type CardGrouping, groupingOptions, parseGrouping } from '../cards/grouping';
 import { useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
 import { usePageTitle } from '../layout/usePageTitle';
 
@@ -37,7 +37,7 @@ type Side = 'deck' | 'other' | 'both';
 const sideColors: Record<Side, string> = { deck: 'lune', both: 'ocelle', other: 'prune' };
 
 interface DisplayOptions {
-  grouping: SharedCardGrouping | null;
+  grouping: CardGrouping | null;
   sort: SharedDeckSort;
   display: CardDisplay;
 }
@@ -53,7 +53,7 @@ export function DeckComparePage() {
   );
   const [tab, setTab] = useState<string | null>('common');
   const [sort, setSort] = useState<SharedDeckSort>('mana_value');
-  const [grouping, setGrouping] = useState<SharedCardGrouping | null>('type');
+  const [grouping, setGrouping] = useState<CardGrouping | null>('type');
   const display = useCardDisplay({ showDetails: false });
 
   if (comparison.isLoading) {
@@ -106,9 +106,9 @@ export function DeckComparePage() {
             <Select
               label="Grouper par"
               placeholder="Aucun regroupement"
-              data={sharedGroupingOptions}
+              data={groupingOptions}
               value={grouping}
-              onChange={(value) => setGrouping(parseSharedGrouping(value))}
+              onChange={(value) => setGrouping(parseGrouping(value))}
               clearable
               w={200}
             />
@@ -199,17 +199,6 @@ interface TabLabelProps {
   active: boolean;
 }
 
-function sideTags(card: ComparedCard, side: Side) {
-  switch (side) {
-    case 'deck':
-      return card.tags;
-    case 'other':
-      return card.other_tags;
-    case 'both':
-      return [...new Set([...card.tags, ...card.other_tags])];
-  }
-}
-
 function TabLabel({ title, cards, side, active }: TabLabelProps) {
   const total = cards.reduce((sum, card) => sum + copies(card, side), 0);
   return (
@@ -261,10 +250,7 @@ function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps
   const images = useCardImages(ids);
   const backImages = useCardBackImages(ids);
   const manaCosts = useManaCosts(ids);
-  const grouped = useDeckCardGroups(sorted, options.grouping, undefined, (card) => {
-    const compared = byId.get(card.id);
-    return compared ? sideTags(compared, side) : [];
-  });
+  const grouped = useDeckCardGroups(sorted, options.grouping);
 
   function isCommander(card: Card) {
     const compared = byId.get(card.id);
