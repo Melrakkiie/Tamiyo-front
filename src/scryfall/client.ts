@@ -144,6 +144,10 @@ export function imageUrl(card: ScryfallCard, size: ImageSize): string | undefine
   return card.image_uris?.[size] ?? card.card_faces?.[0]?.image_uris?.[size];
 }
 
+export function cdnImageUrl(id: string, size: ImageSize): string {
+  return `https://cards.scryfall.io/${size}/front/${id[0]}/${id[1]}/${id}.jpg`;
+}
+
 const doubleFacedLayouts = ['transform', 'modal_dfc', 'reversible_card'];
 
 export function isDoubleFaced(card: ScryfallCard) {

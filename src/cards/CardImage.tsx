@@ -15,6 +15,8 @@ export function CardImage({ name, url, loading, backUrl, onFlip }: CardImageProp
   const [showBack, setShowBack] = useState(false);
   const flipped = showBack && !!backUrl;
   const shown = flipped ? backUrl : url;
+  const [failedUrl, setFailedUrl] = useState<string | undefined>();
+  const failed = !!shown && failedUrl === shown;
 
   function flip(event: { preventDefault: () => void; stopPropagation: () => void }) {
     event.preventDefault();
@@ -27,8 +29,8 @@ export function CardImage({ name, url, loading, backUrl, onFlip }: CardImageProp
   return (
     <Box pos="relative">
       <AspectRatio ratio={CARD_RATIO}>
-        {shown ? (
-          <Image src={shown} alt={name} radius="md" loading="lazy" />
+        {shown && !failed ? (
+          <Image src={shown} alt={name} radius="md" loading="lazy" onError={() => setFailedUrl(shown)} />
         ) : loading ? (
           <Skeleton radius="md" />
         ) : (

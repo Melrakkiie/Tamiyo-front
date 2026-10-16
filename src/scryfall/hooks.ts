@@ -6,6 +6,7 @@ import { type FaceTypes, faceTypes, subtypes } from './classify';
 import {
   autocompleteCardNames,
   backImageUrl,
+  cdnImageUrl,
   meldResultId,
   type CardArt,
   cardArt,
@@ -40,13 +41,15 @@ export function useScryfallCards(scryfallIds: string[]) {
 }
 
 export function useCardImages(scryfallIds: string[], size: 'small' | 'normal' = 'normal') {
-  return useScryfallCardsByIds(scryfallIds, (cards) => {
-    const urls: Record<string, string | undefined> = {};
-    for (const [id, card] of Object.entries(cards)) {
-      urls[id] = imageUrl(card, size);
-    }
-    return urls;
-  });
+  const cards = useScryfallCardsByIds(scryfallIds, (byId) => byId);
+  const settled = !cards.isLoading;
+  const urls: Record<string, string | undefined> = {};
+  for (const id of scryfallIds) {
+    const card = cards.data?.[id];
+    const url = card ? imageUrl(card, size) : undefined;
+    urls[id] = url ?? (settled ? cdnImageUrl(id, size) : undefined);
+  }
+  return { data: urls, isLoading: cards.isLoading, isFetching: cards.isFetching };
 }
 
 export function useCardBackImages(scryfallIds: string[], size: 'small' | 'normal' = 'normal') {
