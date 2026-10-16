@@ -49,7 +49,7 @@ function withCardTags(current: DeckTags, name: string, tags: string[]): DeckTags
   const key = cardNameKey(name);
   const others = current.cards.filter((card) => cardNameKey(card.name) !== key);
   const cards = tags.length > 0 ? [...others, { name, tags: sortedTags(tags) }] : others;
-  return { tags: sortedTags(new Set(cards.flatMap((card) => card.tags))), cards };
+  return { tags: sortedTags(new Set([...current.tags, ...cards.flatMap((card) => card.tags)])), cards };
 }
 
 function useInvalidateTags() {
@@ -101,6 +101,16 @@ export function useAddTagsToCard(deckId: string | null) {
   }
 
   return { suggestions: deckTags.data?.tags ?? [], addTags, error: setTags.error };
+}
+
+export function useCreateDeckTag() {
+  const invalidate = useInvalidateTags();
+
+  return useMutation({
+    mutationFn: async ({ deckId, tag }: { deckId: string; tag: string }) =>
+      unwrap(await api.POST('/deck/{id}/tags', { params: { path: { id: deckId } }, body: { tag } })),
+    onSettled: (_data, _err, { deckId }) => invalidate(deckId),
+  });
 }
 
 export function useRenameDeckTag() {

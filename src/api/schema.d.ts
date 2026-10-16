@@ -2750,7 +2750,7 @@ export interface paths {
         };
         /**
          * List the deck's card tags
-         * @description Every tag used in the deck and the tagged cards (untagged ones are left out), sorted alphabetically ignoring case. A tag belongs to a card name within the deck: every copy shares it, pending ones included, whatever the printing. Tags of cards no longer in the deck are kept but not returned.
+         * @description Every tag of the deck (the tags of its cards plus the tags created with POST, even those no card has) and the tagged cards (untagged ones are left out), sorted alphabetically ignoring case. A tag belongs to a card name within the deck: every copy shares it, pending ones included, whatever the printing. Tags of cards no longer in the deck are kept but not returned.
          */
         get: {
             parameters: {
@@ -2796,8 +2796,61 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
-        /** Remove a tag from every card of the deck */
+        /**
+         * Create a tag no card has yet
+         * @description Adds the tag to the deck's list, where it stays with no card until it is deleted. Creating a tag the deck already has (ignoring case) changes nothing and returns its existing spelling.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["TagRequest"];
+                };
+            };
+            responses: {
+                /** @description Created, or already there. Returns the tag's spelling in the deck. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TagRequest"];
+                    };
+                };
+                /** @description Invalid id, no tag, or a tag that's blank or over 40 characters. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found (or not owned by the authenticated user). */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+            };
+        };
+        /**
+         * Remove a tag from every card of the deck
+         * @description Also removes it from the deck's list when it was created with POST.
+         */
         delete: {
             parameters: {
                 query: {
@@ -2829,7 +2882,7 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["Unauthorized"];
-                /** @description Deck not found, or the deck doesn't use this tag. */
+                /** @description Deck not found, or the deck doesn't have this tag. */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -2845,7 +2898,7 @@ export interface paths {
         head?: never;
         /**
          * Rename a tag on every card of the deck
-         * @description Renaming into a tag the deck already uses (ignoring case) merges the two.
+         * @description Renaming into a tag the deck already has (ignoring case) merges the two. Works on a tag no card has too.
          */
         patch: {
             parameters: {
@@ -2880,7 +2933,7 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["Unauthorized"];
-                /** @description Deck not found, or the deck doesn't use this tag. */
+                /** @description Deck not found, or the deck doesn't have this tag. */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -3579,7 +3632,7 @@ export interface paths {
         put?: never;
         /**
          * Add a list of cards to an existing deck
-         * @description Adds a decklist to this deck, without ever creating cards in the collection. Accepts a Moxfield plain-text export ("1 Sol Ring (SLD) 1011 *F*", resolved by set and collector number against Scryfall), a plain "4 Lightning Bolt" list (resolved by name, any owned printing can be used, missing copies are added in Scryfall's default printing), or a mix of both. Owned copies go in the deck (cards_linked), copies in no deck and of the same finish first, each copy used once and copies already in this deck never used twice, copies in storages locked against this deck left out unless include_locked_storages is true; missing copies become pending cards (cards_pending). Section headers choose the board of the lines below them: Sideboard for sideboard, Maybeboard or Considering for considering, main otherwise. With commander_from_first_line, the first card line of the main board becomes the commander only if the deck has none yet: an owned one becomes commander_id, a missing one the pending commander. Moxfield tags at the end of a line ("#ramp #food generator") are added to that card's tags. A file starting with "{" is read as a Tamiyo deck file (see TamiyoFile): cards go on their boards, its commander becomes the deck's when it has none, and its tags are added to the deck's.
+         * @description Adds a decklist to this deck, without ever creating cards in the collection. Accepts a Moxfield plain-text export ("1 Sol Ring (SLD) 1011 *F*", resolved by set and collector number against Scryfall), a plain "4 Lightning Bolt" list (resolved by name, any owned printing can be used, missing copies are added in Scryfall's default printing), or a mix of both. Owned copies go in the deck (cards_linked), copies in no deck and of the same finish first, each copy used once and copies already in this deck never used twice, copies in storages locked against this deck left out unless include_locked_storages is true; missing copies become pending cards (cards_pending). Section headers choose the board of the lines below them: Sideboard for sideboard, Maybeboard or Considering for considering, main otherwise. With commander_from_first_line, the first card line of the main board becomes the commander only if the deck has none yet: an owned one becomes commander_id, a missing one the pending commander. Moxfield tags at the end of a line ("#ramp #food generator") are added to that card's tags. Pending cards and tags use the English Scryfall name, whatever the list's language. A file starting with "{" is read as a Tamiyo deck file (see TamiyoFile): cards go on their boards, its commander becomes the deck's when it has none, and its tags are added to the deck's.
          */
         post: {
             parameters: {
@@ -4831,7 +4884,7 @@ export interface paths {
         put?: never;
         /**
          * Bulk import a ManaBox collection export
-         * @description Imports a ManaBox_Collection.csv export. For each row, gets or creates the matching storage (Binder Name/Binder Type, a "deck" binder becoming a storage of type "deckbox"), gets or creates a deck too if Binder Type is "deck" (format defaults to "commander" — correct it afterwards with PATCH /deck/:id if needed), creates one card per physical copy (Quantity), and links deck cards accordingly. The export already carries the Scryfall ID directly, so this route never calls Scryfall and never returns 502.
+         * @description Imports a ManaBox_Collection.csv export. For each row, gets or creates the matching storage (Binder Name/Binder Type, a "deck" binder becoming a storage of type "deckbox"), gets or creates a deck too if Binder Type is "deck" (format defaults to "commander" — correct it afterwards with PATCH /deck/:id if needed), creates one card per physical copy (Quantity), and links deck cards accordingly. The export already carries the Scryfall ID directly, so cards are created even when Scryfall is unreachable and this route never returns 502. Cards are stored under their English Scryfall name, whatever the export's language; while Scryfall is unreachable the file's name is kept until the background printing refresher renames them.
          */
         post: {
             parameters: {
@@ -4893,7 +4946,7 @@ export interface paths {
         put?: never;
         /**
          * Bulk import a Moxfield collection export
-         * @description Imports a Moxfield "Export Collection" CSV. Moxfield's export has no storage concept, so every created card is assigned to the existing storage given by storage_id. It also has no Scryfall ID, so each row is resolved by (set, collector number) against the Scryfall API (https://scryfall.com/docs/api/cards/collection).
+         * @description Imports a Moxfield "Export Collection" CSV. Moxfield's export has no storage concept, so every created card is assigned to the existing storage given by storage_id. It also has no Scryfall ID, so each row is resolved by (set, collector number) against the Scryfall API (https://scryfall.com/docs/api/cards/collection). Cards are stored under their English Scryfall name, whatever the export's language.
          */
         post: {
             parameters: {
@@ -4956,7 +5009,7 @@ export interface paths {
         put?: never;
         /**
          * Bulk import a plain card list
-         * @description Creates one card per copy from a card list, in the storage given by storage_id or in no storage. Same line format as POST /deck/{id}/import: "1 Sol Ring (SLD) 1011 *F*" creates that printing (resolved by set and collector number against Scryfall), "4 Lightning Bolt" creates the printing Scryfall returns by default for that name; section headers are skipped. Lines that can't be resolved are skipped and reported in ImportSummary.warnings.
+         * @description Creates one card per copy from a card list, in the storage given by storage_id or in no storage. Same line format as POST /deck/{id}/import: "1 Sol Ring (SLD) 1011 *F*" creates that printing (resolved by set and collector number against Scryfall), "4 Lightning Bolt" creates the printing Scryfall returns by default for that name; section headers are skipped. Lines that can't be resolved are skipped and reported in ImportSummary.warnings. Cards are stored under their English Scryfall name, whatever the list's language.
          */
         post: {
             parameters: {
@@ -6066,13 +6119,16 @@ export interface components {
             tags: string[];
         };
         DeckTags: {
-            /** @description Every tag used in the deck. */
+            /** @description Every tag of the deck, including the ones no card has. */
             tags: string[];
             cards: components["schemas"]["TaggedCard"][];
         };
         SetCardTagsRequest: {
             name: string;
             tags: string[];
+        };
+        TagRequest: {
+            tag: string;
         };
         RenameTagRequest: {
             from: string;

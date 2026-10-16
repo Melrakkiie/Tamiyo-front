@@ -2,8 +2,9 @@ import { Alert, Button, Group, Modal, Stack, Text, TextInput } from '@mantine/co
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
+import { InfoHint } from '../theme/InfoHint';
 import { TagSticker } from '../theme/Sticker';
-import { useDeckTags, useDeleteDeckTag, useRenameDeckTag } from './tags';
+import { useCreateDeckTag, useDeckTags, useDeleteDeckTag, useRenameDeckTag } from './tags';
 
 interface DeckTagsModalProps {
   deckId: string;
@@ -13,7 +14,19 @@ interface DeckTagsModalProps {
 
 export function DeckTagsModal({ deckId, opened, onClose }: DeckTagsModalProps) {
   return (
-    <Modal opened={opened} onClose={onClose} title="Tags du deck">
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title={
+        <Group gap={8} component="span" display="inline-flex">
+          Tags du deck
+          <InfoHint label="Aide sur les tags">
+            Crée des tags ici ou depuis le détail d'une carte du deck, puis groupe les cartes par tag. Renommer un tag
+            avec le nom d'un autre les fusionne.
+          </InfoHint>
+        </Group>
+      }
+    >
       {opened && <DeckTagsList deckId={deckId} />}
     </Modal>
   );
@@ -30,14 +43,48 @@ function DeckTagsList({ deckId }: { deckId: string }) {
 
   return (
     <Stack>
-      <Text size="sm" c="dimmed">
-        Ajoute des tags depuis le détail d'une carte du deck, puis groupe les cartes par tag. Renommer un tag avec le
-        nom d'un autre les fusionne.
-      </Text>
+      <NewTagForm deckId={deckId} />
       {!deckTags.isLoading && tags.length === 0 && <Text size="sm">Aucun tag dans ce deck pour le moment.</Text>}
       {tags.map((tag) => (
         <TagRow key={tag} deckId={deckId} tag={tag} count={cards.filter((card) => card.tags.includes(tag)).length} />
       ))}
+    </Stack>
+  );
+}
+
+function NewTagForm({ deckId }: { deckId: string }) {
+  const [name, setName] = useState('');
+  const create = useCreateDeckTag();
+  const trimmed = name.trim();
+
+  function submit() {
+    if (!trimmed) {
+      return;
+    }
+    create.mutate({ deckId, tag: trimmed }, { onSuccess: () => setName('') });
+  }
+
+  return (
+    <Stack gap={4}>
+      <Group gap="xs" wrap="nowrap">
+        <TextInput
+          value={name}
+          onChange={(event) => setName(event.currentTarget.value)}
+          onKeyDown={(event) => event.key === 'Enter' && submit()}
+          maxLength={40}
+          placeholder="Nouveau tag"
+          aria-label="Nouveau tag"
+          style={{ flex: 1 }}
+        />
+        <Button onClick={submit} loading={create.isPending} disabled={!trimmed}>
+          Ajouter
+        </Button>
+      </Group>
+      {create.error && (
+        <Text size="xs" c="red">
+          {errorMessage(create.error)}
+        </Text>
+      )}
     </Stack>
   );
 }
