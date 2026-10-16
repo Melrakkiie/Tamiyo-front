@@ -54,11 +54,7 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
   const owned = (copies.data ?? []).filter(
     (copy) => !(source.kind === 'card' && copy.id === source.card.id) && !deckCardIds.has(copy.id),
   );
-  const ownedPrintings = new Set(owned.map((copy) => copy.scryfall_id));
   const printings = usePrintings(current.name);
-  const others = (printings.data ?? []).filter(
-    (printing) => printing.id !== current.scryfall_id && !ownedPrintings.has(printing.id),
-  );
   const images = useCardImages(
     owned.map((copy) => copy.scryfall_id),
     'small',
@@ -69,6 +65,10 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
     (storages.data ?? []).filter((storage) => !isOpenTo(storage, deckId)).map((storage) => storage.id),
   );
   const isClosed = (copy: Card) => copy.storage_id != null && closedStorageIds.has(copy.storage_id);
+  const ownedPrintings = new Set(owned.filter((copy) => !isClosed(copy)).map((copy) => copy.scryfall_id));
+  const others = (printings.data ?? []).filter(
+    (printing) => printing.id !== current.scryfall_id && !ownedPrintings.has(printing.id),
+  );
   const closedCount = owned.filter(isClosed).length;
   const [showClosed, setShowClosed] = useState(false);
   const unlocked = showClosed ? owned : owned.filter((copy) => !isClosed(copy));
@@ -182,7 +182,7 @@ export function EditionSwitcher({ deckId, source, deckCardIds, isCommander, onSw
 
       <Stack gap="xs">
         <Text size="sm" fw={500}>
-          Autres éditions, pas dans ta collection
+          Autres éditions, pas disponibles dans ta collection
         </Text>
         {printings.isLoading ? (
           <Center p="md">
