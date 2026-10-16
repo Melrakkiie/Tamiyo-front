@@ -31,7 +31,7 @@ export function AppearanceSection() {
   const theme = preferences.data?.theme ?? 'auto';
   const startsAt = preferences.data?.night_starts_at ?? DEFAULT_NIGHT_STARTS_AT;
   const endsAt = preferences.data?.night_ends_at ?? DEFAULT_NIGHT_ENDS_AT;
-  const showPrices = preferences.data?.show_prices ?? false;
+  const showPrices = preferences.data?.show_prices ?? true;
   const currency = preferences.data?.price_currency ?? 'eur';
 
   return (

@@ -5398,7 +5398,7 @@ export interface components {
             night_ends_at: number;
             /**
              * @description Whether the app shows card prices and the value of the collection, storages and decks.
-             * @default false
+             * @default true
              */
             show_prices: boolean;
             /**
