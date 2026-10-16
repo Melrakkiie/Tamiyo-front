@@ -22,7 +22,13 @@ type RegisterValues = {
   confirmPassword: string;
 };
 
-export function RegisterForm({ onSwitch }: { onSwitch?: () => void }) {
+export function RegisterForm({
+  onSwitch,
+  onSuccess,
+}: {
+  onSwitch?: () => void;
+  onSuccess?: () => void;
+}) {
   const form = useForm<RegisterValues>({
     mode: "uncontrolled",
     initialValues: {
@@ -48,6 +54,7 @@ export function RegisterForm({ onSwitch }: { onSwitch?: () => void }) {
   const mutation = useMutation({
     mutationFn: (values: RegisterValues) =>
       register(values.email, values.password, values.displayName),
+    onSuccess,
   });
 
   return (

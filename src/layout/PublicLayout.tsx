@@ -1,6 +1,6 @@
 import { AppShell, Button, Group, Title, UnstyledButton } from "@mantine/core";
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 
 import { type AuthMode, AuthModal } from "../auth/AuthModal";
 import { LunaMoth } from "../theme/LunaMoth";
@@ -11,6 +11,7 @@ import { PageWithFooter } from "./PageWithFooter";
 
 export function PublicLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const showPreview = pagesWithCards.test(location.pathname);
   const [authMode, setAuthMode] = useState<AuthMode | null>(null);
 
@@ -77,6 +78,14 @@ export function PublicLayout() {
         mode={authMode}
         onModeChange={setAuthMode}
         onClose={() => setAuthMode(null)}
+        onAuthenticated={() => {
+          if (
+            location.pathname.startsWith("/explorer") ||
+            location.pathname.startsWith("/aide")
+          ) {
+            navigate("/", { replace: true });
+          }
+        }}
       />
     </AppShell>
   );

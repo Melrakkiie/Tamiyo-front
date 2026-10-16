@@ -17,7 +17,13 @@ import { login } from "./actions";
 
 type LoginValues = { email: string; password: string };
 
-export function LoginForm({ onSwitch }: { onSwitch?: () => void }) {
+export function LoginForm({
+  onSwitch,
+  onSuccess,
+}: {
+  onSwitch?: () => void;
+  onSuccess?: () => void;
+}) {
   const form = useForm<LoginValues>({
     mode: "uncontrolled",
     initialValues: { email: "", password: "" },
@@ -29,6 +35,7 @@ export function LoginForm({ onSwitch }: { onSwitch?: () => void }) {
 
   const mutation = useMutation({
     mutationFn: (values: LoginValues) => login(values.email, values.password),
+    onSuccess,
   });
 
   return (

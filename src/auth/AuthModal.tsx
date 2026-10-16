@@ -9,9 +9,15 @@ interface AuthModalProps {
   mode: AuthMode | null;
   onModeChange: (mode: AuthMode) => void;
   onClose: () => void;
+  onAuthenticated?: () => void;
 }
 
-export function AuthModal({ mode, onModeChange, onClose }: AuthModalProps) {
+export function AuthModal({
+  mode,
+  onModeChange,
+  onClose,
+  onAuthenticated,
+}: AuthModalProps) {
   return (
     <Modal
       opened={mode !== null}
@@ -19,10 +25,16 @@ export function AuthModal({ mode, onModeChange, onClose }: AuthModalProps) {
       title={mode === "register" ? "Créer un compte" : "Connexion"}
     >
       {mode === "login" && (
-        <LoginForm onSwitch={() => onModeChange("register")} />
+        <LoginForm
+          onSwitch={() => onModeChange("register")}
+          onSuccess={onAuthenticated}
+        />
       )}
       {mode === "register" && (
-        <RegisterForm onSwitch={() => onModeChange("login")} />
+        <RegisterForm
+          onSwitch={() => onModeChange("login")}
+          onSuccess={onAuthenticated}
+        />
       )}
     </Modal>
   );
