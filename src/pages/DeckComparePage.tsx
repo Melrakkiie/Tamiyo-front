@@ -34,7 +34,7 @@ import { usePageTitle } from '../layout/usePageTitle';
 
 type Side = 'deck' | 'other' | 'both';
 
-const sideColors: Record<Side, string> = { deck: 'blue', both: 'teal', other: 'grape' };
+const sideColors: Record<Side, string> = { deck: 'lune', both: 'ocelle', other: 'prune' };
 
 interface DisplayOptions {
   grouping: SharedCardGrouping | null;

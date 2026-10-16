@@ -1,4 +1,4 @@
-import { Button, Loader, createTheme, defaultVariantColorsResolver } from '@mantine/core';
+import { Button, Loader, Tabs, createTheme, defaultVariantColorsResolver } from '@mantine/core';
 
 import { MoonLoader } from './MoonLoader';
 
@@ -115,6 +115,7 @@ export const theme = createTheme({
     Loader: Loader.extend({
       defaultProps: { loaders: { ...Loader.defaultLoaders, moon: MoonLoader }, type: 'moon' },
     }),
+    Tabs: Tabs.extend({ styles: { tab: { '--tabs-text-color': 'var(--tamiyo-on-filled)' } } }),
   },
   shadows: {
     xs: '0 1px 3px rgba(43, 36, 32, 0.08)',
