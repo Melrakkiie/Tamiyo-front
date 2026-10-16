@@ -142,6 +142,7 @@ export const cssVariablesResolver = () => ({
     '--tamiyo-ink': palette.ink,
     '--tamiyo-on-filled': palette.sheet,
     '--tamiyo-white-variant': palette.sheet,
+    '--tamiyo-chart-secondary': papier[5],
   },
   dark: {
     '--mantine-color-body': palette.velvet,
@@ -156,5 +157,6 @@ export const cssVariablesResolver = () => ({
     '--tamiyo-ink': palette.glow,
     '--tamiyo-on-filled': palette.night,
     '--tamiyo-white-variant': 'rgba(28, 26, 34, 0.88)',
+    '--tamiyo-chart-secondary': papier[7],
   },
 });

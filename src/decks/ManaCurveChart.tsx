@@ -3,7 +3,7 @@ import { Box, Group, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core'
 import type { ManaCurveBucket } from '../api/types';
 
 const PERMANENT_COLOR = 'var(--mantine-primary-color-filled)';
-const NON_PERMANENT_COLOR = 'var(--mantine-color-gray-7)';
+const NON_PERMANENT_COLOR = 'var(--tamiyo-chart-secondary)';
 const CURVE_HEIGHT = 140;
 
 function plural(count: number, word: string) {
