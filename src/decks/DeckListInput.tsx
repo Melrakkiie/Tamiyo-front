@@ -1,8 +1,9 @@
-import { FileInput, SegmentedControl, Stack, Text, Textarea } from '@mantine/core';
+import { FileInput, Group, SegmentedControl, Stack, Textarea } from '@mantine/core';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 import { ApiError, errorMessage } from '../api/errors';
 import type { ImportSummary } from '../api/types';
+import { InfoHint } from '../theme/InfoHint';
 
 type DeckListMode = 'text' | 'file';
 
@@ -92,16 +93,16 @@ interface DeckListInputProps {
 export function DeckListInput({ list, minRows = 8, hint = deckHint }: DeckListInputProps) {
   return (
     <Stack gap="xs">
-      <Text size="xs" c="dimmed">
-        {hint}
-      </Text>
-      <SegmentedControl
-        data={modes}
-        value={list.mode}
-        onChange={(value) => list.setMode(value as DeckListMode)}
-        w="fit-content"
-        size="xs"
-      />
+      <Group gap={8}>
+        <SegmentedControl
+          data={modes}
+          value={list.mode}
+          onChange={(value) => list.setMode(value as DeckListMode)}
+          w="fit-content"
+          size="xs"
+        />
+        <InfoHint label="Aide sur l'import de liste">{hint}</InfoHint>
+      </Group>
       {list.mode === 'text' ? (
         <Textarea
           aria-label="Liste de cartes"
