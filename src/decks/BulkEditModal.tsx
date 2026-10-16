@@ -1,9 +1,10 @@
-import { Alert, Button, Center, Group, Loader, Modal, Stack, Text, Textarea } from '@mantine/core';
+import { Alert, Button, Center, Group, Loader, Modal, Stack, Textarea } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import { useBulkEditDeck, useDeckExport } from '../bulk/api';
+import { InfoHint } from '../theme/InfoHint';
 import { deckListErrorMessage } from './DeckListInput';
 
 interface BulkEditModalProps {
@@ -74,14 +75,18 @@ function BulkEditForm({ deckId, onClose }: { deckId: string; onClose: () => void
 
   return (
     <Stack>
-      <Text size="sm" c="dimmed">
-        Le deck tel qu'il est, une ligne par carte. Modifie la liste : ce qui y est entre dans le deck, ce qui n'y est
-        plus en sort (en restant dans ta collection). Les lignes sous « SIDEBOARD: » et « MAYBEBOARD: » vont dans ces
-        sections, et les tags en fin de ligne (« #ramp ») remplacent ceux de la carte. Une ligne sans édition, comme « 4
-        Lightning Bolt », accepte n'importe quelle édition.
-      </Text>
       <Textarea
-        aria-label="Liste du deck"
+        label={
+          <Group gap={8} component="span" display="inline-flex" mb={6}>
+            Liste du deck
+            <InfoHint label="Aide sur l'édition en masse">
+              Le deck tel qu'il est, une ligne par carte. Modifie la liste : ce qui y est entre dans le deck, ce qui n'y
+              est plus en sort (en restant dans ta collection). Les lignes sous « SIDEBOARD: » et « MAYBEBOARD: » vont
+              dans ces sections, et les tags en fin de ligne (« #ramp ») remplacent ceux de la carte. Une ligne sans
+              édition, comme « 4 Lightning Bolt », accepte n'importe quelle édition.
+            </InfoHint>
+          </Group>
+        }
         value={list}
         onChange={(event) => setText(event.currentTarget.value)}
         autosize
