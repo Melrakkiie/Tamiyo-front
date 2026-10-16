@@ -8,6 +8,7 @@ import { usePreferences } from '../auth/preferences';
 import { useSession } from '../auth/useSession';
 import type { ScryfallCard } from '../scryfall/client';
 import { useScryfallCard } from '../scryfall/hooks';
+import { FoilSticker } from '../theme/Sticker';
 
 export type PriceCurrency = keyof Value;
 
@@ -96,7 +97,12 @@ export function PrintingPrice({ printing, foil = false, ...props }: PrintingPric
   return (
     <PriceText {...props}>
       {amount === null ? 'Prix inconnu' : formatPrice(amount, currency)}
-      {foil && amount !== null ? ' (foil)' : ''}
+      {foil && amount !== null && (
+        <>
+          {' '}
+          <FoilSticker />
+        </>
+      )}
     </PriceText>
   );
 }
