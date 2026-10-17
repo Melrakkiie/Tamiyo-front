@@ -4,9 +4,10 @@ How the engineering skills should consume this repo's domain documentation when 
 
 ## Before exploring, read these
 
-- **`GLOSSARY.md`** at the repo root, or
-- **`GLOSSARY-MAP.md`** at the repo root if it exists: it points at one `GLOSSARY.md` per context. Read each one relevant to the topic.
-- **`docs/adr/`**: read ADRs that touch the area you're about to work in. In multi-context repos, also check `src/<context>/docs/adr/` for context-scoped decisions.
+The domain docs live in the API repo, not here: read them from the sibling clone `../Tamiyo/`, or from `Melrakkiie/Tamiyo` on GitHub (`gh api repos/Melrakkiie/Tamiyo/contents/<path>`) when there is none.
+
+- **`GLOSSARY.md`** at the API repo root.
+- **`docs/adr/`** in the API repo: read ADRs that touch the area you're about to work in.
 
 If any of these files don't exist, **proceed silently**. Don't flag their absence; don't suggest creating them upfront. The `/domain-modeling` skill (reached via `/grill-with-docs` and `/improve-codebase-architecture`) creates them lazily when terms or decisions actually get resolved.
 
