@@ -1,4 +1,5 @@
-import { Alert, Anchor, Center, Group, Loader, Paper, Stack, Text, Title } from '@mantine/core';
+import { Alert, Anchor, Center, Flex, Group, Loader, Paper, Stack, Text, Title } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router';
 
@@ -33,6 +34,7 @@ export function ProfilePage() {
   const avatarArt = useAvatarArt(profile.data?.avatar_scryfall_id);
   const follow = useFollowStatus(id);
   const own = !!account.data && account.data.id === id;
+  const compact = useMediaQuery('(max-width: 36em)') ?? false;
 
   if (profile.isLoading) {
     return (
@@ -83,53 +85,55 @@ export function ProfilePage() {
   return (
     <Stack gap="xl">
       <Paper withBorder p="lg" radius="md">
-        <Group wrap="nowrap" align="center">
-          <ProfileAvatar scryfallId={profile.data.avatar_scryfall_id} name={name} size={112} />
-          <Stack gap={4} style={{ minWidth: 0, flex: 1 }}>
-            <Group gap="sm" wrap="nowrap">
-              <Title order={2} c={profile.data.display_name ? undefined : 'dimmed'} lineClamp={1}>
-                {name}
-              </Title>
-              {!own && follow.data?.follows_me && (
-                <Sticker tone="lune" icon={<CheckIcon />} tilt={-2}>
-                  te suit
-                </Sticker>
-              )}
-            </Group>
-            {follow.data && (
-              <Group gap="md">
-                <Anchor component={Link} to={connectionsUrl(profile.data.id, 'followers')} size="sm" c="dimmed">
-                  <Text span fw={600} c="var(--mantine-color-text)">
-                    {follow.data.followers_count}
-                  </Text>{' '}
-                  abonné{follow.data.followers_count > 1 ? 's' : ''}
-                </Anchor>
-                <Anchor component={Link} to={connectionsUrl(profile.data.id, 'following')} size="sm" c="dimmed">
-                  <Text span fw={600} c="var(--mantine-color-text)">
-                    {follow.data.following_count}
-                  </Text>{' '}
-                  suivi{follow.data.following_count > 1 ? 's' : ''}
-                </Anchor>
+        <Flex direction={{ base: 'column', xs: 'row' }} align={{ base: 'stretch', xs: 'center' }} gap="md">
+          <Group wrap="nowrap" align="center" style={{ flex: 1, minWidth: 0 }}>
+            <ProfileAvatar scryfallId={profile.data.avatar_scryfall_id} name={name} size={compact ? 80 : 112} />
+            <Stack gap={4} style={{ minWidth: 0, flex: 1 }}>
+              <Group gap="sm" wrap="wrap">
+                <Title order={2} c={profile.data.display_name ? undefined : 'dimmed'} lineClamp={2}>
+                  {name}
+                </Title>
+                {!own && follow.data?.follows_me && (
+                  <Sticker tone="lune" icon={<CheckIcon />} tilt={-2}>
+                    te suit
+                  </Sticker>
+                )}
               </Group>
-            )}
-            {own && (
-              <Text size="sm" c="dimmed">
-                C'est ton profil, tel que les autres le voient.{' '}
-                <Anchor component={Link} to="/settings" size="sm">
-                  Modifier
-                </Anchor>
-              </Text>
-            )}
-            {avatarArt && (
-              <Text size="xs" c="dimmed">
-                {artCredit(avatarArt.artist)}
-              </Text>
-            )}
-          </Stack>
+              {follow.data && (
+                <Group gap="md">
+                  <Anchor component={Link} to={connectionsUrl(profile.data.id, 'followers')} size="sm" c="dimmed">
+                    <Text span fw={600} c="var(--mantine-color-text)">
+                      {follow.data.followers_count}
+                    </Text>{' '}
+                    abonné{follow.data.followers_count > 1 ? 's' : ''}
+                  </Anchor>
+                  <Anchor component={Link} to={connectionsUrl(profile.data.id, 'following')} size="sm" c="dimmed">
+                    <Text span fw={600} c="var(--mantine-color-text)">
+                      {follow.data.following_count}
+                    </Text>{' '}
+                    suivi{follow.data.following_count > 1 ? 's' : ''}
+                  </Anchor>
+                </Group>
+              )}
+              {own && (
+                <Text size="sm" c="dimmed">
+                  C'est ton profil, tel que les autres le voient.{' '}
+                  <Anchor component={Link} to="/settings" size="sm">
+                    Modifier
+                  </Anchor>
+                </Text>
+              )}
+              {avatarArt && (
+                <Text size="xs" c="dimmed">
+                  {artCredit(avatarArt.artist)}
+                </Text>
+              )}
+            </Stack>
+          </Group>
           {!own && follow.data && (
             <FollowButton userId={profile.data.id} name={name} followed={follow.data.followed_by_me} />
           )}
-        </Group>
+        </Flex>
       </Paper>
 
       {favorites.length > 0 && (
