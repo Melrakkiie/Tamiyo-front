@@ -1,18 +1,8 @@
-import {
-  Alert,
-  Button,
-  Center,
-  Group,
-  Loader,
-  Paper,
-  ScrollArea,
-  Stack,
-  Text,
-} from "@mantine/core";
+import { Alert, Button, Center, Group, Loader, Paper, ScrollArea, Stack, Text } from '@mantine/core';
 
-import { errorMessage } from "../api/errors";
-import { useCardNameSuggestions } from "../scryfall/hooks";
-import { CardHoverPreview } from "./CardHoverPreview";
+import { errorMessage } from '../api/errors';
+import { useCardNameSuggestions } from '../scryfall/hooks';
+import { CardHoverPreview } from './CardHoverPreview';
 
 const MAX_RESULTS = 15;
 
@@ -25,7 +15,7 @@ interface ScryfallFallbackProps {
 
 export function hiddenCardsHint(count: number) {
   return count === 1
-    ? "1 autre carte : affine la recherche pour la voir."
+    ? '1 autre carte : affine la recherche pour la voir.'
     : `${count} autres cartes : affine la recherche pour les voir.`;
 }
 
@@ -33,29 +23,21 @@ function scryfallQuery(search: string, identity: string | undefined) {
   if (identity === undefined) {
     return search;
   }
-  return `${search} ${identity === "" ? "id:c" : `id<=${identity}`}`;
+  return `${search} ${identity === '' ? 'id:c' : `id<=${identity}`}`;
 }
 
-export function ScryfallFallback({
-  search,
-  identity,
-  excludeNames,
-  onPick,
-}: ScryfallFallbackProps) {
+export function ScryfallFallback({ search, identity, excludeNames, onPick }: ScryfallFallbackProps) {
   const suggestions = useCardNameSuggestions(scryfallQuery(search, identity));
   const found = suggestions.data?.suggestions ?? [];
   const filtered = found.filter((result) => !excludeNames?.has(result.name));
   const results = filtered.slice(0, MAX_RESULTS);
-  const hidden =
-    (suggestions.data?.total ?? 0) -
-    found.length +
-    (filtered.length - results.length);
+  const hidden = (suggestions.data?.total ?? 0) - found.length + (filtered.length - results.length);
   const emptyMessage =
     found.length > 0
-      ? "Les cartes trouvées sur Scryfall sont déjà dans ta collection."
+      ? 'Les cartes trouvées sur Scryfall sont déjà dans ta collection.'
       : excludeNames && excludeNames.size > 0
-        ? "Aucune autre carte ne correspond sur Scryfall."
-        : "Aucune carte ne correspond sur Scryfall non plus.";
+        ? 'Aucune autre carte ne correspond sur Scryfall.'
+        : 'Aucune carte ne correspond sur Scryfall non plus.';
 
   return (
     <Paper withBorder p="sm">
@@ -71,8 +53,7 @@ export function ScryfallFallback({
           )}
         </Group>
         <Text size="xs" c="dimmed">
-          La carte apparaîtra dans le deck entourée en orange, en attendant que
-          tu l'ajoutes à ta collection.
+          La carte apparaîtra dans le deck entourée en orange, en attendant que tu l'ajoutes à ta collection.
         </Text>
         {suggestions.isLoading ? (
           <Center p="md">
@@ -81,7 +62,7 @@ export function ScryfallFallback({
         ) : suggestions.error ? (
           <Alert color="red">
             {errorMessage(suggestions.error, {
-              400: "Scryfall ne comprend pas cette recherche : vérifie la syntaxe.",
+              400: 'Scryfall ne comprend pas cette recherche : vérifie la syntaxe.',
             })}
           </Alert>
         ) : results.length === 0 ? (
@@ -105,12 +86,7 @@ export function ScryfallFallback({
                       </Text>
                     )}
                   </div>
-                  <Button
-                    size="xs"
-                    variant="light"
-                    color="orange"
-                    onClick={() => onPick(result.name)}
-                  >
+                  <Button size="xs" variant="light" color="orange" onClick={() => onPick(result.name)}>
                     Ajouter au deck
                   </Button>
                 </Group>

@@ -3,9 +3,7 @@ import type { ReactNode } from 'react';
 import { CheckIcon, HourglassIcon, Sticker, type StickerTone, SwapIcon } from '../theme/Sticker';
 
 export type PendingStatus =
-  | { kind: 'missing' }
-  | { kind: 'other-printing'; owned: number }
-  | { kind: 'owned'; owned: number };
+  { kind: 'missing' } | { kind: 'other-printing'; owned: number } | { kind: 'owned'; owned: number };
 
 const labels: Record<PendingStatus['kind'], string> = {
   missing: 'Manquante',

@@ -48,7 +48,8 @@ function DropZone({ id, accepts, onDrop, danger = false, fullWidth = false, labe
       {...targetProps}
       className="tamiyo-drop-zone"
       data-over={over || undefined}
-      data-danger={danger || undefined}      aria-label={label}
+      data-danger={danger || undefined}
+      aria-label={label}
       tabIndex={-1}
       px="lg"
       py="sm"

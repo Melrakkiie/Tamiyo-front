@@ -1,9 +1,9 @@
-import { Modal } from "@mantine/core";
+import { Modal } from '@mantine/core';
 
-import { LoginForm } from "./LoginForm";
-import { RegisterForm } from "./RegisterForm";
+import { LoginForm } from './LoginForm';
+import { RegisterForm } from './RegisterForm';
 
-export type AuthMode = "login" | "register";
+export type AuthMode = 'login' | 'register';
 
 interface AuthModalProps {
   mode: AuthMode | null;
@@ -12,30 +12,11 @@ interface AuthModalProps {
   onAuthenticated?: () => void;
 }
 
-export function AuthModal({
-  mode,
-  onModeChange,
-  onClose,
-  onAuthenticated,
-}: AuthModalProps) {
+export function AuthModal({ mode, onModeChange, onClose, onAuthenticated }: AuthModalProps) {
   return (
-    <Modal
-      opened={mode !== null}
-      onClose={onClose}
-      title={mode === "register" ? "Créer un compte" : "Connexion"}
-    >
-      {mode === "login" && (
-        <LoginForm
-          onSwitch={() => onModeChange("register")}
-          onSuccess={onAuthenticated}
-        />
-      )}
-      {mode === "register" && (
-        <RegisterForm
-          onSwitch={() => onModeChange("login")}
-          onSuccess={onAuthenticated}
-        />
-      )}
+    <Modal opened={mode !== null} onClose={onClose} title={mode === 'register' ? 'Créer un compte' : 'Connexion'}>
+      {mode === 'login' && <LoginForm onSwitch={() => onModeChange('register')} onSuccess={onAuthenticated} />}
+      {mode === 'register' && <RegisterForm onSwitch={() => onModeChange('login')} onSuccess={onAuthenticated} />}
     </Modal>
   );
 }

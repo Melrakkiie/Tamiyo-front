@@ -20,7 +20,9 @@ export function ScryfallCardSearch({ label, placeholder, onSelect, hiddenQuery, 
   const [debouncedSearch] = useDebouncedValue(search, 300);
   const query = debouncedSearch.trim() && hiddenQuery ? `${debouncedSearch.trim()} ${hiddenQuery}` : debouncedSearch;
   const suggestions = useCardNameSuggestions(query);
-  const typeLines = new Map((suggestions.data?.suggestions ?? []).map((suggestion) => [suggestion.name, suggestion.typeLine]));
+  const typeLines = new Map(
+    (suggestions.data?.suggestions ?? []).map((suggestion) => [suggestion.name, suggestion.typeLine]),
+  );
   const names = [...new Set((suggestions.data?.suggestions ?? []).map((suggestion) => suggestion.name))];
   const advanced = isAdvancedQuery(query.trim());
   const noResult =

@@ -1,35 +1,20 @@
-import {
-  Alert,
-  Anchor,
-  Button,
-  Group,
-  PasswordInput,
-  Stack,
-  Text,
-  TextInput,
-} from "@mantine/core";
-import { isEmail, isNotEmpty, useForm } from "@mantine/form";
-import { useMutation } from "@tanstack/react-query";
-import { Link } from "react-router";
+import { Alert, Anchor, Button, Group, PasswordInput, Stack, Text, TextInput } from '@mantine/core';
+import { isEmail, isNotEmpty, useForm } from '@mantine/form';
+import { useMutation } from '@tanstack/react-query';
+import { Link } from 'react-router';
 
-import { errorMessage } from "../api/errors";
-import { login } from "./actions";
+import { errorMessage } from '../api/errors';
+import { login } from './actions';
 
 type LoginValues = { email: string; password: string };
 
-export function LoginForm({
-  onSwitch,
-  onSuccess,
-}: {
-  onSwitch?: () => void;
-  onSuccess?: () => void;
-}) {
+export function LoginForm({ onSwitch, onSuccess }: { onSwitch?: () => void; onSuccess?: () => void }) {
   const form = useForm<LoginValues>({
-    mode: "uncontrolled",
-    initialValues: { email: "", password: "" },
+    mode: 'uncontrolled',
+    initialValues: { email: '', password: '' },
     validate: {
-      email: isEmail("Email invalide"),
-      password: isNotEmpty("Mot de passe requis"),
+      email: isEmail('Email invalide'),
+      password: isNotEmpty('Mot de passe requis'),
     },
   });
 
@@ -44,7 +29,7 @@ export function LoginForm({
         {mutation.error && (
           <Alert color="red">
             {errorMessage(mutation.error, {
-              401: "Email ou mot de passe incorrect.",
+              401: 'Email ou mot de passe incorrect.',
             })}
           </Alert>
         )}
@@ -53,14 +38,14 @@ export function LoginForm({
           label="Email"
           type="email"
           autoComplete="email"
-          key={form.key("email")}
-          {...form.getInputProps("email")}
+          key={form.key('email')}
+          {...form.getInputProps('email')}
         />
         <PasswordInput
           label="Mot de passe"
           autoComplete="current-password"
-          key={form.key("password")}
-          {...form.getInputProps("password")}
+          key={form.key('password')}
+          {...form.getInputProps('password')}
         />
 
         <Group justify="flex-end">
@@ -74,7 +59,7 @@ export function LoginForm({
         </Button>
 
         <Text size="sm" ta="center">
-          Pas encore de compte ?{" "}
+          Pas encore de compte ?{' '}
           {onSwitch ? (
             <Anchor component="button" type="button" onClick={onSwitch}>
               Créer un compte

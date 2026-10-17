@@ -2,12 +2,7 @@ import { notifications } from '@mantine/notifications';
 import createClient from 'openapi-fetch';
 
 import { expiresSoon, getSession, refreshAccessToken } from '../auth/session';
-import {
-  API_BASE_PATH,
-  API_BASE_URL,
-  REFRESH_TRANSPORT_COOKIE,
-  REFRESH_TRANSPORT_HEADER,
-} from '../config';
+import { API_BASE_PATH, API_BASE_URL, REFRESH_TRANSPORT_COOKIE, REFRESH_TRANSPORT_HEADER } from '../config';
 import { ApiError } from './errors';
 import type { paths } from './schema';
 
