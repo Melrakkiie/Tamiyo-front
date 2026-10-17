@@ -7,8 +7,7 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
-      retry: (failureCount, error) =>
-        failureCount < 1 && !(error instanceof ApiError && error.status < 500),
+      retry: (failureCount, error) => failureCount < 1 && !(error instanceof ApiError && error.status < 500),
     },
   },
 });

@@ -29,8 +29,8 @@ export function ForgotPasswordPage() {
 
       {mutation.isSuccess ? (
         <Alert color="green">
-          Si un compte existe avec cette adresse, un email avec un lien de réinitialisation vient
-          d'être envoyé. Pense à vérifier tes spams.
+          Si un compte existe avec cette adresse, un email avec un lien de réinitialisation vient d'être envoyé. Pense à
+          vérifier tes spams.
         </Alert>
       ) : (
         <form onSubmit={form.onSubmit((values) => mutation.mutate(values))}>

@@ -16,11 +16,7 @@ export class ApiError extends Error {
         : response.statusText;
     const retryAfter = Number(response.headers.get('Retry-After'));
 
-    return new ApiError(
-      response.status,
-      message,
-      Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : null,
-    );
+    return new ApiError(response.status, message, Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : null);
   }
 }
 
@@ -51,8 +47,7 @@ export function errorMessage(err: unknown, overrides: Partial<Record<number, str
     if (import.meta.env.DEV) {
       console.warn(`API error ${err.status}: ${err.message}`);
     }
-    const fallback =
-      err.status >= 500 ? serverErrorMessage : `Une erreur est survenue (code ${err.status}).`;
+    const fallback = err.status >= 500 ? serverErrorMessage : `Une erreur est survenue (code ${err.status}).`;
     return defaultMessages[err.status] ?? fallback;
   }
 

@@ -135,7 +135,13 @@ function DeckForm({
     >
       <Stack>
         {error !== null && error !== undefined && <Alert color="red">{errorMessage(error)}</Alert>}
-        <TextInput label="Nom" placeholder="Atraxa superfriends…" data-autofocus key={form.key('name')} {...form.getInputProps('name')} />
+        <TextInput
+          label="Nom"
+          placeholder="Atraxa superfriends…"
+          data-autofocus
+          key={form.key('name')}
+          {...form.getInputProps('name')}
+        />
         <Autocomplete
           label="Format"
           description="Le nom du format chez Scryfall (commander, modern, pauper…), utilisé pour vérifier la légalité."

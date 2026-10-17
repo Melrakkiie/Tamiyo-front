@@ -197,7 +197,7 @@ export function buildFolderTree<F extends FolderLike>(folders: F[], decks: Deck[
 export function isInsideFolder(folders: FolderLike[], folderId: number, ancestorId: number) {
   const parents = new Map(folders.map((folder) => [folder.id, folder.parent_id]));
   const seen = new Set<number>();
-  for (let current: number | null = folderId; current !== null && !seen.has(current); ) {
+  for (let current: number | null = folderId; current !== null && !seen.has(current);) {
     if (current === ancestorId) {
       return true;
     }
