@@ -50,4 +50,4 @@ Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-
 
 ### Domain docs
 
-Single-context: `GLOSSARY.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+Single-context, kept in the API repo (`../Tamiyo/GLOSSARY.md`, `../Tamiyo/docs/adr/`). See `docs/agents/domain.md`.
