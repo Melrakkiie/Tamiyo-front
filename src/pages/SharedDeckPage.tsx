@@ -445,29 +445,29 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
         </Group>
       )}
 
-      <Group gap="lg" align="stretch">
+      <Group justify="flex-end" align="stretch" gap="md" miw={0}>
+        <Select
+          label="Grouper par"
+          placeholder="Aucun regroupement"
+          data={sharedGroupingOptions}
+          value={grouping}
+          onChange={(value) => setGrouping(parseSharedGrouping(value))}
+          clearable
+          w={200}
+        />
         <CardDisplayControls
           display={display}
+          wrap="nowrap"
           options={
-            <>
-              <Select
-                label="Grouper par"
-                placeholder="Aucun regroupement"
-                data={sharedGroupingOptions}
-                value={grouping}
-                onChange={(value) => setGrouping(parseSharedGrouping(value))}
-                clearable
-                w={200}
-              />
-              <Select
-                label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
-                data={sharedDeckSortOptions}
-                value={sort}
-                onChange={(value) => value && setSort(value as SharedDeckSort)}
-                allowDeselect={false}
-                w={240}
-              />
-            </>
+            <Select
+              label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
+              data={sharedDeckSortOptions}
+              value={sort}
+              onChange={(value) => value && setSort(value as SharedDeckSort)}
+              allowDeselect={false}
+              w={240}
+              miw={0}
+            />
           }
         />
         {signedIn && <CollectionToggle description="Les cartes de ce deck que tu as dans ta collection" />}

@@ -99,19 +99,20 @@ export function DeckComparePage() {
         <DeckSummary deck={other} color={sideColors.other} />
       </SimpleGrid>
 
-      <CardDisplayControls
-        display={display}
-        options={
-          <>
-            <Select
-              label="Grouper par"
-              placeholder="Aucun regroupement"
-              data={groupingOptions}
-              value={grouping}
-              onChange={(value) => setGrouping(parseGrouping(value))}
-              clearable
-              w={200}
-            />
+      <Group justify="flex-end" align="flex-end" gap="md">
+        <Select
+          label="Grouper par"
+          placeholder="Aucun regroupement"
+          data={groupingOptions}
+          value={grouping}
+          onChange={(value) => setGrouping(parseGrouping(value))}
+          clearable
+          w={200}
+        />
+        <CardDisplayControls
+          display={display}
+          wrap="nowrap"
+          options={
             <Select
               label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
               data={sharedDeckSortOptions}
@@ -119,10 +120,11 @@ export function DeckComparePage() {
               onChange={(value) => value && setSort(value as SharedDeckSort)}
               allowDeselect={false}
               w={240}
+              miw={0}
             />
-          </>
-        }
-      />
+          }
+        />
+      </Group>
 
       <Tabs value={tab} onChange={setTab} variant="pills" radius="md">
         <Paper withBorder p={4} radius="md">

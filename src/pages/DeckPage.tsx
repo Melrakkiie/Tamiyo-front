@@ -771,29 +771,29 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
           deckTags={deckTags.data?.tags ?? []}
         />
         <Group align="flex-start" wrap="wrap-reverse">
-          <Group gap="lg" align="stretch">
+          <Group justify="flex-end" align="stretch" gap="md" miw={0} style={{ flexGrow: 1 }}>
+            <Select
+              label="Grouper par"
+              placeholder="Aucun regroupement"
+              data={deckGroupingOptions}
+              value={grouping}
+              onChange={(value) => changeView({ grouping: parseDeckGrouping(value) })}
+              clearable
+              w={200}
+            />
             <CardDisplayControls
               display={display}
+              wrap="nowrap"
               options={
-                <>
-                  <Select
-                    label="Grouper par"
-                    placeholder="Aucun regroupement"
-                    data={deckGroupingOptions}
-                    value={grouping}
-                    onChange={(value) => changeView({ grouping: parseDeckGrouping(value) })}
-                    clearable
-                    w={200}
-                  />
-                  <Select
-                    label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
-                    data={sortChoices}
-                    value={shownSort}
-                    onChange={(value) => value && changeView({ sort: value as DeckCardSort })}
-                    allowDeselect={false}
-                    w={240}
-                  />
-                </>
+                <Select
+                  label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
+                  data={sortChoices}
+                  value={shownSort}
+                  onChange={(value) => value && changeView({ sort: value as DeckCardSort })}
+                  allowDeselect={false}
+                  w={240}
+                  miw={0}
+                />
               }
             />
             <CollectionToggle description="Les cartes en attente et le rangement de chaque exemplaire" />
