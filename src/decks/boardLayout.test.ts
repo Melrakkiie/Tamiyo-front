@@ -153,6 +153,17 @@ describe('buildDeckBoards commanders', () => {
     );
     expect(names(boards.main.stacks)).toEqual(['Serra Angel', 'Forest']);
   });
+
+  it('recognizes a pending commander as commander, alone in its stack', () => {
+    const pending = [pendingCard(serraAngel, { id: 8, quantity: 2 }), pendingCard(serraAngel, { id: 9 })];
+    const boards = buildDeckBoards(
+      boardsInput([deckCard(serraAngel)], [serraAngel], { pending, commanders: [{ pendingId: 9 }] }),
+    );
+    const [commander] = boards.main.stacks;
+    expect(commander).toMatchObject({ kind: 'pending', pending: { id: 9 }, quantity: 1 });
+    expect([...boards.main.commanders]).toEqual([commander.key]);
+    expect(stackKinds(boards.main.stacks)).toEqual(['pending', 'owned', 'pending']);
+  });
 });
 
 const valakutAwakening: ScryfallCard = {
