@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Card } from '../api/types';
+import type { Card, DeckCardSort } from '../api/types';
 import type { CardGroup } from '../cards/grouping';
 import type { ScryfallCard } from '../scryfall/client';
 import {
@@ -258,5 +258,60 @@ describe('buildDeckBoards groups', () => {
   it('leaves the stacks ungrouped without a grouping', () => {
     const boards = buildDeckBoards(boardsInput([deckCard(forest)], [forest]));
     expect(boards.main.groups).toBeNull();
+  });
+});
+
+describe('buildDeckBoards sorts', () => {
+  const cards = [
+    deckCard(serraAngel, { price: 0.5, added: '2026-03-01', updated: '2026-03-05' }),
+    deckCard(grizzlyBears, { price: null, added: '2026-01-01', updated: '2026-03-09' }),
+    deckCard(solRing, { price: 2, added: '2026-02-01', updated: '2026-03-01' }),
+    deckCard(tarmogoyf, { price: 20, added: '2026-04-01', updated: '2026-03-02' }),
+  ];
+  const printings = [serraAngel, grizzlyBears, solRing, tarmogoyf];
+
+  it.each<[DeckCardSort, string[]]>([
+    ['name', ['Grizzly Bears', 'Serra Angel', 'Sol Ring', 'Tarmogoyf']],
+    ['-name', ['Tarmogoyf', 'Sol Ring', 'Serra Angel', 'Grizzly Bears']],
+    ['mana_value', ['Sol Ring', 'Grizzly Bears', 'Tarmogoyf', 'Serra Angel']],
+    ['-mana_value', ['Serra Angel', 'Grizzly Bears', 'Tarmogoyf', 'Sol Ring']],
+    ['price', ['Serra Angel', 'Sol Ring', 'Tarmogoyf', 'Grizzly Bears']],
+    ['-price', ['Tarmogoyf', 'Sol Ring', 'Serra Angel', 'Grizzly Bears']],
+    ['added', ['Grizzly Bears', 'Sol Ring', 'Serra Angel', 'Tarmogoyf']],
+    ['-added', ['Tarmogoyf', 'Serra Angel', 'Sol Ring', 'Grizzly Bears']],
+    ['updated', ['Sol Ring', 'Tarmogoyf', 'Serra Angel', 'Grizzly Bears']],
+    ['-updated', ['Grizzly Bears', 'Serra Angel', 'Tarmogoyf', 'Sol Ring']],
+  ])('sorts by %s', (sort, expected) => {
+    expect(names(buildDeckBoards(boardsInput(cards, printings, { sort })).main.stacks)).toEqual(expected);
+  });
+
+  it('sorts the cards inside each group', () => {
+    const boards = buildDeckBoards(boardsInput(cards, printings, { sort: '-mana_value', grouping: 'type' }));
+    expect(groupSummary(boards.main.groups)).toEqual([
+      ['Créatures', ['Serra Angel', 'Grizzly Bears', 'Tarmogoyf']],
+      ['Artefacts', ['Sol Ring']],
+    ]);
+  });
+});
+
+describe('buildDeckBoards empty boards', () => {
+  it('returns every board, empty when it has no card', () => {
+    const boards = buildDeckBoards(
+      boardsInput([deckCard(forest, { board: 'considering' })], [forest], { grouping: 'type' }),
+    );
+    expect([boards.main, boards.sideboard].map(({ stacks, groups, count }) => ({ stacks, groups, count }))).toEqual([
+      { stacks: [], groups: [], count: 0 },
+      { stacks: [], groups: [], count: 0 },
+    ]);
+    expect(boards.considering.count).toBe(1);
+  });
+
+  it('returns empty boards for an empty deck', () => {
+    const boards = buildDeckBoards(boardsInput([], []));
+    expect(Object.values(boards).map((board) => [board.board, board.count, board.stacks.length])).toEqual([
+      ['main', 0, 0],
+      ['sideboard', 0, 0],
+      ['considering', 0, 0],
+    ]);
   });
 });
