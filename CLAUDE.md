@@ -6,13 +6,14 @@ React SPA for Tamiyo, a Magic: The Gathering collection and deck manager. React 
 
 ```bash
 npm run dev          # http://localhost:5173, proxies /api to localhost:8080 (run the API with API_BASE_PATH=/api)
-npm run build        # type check + production build; this is what CI runs
+npm run build        # type check + production build; CI runs it after the tests
+npm test             # Vitest suite, run once (node environment, no DOM)
 npm run typecheck
 npm run gen:api      # regenerate src/api/schema.d.ts from the API's doc/openapi.yaml (main branch)
 npx prettier --write <files>   # options in .prettierrc
 ```
 
-There are no automated tests: run `npm run build` before calling a change done, and check the result in the browser.
+Vitest covers pure TypeScript only; tests sit next to their module (`foo.test.ts`), and shared Scryfall card fixtures live in `src/scryfall/fixtures.ts`. There are no rendering tests: run `npm test` and `npm run build` before calling a change done, and check UI changes in the browser.
 
 ## Layout
 

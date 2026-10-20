@@ -11,6 +11,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
+    "test": "vitest run",
     "gen:api": "openapi-typescript https://raw.githubusercontent.com/Melrakkiie/tamiyo/main/doc/openapi.yaml -o src/api/schema.d.ts"
   },
   "dependencies": {
@@ -34,6 +35,7 @@
     "postcss-preset-mantine": "^1.17.0",
     "postcss-simple-vars": "^7.0.1",
     "typescript": "~5.9.2",
-    "vite": "^7.0.0"
+    "vite": "^7.0.0",
+    "vitest": "5.0.3"
   }
 }
