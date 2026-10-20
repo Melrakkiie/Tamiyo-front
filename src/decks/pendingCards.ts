@@ -95,11 +95,13 @@ export function stackCards<T extends Card>(
   for (const card of cards) {
     const key = stackKey(card, commanderIds, byPrinting);
     const stack = stacks.get(key);
+    const quantity = card.quantity ?? 1;
+    const ids = card.copy_ids?.length ? card.copy_ids : [card.id];
     if (stack) {
-      stack.quantity = (stack.quantity ?? 1) + 1;
-      stack.copy_ids = [...(stack.copy_ids ?? []), card.id];
+      stack.quantity = (stack.quantity ?? 1) + quantity;
+      stack.copy_ids = [...(stack.copy_ids ?? []), ...ids];
     } else {
-      stacks.set(key, { ...card, quantity: 1, copy_ids: [card.id] });
+      stacks.set(key, { ...card, quantity, copy_ids: ids });
     }
   }
   return [...stacks.values()];

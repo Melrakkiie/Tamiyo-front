@@ -13,7 +13,7 @@ import { CardImage } from './CardImage';
 import { CommanderBadge, CommanderInlineMark } from './CommanderMark';
 import { CollectionBadge, PendingBadge, type PendingStatus } from './PendingBadge';
 
-interface CardTileProps {
+export interface CardTileProps {
   card: Card;
   imageUrl: string | undefined;
   backImageUrl?: string;
