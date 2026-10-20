@@ -63,7 +63,7 @@ import { useDeckCardMenu } from '../decks/useDeckCardMenu';
 import { useOpenedEntry } from '../decks/useOpenedEntry';
 import { CollectionToggle } from '../decks/CollectionToggle';
 import { CompareDeckModal } from '../decks/CompareDeckModal';
-import { DeckCardModal } from '../decks/DeckCardModal';
+import { DeckEntryModal } from '../decks/DeckEntryModal';
 import { useDeckCopyActions } from '../decks/DeckCopyActions';
 import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckTagsModal } from '../decks/DeckTagsModal';
@@ -78,7 +78,6 @@ import { LikeButton } from '../decks/LikeButton';
 import { DeckStatsPanel } from '../decks/DeckStatsPanel';
 import { ExportDeckModal } from '../decks/ExportDeckModal';
 import { ImportListModal } from '../decks/ImportListModal';
-import { PendingCardModal } from '../decks/PendingCardModal';
 import { pendingStatus } from '../decks/pendingCards';
 import { PendingCardsSection } from '../decks/PendingCardsSection';
 import { ShareDeckModal } from '../decks/ShareDeckModal';
@@ -707,20 +706,10 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
           opened={addOpened}
           onClose={() => setAddOpened(false)}
         />
-        <DeckCardModal
+        <DeckEntryModal
           deck={deck}
           deckCardIds={new Set(deckCards.map((card) => card.id))}
-          card={opened.entry?.kind === 'owned' ? opened.entry : null}
-          board={opened.entry?.board ?? 'main'}
-          imageUrl={opened.imageUrl}
-          loading={opened.loading}
-          onClose={opened.close}
-          onSwapped={opened.showSwapped}
-        />
-        <PendingCardModal
-          deck={deck}
-          deckCardIds={new Set(deckCards.map((card) => card.id))}
-          entry={opened.entry?.kind === 'pending' ? opened.entry : null}
+          entry={opened.entry}
           imageUrl={opened.imageUrl}
           loading={opened.loading}
           onClose={opened.close}
