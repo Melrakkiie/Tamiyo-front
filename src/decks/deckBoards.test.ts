@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { Card } from '../api/types';
-import { forest, grizzlyBears, serraAngel, solRing, tarmogoyf } from '../scryfall/fixtures';
+import type { CardGroup } from '../cards/grouping';
+import type { ScryfallCard } from '../scryfall/client';
+import {
+  delverOfSecrets,
+  forest,
+  grizzlyBears,
+  serraAngel,
+  solRing,
+  sproutingThrinax,
+  tarmogoyf,
+  westvaleAbbey,
+} from '../scryfall/fixtures';
 import { boardsInput, copies, deckCard, pendingCard } from './boardTestHelpers';
 import { buildDeckBoards } from './deckBoards';
 import { isPendingCard, pendingToCards } from './pendingCards';
@@ -104,5 +115,148 @@ describe('buildDeckBoards commanders', () => {
     const cards = [deckCard(forest), commander];
     const boards = buildDeckBoards(boardsInput(cards, [forest, serraAngel], { commanderIds: [null, commander.id] }));
     expect(names(boards.main.stacks)).toEqual(['Serra Angel', 'Forest']);
+  });
+});
+
+const valakutAwakening: ScryfallCard = {
+  id: 'fixture-valakut-awakening',
+  layout: 'modal_dfc',
+  name: 'Valakut Awakening // Valakut Stoneforge',
+  set: 'znr',
+  set_name: 'Zendikar Rising',
+  collector_number: '174',
+  released_at: '2020-09-25',
+  cmc: 3,
+  type_line: 'Instant // Land',
+  rarity: 'uncommon',
+  color_identity: ['R'],
+  card_faces: [
+    { name: 'Valakut Awakening', mana_cost: '{2}{R}', type_line: 'Instant', colors: ['R'] },
+    { name: 'Valakut Stoneforge', mana_cost: '', type_line: 'Land', colors: [] },
+  ],
+};
+
+function groupSummary(groups: CardGroup[] | null) {
+  return groups?.map((group) => [group.label, names(group.cards)]) ?? null;
+}
+
+describe('buildDeckBoards groups', () => {
+  it('groups by the type of the front face and notes the back faces of another type', () => {
+    const cards = [
+      ...copies(2, valakutAwakening),
+      deckCard(westvaleAbbey),
+      deckCard(grizzlyBears, { card_type: null }),
+      deckCard(forest),
+      deckCard(solRing),
+    ];
+    const printings = [valakutAwakening, westvaleAbbey, grizzlyBears, forest, solRing];
+    const boards = buildDeckBoards(boardsInput(cards, printings, { grouping: 'type' }));
+    expect(groupSummary(boards.main.groups)).toEqual([
+      ['Créatures', ['Grizzly Bears']],
+      ['Éphémères', ['Valakut Awakening // Valakut Stoneforge']],
+      ['Artefacts', ['Sol Ring']],
+      ['Terrains', ['Forest', 'Westvale Abbey // Ormendahl, Profane Prince']],
+    ]);
+    expect(Object.fromEntries(boards.main.backFaces)).toEqual({
+      Terrains: [{ name: 'Valakut Awakening // Valakut Stoneforge', quantity: 2 }],
+      Créatures: [{ name: 'Westvale Abbey // Ormendahl, Profane Prince', quantity: 1 }],
+    });
+  });
+
+  it('groups by colour', () => {
+    const cards = [
+      deckCard(forest),
+      deckCard(sproutingThrinax),
+      deckCard(solRing),
+      deckCard(grizzlyBears),
+      deckCard(serraAngel),
+    ];
+    const printings = [forest, sproutingThrinax, solRing, grizzlyBears, serraAngel];
+    const boards = buildDeckBoards(boardsInput(cards, printings, { grouping: 'color' }));
+    expect(groupSummary(boards.main.groups)).toEqual([
+      ['Blanc', ['Serra Angel']],
+      ['Vert', ['Grizzly Bears']],
+      ['Multicolore', ['Sprouting Thrinax']],
+      ['Incolore', ['Sol Ring']],
+      ['Terrains', ['Forest']],
+    ]);
+  });
+
+  it('groups by mana value', () => {
+    const cards = [deckCard(serraAngel), deckCard(grizzlyBears), deckCard(solRing), deckCard(tarmogoyf)];
+    const printings = [serraAngel, grizzlyBears, solRing, tarmogoyf];
+    const boards = buildDeckBoards(boardsInput(cards, printings, { grouping: 'mana' }));
+    expect(groupSummary(boards.main.groups)).toEqual([
+      ['Coût de mana 1', ['Sol Ring']],
+      ['Coût de mana 2', ['Grizzly Bears', 'Tarmogoyf']],
+      ['Coût de mana 5', ['Serra Angel']],
+    ]);
+  });
+
+  it('groups by subtype, listing a card under each of its subtypes', () => {
+    const cards = [deckCard(delverOfSecrets), deckCard(grizzlyBears), deckCard(solRing)];
+    const printings = [delverOfSecrets, grizzlyBears, solRing];
+    const boards = buildDeckBoards(boardsInput(cards, printings, { grouping: 'subtype' }));
+    expect(groupSummary(boards.main.groups)).toEqual([
+      ['Bear', ['Grizzly Bears']],
+      ['Human', ['Delver of Secrets // Insectile Aberration']],
+      ['Insect', ['Delver of Secrets // Insectile Aberration']],
+      ['Wizard', ['Delver of Secrets // Insectile Aberration']],
+      ['Sans sous-type', ['Sol Ring']],
+    ]);
+  });
+
+  it('groups by storage, the pending cards first', () => {
+    const cards = [
+      deckCard(forest, { storage_id: 2 }),
+      deckCard(grizzlyBears, { storage_id: 1 }),
+      deckCard(serraAngel, { storage_id: 9 }),
+      deckCard(solRing),
+      ...pendingToCards([pendingCard(tarmogoyf)]),
+    ];
+    const storageNames = new Map([
+      [1, 'Classeur'],
+      [2, 'Boîte à terrains'],
+    ]);
+    const boards = buildDeckBoards(
+      boardsInput(cards, [forest, grizzlyBears, serraAngel, solRing, tarmogoyf], {
+        grouping: 'storage',
+        separateByStorage: true,
+        storageNames,
+      }),
+    );
+    expect(groupSummary(boards.main.groups)).toEqual([
+      ['Pas encore dans ta collection', ['Tarmogoyf']],
+      ['Boîte à terrains', ['Forest']],
+      ['Classeur', ['Grizzly Bears']],
+      ['Rangement inconnu', ['Serra Angel']],
+      ['Sans rangement', ['Sol Ring']],
+    ]);
+  });
+
+  it('groups by tag, the untagged cards last', () => {
+    const tags: Record<string, string[]> = {
+      'Grizzly Bears': ['rampe', 'Élan'],
+      Tarmogoyf: ['défense'],
+    };
+    const cards = [deckCard(grizzlyBears), deckCard(tarmogoyf), deckCard(solRing)];
+    const boards = buildDeckBoards(
+      boardsInput(cards, [grizzlyBears, tarmogoyf, solRing], {
+        grouping: 'tag',
+        tagsOf: (card) => tags[card.name] ?? [],
+      }),
+    );
+    expect(groupSummary(boards.main.groups)).toEqual([
+      ['défense', ['Tarmogoyf']],
+      ['Élan', ['Grizzly Bears']],
+      ['rampe', ['Grizzly Bears']],
+      ['Sans tag', ['Sol Ring']],
+    ]);
+    expect(boards.main.groups?.map((group) => group.tag)).toEqual(['défense', 'Élan', 'rampe', null]);
+  });
+
+  it('leaves the stacks ungrouped without a grouping', () => {
+    const boards = buildDeckBoards(boardsInput([deckCard(forest)], [forest]));
+    expect(boards.main.groups).toBeNull();
   });
 });
