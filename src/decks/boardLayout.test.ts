@@ -95,6 +95,19 @@ describe('buildDeckBoards stacks', () => {
     expect(stackKinds(boards.main.stacks)).toEqual(['owned', 'pending', 'owned']);
   });
 
+  it.each([false, true])(
+    'keeps owned and pending copies of one printing apart (by storage: %s)',
+    (separateByStorage) => {
+      const cards = copies(2, forest);
+      const pending = [pendingCard(forest, { quantity: 3 })];
+      const boards = buildDeckBoards(boardsInput(cards, [forest], { pending, separateByStorage }));
+      expect(boards.main.stacks.map((entry) => [entry.kind, entry.quantity])).toEqual([
+        ['owned', 2],
+        ['pending', 3],
+      ]);
+    },
+  );
+
   it('keeps a pending card of 150 copies apart from the next pending card', () => {
     const pending = [pendingCard(forest, { id: 1, quantity: 150 }), pendingCard(forest, { id: 2, quantity: 3 })];
     const boards = buildDeckBoards(boardsInput([], [forest], { pending }));
