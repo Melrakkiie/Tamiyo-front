@@ -3,7 +3,7 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
-import type { Card, DeckCard, SharedDeck } from '../api/types';
+import type { Card, SharedDeck } from '../api/types';
 import { useAccount } from '../auth/account';
 import { ProfileAvatar } from '../auth/UserAvatar';
 import { useShowCollectionInDecks } from '../auth/preferences';
@@ -11,15 +11,12 @@ import { useSession } from '../auth/useSession';
 import { useCardContextMenu } from '../cards/CardContextMenu';
 import { CardImage } from '../cards/CardImage';
 import { CardDisplayControls, useCardDisplay } from '../cards/CardDisplay';
-import { CardGrid } from '../cards/CardLayout';
-import { CardTile } from '../cards/CardTile';
 import { useCardVisuals } from '../cards/useCardVisuals';
-import { type CollapsibleBoard, DEFAULT_COLLAPSED_BOARDS, inBoard } from '../decks/boards';
-import { BoardSection } from '../decks/BoardSection';
-import { type DeckCardGrouped, DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
+import { type CollapsibleBoard, DEFAULT_COLLAPSED_BOARDS } from '../decks/boards';
+import { DeckBoards, type DeckBoardsExtras, useDeckBoards } from '../decks/DeckBoards';
 import { LegalityWarning } from '../decks/DeckLegalityWarning';
 import { useAllDecks } from '../decks/api';
-import { formatPrice, PriceText, usePriceCurrency } from '../cards/price';
+import { usePriceCurrency } from '../cards/price';
 import { DeckValue } from '../decks/DeckValue';
 import { DeckBanner } from '../decks/DeckBanner';
 import { LikeButton, LikeCount } from '../decks/LikeButton';
@@ -28,7 +25,6 @@ import { CompareDeckModal } from '../decks/CompareDeckModal';
 import { useDeckCopyActions } from '../decks/DeckCopyActions';
 import { DeckStatsView } from '../decks/DeckStatsPanel';
 import { ExportDeckModal } from '../decks/ExportDeckModal';
-import { sortDeckCards } from '../decks/pendingCards';
 import {
   type SharedDeckSort,
   sharedCardsToCards,
@@ -277,6 +273,28 @@ function CommanderCard({ card, label, imageUrl, onOpen }: CommanderCardProps) {
   );
 }
 
+function useSharedDeckTiles(signedIn: boolean, collectionCounts: Map<string, number> | null) {
+  const contextMenu = useCardContextMenu();
+  const cardMenu = useSharedCardMenu(signedIn);
+  const extras: DeckBoardsExtras = {
+    tile: (card, { imageUrl }) => ({
+      props: {
+        collectionCount: collectionCounts ? collectionCounts.get(cardNameKey(card.name)) : undefined,
+        onContextMenu: (event, clicked) => contextMenu.open(event, cardMenu.menuFor(clicked, imageUrl)),
+      },
+    }),
+  };
+  return {
+    extras,
+    overlays: (
+      <>
+        {contextMenu.element}
+        {cardMenu.modals}
+      </>
+    ),
+  };
+}
+
 function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: boolean }) {
   const { pathname } = useLocation();
   const showCollection = useShowCollectionInDecks(signedIn) && signedIn;
@@ -286,7 +304,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
   const [grouping, setGrouping] = useState<SharedCardGrouping | null>('type');
   const display = useCardDisplay({ showDetails: false });
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
-  const [collapsed, setCollapsed] = useState<CollapsibleBoard[]>(DEFAULT_COLLAPSED_BOARDS);
+  const [folded, setFolded] = useState<CollapsibleBoard[]>(DEFAULT_COLLAPSED_BOARDS);
   const currency = usePriceCurrency();
   const stats = useSharedDeckStats(shared.deck.id, currency !== null);
   const all = sharedCardsToCards(shared.cards);
@@ -298,40 +316,23 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
         Number(a.scryfall_id === shared.deck.commander_scryfall_id),
     );
   const commander = commanders[0];
-  const cards = sortDeckCards<DeckCard>(all, sort);
-  const mainCards = inBoard(cards, 'main');
-  const sideboardCards = inBoard(cards, 'sideboard');
-  const consideringCards = inBoard(cards, 'considering');
-  const visuals = useCardVisuals(cards, display);
   const cardTags = tagsByName(shared.cards);
-  const cardTagsOf = (card: Card) => tagsOf(cardTags, card.name);
-  const groupedMain = useDeckCardGroups(mainCards, grouping, undefined, cardTagsOf);
-  const groupedSideboard = useDeckCardGroups(sideboardCards, grouping, undefined, cardTagsOf);
-  const groupedConsidering = useDeckCardGroups(consideringCards, grouping, undefined, cardTagsOf);
-
-  const contextMenu = useCardContextMenu();
-  const cardMenu = useSharedCardMenu(signedIn);
+  const boards = useDeckBoards({
+    cards: all,
+    sort,
+    grouping,
+    commanderIds: commanders.map((card) => card.id),
+    tagsOf: (card) => tagsOf(cardTags, card.name),
+  });
+  const visuals = useCardVisuals(all, display);
+  const tiles = useSharedDeckTiles(signedIn, showCollection ? ownedByName : null);
 
   function toggleBoard(board: CollapsibleBoard) {
-    setCollapsed((current) =>
+    setFolded((current) =>
       current.includes(board) ? current.filter((other) => other !== board) : [...current, board],
     );
   }
 
-  function boardValue(board: CollapsibleBoard) {
-    if (!currency || !stats.data) {
-      return undefined;
-    }
-    return (
-      <PriceText span fz="md">
-        {formatPrice(stats.data.board_values[board][currency], currency)}
-      </PriceText>
-    );
-  }
-
-  function count(boardCards: Card[]) {
-    return boardCards.reduce((total, card) => total + (card.quantity ?? 1), 0);
-  }
   const commanderImage = commander ? visuals.imageUrl(commander) : undefined;
 
   useEffect(() => {
@@ -349,34 +350,6 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
     );
   });
   useEffect(() => () => setDefaultCardPreview(null), []);
-
-  function renderTile(card: Card) {
-    return (
-      <CardTile
-        key={card.id}
-        card={card}
-        imageUrl={visuals.imageUrl(card)}
-        backImageUrl={visuals.backImageUrl(card)}
-        imageLoading={visuals.imageLoading}
-        display={display}
-        commander={commanders.some((other) => other.id === card.id)}
-        manaCost={visuals.manaCost(card)}
-        collectionCount={showCollection ? ownedByName.get(cardNameKey(card.name)) : undefined}
-        onOpen={setOpenedCard}
-        onContextMenu={(event, clicked) =>
-          contextMenu.open(event, cardMenu.menuFor(clicked, visuals.imageUrl(clicked)))
-        }
-      />
-    );
-  }
-
-  function renderBoard(boardCards: Card[], grouped: DeckCardGrouped) {
-    return grouping ? (
-      <DeckCardGroups {...grouped} display={display} renderTile={renderTile} />
-    ) : (
-      <CardGrid display={display} cards={boardCards} renderTile={renderTile} />
-    );
-  }
 
   return (
     <Stack>
@@ -422,42 +395,18 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
         {signedIn && <CollectionToggle description="Les cartes de ce deck que tu as dans ta collection" />}
       </Group>
 
-      {cards.length === 0 ? (
-        <EmptyNote title="Ce deck est vide" />
-      ) : mainCards.length === 0 ? (
-        <Text size="sm" c="dimmed">
-          Aucune carte dans le deck principal.
-        </Text>
-      ) : (
-        renderBoard(mainCards, groupedMain)
-      )}
-      {sideboardCards.length > 0 && (
-        <BoardSection
-          board="sideboard"
-          count={count(sideboardCards)}
-          collapsed={collapsed.includes('sideboard')}
-          onToggle={() => toggleBoard('sideboard')}
-          emptyMessage=""
-          value={boardValue('sideboard')}
-        >
-          {renderBoard(sideboardCards, groupedSideboard)}
-        </BoardSection>
-      )}
-      {consideringCards.length > 0 && (
-        <BoardSection
-          board="considering"
-          count={count(consideringCards)}
-          collapsed={collapsed.includes('considering')}
-          onToggle={() => toggleBoard('considering')}
-          emptyMessage=""
-          value={boardValue('considering')}
-        >
-          {renderBoard(consideringCards, groupedConsidering)}
-        </BoardSection>
-      )}
+      <DeckBoards
+        boards={boards}
+        display={display}
+        folded={folded}
+        onToggleBoard={toggleBoard}
+        boardValues={stats.data?.board_values}
+        emptyDeck={<EmptyNote title="Ce deck est vide" />}
+        extras={tiles.extras}
+        onOpen={setOpenedCard}
+      />
 
-      {contextMenu.element}
-      {cardMenu.modals}
+      {tiles.overlays}
       <SharedCardModal
         card={openedCard}
         imageUrl={openedCard ? visuals.imageUrl(openedCard) : undefined}
