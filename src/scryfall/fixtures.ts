@@ -247,3 +247,41 @@ export const delverOfSecrets: ScryfallCard = {
     },
   ],
 };
+
+export const serraAngel: ScryfallCard = {
+  id: 'fixture-serra-angel',
+  layout: 'normal',
+  name: 'Serra Angel',
+  set: 'dmu',
+  set_name: 'Dominaria United',
+  collector_number: '36',
+  released_at: '2022-09-09',
+  cmc: 5,
+  type_line: 'Creature — Angel',
+  mana_cost: '{3}{W}{W}',
+  oracle_text: 'Flying, vigilance',
+  power: '4',
+  toughness: '4',
+  rarity: 'uncommon',
+  keywords: ['Flying', 'Vigilance'],
+  colors: ['W'],
+  color_identity: ['W'],
+  legalities: { standard: 'not_legal', modern: 'legal', vintage: 'restricted', commander: 'banned' },
+};
+
+export const starredPromo: ScryfallCard = {
+  id: 'fixture-starred-promo',
+  layout: 'normal',
+  name: 'Lightning Bolt',
+  set: 'plst',
+  set_name: 'The List',
+  collector_number: '12★',
+  released_at: '2023-01-01',
+  cmc: 1,
+  type_line: 'Instant',
+  mana_cost: '{R}',
+  oracle_text: 'Lightning Bolt deals 3 damage to any target.',
+  rarity: 'special',
+  colors: ['R'],
+  color_identity: ['R'],
+};
