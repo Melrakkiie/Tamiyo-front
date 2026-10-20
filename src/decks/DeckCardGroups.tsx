@@ -2,24 +2,17 @@ import { Box, Stack, Text, Tooltip } from '@mantine/core';
 import type { ReactNode } from 'react';
 
 import type { Card } from '../api/types';
-import { copyCount } from '../cards/api';
+import { totalCopies } from '../cards/copies';
 import type { CardDisplay } from '../cards/CardDisplay';
 import { CardGroupsLayout } from '../cards/CardLayout';
 import { SectionTitle } from '../theme/SectionTitle';
-import { type CardGroup, groupCards, sortIntoGroups, typeLabels } from '../cards/grouping';
-import type { FaceTypes } from '../scryfall/classify';
-import { useCardFaceTypes, useCardSubtypes } from '../scryfall/hooks';
+import type { CardGroup } from '../cards/grouping';
+import type { BackFaceEntry } from './boardLayout';
 import { type DragItem, useDropTarget } from './dragDrop';
 import { StorageIcon } from '../storages/StorageLabel';
-import { type DeckCardGrouping, groupByStorage, groupBySubtype, groupByTag } from './storageGrouping';
-
-interface BackFaceEntry {
-  name: string;
-  quantity: number;
-}
 
 function GroupCount({ label, cards, backFaces }: { label: string; cards: Card[]; backFaces: BackFaceEntry[] }) {
-  const count = cards.reduce((total, card) => total + copyCount(card), 0);
+  const count = totalCopies(cards);
   if (backFaces.length === 0) {
     return <>{count}</>;
   }
@@ -69,51 +62,6 @@ export function BackFacesExtra({ label, count, backFaces }: BackFacesExtraProps)
   );
 }
 
-export interface DeckCardGrouped {
-  groups: CardGroup[];
-  backFaces: Map<string, Map<string, number>>;
-}
-
-export function useDeckCardGroups(
-  stacks: Card[],
-  grouping: DeckCardGrouping | null,
-  storageNames: Map<number, string> = new Map(),
-  tagsOf: (card: Card) => string[] = () => [],
-): DeckCardGrouped {
-  const faceTypes = useCardFaceTypes(stacks.map((card) => card.scryfall_id));
-  const subtypes = useCardSubtypes(stacks.map((card) => card.scryfall_id));
-  const groupedStacks =
-    grouping === 'type'
-      ? stacks.map((card) => {
-          const types: FaceTypes | undefined = faceTypes.data?.[card.scryfall_id];
-          return types ? { ...card, card_type: types.front } : card;
-        })
-      : stacks;
-  const backFaces = new Map<string, Map<string, number>>();
-  if (grouping === 'type') {
-    for (const card of groupedStacks) {
-      const types: FaceTypes | undefined = faceTypes.data?.[card.scryfall_id];
-      if (types?.back && types.back !== types.front) {
-        const label = typeLabels[types.back];
-        const entries = backFaces.get(label) ?? new Map<string, number>();
-        entries.set(card.name, (entries.get(card.name) ?? 0) + copyCount(card));
-        backFaces.set(label, entries);
-      }
-    }
-  }
-  const groups =
-    grouping === 'storage'
-      ? groupByStorage(groupedStacks, storageNames)
-      : grouping === 'tag'
-        ? groupByTag(groupedStacks, tagsOf)
-        : grouping === 'subtype'
-          ? groupBySubtype(groupedStacks, (card) => subtypes.data?.[card.scryfall_id] ?? [])
-          : grouping
-            ? groupCards(sortIntoGroups(groupedStacks, grouping), grouping)
-            : [];
-  return { groups, backFaces };
-}
-
 export interface GroupDrop {
   id: (group: CardGroup) => string | null;
   accepts: (group: CardGroup, item: DragItem) => boolean;
@@ -132,7 +80,9 @@ function GroupDropArea({ group, drop, children }: { group: CardGroup; drop?: Gro
   );
 }
 
-interface DeckCardGroupsProps extends DeckCardGrouped {
+interface DeckCardGroupsProps {
+  groups: CardGroup[];
+  backFaces: Map<string, BackFaceEntry[]>;
   display: CardDisplay;
   renderTile: (card: Card, group: CardGroup) => ReactNode;
   drop?: GroupDrop;
@@ -150,15 +100,7 @@ export function DeckCardGroups({ groups, backFaces, display, renderTile, drop }:
     ),
     header: (
       <SectionTitle
-        count={
-          <GroupCount
-            label={group.label}
-            cards={group.cards}
-            backFaces={[...(backFaces.get(group.label) ?? new Map<string, number>())]
-              .map(([name, quantity]) => ({ name, quantity }))
-              .sort((a, b) => a.name.localeCompare(b.name))}
-          />
-        }
+        count={<GroupCount label={group.label} cards={group.cards} backFaces={backFaces.get(group.label) ?? []} />}
       >
         {group.storage && (
           <Text span c="dimmed" mr={6} style={{ display: 'inline-block', verticalAlign: '-0.1em' }}>

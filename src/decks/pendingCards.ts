@@ -1,4 +1,5 @@
 import type { Card, DeckCard, DeckCardSort, PendingCard } from '../api/types';
+import { copyCount, copyIds } from '../cards/copies';
 import type { PendingStatus } from '../cards/PendingBadge';
 
 const COPIES_PER_ITEM = 100;
@@ -74,7 +75,7 @@ export function sortDeckCards<T extends SortableCard>(cards: T[], sort: DeckCard
     .map(({ card }) => card);
 }
 
-function stackKey(card: Card, commanderIds: (number | null | undefined)[], byPrinting: boolean) {
+function stackKey(card: Card, commanderIds: number[], byPrinting: boolean) {
   if (isPendingCard(card)) {
     return `pending-${pendingIdOf(card)}`;
   }
@@ -86,20 +87,18 @@ function stackKey(card: Card, commanderIds: (number | null | undefined)[], byPri
     : `${card.scryfall_id}-${card.foil}-${card.proxy}-${card.storage_id ?? ''}`;
 }
 
-export function stackCards<T extends Card>(
-  cards: T[],
-  commanderIds: (number | null | undefined)[],
-  byPrinting = false,
-): T[] {
+export function stackCards<T extends Card>(cards: T[], commanderIds: number[], byPrinting = false): T[] {
   const stacks = new Map<string, T>();
   for (const card of cards) {
     const key = stackKey(card, commanderIds, byPrinting);
     const stack = stacks.get(key);
+    const quantity = copyCount(card);
+    const ids = copyIds(card);
     if (stack) {
-      stack.quantity = (stack.quantity ?? 1) + 1;
-      stack.copy_ids = [...(stack.copy_ids ?? []), card.id];
+      stack.quantity = (stack.quantity ?? 1) + quantity;
+      stack.copy_ids = [...(stack.copy_ids ?? []), ...ids];
     } else {
-      stacks.set(key, { ...card, quantity: 1, copy_ids: [card.id] });
+      stacks.set(key, { ...card, quantity, copy_ids: ids });
     }
   }
   return [...stacks.values()];

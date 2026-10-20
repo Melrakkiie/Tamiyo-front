@@ -4,7 +4,8 @@ import { useRef, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Card, Deck, DeckBoard } from '../api/types';
-import { copyIds, useUpdateCard } from '../cards/api';
+import { useUpdateCard } from '../cards/api';
+import { copyIds } from '../cards/copies';
 import { CardImage } from '../cards/CardImage';
 import { PrintPrice } from '../cards/price';
 import { CardRulesText } from '../scryfall/CardRulesText';

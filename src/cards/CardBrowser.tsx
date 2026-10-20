@@ -17,7 +17,7 @@ import { useLocation, useSearchParams } from 'react-router';
 
 import { errorMessage } from '../api/errors';
 import type { Card, CardSort } from '../api/types';
-import { useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
+import { useCardImages } from '../scryfall/hooks';
 import { DropOverlay } from '../scryfall/DropOverlay';
 import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
 import { useScryfallDrop } from '../scryfall/useScryfallDrop';
@@ -35,7 +35,9 @@ import {
   cardsQueryFilters,
   parseAdvancedFilters,
 } from './advancedFilters';
-import { copyCount, copyIds, useCard, useCards } from './api';
+import { useCard, useCards } from './api';
+import { storageNameOf } from '../storages/storageName';
+import { copyIds, totalCopies } from './copies';
 import { useCardContextMenu } from './CardContextMenu';
 import { CardDetailModal } from './CardDetailModal';
 import { CardDisplayControls, useCardDisplay } from './CardDisplay';
@@ -43,6 +45,7 @@ import { SectionTitle } from '../theme/SectionTitle';
 import { EmptyNote } from '../theme/EmptyNote';
 import { CardGrid, CardGroupsLayout } from './CardLayout';
 import { CardTile } from './CardTile';
+import { useCardVisuals } from './useCardVisuals';
 import { CollectionSearchInput } from './CollectionSearchInput';
 import { MissingDetailsAlert } from './MissingDetailsAlert';
 import { SearchSyntaxHelp, searchSyntaxError } from './SearchSyntaxHelp';
@@ -149,15 +152,14 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
     : null;
   const detailCard = openedCard ?? (linkedCardId ? (linkedCard.data ?? null) : null);
   const detailImage = useCardImages(detailCard ? [detailCard.scryfall_id] : []);
-  const images = useCardImages(pageCards.map((card) => card.scryfall_id));
-  const backImages = useCardBackImages(pageCards.map((card) => card.scryfall_id));
-  const manaCosts = useManaCosts(pageCards.map((card) => card.scryfall_id));
+  const display = useCardDisplay();
+  const visuals = useCardVisuals(pageCards, display);
   const showMissingDetails =
     (grouping === 'type' || grouping === 'color' || sortsNeedingDetails.includes(sort)) && hasMissingDetails(pageCards);
 
   const groups = grouping ? groupCards(pageCards, grouping) : null;
   const firstCard = groups ? groups[0]?.cards[0] : pageCards[0];
-  const firstImage = firstCard ? images.data?.[firstCard.scryfall_id] : undefined;
+  const firstImage = firstCard ? visuals.imageUrl(firstCard) : undefined;
   useEffect(() => {
     setDefaultCardPreview(
       firstCard
@@ -184,28 +186,19 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
       <CardTile
         key={card.id}
         card={card}
-        imageUrl={images.data?.[card.scryfall_id]}
-        backImageUrl={backImages.data?.[card.scryfall_id]}
-        imageLoading={images.isLoading}
-        textOnly={textOnly}
-        compact={display.compact}
-        stacked={display.stacked}
-        overlapped={display.overlapped}
-        hideDetails={!display.showDetails}
-        manaCost={
-          !display.showManaCost || manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)
-        }
-        storageName={showStorage ? (card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null) : undefined}
+        imageUrl={visuals.imageUrl(card)}
+        backImageUrl={visuals.backImageUrl(card)}
+        imageLoading={visuals.imageLoading}
+        display={display}
+        manaCost={visuals.manaCost(card)}
+        storageName={showStorage ? storageNameOf(card, storageNames) : undefined}
         onOpen={openCard}
         onContextMenu={(event, clicked) =>
-          contextMenu.open(event, cardMenu.menuFor(clicked, images.data?.[clicked.scryfall_id]))
+          contextMenu.open(event, cardMenu.menuFor(clicked, visuals.imageUrl(clicked)))
         }
       />
     );
   }
-
-  const display = useCardDisplay();
-  const { textOnly } = display;
 
   function updateParams(changes: Record<string, string | null>) {
     setParams(
@@ -384,11 +377,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
           groups={groups.map((group, index) => ({
             key: `${index}-${group.label}`,
             cards: group.cards,
-            header: (
-              <SectionTitle count={group.cards.reduce((total, card) => total + copyCount(card), 0)}>
-                {group.label}
-              </SectionTitle>
-            ),
+            header: <SectionTitle count={totalCopies(group.cards)}>{group.label}</SectionTitle>,
           }))}
           renderTile={renderTile}
         />

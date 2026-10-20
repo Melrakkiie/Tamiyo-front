@@ -1,23 +1,9 @@
-import {
-  Alert,
-  Anchor,
-  Box,
-  Center,
-  Group,
-  Loader,
-  Menu,
-  Paper,
-  Select,
-  Stack,
-  Tabs,
-  Text,
-  Title,
-} from '@mantine/core';
+import { Alert, Anchor, Box, Center, Group, Loader, Menu, Paper, Select, Stack, Tabs, Text } from '@mantine/core';
 import { type ReactNode, useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
-import type { Card, DeckCard, SharedDeck } from '../api/types';
+import type { Card, SharedDeck } from '../api/types';
 import { useAccount } from '../auth/account';
 import { ProfileAvatar } from '../auth/UserAvatar';
 import { useShowCollectionInDecks } from '../auth/preferences';
@@ -25,25 +11,20 @@ import { useSession } from '../auth/useSession';
 import { useCardContextMenu } from '../cards/CardContextMenu';
 import { CardImage } from '../cards/CardImage';
 import { CardDisplayControls, useCardDisplay } from '../cards/CardDisplay';
-import { CardGrid } from '../cards/CardLayout';
-import { CardTile } from '../cards/CardTile';
-import { artBackground, artCredit, deckArtId } from '../decks/art';
-import { type CollapsibleBoard, DEFAULT_COLLAPSED_BOARDS, inBoard } from '../decks/boards';
-import { BoardSection } from '../decks/BoardSection';
-import { type DeckCardGrouped, DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
+import { useCardVisuals } from '../cards/useCardVisuals';
+import { type CollapsibleBoard, DEFAULT_COLLAPSED_BOARDS } from '../decks/boards';
+import { DeckBoards, type DeckBoardsExtras, useDeckBoards } from '../decks/DeckBoards';
 import { LegalityWarning } from '../decks/DeckLegalityWarning';
-import { isCommanderFormat, useAllDecks } from '../decks/api';
-import { formatPrice, PriceText, usePriceCurrency } from '../cards/price';
-import { BracketSticker } from '../decks/bracket';
-import { FormatSticker } from '../decks/FormatSticker';
+import { useAllDecks } from '../decks/api';
+import { usePriceCurrency } from '../cards/price';
 import { DeckValue } from '../decks/DeckValue';
+import { DeckBanner } from '../decks/DeckBanner';
 import { LikeButton, LikeCount } from '../decks/LikeButton';
 import { CollectionToggle } from '../decks/CollectionToggle';
 import { CompareDeckModal } from '../decks/CompareDeckModal';
 import { useDeckCopyActions } from '../decks/DeckCopyActions';
 import { DeckStatsView } from '../decks/DeckStatsPanel';
 import { ExportDeckModal } from '../decks/ExportDeckModal';
-import { sortDeckCards } from '../decks/pendingCards';
 import {
   type SharedDeckSort,
   sharedCardsToCards,
@@ -57,10 +38,8 @@ import { SharedCardModal } from '../decks/SharedCardModal';
 import { useSharedCardMenu } from '../decks/useSharedCardMenu';
 import { parseSharedGrouping, type SharedCardGrouping, sharedGroupingOptions } from '../decks/storageGrouping';
 import { cardNameKey, tagsByName, tagsOf } from '../decks/tags';
-import { VisibilitySticker } from '../decks/visibility';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import { SettingsMenu } from '../layout/SettingsMenu';
-import { useCardArts, useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
 import { EmptyNote } from '../theme/EmptyNote';
 import { usePageTitle } from '../layout/usePageTitle';
 
@@ -78,9 +57,6 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
   const stats = useSharedDeckStats(deckId, tab === 'stats' || currency !== null);
   const { status } = useSession();
   const signedIn = status === 'authenticated';
-  const artId = shared.data ? deckArtId(shared.data.deck) : null;
-  const arts = useCardArts([artId]);
-  const art = artId ? (arts.data?.[artId] ?? null) : null;
 
   if (shared.isLoading) {
     return (
@@ -115,64 +91,49 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
 
   return (
     <Stack>
-      <Paper
-        radius="md"
-        p={art ? 'lg' : 0}
-        mih={art ? { base: 240, sm: 320 } : undefined}
-        pos="relative"
-        className={art ? 'tamiyo-banner-taped' : undefined}
-        style={art ? { ...artBackground(art.url, 'light'), display: 'flex', flexDirection: 'column' } : undefined}
-      >
-        {signedIn ? (
-          <SignedInDeckMenu
-            deckId={deck.id}
-            deckName={deck.name}
-            cardCount={deck.card_count}
-            ownerId={owner.id}
-            onImage={art !== null}
-          />
-        ) : (
-          <SharedDeckMenu deckId={deck.id} deckName={deck.name} cardCount={deck.card_count} onImage={art !== null} />
-        )}
-        <Stack gap={6} pr={48} style={art ? { marginTop: 'auto' } : undefined}>
-          <Title order={2} c={art ? 'white' : undefined}>
-            {deck.name}
-          </Title>
-          <Group gap="xs">
-            <FormatSticker format={deck.format} size="md" />
-            <VisibilitySticker visibility={deck.visibility} size="md" />
-            {isCommanderFormat(deck.format) && <BracketSticker bracket={deck.bracket} size="md" />}
-            {signedIn ? (
-              <SharedDeckLike deckId={deck.id} ownerId={owner.id} onImage={art !== null} />
-            ) : (
-              <LikeCount count={deck.likes_count} onImage={art !== null} />
-            )}
-            {currency && stats.data && (
-              <DeckValue value={stats.data.value} currency={currency} onImage={art !== null} />
-            )}
-          </Group>
+      <DeckBanner
+        deck={deck}
+        menu={(onImage) =>
+          signedIn ? (
+            <SignedInDeckMenu
+              deckId={deck.id}
+              deckName={deck.name}
+              cardCount={deck.card_count}
+              ownerId={owner.id}
+              onImage={onImage}
+            />
+          ) : (
+            <SharedDeckMenu deckId={deck.id} deckName={deck.name} cardCount={deck.card_count} onImage={onImage} />
+          )
+        }
+        like={(onImage) =>
+          signedIn ? (
+            <SharedDeckLike deckId={deck.id} ownerId={owner.id} onImage={onImage} />
+          ) : (
+            <LikeCount count={deck.likes_count} onImage={onImage} />
+          )
+        }
+        value={(onImage) =>
+          currency && stats.data && <DeckValue value={stats.data.value} currency={currency} onImage={onImage} />
+        }
+        byline={(onImage) => (
           <Group gap="xs" wrap="nowrap">
             <ProfileAvatar scryfallId={owner.avatar_scryfall_id} name={ownerName} size={28} />
-            <Text size="sm" c={art ? 'gray.3' : 'dimmed'}>
+            <Text size="sm" c={onImage ? 'gray.3' : 'dimmed'}>
               par{' '}
               {signedIn ? (
-                <Anchor component={Link} to={`/users/${owner.id}`} size="sm" c={art ? 'white' : undefined} fw={500}>
+                <Anchor component={Link} to={`/users/${owner.id}`} size="sm" c={onImage ? 'white' : undefined} fw={500}>
                   {ownerName}
                 </Anchor>
               ) : (
-                <Text span inherit fw={500} c={art ? 'white' : undefined}>
+                <Text span inherit fw={500} c={onImage ? 'white' : undefined}>
                   {ownerName}
                 </Text>
               )}
             </Text>
           </Group>
-        </Stack>
-        {art && (
-          <Text size="xs" c="gray.4" ta="right" mt="xs">
-            {artCredit(art.artist)}
-          </Text>
         )}
-      </Paper>
+      />
 
       {signedIn && <OwnDeckNotice ownerId={owner.id} deckId={deck.id} />}
 
@@ -211,21 +172,15 @@ function SharedDeckMenu({ deckId, deckName, cardCount, onImage, extraItems, extr
 
   return (
     <>
-      <Box
-        pos="absolute"
-        top={onImage ? 'var(--mantine-spacing-lg)' : 0}
-        right={onImage ? 'var(--mantine-spacing-lg)' : 0}
-      >
-        <SettingsMenu label="Actions sur le deck" onImage={onImage}>
-          <Menu.Item onClick={() => setCompareOpened(true)}>Comparer avec un autre deck</Menu.Item>
-          <Menu.Item disabled={cardCount === 0} onClick={() => navigate(`/decks/${deckId}/playtest`)}>
-            Tester le deck
-          </Menu.Item>
-          <Menu.Divider />
-          <Menu.Item onClick={() => setExportOpened(true)}>Exporter</Menu.Item>
-          {extraItems}
-        </SettingsMenu>
-      </Box>
+      <SettingsMenu label="Actions sur le deck" onImage={onImage}>
+        <Menu.Item onClick={() => setCompareOpened(true)}>Comparer avec un autre deck</Menu.Item>
+        <Menu.Item disabled={cardCount === 0} onClick={() => navigate(`/decks/${deckId}/playtest`)}>
+          Tester le deck
+        </Menu.Item>
+        <Menu.Divider />
+        <Menu.Item onClick={() => setExportOpened(true)}>Exporter</Menu.Item>
+        {extraItems}
+      </SettingsMenu>
       <ExportDeckModal
         deckId={deckId}
         deckName={deckName}
@@ -318,6 +273,32 @@ function CommanderCard({ card, label, imageUrl, onOpen }: CommanderCardProps) {
   );
 }
 
+function useSharedDeckTiles(
+  signedIn: boolean,
+  collectionCounts: Map<string, number> | null,
+  imageUrl: (card: Card) => string | undefined,
+) {
+  const contextMenu = useCardContextMenu();
+  const cardMenu = useSharedCardMenu(signedIn);
+  const extras: DeckBoardsExtras = {
+    tile: (card) => ({
+      props: {
+        collectionCount: collectionCounts ? collectionCounts.get(cardNameKey(card.name)) : undefined,
+        onContextMenu: (event, clicked) => contextMenu.open(event, cardMenu.menuFor(clicked, imageUrl(clicked))),
+      },
+    }),
+  };
+  return {
+    extras,
+    overlays: (
+      <>
+        {contextMenu.element}
+        {cardMenu.modals}
+      </>
+    ),
+  };
+}
+
 function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: boolean }) {
   const { pathname } = useLocation();
   const showCollection = useShowCollectionInDecks(signedIn) && signedIn;
@@ -326,7 +307,6 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
   const [sort, setSort] = useState<SharedDeckSort>('mana_value');
   const [grouping, setGrouping] = useState<SharedCardGrouping | null>('type');
   const display = useCardDisplay({ showDetails: false });
-  const { textOnly } = display;
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
   const [collapsed, setCollapsed] = useState<CollapsibleBoard[]>(DEFAULT_COLLAPSED_BOARDS);
   const currency = usePriceCurrency();
@@ -340,22 +320,16 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
         Number(a.scryfall_id === shared.deck.commander_scryfall_id),
     );
   const commander = commanders[0];
-  const cards = sortDeckCards<DeckCard>(all, sort);
-  const mainCards = inBoard(cards, 'main');
-  const sideboardCards = inBoard(cards, 'sideboard');
-  const consideringCards = inBoard(cards, 'considering');
-  const ids = cards.map((card) => card.scryfall_id);
-  const images = useCardImages(ids);
-  const backImages = useCardBackImages(ids);
-  const manaCosts = useManaCosts(ids);
   const cardTags = tagsByName(shared.cards);
-  const cardTagsOf = (card: Card) => tagsOf(cardTags, card.name);
-  const groupedMain = useDeckCardGroups(mainCards, grouping, undefined, cardTagsOf);
-  const groupedSideboard = useDeckCardGroups(sideboardCards, grouping, undefined, cardTagsOf);
-  const groupedConsidering = useDeckCardGroups(consideringCards, grouping, undefined, cardTagsOf);
-
-  const contextMenu = useCardContextMenu();
-  const cardMenu = useSharedCardMenu(signedIn);
+  const boards = useDeckBoards({
+    cards: all,
+    sort,
+    grouping,
+    commanderIds: commanders.map((card) => card.id),
+    tagsOf: (card) => tagsOf(cardTags, card.name),
+  });
+  const visuals = useCardVisuals(all, display);
+  const tiles = useSharedDeckTiles(signedIn, showCollection ? ownedByName : null, visuals.imageUrl);
 
   function toggleBoard(board: CollapsibleBoard) {
     setCollapsed((current) =>
@@ -363,21 +337,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
     );
   }
 
-  function boardValue(board: CollapsibleBoard) {
-    if (!currency || !stats.data) {
-      return undefined;
-    }
-    return (
-      <PriceText span fz="md">
-        {formatPrice(stats.data.board_values[board][currency], currency)}
-      </PriceText>
-    );
-  }
-
-  function count(boardCards: Card[]) {
-    return boardCards.reduce((total, card) => total + (card.quantity ?? 1), 0);
-  }
-  const commanderImage = commander ? images.data?.[commander.scryfall_id] : undefined;
+  const commanderImage = commander ? visuals.imageUrl(commander) : undefined;
 
   useEffect(() => {
     setDefaultCardPreview(
@@ -395,40 +355,6 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
   });
   useEffect(() => () => setDefaultCardPreview(null), []);
 
-  function renderTile(card: Card) {
-    return (
-      <CardTile
-        key={card.id}
-        card={card}
-        imageUrl={images.data?.[card.scryfall_id]}
-        backImageUrl={backImages.data?.[card.scryfall_id]}
-        imageLoading={images.isLoading}
-        textOnly={textOnly}
-        commander={commanders.some((other) => other.id === card.id)}
-        manaCost={
-          !display.showManaCost || manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)
-        }
-        collectionCount={showCollection ? ownedByName.get(cardNameKey(card.name)) : undefined}
-        compact={display.compact}
-        stacked={display.stacked}
-        overlapped={display.overlapped}
-        hideDetails={!display.showDetails}
-        onOpen={setOpenedCard}
-        onContextMenu={(event, clicked) =>
-          contextMenu.open(event, cardMenu.menuFor(clicked, images.data?.[clicked.scryfall_id]))
-        }
-      />
-    );
-  }
-
-  function renderBoard(boardCards: Card[], grouped: DeckCardGrouped) {
-    return grouping ? (
-      <DeckCardGroups {...grouped} display={display} renderTile={renderTile} />
-    ) : (
-      <CardGrid display={display} cards={boardCards} renderTile={renderTile} />
-    );
-  }
-
   return (
     <Stack>
       {commanders.length > 0 && (
@@ -438,7 +364,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
               key={card.id}
               card={card}
               label={index === 0 ? 'Commandant' : 'Second commandant'}
-              imageUrl={images.data?.[card.scryfall_id]}
+              imageUrl={visuals.imageUrl(card)}
               onOpen={() => setOpenedCard(card)}
             />
           ))}
@@ -473,45 +399,21 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
         {signedIn && <CollectionToggle description="Les cartes de ce deck que tu as dans ta collection" />}
       </Group>
 
-      {cards.length === 0 ? (
-        <EmptyNote title="Ce deck est vide" />
-      ) : mainCards.length === 0 ? (
-        <Text size="sm" c="dimmed">
-          Aucune carte dans le deck principal.
-        </Text>
-      ) : (
-        renderBoard(mainCards, groupedMain)
-      )}
-      {sideboardCards.length > 0 && (
-        <BoardSection
-          board="sideboard"
-          count={count(sideboardCards)}
-          collapsed={collapsed.includes('sideboard')}
-          onToggle={() => toggleBoard('sideboard')}
-          emptyMessage=""
-          value={boardValue('sideboard')}
-        >
-          {renderBoard(sideboardCards, groupedSideboard)}
-        </BoardSection>
-      )}
-      {consideringCards.length > 0 && (
-        <BoardSection
-          board="considering"
-          count={count(consideringCards)}
-          collapsed={collapsed.includes('considering')}
-          onToggle={() => toggleBoard('considering')}
-          emptyMessage=""
-          value={boardValue('considering')}
-        >
-          {renderBoard(consideringCards, groupedConsidering)}
-        </BoardSection>
-      )}
+      <DeckBoards
+        boards={boards}
+        display={display}
+        collapsed={collapsed}
+        onToggleBoard={toggleBoard}
+        boardValues={stats.data?.board_values}
+        emptyDeck={<EmptyNote title="Ce deck est vide" />}
+        extras={tiles.extras}
+        onOpen={setOpenedCard}
+      />
 
-      {contextMenu.element}
-      {cardMenu.modals}
+      {tiles.overlays}
       <SharedCardModal
         card={openedCard}
-        imageUrl={openedCard ? images.data?.[openedCard.scryfall_id] : undefined}
+        imageUrl={openedCard ? visuals.imageUrl(openedCard) : undefined}
         onClose={() => setOpenedCard(null)}
       />
     </Stack>

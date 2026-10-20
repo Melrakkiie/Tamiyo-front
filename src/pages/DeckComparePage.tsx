@@ -20,16 +20,15 @@ import { ApiError, errorMessage } from '../api/errors';
 import type { Card, ComparedCard, ComparedDeck } from '../api/types';
 import { useSession } from '../auth/useSession';
 import { type CardDisplay, CardDisplayControls, useCardDisplay } from '../cards/CardDisplay';
-import { CardGrid } from '../cards/CardLayout';
-import { CardTile } from '../cards/CardTile';
+import { useCardVisuals } from '../cards/useCardVisuals';
 import { useDeckComparison } from '../decks/api';
-import { DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
+import { comparedStackTotals } from '../decks/comparedStack';
+import { DeckBoards, type DeckBoardsExtras, useDeckBoards } from '../decks/DeckBoards';
+import type { BoardCard } from '../decks/boardLayout';
 import { FormatSticker } from '../decks/FormatSticker';
-import { sortDeckCards } from '../decks/pendingCards';
 import { SharedCardModal } from '../decks/SharedCardModal';
 import { type SharedDeckSort, sharedDeckSortOptions } from '../decks/shared';
 import { type CardGrouping, groupingOptions, parseGrouping } from '../cards/grouping';
-import { useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
 import { usePageTitle } from '../layout/usePageTitle';
 
 type Side = 'deck' | 'other' | 'both';
@@ -215,7 +214,7 @@ function TabLabel({ title, cards, side, active }: TabLabelProps) {
   );
 }
 
-function toCards(cards: ComparedCard[], side: Side): Card[] {
+function toCards(cards: ComparedCard[], side: Side): BoardCard[] {
   return cards.map((card, index) => ({
     id: index + 1,
     name: card.name,
@@ -232,6 +231,7 @@ function toCards(cards: ComparedCard[], side: Side): Card[] {
     added: '',
     updated: '',
     quantity: copies(card, side),
+    board: 'main',
   }));
 }
 
@@ -246,91 +246,61 @@ interface ComparedCardsProps {
 function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps) {
   const [opened, setOpened] = useState<Card | null>(null);
   const converted = toCards(cards, side);
-  const byId = new Map(converted.map((card, index) => [card.id, cards[index]]));
-  const sorted = sortDeckCards(converted, options.sort);
-  const ids = sorted.map((card) => card.scryfall_id);
-  const images = useCardImages(ids);
-  const backImages = useCardBackImages(ids);
-  const manaCosts = useManaCosts(ids);
-  const grouped = useDeckCardGroups(sorted, options.grouping);
+  const byId = new Map<number, ComparedCard>(converted.map((card, index) => [card.id, cards[index]]));
+  const boards = useDeckBoards({ cards: converted, sort: options.sort, grouping: options.grouping });
+  const visuals = useCardVisuals(converted, options.display);
 
   function isCommander(card: Card) {
-    const compared = byId.get(card.id);
-    return (
-      compared !== undefined &&
-      ((side !== 'other' && compared.commander) || (side !== 'deck' && compared.other_commander))
-    );
+    const totals = comparedStackTotals(card, byId);
+    return (side !== 'other' && totals.commander) || (side !== 'deck' && totals.otherCommander);
   }
 
   function details(card: Card, long: boolean): ReactNode {
-    const compared = byId.get(card.id);
-    if (!compared || side !== 'both') {
+    if (side !== 'both') {
       return null;
     }
-    const differs = compared.quantity !== compared.other_quantity;
+    const { quantity, otherQuantity } = comparedStackTotals(card, byId);
+    const differs = quantity !== otherQuantity;
     return (
       <Text
         size={long ? 'sm' : 'xs'}
         fw={differs ? 700 : undefined}
         c={differs ? 'orange' : 'dimmed'}
         lineClamp={1}
-        title={`${compared.quantity} dans ${deck.name}, ${compared.other_quantity} dans ${other.name}`}
+        title={`${quantity} dans ${deck.name}, ${otherQuantity} dans ${other.name}`}
       >
         {long
-          ? `${compared.quantity} dans ${deck.name} · ${compared.other_quantity} dans ${other.name}`
-          : `${compared.quantity} / ${compared.other_quantity}`}
+          ? `${quantity} dans ${deck.name} · ${otherQuantity} dans ${other.name}`
+          : `${quantity} / ${otherQuantity}`}
       </Text>
     );
   }
 
-  function renderTile(card: Card) {
-    return (
-      <CardTile
-        key={card.id}
-        card={card}
-        imageUrl={images.data?.[card.scryfall_id]}
-        backImageUrl={backImages.data?.[card.scryfall_id]}
-        imageLoading={images.isLoading}
-        textOnly={options.display.textOnly}
-        compact={options.display.compact}
-        stacked={options.display.stacked}
-        overlapped={options.display.overlapped}
-        hideDetails={!options.display.showDetails}
-        commander={isCommander(card)}
-        manaCost={
-          !options.display.showManaCost || manaCosts.isLoading
-            ? undefined
-            : (manaCosts.data?.[card.scryfall_id] ?? null)
-        }
-        details={details(card, false)}
-        onOpen={setOpened}
-      />
-    );
-  }
-
-  if (cards.length === 0) {
-    return (
-      <Center p="xl">
-        <Text c="dimmed">Aucune carte.</Text>
-      </Center>
-    );
-  }
+  const extras: DeckBoardsExtras = {
+    tile: (card) => ({ props: { commander: isCommander(card), details: details(card, false) } }),
+  };
 
   return (
     <Stack>
-      {side === 'both' && (
+      {side === 'both' && cards.length > 0 && (
         <Text size="sm" c="dimmed">
           Exemplaires dans {deck.name} / dans {other.name}, en orange quand ils diffèrent.
         </Text>
       )}
-      {options.grouping ? (
-        <DeckCardGroups {...grouped} display={options.display} renderTile={renderTile} />
-      ) : (
-        <CardGrid display={options.display} cards={sorted} renderTile={renderTile} />
-      )}
+      <DeckBoards
+        boards={boards}
+        display={options.display}
+        emptyDeck={
+          <Center p="xl">
+            <Text c="dimmed">Aucune carte.</Text>
+          </Center>
+        }
+        extras={extras}
+        onOpen={setOpened}
+      />
       <SharedCardModal
         card={opened}
-        imageUrl={opened ? images.data?.[opened.scryfall_id] : undefined}
+        imageUrl={opened ? visuals.imageUrl(opened) : undefined}
         details={opened ? details(opened, true) : undefined}
         onClose={() => setOpened(null)}
       />

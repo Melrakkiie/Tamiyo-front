@@ -5,7 +5,8 @@ import { useRef, useState } from 'react';
 import { errorMessage } from '../api/errors';
 import type { Card } from '../api/types';
 import { AddCopiesToDeckModal } from '../decks/AddCopiesToDeckModal';
-import { copyIds, useCreateCards, useDeleteCopies, useUpdateCopies } from './api';
+import { useCreateCards, useDeleteCopies, useUpdateCopies } from './api';
+import { copyIds } from './copies';
 import { CardCopyItems, FoilToggleItem } from './CardContextMenu';
 
 function copies(count: number) {

@@ -2,7 +2,7 @@ import { notifications } from '@mantine/notifications';
 
 import { errorMessage } from '../api/errors';
 import type { Card, Deck, DeckBoard } from '../api/types';
-import { copyCount, copyIds } from '../cards/api';
+import { copyCount, copyIds } from '../cards/copies';
 import {
   useMoveDeckCards,
   useMovePendingCard,

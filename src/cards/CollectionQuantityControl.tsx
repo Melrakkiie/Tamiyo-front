@@ -4,7 +4,8 @@ import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Card } from '../api/types';
-import { copyIds, PartialCreationError, useCreateCards, useDeleteCopies } from './api';
+import { PartialCreationError, useCreateCards, useDeleteCopies } from './api';
+import { copyIds } from './copies';
 
 function copies(count: number) {
   return `${count} exemplaire${count > 1 ? 's' : ''}`;
