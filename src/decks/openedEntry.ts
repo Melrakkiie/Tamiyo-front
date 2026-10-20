@@ -44,3 +44,7 @@ export function resolveOpenedEntry(state: OpenedEntryState, boards: DeckBoardsDa
   }
   return null;
 }
+
+export function forgetVanishedEntry(state: OpenedEntryState, boards: DeckBoardsData): OpenedEntryState {
+  return state.opened && !resolveOpenedEntry(state, boards) ? { session: state.session, opened: null } : state;
+}

@@ -6,7 +6,14 @@ import { boardsInput, copies, deckCard, pendingCard } from './boardTestHelpers';
 import { buildDeckBoards } from './boardLayout';
 import { BOARDS } from './boards';
 import { type DeckEntry } from './deckEntries';
-import { closedEntry, closeEntry, openEntry, resolveOpenedEntry, showSwapResult } from './openedEntry';
+import {
+  closedEntry,
+  closeEntry,
+  forgetVanishedEntry,
+  openEntry,
+  resolveOpenedEntry,
+  showSwapResult,
+} from './openedEntry';
 
 const printings: ScryfallCard[] = [forest, grizzlyBears, solRing];
 
@@ -111,5 +118,18 @@ describe('showSwapResult', () => {
     const swapped = showSwapResult(reopened, first.session, { kind: 'pending', item: pendingCard(grizzlyBears) });
 
     expect(resolveOpenedEntry(swapped, boardsOf([bears, lands]))?.name).toBe('Forest');
+  });
+
+  it('still shows a swap result when the swapped entry left the boards first', () => {
+    const wanted = pendingCard(grizzlyBears);
+    const opened = openEntry(closedEntry, stackOf([], [wanted], 'Grizzly Bears'));
+    const bought = deckCard(grizzlyBears);
+    const refreshed = boardsOf([bought]);
+
+    const vanished = forgetVanishedEntry(opened, refreshed);
+    const swapped = showSwapResult(vanished, opened.session, { kind: 'card', card: bought, board: 'main' });
+
+    expect(vanished.opened).toBeNull();
+    expect(resolveOpenedEntry(swapped, refreshed)?.kind).toBe('owned');
   });
 });
