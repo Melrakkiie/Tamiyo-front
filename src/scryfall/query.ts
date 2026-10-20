@@ -1,11 +1,12 @@
 import { cardColors, cardManaValue, type ScryfallCard } from './client';
 
-type Op = '=' | '<' | '<=' | '>' | '>=';
+export type Op = '=' | '<' | '<=' | '>' | '>=';
 
-type Field =
+export type Field =
   | 'name'
   | 'exact'
   | 'type'
+  | 'subtype'
   | 'oracle'
   | 'color'
   | 'colorCount'
@@ -234,7 +235,7 @@ function lex(chars: string[]): Token[] {
   return tokens;
 }
 
-function term(field: Field, op: Op, text: string, number = 0): QueryNode {
+export function term(field: Field, op: Op, text: string, number = 0): QueryNode {
   return { kind: 'term', field, op, text, number };
 }
 
@@ -591,6 +592,12 @@ function termMatches(node: Extract<QueryNode, { kind: 'term' }>, card: ScryfallC
       return faceTexts(card, card.type_line, (i) => faces[i].type_line).some((line) =>
         line.toLowerCase().includes(text.toLowerCase()),
       );
+    case 'subtype': {
+      const wanted = normalized(text);
+      return faceTexts(card, card.type_line, (i) => faces[i].type_line)
+        .flatMap((line) => line.split('//'))
+        .some((line) => normalized(line.split('—').slice(1).join('—')).includes(wanted));
+    }
     case 'oracle': {
       const wanted = text.toLowerCase().replaceAll('~', card.name.toLowerCase());
       return faceTexts(card, card.oracle_text, (i) => faces[i].oracle_text)
@@ -641,6 +648,10 @@ function termMatches(node: Extract<QueryNode, { kind: 'term' }>, card: ScryfallC
       return value !== null && compare(value, op, number);
     }
   }
+}
+
+export function allOf(nodes: QueryNode[]): QueryNode | null {
+  return nodes.length <= 1 ? (nodes[0] ?? null) : { kind: 'and', children: nodes };
 }
 
 export function matchesScryfallQuery(node: QueryNode | null, card: ScryfallCard | undefined, name: string): boolean {

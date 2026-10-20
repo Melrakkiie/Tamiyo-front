@@ -22,13 +22,13 @@ import { COLORLESS, type ColorMode, type TypeFilter } from '../cards/advancedFil
 import { ColorChips, ComparisonInput, colorModes, typeOptions } from '../cards/AdvancedSearch';
 import { SearchSyntaxHelp } from '../cards/SearchSyntaxHelp';
 import { useScryfallCards } from '../scryfall/hooks';
-import { matchesScryfallQuery, parseScryfallQuery, type QueryNode } from '../scryfall/query';
+import { allOf, matchesScryfallQuery, parseScryfallQuery, type QueryNode } from '../scryfall/query';
 import type { Zone } from './engine';
 import {
   activeLibraryFilterCount,
   emptyLibraryFilters,
   type LibraryFilters,
-  matchesLibraryFilters,
+  libraryFiltersToQuery,
 } from './libraryFilters';
 import { CardFace } from './PlaytestCard';
 import { useTable } from './table';
@@ -68,13 +68,15 @@ export function ZoneModal({ zone, onClose }: { zone: ViewedZone | null; onClose:
     }
   }, [parsed]);
   const query = parsed.error ? lastValid.current : parsed.node;
+  const libraryQuery = useMemo(
+    () => (searching ? allOf([query, libraryFiltersToQuery(filters)].filter((node) => node !== null)) : query),
+    [searching, query, filters],
+  );
   const [settledSearch] = useDebouncedValue(search, 400);
   const searchError = settledSearch === search ? parsed.error : null;
   const ids = state.zones[shownZone].filter((id) => {
     const card = cards.data?.[state.cards[id].scryfallId];
-    return (
-      matchesScryfallQuery(query, card, state.cards[id].name) && (!searching || matchesLibraryFilters(card, filters))
-    );
+    return matchesScryfallQuery(libraryQuery, card, state.cards[id].name);
   });
   const filterCount = activeLibraryFilterCount(filters);
   const shown = searching ? [...ids].sort((a, b) => state.cards[a].name.localeCompare(state.cards[b].name, 'fr')) : ids;
