@@ -31,21 +31,27 @@ export function deckLineFile(card: DeckLinePrinting, count: number, board: DeckB
   return new File([deckLine(card, count, board, tags)], 'deck.txt', { type: 'text/plain' });
 }
 
+function printingKey(card: DeckLinePrinting) {
+  return `${card.name}|${card.set_code}|${card.collector_number}|${card.foil}`;
+}
+
 interface AddCopiesToDeckModalProps {
-  card: Card | null;
+  card: DeckLinePrinting | null;
   excludedDeckId?: string;
   onClose: () => void;
 }
 
 export function AddCopiesToDeckModal({ card, excludedDeckId, onClose }: AddCopiesToDeckModalProps) {
-  const lastShown = useRef<Card | null>(null);
+  const lastShown = useRef<DeckLinePrinting | null>(null);
   if (card) {
     lastShown.current = card;
   }
   const shown = lastShown.current;
   return (
     <Modal opened={card !== null} onClose={onClose} title={shown ? `Ajouter ${shown.name} à un deck` : undefined}>
-      {shown && <AddCopiesForm key={shown.id} card={shown} excludedDeckId={excludedDeckId} onClose={onClose} />}
+      {shown && (
+        <AddCopiesForm key={printingKey(shown)} card={shown} excludedDeckId={excludedDeckId} onClose={onClose} />
+      )}
     </Modal>
   );
 }
@@ -55,7 +61,7 @@ function AddCopiesForm({
   excludedDeckId,
   onClose,
 }: {
-  card: Card;
+  card: DeckLinePrinting;
   excludedDeckId?: string;
   onClose: () => void;
 }) {

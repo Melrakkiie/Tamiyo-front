@@ -2,7 +2,6 @@ import { notifications } from '@mantine/notifications';
 
 import { errorMessage } from '../api/errors';
 import type { Card, Deck, DeckBoard } from '../api/types';
-import { copyCount, copyIds } from '../cards/copies';
 import {
   useMoveDeckCards,
   useMovePendingCard,
@@ -13,10 +12,11 @@ import {
 import { movedMessage } from './boards';
 import { commanderSlotOf } from './commanders';
 import type { DragItem } from './dragDrop';
-import { isPendingCard, pendingIdOf } from './pendingCards';
 import { useSetCardTags } from './tags';
 
-export function useDeckCardActions(deck: Deck, tagsOfCard: (card: Card) => string[]) {
+type Named = Pick<Card, 'name'>;
+
+export function useDeckCardActions(deck: Deck, tagsOfCard: (card: Named) => string[]) {
   const moveCards = useMoveDeckCards();
   const movePending = useMovePendingCard();
   const removeOne = useRemoveCardFromDeck();
@@ -30,30 +30,30 @@ export function useDeckCardActions(deck: Deck, tagsOfCard: (card: Card) => strin
   });
 
   function canMoveTo(item: DragItem, board: DeckBoard) {
-    return board !== item.board && commanderSlotOf(deck, item.card) === null;
+    return board !== item.board && commanderSlotOf(deck, item.entry) === null;
   }
 
-  function moveToBoard({ card }: DragItem, board: DeckBoard) {
-    const message = movedMessage(card.name, copyCount(card), board);
-    if (isPendingCard(card)) {
-      movePending.mutate({ deckId: deck.id, pendingId: pendingIdOf(card), board }, callbacks(message));
+  function moveToBoard({ entry }: DragItem, board: DeckBoard) {
+    const message = movedMessage(entry.name, entry.quantity, board);
+    if (entry.kind === 'pending') {
+      movePending.mutate({ deckId: deck.id, pendingId: entry.pending.id, board }, callbacks(message));
     } else {
-      moveCards.mutate({ deckId: deck.id, cardIds: copyIds(card), board }, callbacks(message));
+      moveCards.mutate({ deckId: deck.id, cardIds: entry.copy_ids, board }, callbacks(message));
     }
   }
 
-  function remove({ card }: DragItem) {
-    const count = copyCount(card);
+  function remove({ entry }: DragItem) {
+    const count = entry.quantity;
     const message =
-      count > 1 ? `${count} exemplaires de ${card.name} retirés du deck.` : `${card.name} retirée du deck.`;
-    if (isPendingCard(card)) {
-      removePending.mutate({ deckId: deck.id, pendingId: pendingIdOf(card) }, callbacks(message));
+      count > 1 ? `${count} exemplaires de ${entry.name} retirés du deck.` : `${entry.name} retirée du deck.`;
+    if (entry.kind === 'pending') {
+      removePending.mutate({ deckId: deck.id, pendingId: entry.pending.id }, callbacks(message));
       return;
     }
-    const ids = copyIds(card);
+    const ids = entry.copy_ids;
     if (ids.length === 1) {
       removeOne.mutate(
-        { deckId: deck.id, cardId: ids[0], commanderSlot: commanderSlotOf(deck, card) },
+        { deckId: deck.id, cardId: ids[0], commanderSlot: commanderSlotOf(deck, entry) },
         callbacks(message),
       );
     } else {
@@ -61,18 +61,18 @@ export function useDeckCardActions(deck: Deck, tagsOfCard: (card: Card) => strin
     }
   }
 
-  function changeTags(card: Card, tags: string[], message: string) {
+  function changeTags(card: Named, tags: string[], message: string) {
     setTags.mutate({ deckId: deck.id, name: card.name, tags }, callbacks(message));
   }
 
-  function addTag({ card }: DragItem, tag: string) {
+  function addTag({ entry: card }: DragItem, tag: string) {
     const current = tagsOfCard(card);
     if (!current.includes(tag)) {
       changeTags(card, [...current, tag], `${card.name} : tag « ${tag} » ajouté.`);
     }
   }
 
-  function removeTag({ card, tag }: DragItem) {
+  function removeTag({ entry: card, tag }: DragItem) {
     if (tag !== null) {
       changeTags(
         card,
@@ -82,7 +82,7 @@ export function useDeckCardActions(deck: Deck, tagsOfCard: (card: Card) => strin
     }
   }
 
-  function removeAllTags({ card }: DragItem) {
+  function removeAllTags({ entry: card }: DragItem) {
     changeTags(card, [], `${card.name} n'a plus de tag.`);
   }
 

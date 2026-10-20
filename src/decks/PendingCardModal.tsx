@@ -17,7 +17,7 @@ import { notifications } from '@mantine/notifications';
 import { useRef, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import type { Card, Deck, PendingCard } from '../api/types';
+import type { Deck, PendingCard } from '../api/types';
 import { CardImage } from '../cards/CardImage';
 import { PendingBadge, pendingStatusDescription } from '../cards/PendingBadge';
 import { PrintPrice } from '../cards/price';
@@ -32,6 +32,7 @@ import { movedMessage } from './boards';
 import { BoardPicker } from './BoardSection';
 import { CardTagsInput } from './CardTagsInput';
 import { CommanderControl } from './CommanderControl';
+import type { PendingEntry } from './deckEntries';
 import { pendingSlot } from './commanders';
 import { pendingStatus } from './pendingCards';
 import { DeckQuantityControl } from './DeckQuantityControl';
@@ -40,8 +41,7 @@ import { type EditionSource, EditionSwitcher } from './EditionSwitcher';
 interface PendingCardModalProps {
   deck: Deck;
   deckCardIds: Set<number>;
-  card: Card | null;
-  item: PendingCard | undefined;
+  entry: PendingEntry | null;
   imageUrl: string | undefined;
   loading: boolean;
   onClose: () => void;
@@ -51,26 +51,25 @@ interface PendingCardModalProps {
 export function PendingCardModal({
   deck,
   deckCardIds,
-  card,
-  item,
+  entry,
   imageUrl,
   loading,
   onClose,
   onSwapped,
 }: PendingCardModalProps) {
-  const lastShown = useRef<{ card: Card; item: PendingCard | undefined; imageUrl: string | undefined } | null>(null);
-  if (card && !loading) {
-    lastShown.current = { card, item, imageUrl };
+  const lastShown = useRef<{ card: PendingEntry; item: PendingCard; imageUrl: string | undefined } | null>(null);
+  if (entry && !loading) {
+    lastShown.current = { card: entry, item: entry.pending, imageUrl };
   }
   const shown = lastShown.current;
   const deckId = deck.id;
-  const commanderSlot = shown?.item ? pendingSlot(deck, shown.item.id) : null;
+  const commanderSlot = shown ? pendingSlot(deck, shown.item.id) : null;
   const commit = useCommitPendingCards();
   const storageOptions = useStorageOptions();
   const [storageId, setStorageId] = useState<string | null>(null);
   const [count, setCount] = useState<number | string>('');
-  const total = shown?.item?.quantity ?? 1;
-  const status = shown?.item ? pendingStatus(shown.item) : null;
+  const total = shown?.item.quantity ?? 1;
+  const status = shown ? pendingStatus(shown.item) : null;
   const selected = count === '' ? total : Math.min(total, Math.max(1, Math.floor(Number(count)) || 1));
 
   function copies(n: number, name: string) {
@@ -78,7 +77,7 @@ export function PendingCardModal({
   }
 
   function addToCollection() {
-    if (!shown?.item) {
+    if (!shown) {
       return;
     }
     const { item: added } = shown;
@@ -101,7 +100,7 @@ export function PendingCardModal({
   }
 
   return (
-    <Modal opened={card !== null} onClose={onClose} title={card?.name ?? shown?.card.name} size="xl">
+    <Modal opened={entry !== null} onClose={onClose} title={entry?.name ?? shown?.card.name} size="xl">
       {loading ? (
         <Center mih={400}>
           <Stack align="center" gap="xs">
@@ -138,10 +137,8 @@ export function PendingCardModal({
                   </div>
                   <CardRulesText scryfallId={shown.card.scryfall_id} />
                   <CardTagsInput deckId={deckId} cardName={shown.card.name} />
-                  {shown.item && (
-                    <PendingBoardPicker deckId={deckId} item={shown.item} isCommander={commanderSlot !== null} />
-                  )}
-                  {shown.item && (commanderSlot !== null || isCommanderFormat(deck.format)) && (
+                  <PendingBoardPicker deckId={deckId} item={shown.item} isCommander={commanderSlot !== null} />
+                  {(commanderSlot !== null || isCommanderFormat(deck.format)) && (
                     <CommanderControl
                       deck={deck}
                       name={shown.item.name}
@@ -151,16 +148,14 @@ export function PendingCardModal({
                     />
                   )}
                   <Divider />
-                  {shown.item && (
-                    <DeckQuantityControl
-                      key={`${shown.item.id}-${shown.item.quantity}`}
-                      deckId={deckId}
-                      card={shown.card}
-                      board={shown.item.board}
-                      source={{ kind: 'pending', item: shown.item }}
-                      onChanged={(removedAll) => removedAll && onClose()}
-                    />
-                  )}
+                  <DeckQuantityControl
+                    key={`${shown.item.id}-${shown.item.quantity}`}
+                    deckId={deckId}
+                    card={shown.card}
+                    board={shown.item.board}
+                    source={{ kind: 'pending', item: shown.item }}
+                    onChanged={(removedAll) => removedAll && onClose()}
+                  />
                   <Divider />
                   <Text size="sm">
                     {total > 1
@@ -194,7 +189,7 @@ export function PendingCardModal({
                       searchable
                     />
                   </Group>
-                  <Button color="orange" onClick={addToCollection} loading={commit.isPending} disabled={!shown.item}>
+                  <Button color="orange" onClick={addToCollection} loading={commit.isPending}>
                     {selected < total ? `Ajouter ${selected} sur ${total} à ma collection` : 'Ajouter à ma collection'}
                   </Button>
                   {commit.error && (
@@ -205,19 +200,15 @@ export function PendingCardModal({
                 </Stack>
               </Grid.Col>
             </Grid>
-            {shown.item && (
-              <>
-                <Divider />
-                <EditionSwitcher
-                  key={shown.item.id}
-                  deckId={deckId}
-                  source={{ kind: 'pending', item: shown.item }}
-                  deckCardIds={deckCardIds}
-                  commanderSlot={commanderSlot}
-                  onSwapped={onSwapped}
-                />
-              </>
-            )}
+            <Divider />
+            <EditionSwitcher
+              key={shown.item.id}
+              deckId={deckId}
+              source={{ kind: 'pending', item: shown.item }}
+              deckCardIds={deckCardIds}
+              commanderSlot={commanderSlot}
+              onSwapped={onSwapped}
+            />
           </Stack>
         )
       )}
@@ -262,7 +253,7 @@ function PendingBoardPicker({ deckId, item, isCommander }: PendingBoardPickerPro
   );
 }
 
-function PendingCardImage({ card, imageUrl }: { card: Card; imageUrl: string | undefined }) {
+function PendingCardImage({ card, imageUrl }: { card: PendingEntry; imageUrl: string | undefined }) {
   const backImage = useBackImage(card.scryfall_id);
-  return <CardImage key={card.id} name={card.name} url={imageUrl} backUrl={backImage} loading={false} />;
+  return <CardImage key={card.key} name={card.name} url={imageUrl} backUrl={backImage} loading={false} />;
 }

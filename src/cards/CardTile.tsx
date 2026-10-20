@@ -13,8 +13,13 @@ import { CardImage } from './CardImage';
 import { CommanderBadge, CommanderInlineMark } from './CommanderMark';
 import { CollectionBadge, PendingBadge, type PendingStatus } from './PendingBadge';
 
-export interface CardTileProps {
-  card: Card;
+export type TileCard = Pick<
+  Card,
+  'name' | 'scryfall_id' | 'set_code' | 'collector_number' | 'foil' | 'proxy' | 'card_type' | 'mana_value' | 'quantity'
+>;
+
+export interface CardTileProps<T extends TileCard = Card> {
+  card: T;
   imageUrl: string | undefined;
   backImageUrl?: string;
   imageLoading: boolean;
@@ -25,11 +30,11 @@ export interface CardTileProps {
   commander?: boolean;
   manaCost?: string | null;
   details?: ReactNode;
-  onOpen: (card: Card) => void;
-  onContextMenu?: (event: ContextMenuEvent, card: Card) => void;
+  onOpen: (card: T) => void;
+  onContextMenu?: (event: ContextMenuEvent, card: T) => void;
 }
 
-function ManaCost({ card, manaCost }: { card: Card; manaCost: string | null | undefined }) {
+function ManaCost({ card, manaCost }: { card: TileCard; manaCost: string | null | undefined }) {
   if (manaCost === undefined) {
     return null;
   }
@@ -51,7 +56,7 @@ function ManaCost({ card, manaCost }: { card: Card; manaCost: string | null | un
   );
 }
 
-function CardRow({
+function CardRow<T extends TileCard>({
   card,
   commander,
   pendingStatus,
@@ -62,7 +67,7 @@ function CardRow({
   onPreview,
   onContextMenu,
 }: Pick<
-  CardTileProps,
+  CardTileProps<T>,
   'card' | 'commander' | 'pendingStatus' | 'collectionCount' | 'manaCost' | 'details' | 'onOpen' | 'onContextMenu'
 > & {
   onPreview: () => void;
@@ -108,7 +113,7 @@ function CardRow({
   );
 }
 
-export function CardTile({
+export function CardTile<T extends TileCard = Card>({
   card,
   imageUrl,
   backImageUrl,
@@ -122,7 +127,7 @@ export function CardTile({
   details,
   onOpen,
   onContextMenu,
-}: CardTileProps) {
+}: CardTileProps<T>) {
   const [shownUrl, setShownUrl] = useState<string | undefined>(undefined);
   const onPreview = () =>
     !document.body.dataset.cardDragging &&
