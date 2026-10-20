@@ -31,9 +31,7 @@ import {
   displayFromStored,
   displayToStored,
 } from '../cards/CardDisplay';
-import { CardGrid } from '../cards/CardLayout';
 import { useCardContextMenu } from '../cards/CardContextMenu';
-import { CardTile } from '../cards/CardTile';
 import { useCardVisuals } from '../cards/useCardVisuals';
 import { PendingBadge, type PendingStatus } from '../cards/PendingBadge';
 import { type CardGroup, hasMissingDetails } from '../cards/grouping';
@@ -52,10 +50,10 @@ import {
   usePendingCards,
   useUpdateDeck,
 } from '../decks/api';
-import { clearSlotChanges, type CommanderSlot, commanderSlotOf, hasCommander, hasPartner } from '../decks/commanders';
-import { type CollapsibleBoard, COLLAPSIBLE_BOARDS, DEFAULT_COLLAPSED_BOARDS, inBoard } from '../decks/boards';
-import { BoardSection } from '../decks/BoardSection';
-import { type DeckCardGrouped, DeckCardGroups, type GroupDrop, useDeckCardGroups } from '../decks/DeckCardGroups';
+import { clearSlotChanges, commanderCardIds, type CommanderSlot, hasCommander, hasPartner } from '../decks/commanders';
+import { BOARDS, type CollapsibleBoard, COLLAPSIBLE_BOARDS, DEFAULT_COLLAPSED_BOARDS } from '../decks/boards';
+import { DeckBoards, type TileContext, type TileExtras, useDeckBoards } from '../decks/DeckBoards';
+import type { GroupDrop } from '../decks/DeckCardGroups';
 import { DeckDropBar } from '../decks/DeckDropBar';
 import { DeckDragProvider, DraggableCard } from '../decks/dragDrop';
 import { useDeckCardActions } from '../decks/useDeckCardActions';
@@ -68,7 +66,7 @@ import { useDeckCopyActions } from '../decks/DeckCopyActions';
 import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckTagsModal } from '../decks/DeckTagsModal';
 import { DeckLegalityWarning } from '../decks/DeckLegalityWarning';
-import { formatPrice, PriceText, usePriceCurrency } from '../cards/price';
+import { usePriceCurrency } from '../cards/price';
 import { DeckValue } from '../decks/DeckValue';
 import { BulkEditModal } from '../decks/BulkEditModal';
 import { MoveDeckToFolderModal } from '../decks/FolderModals';
@@ -79,14 +77,7 @@ import { DeckStatsPanel } from '../decks/DeckStatsPanel';
 import { ExportDeckModal } from '../decks/ExportDeckModal';
 import { ImportListModal } from '../decks/ImportListModal';
 import { PendingCardModal } from '../decks/PendingCardModal';
-import {
-  isPendingCard,
-  pendingIdOf,
-  pendingStatus,
-  pendingToCards,
-  sortDeckCards,
-  stackCards,
-} from '../decks/pendingCards';
+import { isPendingCard, pendingIdOf, pendingStatus, pendingToCards } from '../decks/pendingCards';
 import { PendingCardsSection } from '../decks/PendingCardsSection';
 import { ShareDeckModal } from '../decks/ShareDeckModal';
 import { type DeckCardGrouping, deckGroupingOptions, parseDeckGrouping } from '../decks/storageGrouping';
@@ -524,41 +515,29 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
     changeView({ collapsed: COLLAPSIBLE_BOARDS.filter((candidate) => folded.includes(candidate)) });
   }
 
-  function boardValue(board: CollapsibleBoard) {
-    if (!currency || !stats.data) {
-      return undefined;
-    }
-    return (
-      <PriceText span fz="md">
-        {formatPrice(stats.data.board_values[board][currency], currency)}
-      </PriceText>
-    );
-  }
-
   const display = cardDisplay(displaySettings, (next) => changeView({ display: next }));
   const showCollection = useShowCollectionInDecks();
   const cards = useDeckCards(deck.id, shownSort);
   const deckCards = cards.data ?? [];
   const pending = usePendingCards(deck.id);
   const pendingItems = pending.data ?? [];
-  const allCards = sortDeckCards<DeckCard>([...deckCards, ...pendingToCards(pendingItems)], shownSort);
-  const mainCards = inBoard(allCards, 'main');
-  const sideboardCards = inBoard(allCards, 'sideboard');
-  const consideringCards = inBoard(allCards, 'considering');
+  const allCards: DeckCard[] = [...deckCards, ...pendingToCards(pendingItems)];
   const showMissingDetails = (grouping === 'type' || grouping === 'color') && hasMissingDetails(deckCards);
   const visuals = useCardVisuals(allCards, display);
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
-  const commanderIds = [deck.commander_id, deck.partner_id];
-  const mainStacks = stackCards(mainCards, commanderIds, !showCollection);
-  const sideboardStacks = stackCards(sideboardCards, commanderIds, !showCollection);
-  const consideringStacks = stackCards(consideringCards, commanderIds, !showCollection);
   const deckTags = useDeckTags(deck.id);
   const cardTags = tagsByName(deckTags.data?.cards ?? []);
   const cardTagsOf = (card: Card) => tagsOf(cardTags, card.name);
-  const groupedMain = useDeckCardGroups(mainStacks, grouping, storageNames, cardTagsOf);
-  const groupedSideboard = useDeckCardGroups(sideboardStacks, grouping, storageNames, cardTagsOf);
-  const groupedConsidering = useDeckCardGroups(consideringStacks, grouping, storageNames, cardTagsOf);
+  const boards = useDeckBoards({
+    cards: allCards,
+    sort: shownSort,
+    grouping,
+    commanderIds: commanderCardIds(deck, allCards),
+    separateByStorage: showCollection,
+    storageNames,
+    tagsOf: cardTagsOf,
+  });
   const actions = useDeckCardActions(deck, cardTagsOf);
   const contextMenu = useCardContextMenu();
   const cardMenu = useDeckCardMenu(deck, pendingItems, actions);
@@ -575,7 +554,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   const cardLoading = opened !== null && (!liveCard || (!openedCardImage && visuals.imagesFetching));
   const openedPendingId = openedPending ? pendingIdOf(openedPending) : null;
   const pendingCard = openedPending
-    ? ([...mainStacks, ...sideboardStacks, ...consideringStacks].find(
+    ? ([...boards.main.stacks, ...boards.sideboard.stacks, ...boards.considering.stacks].find(
         (stack) => isPendingCard(stack) && pendingIdOf(stack) === openedPendingId,
       ) ?? openedPending)
     : null;
@@ -584,13 +563,8 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   const pendingLoading = pendingCard !== null && (!pendingItem || (!pendingImage && visuals.imagesFetching));
 
   function liveOpenedCard(current: OpenedCard): OpenedCard | null {
-    const boards: [DeckBoard, Card[]][] = [
-      ['main', mainStacks],
-      ['sideboard', sideboardStacks],
-      ['considering', consideringStacks],
-    ];
-    for (const [board, stacks] of boards) {
-      const card = stacks.find((stack) => copyIds(stack).includes(current.ids[0]));
+    for (const board of BOARDS) {
+      const card = boards[board].stacks.find((stack) => copyIds(stack).includes(current.ids[0]));
       if (card) {
         return { card, board, ids: current.ids };
       }
@@ -631,15 +605,11 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   }
 
   const commanderScryfallId = isCommanderFormat(deck.format) ? deck.commander_scryfall_id : null;
+  const commanderCard = boards.main.stacks.find((card) => boards.main.commanders.has(card.id));
   const commanderName = commanderScryfallId
-    ? mainCards.find((card) => card.scryfall_id === commanderScryfallId)?.name
+    ? boards.main.stacks.find((card) => card.scryfall_id === commanderScryfallId)?.name
     : undefined;
   const commanderImage = commanderScryfallId ? visuals.imageUrl({ scryfall_id: commanderScryfallId }) : undefined;
-  const commanderCard = mainCards.find((card) =>
-    deck.commander_id
-      ? card.id === deck.commander_id
-      : isPendingCard(card) && pendingIdOf(card) === deck.commander_pending_id,
-  );
   useEffect(() => {
     setDefaultCardPreview(
       commanderScryfallId
@@ -660,33 +630,23 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
 
   const pendingStatuses = new Map<number, PendingStatus>(pendingItems.map((item) => [item.id, pendingStatus(item)]));
 
-  const renderTile = (board: DeckBoard) => (card: Card, group?: CardGroup) => {
+  function tileExtras(card: Card, { board, group, imageUrl }: TileContext): TileExtras {
     const notOwned = isPendingCard(card);
-    const item = { card, board, tag: group?.tag ?? null, imageUrl: visuals.imageUrl(card) };
-    return (
-      <DraggableCard key={card.id} item={item}>
-        <CardTile
-          card={card}
-          imageUrl={visuals.imageUrl(card)}
-          backImageUrl={visuals.backImageUrl(card)}
-          imageLoading={visuals.imageLoading}
-          display={display}
-          commander={board === 'main' && commanderSlotOf(deck, card) !== null}
-          manaCost={visuals.manaCost(card)}
-          storageName={
-            showCollection ? (card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null) : undefined
-          }
-          pendingStatus={
-            showCollection && notOwned ? (pendingStatuses.get(pendingIdOf(card)) ?? { kind: 'missing' }) : undefined
-          }
-          onOpen={notOwned ? openPending : (clicked) => openCard(clicked, board)}
-          onContextMenu={(event, clicked) =>
-            contextMenu.open(event, cardMenu.menuFor(clicked, board, visuals.imageUrl(clicked)))
-          }
-        />
-      </DraggableCard>
-    );
-  };
+    return {
+      props: {
+        storageName: showCollection
+          ? card.storage_id
+            ? (storageNames.get(card.storage_id) ?? null)
+            : null
+          : undefined,
+        pendingStatus:
+          showCollection && notOwned ? (pendingStatuses.get(pendingIdOf(card)) ?? { kind: 'missing' }) : undefined,
+        onContextMenu: (event, clicked) =>
+          contextMenu.open(event, cardMenu.menuFor(clicked, board, visuals.imageUrl(clicked))),
+      },
+      wrap: (tile) => <DraggableCard item={{ card, board, tag: group?.tag ?? null, imageUrl }}>{tile}</DraggableCard>,
+    };
+  }
 
   function tagDrop(board: DeckBoard): GroupDrop | undefined {
     if (grouping !== 'tag') {
@@ -717,15 +677,6 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
         }
       },
     };
-  }
-
-  function renderBoard(board: DeckBoard, stacks: Card[], grouped: DeckCardGrouped) {
-    const tile = renderTile(board);
-    return grouping ? (
-      <DeckCardGroups {...grouped} display={display} renderTile={tile} drop={tagDrop(board)} />
-    ) : (
-      <CardGrid display={display} cards={stacks} renderTile={(card) => tile(card)} />
-    );
   }
 
   return (
@@ -784,41 +735,23 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
             <Loader />
           </Center>
         ) : (
-          <>
-            {allCards.length === 0 ? (
+          <DeckBoards
+            boards={boards}
+            display={display}
+            folded={collapsed}
+            onToggleBoard={toggleBoard}
+            boardValues={stats.data?.board_values}
+            emptyDeck={
               <EmptyNote
                 title="Ce deck est vide"
                 note="ajoute des cartes de ta collection, juste là-haut"
                 arrow="up-right"
               />
-            ) : mainCards.length === 0 ? (
-              <Text size="sm" c="dimmed">
-                Aucune carte dans le deck principal.
-              </Text>
-            ) : (
-              renderBoard('main', mainStacks, groupedMain)
-            )}
-            <BoardSection
-              board="sideboard"
-              count={sideboardCards.length}
-              collapsed={collapsed.includes('sideboard')}
-              onToggle={() => toggleBoard('sideboard')}
-              emptyMessage={emptyBoardMessages.sideboard}
-              value={boardValue('sideboard')}
-            >
-              {renderBoard('sideboard', sideboardStacks, groupedSideboard)}
-            </BoardSection>
-            <BoardSection
-              board="considering"
-              count={consideringCards.length}
-              collapsed={collapsed.includes('considering')}
-              onToggle={() => toggleBoard('considering')}
-              emptyMessage={emptyBoardMessages.considering}
-              value={boardValue('considering')}
-            >
-              {renderBoard('considering', consideringStacks, groupedConsidering)}
-            </BoardSection>
-          </>
+            }
+            emptyBoardMessages={emptyBoardMessages}
+            extras={{ tile: tileExtras, groupDrop: tagDrop }}
+            onOpen={(card, board) => (isPendingCard(card) ? openPending(card) : openCard(card, board))}
+          />
         )}
 
         {contextMenu.element}

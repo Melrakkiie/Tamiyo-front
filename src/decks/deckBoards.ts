@@ -35,9 +35,9 @@ export interface BoardData {
 
 export type DeckBoardsData = Record<DeckBoard, BoardData>;
 
-export type GroupingInput = Pick<DeckBoardsInput, 'grouping' | 'faceTypes' | 'subtypes' | 'storageNames' | 'tagsOf'>;
+type GroupingInput = Pick<DeckBoardsInput, 'grouping' | 'faceTypes' | 'subtypes' | 'storageNames' | 'tagsOf'>;
 
-export interface GroupedStacks {
+interface GroupedStacks {
   groups: CardGroup[] | null;
   backFaces: Map<string, BackFaceEntry[]>;
 }
@@ -79,7 +79,7 @@ function backFacesOf(cards: Card[], faceTypes: GroupingInput['faceTypes']) {
   );
 }
 
-export function groupStacks(stacks: Card[], input: GroupingInput): GroupedStacks {
+function groupStacks(stacks: Card[], input: GroupingInput): GroupedStacks {
   const { grouping } = input;
   if (grouping === null) {
     return { groups: null, backFaces: new Map() };
