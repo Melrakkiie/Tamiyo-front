@@ -22,6 +22,7 @@ import { useSession } from '../auth/useSession';
 import { type CardDisplay, CardDisplayControls, useCardDisplay } from '../cards/CardDisplay';
 import { CardGrid } from '../cards/CardLayout';
 import { CardTile } from '../cards/CardTile';
+import { useCardVisuals } from '../cards/useCardVisuals';
 import { useDeckComparison } from '../decks/api';
 import { DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
 import { FormatSticker } from '../decks/FormatSticker';
@@ -29,7 +30,6 @@ import { sortDeckCards } from '../decks/pendingCards';
 import { SharedCardModal } from '../decks/SharedCardModal';
 import { type SharedDeckSort, sharedDeckSortOptions } from '../decks/shared';
 import { type CardGrouping, groupingOptions, parseGrouping } from '../cards/grouping';
-import { useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
 import { usePageTitle } from '../layout/usePageTitle';
 
 type Side = 'deck' | 'other' | 'both';
@@ -248,10 +248,7 @@ function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps
   const converted = toCards(cards, side);
   const byId = new Map(converted.map((card, index) => [card.id, cards[index]]));
   const sorted = sortDeckCards(converted, options.sort);
-  const ids = sorted.map((card) => card.scryfall_id);
-  const images = useCardImages(ids);
-  const backImages = useCardBackImages(ids);
-  const manaCosts = useManaCosts(ids);
+  const visuals = useCardVisuals(sorted, options.display);
   const grouped = useDeckCardGroups(sorted, options.grouping);
 
   function isCommander(card: Card) {
@@ -288,20 +285,12 @@ function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps
       <CardTile
         key={card.id}
         card={card}
-        imageUrl={images.data?.[card.scryfall_id]}
-        backImageUrl={backImages.data?.[card.scryfall_id]}
-        imageLoading={images.isLoading}
-        textOnly={options.display.textOnly}
-        compact={options.display.compact}
-        stacked={options.display.stacked}
-        overlapped={options.display.overlapped}
-        hideDetails={!options.display.showDetails}
+        imageUrl={visuals.imageUrl(card)}
+        backImageUrl={visuals.backImageUrl(card)}
+        imageLoading={visuals.imageLoading}
+        display={options.display}
         commander={isCommander(card)}
-        manaCost={
-          !options.display.showManaCost || manaCosts.isLoading
-            ? undefined
-            : (manaCosts.data?.[card.scryfall_id] ?? null)
-        }
+        manaCost={visuals.manaCost(card)}
         details={details(card, false)}
         onOpen={setOpened}
       />
@@ -330,7 +319,7 @@ function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps
       )}
       <SharedCardModal
         card={opened}
-        imageUrl={opened ? images.data?.[opened.scryfall_id] : undefined}
+        imageUrl={opened ? visuals.imageUrl(opened) : undefined}
         details={opened ? details(opened, true) : undefined}
         onClose={() => setOpened(null)}
       />

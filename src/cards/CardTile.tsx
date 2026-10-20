@@ -8,6 +8,7 @@ import { withSymbols } from '../scryfall/manaSymbols';
 import { StorageLabel } from '../storages/StorageLabel';
 import { FoilSticker, ProxySticker } from '../theme/Sticker';
 import type { ContextMenuEvent } from './CardContextMenu';
+import type { CardDisplay } from './CardDisplay';
 import { CardImage } from './CardImage';
 import { CommanderBadge, CommanderInlineMark } from './CommanderMark';
 import { CollectionBadge, PendingBadge, type PendingStatus } from './PendingBadge';
@@ -20,11 +21,7 @@ interface CardTileProps {
   storageName?: string | null;
   pendingStatus?: PendingStatus;
   collectionCount?: number;
-  compact?: boolean;
-  textOnly?: boolean;
-  hideDetails?: boolean;
-  stacked?: boolean;
-  overlapped?: boolean;
+  display: Pick<CardDisplay, 'textOnly' | 'compact' | 'stacked' | 'overlapped' | 'showDetails'>;
   commander?: boolean;
   manaCost?: string | null;
   details?: ReactNode;
@@ -119,11 +116,7 @@ export function CardTile({
   storageName,
   pendingStatus,
   collectionCount,
-  compact,
-  textOnly,
-  hideDetails = false,
-  stacked = false,
-  overlapped = false,
+  display,
   commander = false,
   manaCost,
   details,
@@ -140,6 +133,7 @@ export function CardTile({
       imageUrl: shownUrl ?? imageUrl,
       open: () => onOpen(card),
     });
+  const { textOnly, compact, stacked, overlapped, showDetails } = display;
   if (textOnly) {
     return (
       <CardRow
@@ -242,7 +236,7 @@ export function CardTile({
             </Box>
           )}
         </Box>
-        {!hideDetails && (
+        {showDetails && (
           <div>
             <Text size="sm" fw={500} lineClamp={1}>
               {card.name}

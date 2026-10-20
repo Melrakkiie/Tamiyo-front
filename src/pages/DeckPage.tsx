@@ -34,6 +34,7 @@ import {
 import { CardGrid } from '../cards/CardLayout';
 import { useCardContextMenu } from '../cards/CardContextMenu';
 import { CardTile } from '../cards/CardTile';
+import { useCardVisuals } from '../cards/useCardVisuals';
 import { PendingBadge, type PendingStatus } from '../cards/PendingBadge';
 import { type CardGroup, hasMissingDetails } from '../cards/grouping';
 import { MissingDetailsAlert } from '../cards/MissingDetailsAlert';
@@ -93,7 +94,7 @@ import { tagsByName, tagsOf, useDeckTags } from '../decks/tags';
 import { useDeckView, useSaveDeckView } from '../decks/view';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import { SettingsMenu } from '../layout/SettingsMenu';
-import { useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
+import { useCardImages } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
 import { EmptyNote } from '../theme/EmptyNote';
 import { usePageTitle } from '../layout/usePageTitle';
@@ -535,7 +536,6 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   }
 
   const display = cardDisplay(displaySettings, (next) => changeView({ display: next }));
-  const { textOnly } = display;
   const showCollection = useShowCollectionInDecks();
   const cards = useDeckCards(deck.id, shownSort);
   const deckCards = cards.data ?? [];
@@ -546,9 +546,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   const sideboardCards = inBoard(allCards, 'sideboard');
   const consideringCards = inBoard(allCards, 'considering');
   const showMissingDetails = (grouping === 'type' || grouping === 'color') && hasMissingDetails(deckCards);
-  const images = useCardImages(allCards.map((card) => card.scryfall_id));
-  const backImages = useCardBackImages(allCards.map((card) => card.scryfall_id));
-  const manaCosts = useManaCosts(allCards.map((card) => card.scryfall_id));
+  const visuals = useCardVisuals(allCards, display);
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
   const commanderIds = [deck.commander_id, deck.partner_id];
@@ -573,8 +571,8 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   const modalSession = useRef(0);
   const liveCard = opened ? liveOpenedCard(opened) : null;
   const openedCard = liveCard ?? opened;
-  const openedCardImage = openedCard ? images.data?.[openedCard.card.scryfall_id] : undefined;
-  const cardLoading = opened !== null && (!liveCard || (!openedCardImage && images.isFetching));
+  const openedCardImage = openedCard ? visuals.imageUrl(openedCard.card) : undefined;
+  const cardLoading = opened !== null && (!liveCard || (!openedCardImage && visuals.imagesFetching));
   const openedPendingId = openedPending ? pendingIdOf(openedPending) : null;
   const pendingCard = openedPending
     ? ([...mainStacks, ...sideboardStacks, ...consideringStacks].find(
@@ -582,8 +580,8 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
       ) ?? openedPending)
     : null;
   const pendingItem = pendingItems.find((item) => item.id === openedPendingId);
-  const pendingImage = pendingCard ? images.data?.[pendingCard.scryfall_id] : undefined;
-  const pendingLoading = pendingCard !== null && (!pendingItem || (!pendingImage && images.isFetching));
+  const pendingImage = pendingCard ? visuals.imageUrl(pendingCard) : undefined;
+  const pendingLoading = pendingCard !== null && (!pendingItem || (!pendingImage && visuals.imagesFetching));
 
   function liveOpenedCard(current: OpenedCard): OpenedCard | null {
     const boards: [DeckBoard, Card[]][] = [
@@ -636,7 +634,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   const commanderName = commanderScryfallId
     ? mainCards.find((card) => card.scryfall_id === commanderScryfallId)?.name
     : undefined;
-  const commanderImage = commanderScryfallId ? images.data?.[commanderScryfallId] : undefined;
+  const commanderImage = commanderScryfallId ? visuals.imageUrl({ scryfall_id: commanderScryfallId }) : undefined;
   const commanderCard = mainCards.find((card) =>
     deck.commander_id
       ? card.id === deck.commander_id
@@ -664,32 +662,26 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
 
   const renderTile = (board: DeckBoard) => (card: Card, group?: CardGroup) => {
     const notOwned = isPendingCard(card);
-    const item = { card, board, tag: group?.tag ?? null, imageUrl: images.data?.[card.scryfall_id] };
+    const item = { card, board, tag: group?.tag ?? null, imageUrl: visuals.imageUrl(card) };
     return (
       <DraggableCard key={card.id} item={item}>
         <CardTile
           card={card}
-          imageUrl={images.data?.[card.scryfall_id]}
-          backImageUrl={backImages.data?.[card.scryfall_id]}
-          imageLoading={images.isLoading}
-          textOnly={textOnly}
+          imageUrl={visuals.imageUrl(card)}
+          backImageUrl={visuals.backImageUrl(card)}
+          imageLoading={visuals.imageLoading}
+          display={display}
           commander={board === 'main' && commanderSlotOf(deck, card) !== null}
-          manaCost={
-            !display.showManaCost || manaCosts.isLoading ? undefined : (manaCosts.data?.[card.scryfall_id] ?? null)
-          }
+          manaCost={visuals.manaCost(card)}
           storageName={
             showCollection ? (card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null) : undefined
           }
           pendingStatus={
             showCollection && notOwned ? (pendingStatuses.get(pendingIdOf(card)) ?? { kind: 'missing' }) : undefined
           }
-          compact={display.compact}
-          stacked={display.stacked}
-          overlapped={display.overlapped}
-          hideDetails={!display.showDetails}
           onOpen={notOwned ? openPending : (clicked) => openCard(clicked, board)}
           onContextMenu={(event, clicked) =>
-            contextMenu.open(event, cardMenu.menuFor(clicked, board, images.data?.[clicked.scryfall_id]))
+            contextMenu.open(event, cardMenu.menuFor(clicked, board, visuals.imageUrl(clicked)))
           }
         />
       </DraggableCard>
