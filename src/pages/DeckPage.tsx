@@ -22,7 +22,9 @@ import { ApiError, errorMessage } from '../api/errors';
 import type { Card, Deck, DeckBoard, DeckCard, DeckCardSort } from '../api/types';
 import { useShowCollectionInDecks } from '../auth/preferences';
 import { useSession } from '../auth/useSession';
-import { copyIds, useCard } from '../cards/api';
+import { useCard } from '../cards/api';
+import { storageNameOf } from '../storages/storageName';
+import { copyIds } from '../cards/copies';
 import { CardImage } from '../cards/CardImage';
 import {
   cardDisplay,
@@ -511,8 +513,8 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   }
 
   function toggleBoard(board: CollapsibleBoard) {
-    const folded = collapsed.includes(board) ? collapsed.filter((other) => other !== board) : [...collapsed, board];
-    changeView({ collapsed: COLLAPSIBLE_BOARDS.filter((candidate) => folded.includes(candidate)) });
+    const toggled = collapsed.includes(board) ? collapsed.filter((other) => other !== board) : [...collapsed, board];
+    changeView({ collapsed: COLLAPSIBLE_BOARDS.filter((candidate) => toggled.includes(candidate)) });
   }
 
   const display = cardDisplay(displaySettings, (next) => changeView({ display: next }));
@@ -554,7 +556,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   const cardLoading = opened !== null && (!liveCard || (!openedCardImage && visuals.imagesFetching));
   const openedPendingId = openedPending ? pendingIdOf(openedPending) : null;
   const pendingCard = openedPending
-    ? ([...boards.main.stacks, ...boards.sideboard.stacks, ...boards.considering.stacks].find(
+    ? (BOARDS.flatMap((board) => boards[board].stacks).find(
         (stack) => isPendingCard(stack) && pendingIdOf(stack) === openedPendingId,
       ) ?? openedPending)
     : null;
@@ -634,11 +636,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
     const notOwned = isPendingCard(card);
     return {
       props: {
-        storageName: showCollection
-          ? card.storage_id
-            ? (storageNames.get(card.storage_id) ?? null)
-            : null
-          : undefined,
+        storageName: showCollection ? storageNameOf(card, storageNames) : undefined,
         pendingStatus:
           showCollection && notOwned ? (pendingStatuses.get(pendingIdOf(card)) ?? { kind: 'missing' }) : undefined,
         onContextMenu: (event, clicked) =>
@@ -738,7 +736,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
           <DeckBoards
             boards={boards}
             display={display}
-            folded={collapsed}
+            collapsed={collapsed}
             onToggleBoard={toggleBoard}
             boardValues={stats.data?.board_values}
             emptyDeck={

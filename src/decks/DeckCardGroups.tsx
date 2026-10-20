@@ -2,17 +2,17 @@ import { Box, Stack, Text, Tooltip } from '@mantine/core';
 import type { ReactNode } from 'react';
 
 import type { Card } from '../api/types';
-import { copyCount } from '../cards/api';
+import { totalCopies } from '../cards/copies';
 import type { CardDisplay } from '../cards/CardDisplay';
 import { CardGroupsLayout } from '../cards/CardLayout';
 import { SectionTitle } from '../theme/SectionTitle';
 import type { CardGroup } from '../cards/grouping';
-import type { BackFaceEntry } from './deckBoards';
+import type { BackFaceEntry } from './boardLayout';
 import { type DragItem, useDropTarget } from './dragDrop';
 import { StorageIcon } from '../storages/StorageLabel';
 
 function GroupCount({ label, cards, backFaces }: { label: string; cards: Card[]; backFaces: BackFaceEntry[] }) {
-  const count = cards.reduce((total, card) => total + copyCount(card), 0);
+  const count = totalCopies(cards);
   if (backFaces.length === 0) {
     return <>{count}</>;
   }

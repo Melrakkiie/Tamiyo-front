@@ -12,11 +12,12 @@ import { useCardFaceTypes, useCardSubtypes } from '../scryfall/hooks';
 import { BOARDS, COLLAPSIBLE_BOARDS, type CollapsibleBoard } from './boards';
 import { BoardSection } from './BoardSection';
 import { DeckCardGroups, type GroupDrop } from './DeckCardGroups';
-import { type BoardData, buildDeckBoards, type DeckBoardsData, type DeckBoardsInput } from './deckBoards';
+import { type BoardData, buildDeckBoards, type DeckBoardsData, type DeckBoardsInput } from './boardLayout';
 
 export type DeckBoardsOptions = Pick<DeckBoardsInput, 'cards' | 'sort' | 'grouping'> &
   Partial<Pick<DeckBoardsInput, 'commanderIds' | 'separateByStorage' | 'storageNames' | 'tagsOf'>>;
 
+const noCollapsedBoards: CollapsibleBoard[] = [];
 const noStorageNames = new Map<number, string>();
 
 export function useDeckBoards({
@@ -65,8 +66,8 @@ export interface DeckBoardsExtras {
 interface DeckBoardsProps {
   boards: DeckBoardsData;
   display: CardDisplay;
-  folded: CollapsibleBoard[];
-  onToggleBoard: (board: CollapsibleBoard) => void;
+  collapsed?: CollapsibleBoard[];
+  onToggleBoard?: (board: CollapsibleBoard) => void;
   boardValues?: DeckStats['board_values'];
   emptyDeck: ReactNode;
   emptyBoardMessages?: Record<CollapsibleBoard, string>;
@@ -77,7 +78,7 @@ interface DeckBoardsProps {
 export function DeckBoards({
   boards,
   display,
-  folded,
+  collapsed = noCollapsedBoards,
   onToggleBoard,
   boardValues,
   emptyDeck,
@@ -149,8 +150,8 @@ export function DeckBoards({
           key={board}
           board={board}
           count={boards[board].count}
-          collapsed={folded.includes(board)}
-          onToggle={() => onToggleBoard(board)}
+          collapsed={collapsed.includes(board)}
+          onToggle={() => onToggleBoard?.(board)}
           emptyMessage={emptyBoardMessages?.[board] ?? ''}
           value={boardValue(board)}
         >

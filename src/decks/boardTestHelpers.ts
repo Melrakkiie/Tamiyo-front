@@ -1,7 +1,7 @@
 import type { DeckCard, PendingCard } from '../api/types';
 import { colorCode, faceTypes, type FaceTypes, primaryType, subtypes } from '../scryfall/classify';
 import type { ScryfallCard } from '../scryfall/client';
-import type { BoardCard, DeckBoardsInput } from './deckBoards';
+import type { BoardCard, DeckBoardsInput } from './boardLayout';
 
 let nextId = 1;
 

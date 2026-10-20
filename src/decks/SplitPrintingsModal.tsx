@@ -18,7 +18,7 @@ import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Card, ImportSummary } from '../api/types';
-import { copyIds } from '../cards/api';
+import { copyIds } from '../cards/copies';
 import { PrintingPrice } from '../cards/price';
 import { imageUrl, type ScryfallCard } from '../scryfall/client';
 import { usePrintings } from '../scryfall/hooks';

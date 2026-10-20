@@ -273,14 +273,18 @@ function CommanderCard({ card, label, imageUrl, onOpen }: CommanderCardProps) {
   );
 }
 
-function useSharedDeckTiles(signedIn: boolean, collectionCounts: Map<string, number> | null) {
+function useSharedDeckTiles(
+  signedIn: boolean,
+  collectionCounts: Map<string, number> | null,
+  imageUrl: (card: Card) => string | undefined,
+) {
   const contextMenu = useCardContextMenu();
   const cardMenu = useSharedCardMenu(signedIn);
   const extras: DeckBoardsExtras = {
-    tile: (card, { imageUrl }) => ({
+    tile: (card) => ({
       props: {
         collectionCount: collectionCounts ? collectionCounts.get(cardNameKey(card.name)) : undefined,
-        onContextMenu: (event, clicked) => contextMenu.open(event, cardMenu.menuFor(clicked, imageUrl)),
+        onContextMenu: (event, clicked) => contextMenu.open(event, cardMenu.menuFor(clicked, imageUrl(clicked))),
       },
     }),
   };
@@ -304,7 +308,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
   const [grouping, setGrouping] = useState<SharedCardGrouping | null>('type');
   const display = useCardDisplay({ showDetails: false });
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
-  const [folded, setFolded] = useState<CollapsibleBoard[]>(DEFAULT_COLLAPSED_BOARDS);
+  const [collapsed, setCollapsed] = useState<CollapsibleBoard[]>(DEFAULT_COLLAPSED_BOARDS);
   const currency = usePriceCurrency();
   const stats = useSharedDeckStats(shared.deck.id, currency !== null);
   const all = sharedCardsToCards(shared.cards);
@@ -325,10 +329,10 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
     tagsOf: (card) => tagsOf(cardTags, card.name),
   });
   const visuals = useCardVisuals(all, display);
-  const tiles = useSharedDeckTiles(signedIn, showCollection ? ownedByName : null);
+  const tiles = useSharedDeckTiles(signedIn, showCollection ? ownedByName : null, visuals.imageUrl);
 
   function toggleBoard(board: CollapsibleBoard) {
-    setFolded((current) =>
+    setCollapsed((current) =>
       current.includes(board) ? current.filter((other) => other !== board) : [...current, board],
     );
   }
@@ -398,7 +402,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
       <DeckBoards
         boards={boards}
         display={display}
-        folded={folded}
+        collapsed={collapsed}
         onToggleBoard={toggleBoard}
         boardValues={stats.data?.board_values}
         emptyDeck={<EmptyNote title="Ce deck est vide" />}

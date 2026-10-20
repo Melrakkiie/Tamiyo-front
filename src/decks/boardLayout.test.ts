@@ -13,7 +13,7 @@ import {
   westvaleAbbey,
 } from '../scryfall/fixtures';
 import { boardsInput, copies, deckCard, pendingCard } from './boardTestHelpers';
-import { buildDeckBoards } from './deckBoards';
+import { buildDeckBoards } from './boardLayout';
 import { isPendingCard, pendingToCards } from './pendingCards';
 
 function names(cards: Card[]) {
@@ -121,7 +121,7 @@ describe('buildDeckBoards commanders', () => {
   it('puts a pending commander first', () => {
     const [commander] = pendingToCards([pendingCard(serraAngel, { id: 7, quantity: 1 })]);
     const cards = [deckCard(forest), commander];
-    const boards = buildDeckBoards(boardsInput(cards, [forest, serraAngel], { commanderIds: [null, commander.id] }));
+    const boards = buildDeckBoards(boardsInput(cards, [forest, serraAngel], { commanderIds: [commander.id] }));
     expect(names(boards.main.stacks)).toEqual(['Serra Angel', 'Forest']);
   });
 });

@@ -1,4 +1,5 @@
 import type { Card, DeckBoard, DeckCardSort } from '../api/types';
+import { copyCount, copyIds, totalCopies } from '../cards/copies';
 import { type CardGroup, groupCards, sortIntoGroups, typeLabels } from '../cards/grouping';
 import type { FaceTypes } from '../scryfall/classify';
 import { inBoard } from './boards';
@@ -11,7 +12,7 @@ export interface DeckBoardsInput {
   cards: BoardCard[];
   sort: DeckCardSort;
   grouping: DeckCardGrouping | null;
-  commanderIds: (number | null | undefined)[];
+  commanderIds: number[];
   separateByStorage: boolean;
   faceTypes: Record<string, FaceTypes | undefined>;
   subtypes: Record<string, string[] | undefined>;
@@ -42,13 +43,9 @@ interface GroupedStacks {
   backFaces: Map<string, BackFaceEntry[]>;
 }
 
-function copies(cards: Card[]) {
-  return cards.reduce((total, card) => total + (card.quantity ?? 1), 0);
-}
-
 function commanderRank(card: Card, commanderIds: DeckBoardsInput['commanderIds']): number | null {
-  const ids = card.copy_ids?.length ? card.copy_ids : [card.id];
-  const rank = commanderIds.findIndex((id) => id != null && ids.includes(id));
+  const ids = copyIds(card);
+  const rank = commanderIds.findIndex((id) => ids.includes(id));
   return rank === -1 ? null : rank;
 }
 
@@ -67,7 +64,7 @@ function backFacesOf(cards: Card[], faceTypes: GroupingInput['faceTypes']) {
     if (types?.back && types.back !== types.front) {
       const label = typeLabels[types.back];
       const entries = byLabel.get(label) ?? new Map<string, number>();
-      entries.set(card.name, (entries.get(card.name) ?? 0) + (card.quantity ?? 1));
+      entries.set(card.name, (entries.get(card.name) ?? 0) + copyCount(card));
       byLabel.set(label, entries);
     }
   }
@@ -111,7 +108,7 @@ function buildBoard(board: DeckBoard, input: DeckBoardsInput): BoardData {
   const commanders = new Set(
     stacks.filter((card) => commanderRank(card, input.commanderIds) !== null).map((card) => card.id),
   );
-  return { board, stacks, commanders, count: copies(stacks), ...groupStacks(stacks, input) };
+  return { board, stacks, commanders, count: totalCopies(stacks), ...groupStacks(stacks, input) };
 }
 
 export function buildDeckBoards(input: DeckBoardsInput): DeckBoardsData {

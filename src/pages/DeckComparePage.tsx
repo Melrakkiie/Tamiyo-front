@@ -22,9 +22,9 @@ import { useSession } from '../auth/useSession';
 import { type CardDisplay, CardDisplayControls, useCardDisplay } from '../cards/CardDisplay';
 import { useCardVisuals } from '../cards/useCardVisuals';
 import { useDeckComparison } from '../decks/api';
-import type { CollapsibleBoard } from '../decks/boards';
+import { comparedStackTotals } from '../decks/comparedStack';
 import { DeckBoards, type DeckBoardsExtras, useDeckBoards } from '../decks/DeckBoards';
-import type { BoardCard } from '../decks/deckBoards';
+import type { BoardCard } from '../decks/boardLayout';
 import { FormatSticker } from '../decks/FormatSticker';
 import { SharedCardModal } from '../decks/SharedCardModal';
 import { type SharedDeckSort, sharedDeckSortOptions } from '../decks/shared';
@@ -243,40 +243,35 @@ interface ComparedCardsProps {
   options: DisplayOptions;
 }
 
-const noFoldedBoards: CollapsibleBoard[] = [];
-
 function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps) {
   const [opened, setOpened] = useState<Card | null>(null);
   const converted = toCards(cards, side);
-  const byId = new Map(converted.map((card, index) => [card.id, cards[index]]));
+  const byId = new Map<number, ComparedCard>(converted.map((card, index) => [card.id, cards[index]]));
   const boards = useDeckBoards({ cards: converted, sort: options.sort, grouping: options.grouping });
   const visuals = useCardVisuals(converted, options.display);
 
   function isCommander(card: Card) {
-    const compared = byId.get(card.id);
-    return (
-      compared !== undefined &&
-      ((side !== 'other' && compared.commander) || (side !== 'deck' && compared.other_commander))
-    );
+    const totals = comparedStackTotals(card, byId);
+    return (side !== 'other' && totals.commander) || (side !== 'deck' && totals.otherCommander);
   }
 
   function details(card: Card, long: boolean): ReactNode {
-    const compared = byId.get(card.id);
-    if (!compared || side !== 'both') {
+    if (side !== 'both') {
       return null;
     }
-    const differs = compared.quantity !== compared.other_quantity;
+    const { quantity, otherQuantity } = comparedStackTotals(card, byId);
+    const differs = quantity !== otherQuantity;
     return (
       <Text
         size={long ? 'sm' : 'xs'}
         fw={differs ? 700 : undefined}
         c={differs ? 'orange' : 'dimmed'}
         lineClamp={1}
-        title={`${compared.quantity} dans ${deck.name}, ${compared.other_quantity} dans ${other.name}`}
+        title={`${quantity} dans ${deck.name}, ${otherQuantity} dans ${other.name}`}
       >
         {long
-          ? `${compared.quantity} dans ${deck.name} · ${compared.other_quantity} dans ${other.name}`
-          : `${compared.quantity} / ${compared.other_quantity}`}
+          ? `${quantity} dans ${deck.name} · ${otherQuantity} dans ${other.name}`
+          : `${quantity} / ${otherQuantity}`}
       </Text>
     );
   }
@@ -295,8 +290,6 @@ function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps
       <DeckBoards
         boards={boards}
         display={options.display}
-        folded={noFoldedBoards}
-        onToggleBoard={() => {}}
         emptyDeck={
           <Center p="xl">
             <Text c="dimmed">Aucune carte.</Text>

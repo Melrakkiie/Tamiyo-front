@@ -35,7 +35,9 @@ import {
   cardsQueryFilters,
   parseAdvancedFilters,
 } from './advancedFilters';
-import { copyCount, copyIds, useCard, useCards } from './api';
+import { useCard, useCards } from './api';
+import { storageNameOf } from '../storages/storageName';
+import { copyIds, totalCopies } from './copies';
 import { useCardContextMenu } from './CardContextMenu';
 import { CardDetailModal } from './CardDetailModal';
 import { CardDisplayControls, useCardDisplay } from './CardDisplay';
@@ -189,7 +191,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
         imageLoading={visuals.imageLoading}
         display={display}
         manaCost={visuals.manaCost(card)}
-        storageName={showStorage ? (card.storage_id ? (storageNames.get(card.storage_id) ?? null) : null) : undefined}
+        storageName={showStorage ? storageNameOf(card, storageNames) : undefined}
         onOpen={openCard}
         onContextMenu={(event, clicked) =>
           contextMenu.open(event, cardMenu.menuFor(clicked, visuals.imageUrl(clicked)))
@@ -375,11 +377,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
           groups={groups.map((group, index) => ({
             key: `${index}-${group.label}`,
             cards: group.cards,
-            header: (
-              <SectionTitle count={group.cards.reduce((total, card) => total + copyCount(card), 0)}>
-                {group.label}
-              </SectionTitle>
-            ),
+            header: <SectionTitle count={totalCopies(group.cards)}>{group.label}</SectionTitle>,
           }))}
           renderTile={renderTile}
         />
