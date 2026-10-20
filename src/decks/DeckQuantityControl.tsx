@@ -15,7 +15,7 @@ export type QuantitySource =
 
 interface DeckQuantityControlProps {
   deckId: string;
-  card: Card;
+  card: Pick<Card, 'name' | 'set_code' | 'collector_number' | 'foil'>;
   board: DeckBoard;
   source: QuantitySource;
   onChanged: (removedAll: boolean) => void;

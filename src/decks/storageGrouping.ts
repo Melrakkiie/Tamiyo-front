@@ -1,6 +1,5 @@
-import type { Card } from '../api/types';
 import { type CardGroup, type CardGrouping, groupingOptions, noSubtypeLabel } from '../cards/grouping';
-import { isPendingCard } from './pendingCards';
+import type { DeckEntry } from './deckEntries';
 
 export type DeckCardGrouping = CardGrouping | 'storage' | 'tag';
 
@@ -25,9 +24,9 @@ export function parseSharedGrouping(raw: string | null): SharedCardGrouping | nu
   return sharedGroupingOptions.find((option) => option.value === raw)?.value ?? null;
 }
 
-export function groupByTag(cards: Card[], tagsOf: (card: Card) => string[]): CardGroup[] {
-  const byTag = new Map<string, Card[]>();
-  const untagged: Card[] = [];
+export function groupByTag<T>(cards: T[], tagsOf: (card: T) => string[]): CardGroup<T>[] {
+  const byTag = new Map<string, T[]>();
+  const untagged: T[] = [];
   for (const card of cards) {
     const tags = tagsOf(card);
     if (tags.length === 0) {
@@ -37,7 +36,7 @@ export function groupByTag(cards: Card[], tagsOf: (card: Card) => string[]): Car
       byTag.set(tag, [...(byTag.get(tag) ?? []), card]);
     }
   }
-  const groups: CardGroup[] = [...byTag.entries()]
+  const groups: CardGroup<T>[] = [...byTag.entries()]
     .map(([label, tagCards]) => ({ label, cards: tagCards, tag: label }))
     .sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }));
   if (untagged.length > 0) {
@@ -46,9 +45,9 @@ export function groupByTag(cards: Card[], tagsOf: (card: Card) => string[]): Car
   return groups;
 }
 
-export function groupBySubtype(cards: Card[], subtypesOf: (card: Card) => string[]): CardGroup[] {
-  const bySubtype = new Map<string, Card[]>();
-  const withoutSubtype: Card[] = [];
+export function groupBySubtype<T>(cards: T[], subtypesOf: (card: T) => string[]): CardGroup<T>[] {
+  const bySubtype = new Map<string, T[]>();
+  const withoutSubtype: T[] = [];
   for (const card of cards) {
     const subtypes = subtypesOf(card);
     if (subtypes.length === 0) {
@@ -58,7 +57,7 @@ export function groupBySubtype(cards: Card[], subtypesOf: (card: Card) => string
       bySubtype.set(subtype, [...(bySubtype.get(subtype) ?? []), card]);
     }
   }
-  const groups: CardGroup[] = [...bySubtype.entries()]
+  const groups: CardGroup<T>[] = [...bySubtype.entries()]
     .map(([label, subtypeCards]) => ({ label, cards: subtypeCards }))
     .sort((a, b) => a.label.localeCompare(b.label, 'en', { sensitivity: 'base' }));
   if (withoutSubtype.length > 0) {
@@ -67,13 +66,13 @@ export function groupBySubtype(cards: Card[], subtypesOf: (card: Card) => string
   return groups;
 }
 
-export function groupByStorage(cards: Card[], storageNames: Map<number, string>): CardGroup[] {
-  const byStorage = new Map<number, Card[]>();
-  const unknownStorage: Card[] = [];
-  const withoutStorage: Card[] = [];
-  const notOwned: Card[] = [];
-  for (const card of cards) {
-    if (isPendingCard(card)) {
+export function groupByStorage<E extends DeckEntry>(entries: E[], storageNames: Map<number, string>): CardGroup<E>[] {
+  const byStorage = new Map<number, E[]>();
+  const unknownStorage: E[] = [];
+  const withoutStorage: E[] = [];
+  const notOwned: E[] = [];
+  for (const card of entries) {
+    if (card.kind === 'pending') {
       notOwned.push(card);
     } else if (card.storage_id == null) {
       withoutStorage.push(card);
@@ -83,7 +82,7 @@ export function groupByStorage(cards: Card[], storageNames: Map<number, string>)
       unknownStorage.push(card);
     }
   }
-  const groups: CardGroup[] = [...byStorage.entries()]
+  const groups: CardGroup<E>[] = [...byStorage.entries()]
     .map(([storageId, storageCards]) => ({
       label: storageNames.get(storageId) ?? '',
       cards: storageCards,

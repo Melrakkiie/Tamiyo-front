@@ -17,15 +17,14 @@ import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import type { Card, ImportSummary } from '../api/types';
-import { copyIds } from '../cards/copies';
+import type { ImportSummary } from '../api/types';
 import { PrintingPrice } from '../cards/price';
 import { imageUrl, type ScryfallCard } from '../scryfall/client';
 import { usePrintings } from '../scryfall/hooks';
 import { canBeFoil, canBeNonFoil, foilFor } from '../scryfall/printing';
 import { SetIcon } from '../scryfall/SetIcon';
 import { useSplitPrintings } from './api';
-import { isPendingCard, pendingIdOf } from './pendingCards';
+import type { DeckEntry } from './deckEntries';
 
 export function summaryDetails(summary: ImportSummary) {
   const linked = summary.cards_linked ?? 0;
@@ -39,14 +38,14 @@ export function summaryDetails(summary: ImportSummary) {
 
 interface SplitPrintingsModalProps {
   deckId: string;
-  card: Card | null;
+  entry: DeckEntry | null;
   onClose: () => void;
 }
 
-export function SplitPrintingsModal({ deckId, card, onClose }: SplitPrintingsModalProps) {
+export function SplitPrintingsModal({ deckId, entry, onClose }: SplitPrintingsModalProps) {
   return (
-    <Modal opened={card !== null} onClose={onClose} title="Séparer les éditions" size="lg">
-      {card && <SplitPrintingsForm deckId={deckId} card={card} onClose={onClose} />}
+    <Modal opened={entry !== null} onClose={onClose} title="Séparer les éditions" size="lg">
+      {entry && <SplitPrintingsForm deckId={deckId} card={entry} onClose={onClose} />}
     </Modal>
   );
 }
@@ -56,11 +55,11 @@ interface Row {
   foil: boolean;
 }
 
-function SplitPrintingsForm({ deckId, card, onClose }: { deckId: string; card: Card; onClose: () => void }) {
+function SplitPrintingsForm({ deckId, card, onClose }: { deckId: string; card: DeckEntry; onClose: () => void }) {
   const printings = usePrintings(card.name);
   const split = useSplitPrintings();
   const [rows, setRows] = useState<Row[]>(() =>
-    Array.from({ length: card.quantity ?? 1 }, () => ({ scryfallId: card.scryfall_id, foil: card.foil })),
+    Array.from({ length: card.quantity }, () => ({ scryfallId: card.scryfall_id, foil: card.foil })),
   );
   const byId = new Map((printings.data ?? []).map((printing) => [printing.id, printing]));
   const options = (printings.data ?? []).map((printing) => ({
@@ -90,7 +89,7 @@ function SplitPrintingsForm({ deckId, card, onClose }: { deckId: string; card: C
         foil: row.foil,
       };
     });
-    const sources = isPendingCard(card) ? { pendingIds: [pendingIdOf(card)] } : { cardIds: copyIds(card) };
+    const sources = card.kind === 'pending' ? { pendingIds: [card.pending.id] } : { cardIds: card.copy_ids };
     split.mutate(
       { deckId, ...sources, printings: printingsOfRows },
       {

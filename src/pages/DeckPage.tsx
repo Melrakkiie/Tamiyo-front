@@ -19,7 +19,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
-import type { Card, Deck, DeckBoard, DeckCard, DeckCardSort } from '../api/types';
+import type { Card, Deck, DeckBoard, DeckCardSort } from '../api/types';
 import { useShowCollectionInDecks } from '../auth/preferences';
 import { useSession } from '../auth/useSession';
 import { useCard } from '../cards/api';
@@ -35,7 +35,7 @@ import {
 } from '../cards/CardDisplay';
 import { useCardContextMenu } from '../cards/CardContextMenu';
 import { useCardVisuals } from '../cards/useCardVisuals';
-import { PendingBadge, type PendingStatus } from '../cards/PendingBadge';
+import { PendingBadge } from '../cards/PendingBadge';
 import { type CardGroup, hasMissingDetails } from '../cards/grouping';
 import { MissingDetailsAlert } from '../cards/MissingDetailsAlert';
 import { AddCardModal, type CardToAdd } from '../cards/AddCardModal';
@@ -52,7 +52,8 @@ import {
   usePendingCards,
   useUpdateDeck,
 } from '../decks/api';
-import { clearSlotChanges, commanderCardIds, type CommanderSlot, hasCommander, hasPartner } from '../decks/commanders';
+import { clearSlotChanges, type CommanderSlot, commanderTargets, hasCommander, hasPartner } from '../decks/commanders';
+import { type DeckEntry, deckEntries, type PendingEntry, pendingEntry } from '../decks/deckEntries';
 import { BOARDS, type CollapsibleBoard, COLLAPSIBLE_BOARDS, DEFAULT_COLLAPSED_BOARDS } from '../decks/boards';
 import { DeckBoards, type TileContext, type TileExtras, useDeckBoards } from '../decks/DeckBoards';
 import type { GroupDrop } from '../decks/DeckCardGroups';
@@ -79,7 +80,7 @@ import { DeckStatsPanel } from '../decks/DeckStatsPanel';
 import { ExportDeckModal } from '../decks/ExportDeckModal';
 import { ImportListModal } from '../decks/ImportListModal';
 import { PendingCardModal } from '../decks/PendingCardModal';
-import { isPendingCard, pendingIdOf, pendingStatus, pendingToCards } from '../decks/pendingCards';
+import { pendingStatus } from '../decks/pendingCards';
 import { PendingCardsSection } from '../decks/PendingCardsSection';
 import { ShareDeckModal } from '../decks/ShareDeckModal';
 import { type DeckCardGrouping, deckGroupingOptions, parseDeckGrouping } from '../decks/storageGrouping';
@@ -523,52 +524,61 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   const deckCards = cards.data ?? [];
   const pending = usePendingCards(deck.id);
   const pendingItems = pending.data ?? [];
-  const allCards: DeckCard[] = [...deckCards, ...pendingToCards(pendingItems)];
+  const entries = deckEntries(deckCards, pendingItems);
   const showMissingDetails = (grouping === 'type' || grouping === 'color') && hasMissingDetails(deckCards);
-  const visuals = useCardVisuals(allCards, display);
+  const visuals = useCardVisuals(entries, display);
   const storages = useAllStorages();
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
   const deckTags = useDeckTags(deck.id);
   const cardTags = tagsByName(deckTags.data?.cards ?? []);
-  const cardTagsOf = (card: Card) => tagsOf(cardTags, card.name);
+  const cardTagsOf = (card: Pick<Card, 'name'>) => tagsOf(cardTags, card.name);
   const boards = useDeckBoards({
-    cards: allCards,
+    entries,
     sort: shownSort,
     grouping,
-    commanderIds: commanderCardIds(deck, allCards),
+    commanders: commanderTargets(deck),
     separateByStorage: showCollection,
     storageNames,
     tagsOf: cardTagsOf,
   });
   const actions = useDeckCardActions(deck, cardTagsOf);
   const contextMenu = useCardContextMenu();
-  const cardMenu = useDeckCardMenu(deck, pendingItems, actions);
+  const cardMenu = useDeckCardMenu(deck, actions);
   const [addOpened, setAddOpened] = useState(false);
   const [droppedCard, setDroppedCard] = useState<CardToAdd | null>(null);
   const scryfallDrop = useScryfallDrop((printing) => setDroppedCard({ name: printing.name, printing }));
   const [importOpened, setImportOpened] = useState(false);
   const [opened, setOpened] = useState<OpenedCard | null>(null);
-  const [openedPending, setOpenedPending] = useState<Card | null>(null);
+  const [openedPending, setOpenedPending] = useState<PendingEntry | null>(null);
   const modalSession = useRef(0);
   const liveCard = opened ? liveOpenedCard(opened) : null;
   const openedCard = liveCard ?? opened;
   const openedCardImage = openedCard ? visuals.imageUrl(openedCard.card) : undefined;
   const cardLoading = opened !== null && (!liveCard || (!openedCardImage && visuals.imagesFetching));
-  const openedPendingId = openedPending ? pendingIdOf(openedPending) : null;
-  const pendingCard = openedPending
-    ? (BOARDS.flatMap((board) => boards[board].stacks).find(
-        (stack) => isPendingCard(stack) && pendingIdOf(stack) === openedPendingId,
-      ) ?? openedPending)
-    : null;
-  const pendingItem = pendingItems.find((item) => item.id === openedPendingId);
-  const pendingImage = pendingCard ? visuals.imageUrl(pendingCard) : undefined;
-  const pendingLoading = pendingCard !== null && (!pendingItem || (!pendingImage && visuals.imagesFetching));
+  const livePending = openedPending ? liveOpenedPending(openedPending) : null;
+  const shownPending = livePending ?? openedPending;
+  const pendingImage = shownPending ? visuals.imageUrl(shownPending) : undefined;
+  const pendingLoading = openedPending !== null && (!livePending || (!pendingImage && visuals.imagesFetching));
 
   function liveOpenedCard(current: OpenedCard): OpenedCard | null {
     for (const board of BOARDS) {
-      const card = boards[board].stacks.find((stack) => copyIds(stack).includes(current.ids[0]));
-      if (card) {
+      const card = boards[board].stacks.find(
+        (stack) => stack.kind === 'owned' && stack.copy_ids.includes(current.ids[0]),
+      );
+      if (card?.kind === 'owned') {
         return { card, board, ids: current.ids };
+      }
+    }
+    return null;
+  }
+
+  function liveOpenedPending(current: PendingEntry): PendingEntry | null {
+    for (const board of BOARDS) {
+      const entry = boards[board].stacks.find(
+        (stack) => stack.kind === 'pending' && stack.pending.id === current.pending.id,
+      );
+      if (entry?.kind === 'pending') {
+        return entry;
       }
     }
     return null;
@@ -579,9 +589,17 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
     setOpened({ card, board, ids: copyIds(card) });
   }
 
-  function openPending(card: Card) {
+  function openPending(entry: PendingEntry) {
     setOpened(null);
-    setOpenedPending(card);
+    setOpenedPending(entry);
+  }
+
+  function openEntry(entry: DeckEntry, board: DeckBoard) {
+    if (entry.kind === 'pending') {
+      openPending(entry);
+    } else {
+      openCard(entry, board);
+    }
   }
 
   function closeCard() {
@@ -602,12 +620,12 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
     if (next.kind === 'card') {
       openCard(next.card, next.board);
     } else {
-      openPending(pendingToCards([next.item])[0]);
+      openPending(pendingEntry(next.item));
     }
   }
 
   const commanderScryfallId = isCommanderFormat(deck.format) ? deck.commander_scryfall_id : null;
-  const commanderCard = boards.main.stacks.find((card) => boards.main.commanders.has(card.id));
+  const commanderCard = boards.main.stacks.find((entry) => boards.main.commanders.has(entry.key));
   const commanderName = commanderScryfallId
     ? boards.main.stacks.find((card) => card.scryfall_id === commanderScryfallId)?.name
     : undefined;
@@ -620,9 +638,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
             scryfallId: commanderScryfallId,
             foil: commanderCard?.foil,
             imageUrl: commanderImage,
-            open: commanderCard
-              ? () => (isPendingCard(commanderCard) ? openPending(commanderCard) : openCard(commanderCard, 'main'))
-              : undefined,
+            open: commanderCard ? () => openEntry(commanderCard, 'main') : undefined,
           }
         : null,
       pathname,
@@ -630,19 +646,15 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   });
   useEffect(() => () => setDefaultCardPreview(null), []);
 
-  const pendingStatuses = new Map<number, PendingStatus>(pendingItems.map((item) => [item.id, pendingStatus(item)]));
-
-  function tileExtras(card: Card, { board, group, imageUrl }: TileContext): TileExtras {
-    const notOwned = isPendingCard(card);
+  function tileExtras(entry: DeckEntry, { board, group, imageUrl }: TileContext): TileExtras {
     return {
       props: {
-        storageName: showCollection ? storageNameOf(card, storageNames) : undefined,
-        pendingStatus:
-          showCollection && notOwned ? (pendingStatuses.get(pendingIdOf(card)) ?? { kind: 'missing' }) : undefined,
+        storageName: showCollection ? (entry.kind === 'owned' ? storageNameOf(entry, storageNames) : null) : undefined,
+        pendingStatus: showCollection && entry.kind === 'pending' ? pendingStatus(entry.pending) : undefined,
         onContextMenu: (event, clicked) =>
           contextMenu.open(event, cardMenu.menuFor(clicked, board, visuals.imageUrl(clicked))),
       },
-      wrap: (tile) => <DraggableCard item={{ card, board, tag: group?.tag ?? null, imageUrl }}>{tile}</DraggableCard>,
+      wrap: (tile) => <DraggableCard item={{ entry, board, tag: group?.tag ?? null, imageUrl }}>{tile}</DraggableCard>,
     };
   }
 
@@ -650,7 +662,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
     if (grouping !== 'tag') {
       return undefined;
     }
-    const changesTags = (group: CardGroup, card: Card) => {
+    const changesTags = (group: CardGroup<DeckEntry>, card: DeckEntry) => {
       const tags = cardTagsOf(card);
       return group.tag === null ? tags.length > 0 : group.tag !== undefined && !tags.includes(group.tag);
     };
@@ -661,9 +673,9 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
           : group.tag === null
             ? `group:${board}:untagged`
             : `group:${board}:tag:${group.tag}`,
-      accepts: (group, item) => changesTags(group, item.card) || actions.canMoveTo(item, board),
+      accepts: (group, item) => changesTags(group, item.entry) || actions.canMoveTo(item, board),
       onDrop: (group, item) => {
-        if (changesTags(group, item.card)) {
+        if (changesTags(group, item.entry)) {
           if (group.tag === null) {
             actions.removeAllTags(item);
           } else if (group.tag !== undefined) {
@@ -748,7 +760,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
             }
             emptyBoardMessages={emptyBoardMessages}
             extras={{ tile: tileExtras, groupDrop: tagDrop }}
-            onOpen={(card, board) => (isPendingCard(card) ? openPending(card) : openCard(card, board))}
+            onOpen={openEntry}
           />
         )}
 
@@ -785,8 +797,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
         <PendingCardModal
           deck={deck}
           deckCardIds={new Set(deckCards.map((card) => card.id))}
-          card={pendingCard}
-          item={pendingItem}
+          entry={shownPending}
           imageUrl={pendingImage}
           loading={pendingLoading}
           onClose={closePending}

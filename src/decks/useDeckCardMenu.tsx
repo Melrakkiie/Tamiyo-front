@@ -3,10 +3,9 @@ import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import type { Card, Deck, DeckBoard, PendingCard } from '../api/types';
+import type { Deck, DeckBoard } from '../api/types';
 import { useImportIntoDeck } from '../bulk/api';
 import { useCreateCards } from '../cards/api';
-import { copyIds } from '../cards/copies';
 import { CardCopyItems, FoilToggleItem, ProxyToggleItem } from '../cards/CardContextMenu';
 import { canPair, commanderEligibility } from '../scryfall/commander';
 import { useScryfallCard } from '../scryfall/hooks';
@@ -23,8 +22,8 @@ import {
 } from './api';
 import { BOARDS } from './boards';
 import { type CommanderSlot, commanderSlotOf, hasCommander, hasPartner, setSlotChanges } from './commanders';
+import type { DeckEntry } from './deckEntries';
 import { deckListErrorMessage, deckListSummary } from './DeckListInput';
-import { isPendingCard, pendingIdOf } from './pendingCards';
 import { SplitPrintingsModal, summaryDetails } from './SplitPrintingsModal';
 import type { DeckCardActions } from './useDeckCardActions';
 
@@ -38,7 +37,7 @@ function notifyError(err: unknown) {
   notifications.show({ color: 'red', message: errorMessage(err) });
 }
 
-export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions: DeckCardActions) {
+export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
   const switchFoil = useSwitchFoil();
   const switchProxy = useSwitchProxy();
   const importLine = useImportIntoDeck();
@@ -48,22 +47,20 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
   const updateDeck = useUpdateDeck();
   const commit = useCommitPendingCards();
   const createCards = useCreateCards();
-  const [otherDeckCard, setOtherDeckCard] = useState<Card | null>(null);
-  const [splitCard, setSplitCard] = useState<Card | null>(null);
+  const [otherDeckEntry, setOtherDeckEntry] = useState<DeckEntry | null>(null);
+  const [splitEntry, setSplitEntry] = useState<DeckEntry | null>(null);
 
-  const pendingOf = (card: Card) => pendingItems.find((item) => item.id === pendingIdOf(card));
   const done = (message: string) => ({
     onSuccess: () => notifications.show({ color: 'green', message }),
     onError: notifyError,
   });
 
-  function toggleFoil(card: Card, foil: boolean) {
-    const pendingId = isPendingCard(card) ? pendingIdOf(card) : null;
+  function toggleFoil(card: DeckEntry, foil: boolean) {
     const finish = foil ? 'foil' : 'non-foil';
     switchFoil.mutate(
-      pendingId !== null
-        ? { deckId: deck.id, pendingIds: [pendingId], foil }
-        : { deckId: deck.id, cardIds: copyIds(card), foil },
+      card.kind === 'pending'
+        ? { deckId: deck.id, pendingIds: [card.pending.id], foil }
+        : { deckId: deck.id, cardIds: card.copy_ids, foil },
       {
         onSuccess: (summary) =>
           notifications.show({
@@ -75,13 +72,12 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
     );
   }
 
-  function toggleProxy(card: Card, proxy: boolean) {
-    const pendingId = isPendingCard(card) ? pendingIdOf(card) : null;
+  function toggleProxy(card: DeckEntry, proxy: boolean) {
     const state = proxy ? 'est maintenant proxy' : "n'est plus proxy";
     switchProxy.mutate(
-      pendingId !== null
-        ? { deckId: deck.id, pendingIds: [pendingId], proxy }
-        : { deckId: deck.id, cardIds: copyIds(card), proxy },
+      card.kind === 'pending'
+        ? { deckId: deck.id, pendingIds: [card.pending.id], proxy }
+        : { deckId: deck.id, cardIds: card.copy_ids, proxy },
       {
         onSuccess: (summary) =>
           notifications.show({
@@ -93,7 +89,7 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
     );
   }
 
-  function addOne(card: Card, board: DeckBoard) {
+  function addOne(card: DeckEntry, board: DeckBoard) {
     importLine.mutate(
       { deckId: deck.id, file: deckLineFile(card, 1, board), commanderFromFirstLine: false },
       {
@@ -107,20 +103,17 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
     );
   }
 
-  function removeOne(card: Card) {
+  function removeOne(card: DeckEntry) {
     const message = `Un exemplaire de ${card.name} retiré du deck.`;
-    if (!isPendingCard(card)) {
-      const ids = copyIds(card);
+    if (card.kind === 'owned') {
+      const ids = card.copy_ids;
       removeOwned.mutate(
         { deckId: deck.id, cardId: ids[ids.length - 1], commanderSlot: commanderSlotOf(deck, card) },
         done(message),
       );
       return;
     }
-    const item = pendingOf(card);
-    if (!item) {
-      return;
-    }
+    const item = card.pending;
     if (item.quantity > 1) {
       setPendingQuantity.mutate({ deckId: deck.id, pendingId: item.id, quantity: item.quantity - 1 }, done(message));
     } else {
@@ -128,8 +121,8 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
     }
   }
 
-  function makeCommander(card: Card, slot: CommanderSlot) {
-    const target = isPendingCard(card) ? { pendingId: pendingIdOf(card) } : { cardId: card.id };
+  function makeCommander(card: DeckEntry, slot: CommanderSlot) {
+    const target = card.kind === 'pending' ? { pendingId: card.pending.id } : { cardId: card.id };
     const role = slot === 'commander' ? 'le commandant' : 'le second commandant';
     updateDeck.mutate(
       { id: deck.id, changes: setSlotChanges(slot, target) },
@@ -137,11 +130,11 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
     );
   }
 
-  function addToCollection(card: Card) {
-    if (isPendingCard(card)) {
-      const count = card.quantity ?? 1;
+  function addToCollection(card: DeckEntry) {
+    if (card.kind === 'pending') {
+      const count = card.quantity;
       commit.mutate(
-        { deckId: deck.id, storageId: null, pendingId: pendingIdOf(card) },
+        { deckId: deck.id, storageId: null, pendingId: card.pending.id },
         done(
           count > 1
             ? `${count} exemplaires de ${card.name} ajoutés à ta collection, sans rangement.`
@@ -171,23 +164,25 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
     );
   }
 
-  function setDeckImage(card: Card) {
+  function setDeckImage(card: DeckEntry) {
     updateDeck.mutate(
       { id: deck.id, changes: { background_scryfall_id: card.scryfall_id } },
       done(`L'illustration de ${card.name} est maintenant celle du deck.`),
     );
   }
 
-  function menuFor(card: Card, board: DeckBoard, imageUrl: string | undefined) {
-    const item = { card, board, tag: null, imageUrl };
+  function menuFor(card: DeckEntry, board: DeckBoard, imageUrl: string | undefined) {
+    const item = { entry: card, board, tag: null, imageUrl };
     const commander = commanderSlotOf(deck, card) !== null;
-    const quantity = card.quantity ?? 1;
+    const { quantity } = card;
     return (
       <>
         <FoilToggleItem card={card} onToggle={(foil) => toggleFoil(card, foil)} divider={false} />
         <ProxyToggleItem card={card} onToggle={(proxy) => toggleProxy(card, proxy)} />
         <Menu.Divider />
-        {quantity >= 2 && !commander && <Menu.Item onClick={() => setSplitCard(card)}>Séparer les éditions…</Menu.Item>}
+        {quantity >= 2 && !commander && (
+          <Menu.Item onClick={() => setSplitEntry(card)}>Séparer les éditions…</Menu.Item>
+        )}
         <Menu.Item onClick={() => addOne(card, board)}>Ajouter un exemplaire</Menu.Item>
         <Menu.Item onClick={() => removeOne(card)} disabled={commander && quantity <= 1}>
           Retirer un exemplaire
@@ -208,9 +203,9 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
             onClick={(slot) => makeCommander(card, slot)}
           />
         )}
-        <Menu.Item onClick={() => setOtherDeckCard(card)}>Ajouter à un autre deck</Menu.Item>
+        <Menu.Item onClick={() => setOtherDeckEntry(card)}>Ajouter à un autre deck</Menu.Item>
         <Menu.Item onClick={() => addToCollection(card)}>
-          {isPendingCard(card) ? 'Ajouter à ma collection' : 'Ajouter un exemplaire à ma collection'}
+          {card.kind === 'pending' ? 'Ajouter à ma collection' : 'Ajouter un exemplaire à ma collection'}
         </Menu.Item>
         <Menu.Divider />
         <CardCopyItems card={card} imageUrl={imageUrl} />
@@ -223,8 +218,8 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
 
   const modals = (
     <>
-      <AddCopiesToDeckModal card={otherDeckCard} excludedDeckId={deck.id} onClose={() => setOtherDeckCard(null)} />
-      <SplitPrintingsModal deckId={deck.id} card={splitCard} onClose={() => setSplitCard(null)} />
+      <AddCopiesToDeckModal card={otherDeckEntry} excludedDeckId={deck.id} onClose={() => setOtherDeckEntry(null)} />
+      <SplitPrintingsModal deckId={deck.id} entry={splitEntry} onClose={() => setSplitEntry(null)} />
     </>
   );
 
@@ -232,7 +227,7 @@ export function useDeckCardMenu(deck: Deck, pendingItems: PendingCard[], actions
 }
 
 interface CommanderItemProps {
-  card: Card;
+  card: DeckEntry;
   pairWith: string | null | undefined;
   onClick: (slot: CommanderSlot) => void;
 }

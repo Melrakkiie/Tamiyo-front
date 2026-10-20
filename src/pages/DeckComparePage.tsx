@@ -24,7 +24,7 @@ import { useCardVisuals } from '../cards/useCardVisuals';
 import { useDeckComparison } from '../decks/api';
 import { comparedStackTotals } from '../decks/comparedStack';
 import { DeckBoards, type DeckBoardsExtras, useDeckBoards } from '../decks/DeckBoards';
-import type { BoardCard } from '../decks/boardLayout';
+import { type OwnedCard, type OwnedEntry, ownedEntry } from '../decks/deckEntries';
 import { FormatSticker } from '../decks/FormatSticker';
 import { SharedCardModal } from '../decks/SharedCardModal';
 import { type SharedDeckSort, sharedDeckSortOptions } from '../decks/shared';
@@ -214,7 +214,7 @@ function TabLabel({ title, cards, side, active }: TabLabelProps) {
   );
 }
 
-function toCards(cards: ComparedCard[], side: Side): BoardCard[] {
+function toCards(cards: ComparedCard[], side: Side): OwnedCard[] {
   return cards.map((card, index) => ({
     id: index + 1,
     name: card.name,
@@ -247,7 +247,7 @@ function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps
   const [opened, setOpened] = useState<Card | null>(null);
   const converted = toCards(cards, side);
   const byId = new Map<number, ComparedCard>(converted.map((card, index) => [card.id, cards[index]]));
-  const boards = useDeckBoards({ cards: converted, sort: options.sort, grouping: options.grouping });
+  const boards = useDeckBoards({ entries: converted.map(ownedEntry), sort: options.sort, grouping: options.grouping });
   const visuals = useCardVisuals(converted, options.display);
 
   function isCommander(card: Card) {
@@ -276,7 +276,7 @@ function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps
     );
   }
 
-  const extras: DeckBoardsExtras = {
+  const extras: DeckBoardsExtras<OwnedEntry> = {
     tile: (card) => ({ props: { commander: isCommander(card), details: details(card, false) } }),
   };
 

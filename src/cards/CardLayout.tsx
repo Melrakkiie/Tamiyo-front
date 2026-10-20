@@ -2,8 +2,13 @@ import { Box, px, SimpleGrid, Stack, useMantineTheme, useMatches } from '@mantin
 import { useElementSize } from '@mantine/hooks';
 import { type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 
-import type { Card } from '../api/types';
 import type { CardDisplay } from './CardDisplay';
+
+export type LayoutCard = { key: string } | { id: number };
+
+function layoutKey(card: LayoutCard) {
+  return 'key' in card ? card.key : card.id;
+}
 
 const CARD_HEIGHT_RATIO = 680 / 488;
 const GRID_VISIBLE = 0.42;
@@ -33,14 +38,14 @@ function chunk<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
-function OverlappingGrid({
+function OverlappingGrid<T extends LayoutCard>({
   cards,
   columns,
   renderTile,
 }: {
-  cards: Card[];
+  cards: T[];
   columns: number;
-  renderTile: (card: Card) => ReactNode;
+  renderTile: (card: T) => ReactNode;
 }) {
   const rows = chunk(cards, columns);
   return (
@@ -58,7 +63,7 @@ function OverlappingGrid({
           }}
         >
           {row.map((card) => (
-            <Box key={card.id} style={{ pointerEvents: 'auto', minWidth: 0 }}>
+            <Box key={layoutKey(card)} style={{ pointerEvents: 'auto', minWidth: 0 }}>
               {renderTile(card)}
             </Box>
           ))}
@@ -68,12 +73,18 @@ function OverlappingGrid({
   );
 }
 
-export function CardStack({ cards, renderTile }: { cards: Card[]; renderTile: (card: Card) => ReactNode }) {
+export function CardStack<T extends LayoutCard>({
+  cards,
+  renderTile,
+}: {
+  cards: T[];
+  renderTile: (card: T) => ReactNode;
+}) {
   return (
     <div>
       {cards.map((card, index) => (
         <Box
-          key={card.id}
+          key={layoutKey(card)}
           style={{
             marginBottom:
               index < cards.length - 1 ? `calc(-100% * ${CARD_HEIGHT_RATIO * (1 - STACK_VISIBLE)})` : undefined,
@@ -87,14 +98,19 @@ export function CardStack({ cards, renderTile }: { cards: Card[]; renderTile: (c
   );
 }
 
-interface CardGridProps {
+interface CardGridProps<T extends LayoutCard> {
   display: CardDisplay;
-  cards: Card[];
-  renderTile: (card: Card) => ReactNode;
+  cards: T[];
+  renderTile: (card: T) => ReactNode;
   columns?: number;
 }
 
-export function CardGrid({ display, cards, renderTile, columns: fixedColumns }: CardGridProps) {
+export function CardGrid<T extends LayoutCard>({
+  display,
+  cards,
+  renderTile,
+  columns: fixedColumns,
+}: CardGridProps<T>) {
   const responsiveColumns = useColumnCount(display.columns);
   const columns = fixedColumns ?? responsiveColumns;
   if (display.mode === 'grid') {
@@ -184,20 +200,24 @@ function distribute<G extends LayoutGroup>(groups: G[], count: number): G[][] {
   return columns;
 }
 
-export interface LayoutGroup {
+export interface LayoutGroup<T extends LayoutCard = LayoutCard> {
   key: string;
   header: ReactNode;
-  cards: Card[];
+  cards: T[];
   wrap?: (content: ReactNode) => ReactNode;
 }
 
-interface CardGroupsLayoutProps<G extends LayoutGroup> {
+interface CardGroupsLayoutProps<T extends LayoutCard, G extends LayoutGroup<T>> {
   display: CardDisplay;
   groups: G[];
-  renderTile: (card: Card, group: G) => ReactNode;
+  renderTile: (card: T, group: G) => ReactNode;
 }
 
-export function CardGroupsLayout<G extends LayoutGroup>({ display, groups, renderTile }: CardGroupsLayoutProps<G>) {
+export function CardGroupsLayout<T extends LayoutCard, G extends LayoutGroup<T>>({
+  display,
+  groups,
+  renderTile,
+}: CardGroupsLayoutProps<T, G>) {
   const columns = useColumnCount(display.columns);
   const theme = useMantineTheme();
   const { ref, width } = useElementSize();

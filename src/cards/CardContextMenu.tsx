@@ -104,7 +104,7 @@ function copyImage(name: string, url: string) {
   );
 }
 
-export function CardCopyItems({ card, imageUrl }: { card: Card; imageUrl: string | undefined }) {
+export function CardCopyItems({ card, imageUrl }: { card: Pick<Card, 'name'>; imageUrl: string | undefined }) {
   return (
     <>
       <Menu.Item onClick={() => copyText(card.name, `« ${card.name} » copié.`)}>Copier le nom</Menu.Item>
@@ -118,7 +118,7 @@ export function CardCopyItems({ card, imageUrl }: { card: Card; imageUrl: string
   );
 }
 
-export function ProxyToggleItem({ card, onToggle }: { card: Card; onToggle: (proxy: boolean) => void }) {
+export function ProxyToggleItem({ card, onToggle }: { card: Pick<Card, 'proxy'>; onToggle: (proxy: boolean) => void }) {
   return (
     <Menu.Item onClick={() => onToggle(!card.proxy)}>
       {card.proxy ? 'Passer en non-proxy' : 'Passer en proxy'}
@@ -131,7 +131,7 @@ export function FoilToggleItem({
   onToggle,
   divider = true,
 }: {
-  card: Card;
+  card: Pick<Card, 'foil' | 'scryfall_id'>;
   onToggle: (foil: boolean) => void;
   divider?: boolean;
 }) {

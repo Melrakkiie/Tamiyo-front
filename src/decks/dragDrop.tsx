@@ -1,34 +1,35 @@
 import { Box, Image, Paper, Text } from '@mantine/core';
 
-import type { Card, DeckBoard } from '../api/types';
+import type { DeckBoard } from '../api/types';
 import { createDragDrop } from '../layout/dragDrop';
+import type { DeckEntry } from './deckEntries';
 
 export interface DragItem {
-  card: Card;
+  entry: DeckEntry;
   board: DeckBoard;
   tag: string | null;
   imageUrl: string | undefined;
 }
 
 function CardGhost({ item }: { item: DragItem }) {
-  const { card, imageUrl } = item;
-  const quantity = card.quantity ?? 1;
+  const { entry, imageUrl } = item;
+  const { quantity } = entry;
   return imageUrl ? (
     <Box w={110}>
-      <Image src={imageUrl} alt={card.name} radius="md" style={{ boxShadow: 'var(--mantine-shadow-lg)' }} />
+      <Image src={imageUrl} alt={entry.name} radius="md" style={{ boxShadow: 'var(--mantine-shadow-lg)' }} />
     </Box>
   ) : (
     <Paper shadow="lg" px="sm" py={6} radius="md" withBorder>
       <Text size="sm" fw={500}>
         {quantity > 1 ? `${quantity}× ` : ''}
-        {card.name}
+        {entry.name}
       </Text>
     </Paper>
   );
 }
 
 const cardDrag = createDragDrop<DragItem>({
-  sameItem: (a, b) => a.card.id === b.card.id && a.board === b.board && a.tag === b.tag,
+  sameItem: (a, b) => a.entry.key === b.entry.key && a.board === b.board && a.tag === b.tag,
   Ghost: CardGhost,
 });
 

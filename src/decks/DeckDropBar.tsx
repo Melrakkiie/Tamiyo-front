@@ -77,11 +77,11 @@ interface QuickTagsPanelProps {
   tags: string[];
   dragged: DragItem;
   actions: DeckCardActions;
-  tagsOf: (card: Card) => string[];
+  tagsOf: (card: Pick<Card, 'name'>) => string[];
 }
 
 function QuickTagsPanel({ tags, dragged, actions, tagsOf }: QuickTagsPanelProps) {
-  const applied = new Set(tagsOf(dragged.card));
+  const applied = new Set(tagsOf(dragged.entry));
   return (
     <Portal>
       <Box
@@ -112,7 +112,7 @@ function QuickTagsPanel({ tags, dragged, actions, tagsOf }: QuickTagsPanelProps)
                     id={`quick-tag:${tag}`}
                     label={`Ajouter le tag ${tag}`}
                     fullWidth
-                    accepts={(item) => !tagsOf(item.card).includes(tag)}
+                    accepts={(item) => !tagsOf(item.entry).includes(tag)}
                     onDrop={(item) => actions.addTag(item, tag)}
                   >
                     <Text size="md" lineClamp={1}>
@@ -132,7 +132,7 @@ function QuickTagsPanel({ tags, dragged, actions, tagsOf }: QuickTagsPanelProps)
 interface DeckDropBarProps {
   actions: DeckCardActions;
   tagMode: boolean;
-  tagsOf: (card: Card) => string[];
+  tagsOf: (card: Pick<Card, 'name'>) => string[];
   deckTags: string[];
 }
 
@@ -205,7 +205,7 @@ function DropBar({ dragged, actions, tagMode, tagsOf }: Omit<DeckDropBarProps, '
                 <DropZone
                   id="bar:untag-all"
                   label="Retirer tous les tags"
-                  accepts={(item) => tagsOf(item.card).length > 0}
+                  accepts={(item) => tagsOf(item.entry).length > 0}
                   onDrop={(item) => actions.removeAllTags(item)}
                 >
                   <Text size="md">Retirer tous les tags</Text>

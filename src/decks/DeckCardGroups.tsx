@@ -1,17 +1,17 @@
 import { Box, Stack, Text, Tooltip } from '@mantine/core';
 import type { ReactNode } from 'react';
 
-import type { Card } from '../api/types';
 import { totalCopies } from '../cards/copies';
 import type { CardDisplay } from '../cards/CardDisplay';
 import { CardGroupsLayout } from '../cards/CardLayout';
 import { SectionTitle } from '../theme/SectionTitle';
 import type { CardGroup } from '../cards/grouping';
 import type { BackFaceEntry } from './boardLayout';
+import type { DeckEntry } from './deckEntries';
 import { type DragItem, useDropTarget } from './dragDrop';
 import { StorageIcon } from '../storages/StorageLabel';
 
-function GroupCount({ label, cards, backFaces }: { label: string; cards: Card[]; backFaces: BackFaceEntry[] }) {
+function GroupCount({ label, cards, backFaces }: { label: string; cards: DeckEntry[]; backFaces: BackFaceEntry[] }) {
   const count = totalCopies(cards);
   if (backFaces.length === 0) {
     return <>{count}</>;
@@ -63,12 +63,20 @@ export function BackFacesExtra({ label, count, backFaces }: BackFacesExtraProps)
 }
 
 export interface GroupDrop {
-  id: (group: CardGroup) => string | null;
-  accepts: (group: CardGroup, item: DragItem) => boolean;
-  onDrop: (group: CardGroup, item: DragItem) => void;
+  id: (group: CardGroup<DeckEntry>) => string | null;
+  accepts: (group: CardGroup<DeckEntry>, item: DragItem) => boolean;
+  onDrop: (group: CardGroup<DeckEntry>, item: DragItem) => void;
 }
 
-function GroupDropArea({ group, drop, children }: { group: CardGroup; drop?: GroupDrop; children: ReactNode }) {
+function GroupDropArea({
+  group,
+  drop,
+  children,
+}: {
+  group: CardGroup<DeckEntry>;
+  drop?: GroupDrop;
+  children: ReactNode;
+}) {
   const { active, over, targetProps } = useDropTarget(drop ? drop.id(group) : null, {
     accepts: (item) => drop?.accepts(group, item) ?? false,
     onDrop: (item) => drop?.onDrop(group, item),
@@ -80,15 +88,21 @@ function GroupDropArea({ group, drop, children }: { group: CardGroup; drop?: Gro
   );
 }
 
-interface DeckCardGroupsProps {
-  groups: CardGroup[];
+interface DeckCardGroupsProps<E extends DeckEntry> {
+  groups: CardGroup<E>[];
   backFaces: Map<string, BackFaceEntry[]>;
   display: CardDisplay;
-  renderTile: (card: Card, group: CardGroup) => ReactNode;
+  renderTile: (entry: E, group: CardGroup<E>) => ReactNode;
   drop?: GroupDrop;
 }
 
-export function DeckCardGroups({ groups, backFaces, display, renderTile, drop }: DeckCardGroupsProps) {
+export function DeckCardGroups<E extends DeckEntry>({
+  groups,
+  backFaces,
+  display,
+  renderTile,
+  drop,
+}: DeckCardGroupsProps<E>) {
   const layoutGroups = groups.map((group, index) => ({
     key: `${index}-${group.label}`,
     group,
@@ -115,7 +129,7 @@ export function DeckCardGroups({ groups, backFaces, display, renderTile, drop }:
     <CardGroupsLayout
       display={display}
       groups={layoutGroups}
-      renderTile={(card, layoutGroup) => renderTile(card, layoutGroup.group)}
+      renderTile={(entry: E, layoutGroup) => renderTile(entry, layoutGroup.group)}
     />
   );
 }

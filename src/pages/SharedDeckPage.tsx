@@ -14,6 +14,7 @@ import { CardDisplayControls, useCardDisplay } from '../cards/CardDisplay';
 import { useCardVisuals } from '../cards/useCardVisuals';
 import { type CollapsibleBoard, DEFAULT_COLLAPSED_BOARDS } from '../decks/boards';
 import { DeckBoards, type DeckBoardsExtras, useDeckBoards } from '../decks/DeckBoards';
+import { type OwnedEntry, ownedEntry } from '../decks/deckEntries';
 import { LegalityWarning } from '../decks/DeckLegalityWarning';
 import { useAllDecks } from '../decks/api';
 import { usePriceCurrency } from '../cards/price';
@@ -280,7 +281,7 @@ function useSharedDeckTiles(
 ) {
   const contextMenu = useCardContextMenu();
   const cardMenu = useSharedCardMenu(signedIn);
-  const extras: DeckBoardsExtras = {
+  const extras: DeckBoardsExtras<OwnedEntry> = {
     tile: (card) => ({
       props: {
         collectionCount: collectionCounts ? collectionCounts.get(cardNameKey(card.name)) : undefined,
@@ -322,10 +323,10 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
   const commander = commanders[0];
   const cardTags = tagsByName(shared.cards);
   const boards = useDeckBoards({
-    cards: all,
+    entries: all.map(ownedEntry),
     sort,
     grouping,
-    commanderIds: commanders.map((card) => card.id),
+    commanders: commanders.map((card) => ({ cardId: card.id })),
     tagsOf: (card) => tagsOf(cardTags, card.name),
   });
   const visuals = useCardVisuals(all, display);
