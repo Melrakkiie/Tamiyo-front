@@ -12,7 +12,6 @@ import {
   Stack,
   Tabs,
   Text,
-  Title,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useQueryClient } from '@tanstack/react-query';
@@ -42,7 +41,6 @@ import { AddCardModal, type CardToAdd } from '../cards/AddCardModal';
 import { AddToDeckModal } from '../decks/AddToDeckModal';
 import { DropOverlay } from '../scryfall/DropOverlay';
 import { useScryfallDrop } from '../scryfall/useScryfallDrop';
-import { artBackground, artCredit, deckArtId } from '../decks/art';
 import { ArtPickerModal } from '../decks/ArtPickerModal';
 import {
   isCommanderFormat,
@@ -70,12 +68,11 @@ import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckTagsModal } from '../decks/DeckTagsModal';
 import { DeckLegalityWarning } from '../decks/DeckLegalityWarning';
 import { formatPrice, PriceText, usePriceCurrency } from '../cards/price';
-import { BracketSticker } from '../decks/bracket';
-import { FormatSticker } from '../decks/FormatSticker';
 import { DeckValue } from '../decks/DeckValue';
 import { BulkEditModal } from '../decks/BulkEditModal';
 import { MoveDeckToFolderModal } from '../decks/FolderModals';
 import { useSetFavorite } from '../decks/folders';
+import { DeckBanner } from '../decks/DeckBanner';
 import { LikeButton } from '../decks/LikeButton';
 import { DeckStatsPanel } from '../decks/DeckStatsPanel';
 import { ExportDeckModal } from '../decks/ExportDeckModal';
@@ -94,10 +91,9 @@ import { ShareDeckModal } from '../decks/ShareDeckModal';
 import { type DeckCardGrouping, deckGroupingOptions, parseDeckGrouping } from '../decks/storageGrouping';
 import { tagsByName, tagsOf, useDeckTags } from '../decks/tags';
 import { useDeckView, useSaveDeckView } from '../decks/view';
-import { VisibilitySticker } from '../decks/visibility';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import { SettingsMenu } from '../layout/SettingsMenu';
-import { useCardArts, useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
+import { useCardBackImages, useCardImages, useManaCosts } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
 import { EmptyNote } from '../theme/EmptyNote';
 import { usePageTitle } from '../layout/usePageTitle';
@@ -170,9 +166,6 @@ function DeckView({ id }: { id: string }) {
   );
   const currency = usePriceCurrency();
   const stats = useDeckStats(id, currency !== null);
-  const artId = deck.data ? deckArtId(deck.data) : null;
-  const arts = useCardArts([artId]);
-  const art = artId ? (arts.data?.[artId] ?? null) : null;
 
   function closeEdit() {
     setEditOpened(false);
@@ -222,16 +215,10 @@ function DeckView({ id }: { id: string }) {
 
       {deck.error && <Alert color="orange">{errorMessage(deck.error)}</Alert>}
 
-      <Paper
-        radius="md"
-        p={art ? 'lg' : 0}
-        mih={art ? { base: 240, sm: 320 } : undefined}
-        pos="relative"
-        className={art ? 'tamiyo-banner-taped' : undefined}
-        style={art ? { ...artBackground(art.url, 'light'), display: 'flex', flexDirection: 'column' } : undefined}
-      >
-        <Box pos="absolute" top={art ? 'var(--mantine-spacing-lg)' : 0} right={art ? 'var(--mantine-spacing-lg)' : 0}>
-          <SettingsMenu label="Actions sur le deck" onImage={art !== null}>
+      <DeckBanner
+        deck={current}
+        menu={(onImage) => (
+          <SettingsMenu label="Actions sur le deck" onImage={onImage}>
             <Menu.Item onClick={() => setEditOpened(true)}>Modifier</Menu.Item>
             <Menu.Item onClick={() => setArtPickerOpened(true)}>Illustration</Menu.Item>
             <Menu.Item onClick={() => setTagsOpened(true)}>Gérer les tags</Menu.Item>
@@ -259,32 +246,20 @@ function DeckView({ id }: { id: string }) {
               Supprimer
             </Menu.Item>
           </SettingsMenu>
-        </Box>
-        <Stack gap={6} pr={48} style={art ? { marginTop: 'auto' } : undefined}>
-          <Title order={2} c={art ? 'white' : undefined}>
-            {current.name}
-          </Title>
-          <Group gap="xs">
-            <FormatSticker format={current.format} size="md" />
-            <VisibilitySticker visibility={current.visibility} size="md" />
-            {isCommanderFormat(current.format) && <BracketSticker bracket={current.bracket} size="md" />}
-            <LikeButton deckId={current.id} canLike={false} onImage={art !== null} />
-            {currency && stats.data && (
-              <DeckValue
-                value={stats.data.value}
-                currency={currency}
-                onImage={art !== null}
-                breakdown={{ owned: stats.data.owned_value, pending: stats.data.pending_value }}
-              />
-            )}
-          </Group>
-        </Stack>
-        {art && (
-          <Text size="xs" c="gray.4" ta="right" mt="xs">
-            {artCredit(art.artist)}
-          </Text>
         )}
-      </Paper>
+        like={(onImage) => <LikeButton deckId={current.id} canLike={false} onImage={onImage} />}
+        value={(onImage) =>
+          currency &&
+          stats.data && (
+            <DeckValue
+              value={stats.data.value}
+              currency={currency}
+              onImage={onImage}
+              breakdown={{ owned: stats.data.owned_value, pending: stats.data.pending_value }}
+            />
+          )
+        }
+      />
 
       <DeckLegalityWarning deck={current} />
 
