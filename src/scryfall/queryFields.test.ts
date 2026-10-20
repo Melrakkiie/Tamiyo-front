@@ -364,3 +364,76 @@ describe('collector number', () => {
     ['cn:', /attend une valeur/],
   ]);
 });
+
+describe('color identity', () => {
+  it.each(
+    cases([
+      ['id:g', grizzlyBears, true],
+      ['id:g', forest, true],
+      ['id:g', solRing, true],
+      ['id:g', esperSentinel, false],
+      ['id:g', sproutingThrinax, false],
+      ['identity:g', grizzlyBears, true],
+      ['ci:g', grizzlyBears, true],
+      ['id:brg', sproutingThrinax, true],
+      ['id:brg', grizzlyBears, true],
+      ['id:wu', alrundGodOfTheCosmos, true],
+      ['id:wu', esperSentinel, true],
+      ['id:wu', grizzlyBears, false],
+      ['id:azorius', esperSentinel, true],
+      ['id:jund', sproutingThrinax, true],
+      ['id:b', westvaleAbbey, true],
+      ['id:u', westvaleAbbey, false],
+      ['id=g', grizzlyBears, true],
+      ['id=g', sproutingThrinax, false],
+      ['id=g', solRing, false],
+      ['id>=g', grizzlyBears, true],
+      ['id>=g', sproutingThrinax, true],
+      ['id>=g', esperSentinel, false],
+      ['id>g', sproutingThrinax, true],
+      ['id>g', grizzlyBears, false],
+      ['id<brg', grizzlyBears, true],
+      ['id<brg', sproutingThrinax, false],
+      ['id<=brg', sproutingThrinax, true],
+      ['id!=g', grizzlyBears, false],
+      ['id!=g', esperSentinel, true],
+      ['id:c', solRing, true],
+      ['id:c', forest, false],
+      ['id=colorless', solRing, true],
+      ['id=c', grizzlyBears, false],
+      ['id:m', sproutingThrinax, true],
+      ['id:multicolor', sproutingThrinax, true],
+      ['id:m', grizzlyBears, false],
+      ['id:2', sproutingThrinax, false],
+      ['id=3', sproutingThrinax, true],
+      ['id:1', grizzlyBears, true],
+      ['id:0', solRing, true],
+      ['id>=1', solRing, false],
+      ['id<2', grizzlyBears, true],
+      ['id<2', sproutingThrinax, false],
+    ]),
+  )('$search on $card.name: $matches', ({ search, card, matches: expected }) => {
+    expect(matches(search, card)).toBe(expected);
+  });
+
+  failsToParse([
+    ['id:purple', /« purple » n'est pas une couleur/],
+    ['ci:xyz', /« xyz » n'est pas une couleur/],
+    ['id:6', /« 6 » n'est pas une couleur/],
+    ['id<m', /« id » n'accepte pas « < »/],
+    ['id>=multicolor', /« id » n'accepte pas « >= »/],
+    ['id:', /attend une valeur/],
+  ]);
+});
+
+describe('is', () => {
+  failsToParse([
+    ['is:foil', /ne s'applique qu'à ta collection/],
+    ['is:commander', /« is: » ne s'applique qu'à ta collection/],
+    ['not:foil', /« not: » ne s'applique qu'à ta collection/],
+    ['-is:foil', /ne s'applique qu'à ta collection/],
+    ['t:creature is:foil', /ne s'applique qu'à ta collection/],
+    ['(t:creature or is:foil)', /ne s'applique qu'à ta collection/],
+    ['is:', /attend une valeur/],
+  ]);
+});
