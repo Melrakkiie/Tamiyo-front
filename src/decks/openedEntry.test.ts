@@ -4,8 +4,9 @@ import { forest, grizzlyBears, solRing } from '../scryfall/fixtures';
 import type { ScryfallCard } from '../scryfall/client';
 import { boardsInput, copies, deckCard, pendingCard } from './boardTestHelpers';
 import { buildDeckBoards } from './boardLayout';
+import { BOARDS } from './boards';
 import { type DeckEntry } from './deckEntries';
-import { closedEntry, openEntry, resolveOpenedEntry } from './openedEntry';
+import { closedEntry, closeEntry, openEntry, resolveOpenedEntry, showSwapResult } from './openedEntry';
 
 const printings: ScryfallCard[] = [forest, grizzlyBears, solRing];
 
@@ -14,7 +15,8 @@ function boardsOf(cards: DeckCard[], pending: PendingCard[] = []) {
 }
 
 function stackOf(cards: DeckCard[], pending: PendingCard[], name: string): DeckEntry {
-  const stack = boardsOf(cards, pending).main.stacks.find((entry) => entry.name === name);
+  const boards = boardsOf(cards, pending);
+  const stack = BOARDS.flatMap((board) => boards[board].stacks).find((entry) => entry.name === name);
   if (!stack) {
     throw new Error(`no stack for ${name}`);
   }
@@ -62,5 +64,52 @@ describe('resolveOpenedEntry', () => {
     expect(resolveOpenedEntry(openEntry(closedEntry, stackOf([bears], [], 'Grizzly Bears')), others)).toBeNull();
     expect(resolveOpenedEntry(openEntry(closedEntry, stackOf([], [lands], 'Forest')), others)).toBeNull();
     expect(resolveOpenedEntry(closedEntry, boards)).toBeNull();
+  });
+});
+
+describe('showSwapResult', () => {
+  it('shows as owned an entry that turned from pending to owned', () => {
+    const wanted = pendingCard(solRing, { board: 'sideboard' });
+    const opened = openEntry(closedEntry, stackOf([], [wanted], 'Sol Ring'));
+    const bought = deckCard(solRing, { board: 'sideboard' });
+
+    const swapped = showSwapResult(opened, opened.session, { kind: 'card', card: bought, board: 'sideboard' });
+    const live = resolveOpenedEntry(swapped, boardsOf([bought]));
+
+    expect(live?.kind).toBe('owned');
+    expect(live?.kind === 'owned' && live.copy_ids).toEqual([bought.id]);
+    expect(swapped.opened?.entry.kind).toBe('owned');
+  });
+
+  it('follows an owned entry that turned pending', () => {
+    const bears = deckCard(grizzlyBears);
+    const opened = openEntry(closedEntry, stackOf([bears], [], 'Grizzly Bears'));
+    const wanted = pendingCard(grizzlyBears);
+
+    const swapped = showSwapResult(opened, opened.session, { kind: 'pending', item: wanted });
+    const live = resolveOpenedEntry(swapped, boardsOf([], [wanted]));
+
+    expect(live?.kind === 'pending' && live.pending.id).toBe(wanted.id);
+  });
+
+  it('ignores a swap result that arrives after the modal closed', () => {
+    const bears = deckCard(grizzlyBears);
+    const opened = openEntry(closedEntry, stackOf([bears], [], 'Grizzly Bears'));
+    const closed = closeEntry(opened);
+
+    const swapped = showSwapResult(closed, opened.session, { kind: 'pending', item: pendingCard(grizzlyBears) });
+
+    expect(swapped.opened).toBeNull();
+  });
+
+  it('ignores a swap result from a modal closed and reopened since', () => {
+    const bears = deckCard(grizzlyBears);
+    const lands = deckCard(forest);
+    const first = openEntry(closedEntry, stackOf([bears, lands], [], 'Grizzly Bears'));
+    const reopened = openEntry(closeEntry(first), stackOf([bears, lands], [], 'Forest'));
+
+    const swapped = showSwapResult(reopened, first.session, { kind: 'pending', item: pendingCard(grizzlyBears) });
+
+    expect(resolveOpenedEntry(swapped, boardsOf([bears, lands]))?.name).toBe('Forest');
   });
 });
