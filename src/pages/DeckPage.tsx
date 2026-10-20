@@ -15,7 +15,7 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
@@ -24,7 +24,6 @@ import { useShowCollectionInDecks } from '../auth/preferences';
 import { useSession } from '../auth/useSession';
 import { useCard } from '../cards/api';
 import { storageNameOf } from '../storages/storageName';
-import { copyIds } from '../cards/copies';
 import { CardImage } from '../cards/CardImage';
 import {
   cardDisplay,
@@ -53,18 +52,18 @@ import {
   useUpdateDeck,
 } from '../decks/api';
 import { clearSlotChanges, type CommanderSlot, commanderTargets, hasCommander, hasPartner } from '../decks/commanders';
-import { type DeckEntry, deckEntries, type PendingEntry, pendingEntry } from '../decks/deckEntries';
-import { BOARDS, type CollapsibleBoard, COLLAPSIBLE_BOARDS, DEFAULT_COLLAPSED_BOARDS } from '../decks/boards';
+import { type DeckEntry, deckEntries } from '../decks/deckEntries';
+import { type CollapsibleBoard, COLLAPSIBLE_BOARDS, DEFAULT_COLLAPSED_BOARDS } from '../decks/boards';
 import { DeckBoards, type TileContext, type TileExtras, useDeckBoards } from '../decks/DeckBoards';
 import type { GroupDrop } from '../decks/DeckCardGroups';
 import { DeckDropBar } from '../decks/DeckDropBar';
 import { DeckDragProvider, DraggableCard } from '../decks/dragDrop';
 import { useDeckCardActions } from '../decks/useDeckCardActions';
 import { useDeckCardMenu } from '../decks/useDeckCardMenu';
+import { useOpenedEntry } from '../decks/useOpenedEntry';
 import { CollectionToggle } from '../decks/CollectionToggle';
 import { CompareDeckModal } from '../decks/CompareDeckModal';
 import { DeckCardModal } from '../decks/DeckCardModal';
-import type { EditionSource } from '../decks/EditionSwitcher';
 import { useDeckCopyActions } from '../decks/DeckCopyActions';
 import { DeckFormModal } from '../decks/DeckFormModal';
 import { DeckTagsModal } from '../decks/DeckTagsModal';
@@ -465,12 +464,6 @@ interface DeckViewChange {
   display?: Partial<DisplaySettings>;
 }
 
-interface OpenedCard {
-  card: Card;
-  board: DeckBoard;
-  ids: number[];
-}
-
 const emptyBoardMessages: Record<CollapsibleBoard, string> = {
   sideboard:
     "Aucune carte dans le sideboard : ouvre une carte du deck pour l'y déplacer, ou choisis cette section en ajoutant des cartes.",
@@ -548,81 +541,11 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   const [droppedCard, setDroppedCard] = useState<CardToAdd | null>(null);
   const scryfallDrop = useScryfallDrop((printing) => setDroppedCard({ name: printing.name, printing }));
   const [importOpened, setImportOpened] = useState(false);
-  const [opened, setOpened] = useState<OpenedCard | null>(null);
-  const [openedPending, setOpenedPending] = useState<PendingEntry | null>(null);
-  const modalSession = useRef(0);
-  const liveCard = opened ? liveOpenedCard(opened) : null;
-  const openedCard = liveCard ?? opened;
-  const openedCardImage = openedCard ? visuals.imageUrl(openedCard.card) : undefined;
-  const cardLoading = opened !== null && (!liveCard || (!openedCardImage && visuals.imagesFetching));
-  const livePending = openedPending ? liveOpenedPending(openedPending) : null;
-  const shownPending = livePending ?? openedPending;
-  const pendingImage = shownPending ? visuals.imageUrl(shownPending) : undefined;
-  const pendingLoading = openedPending !== null && (!livePending || (!pendingImage && visuals.imagesFetching));
-
-  function liveOpenedCard(current: OpenedCard): OpenedCard | null {
-    for (const board of BOARDS) {
-      const card = boards[board].stacks.find(
-        (stack) => stack.kind === 'owned' && stack.copy_ids.includes(current.ids[0]),
-      );
-      if (card?.kind === 'owned') {
-        return { card, board, ids: current.ids };
-      }
-    }
-    return null;
-  }
-
-  function liveOpenedPending(current: PendingEntry): PendingEntry | null {
-    for (const board of BOARDS) {
-      const entry = boards[board].stacks.find(
-        (stack) => stack.kind === 'pending' && stack.pending.id === current.pending.id,
-      );
-      if (entry?.kind === 'pending') {
-        return entry;
-      }
-    }
-    return null;
-  }
-
-  function openCard(card: Card, board: DeckBoard) {
-    setOpenedPending(null);
-    setOpened({ card, board, ids: copyIds(card) });
-  }
-
-  function openPending(entry: PendingEntry) {
-    setOpened(null);
-    setOpenedPending(entry);
-  }
-
-  function openEntry(entry: DeckEntry, board: DeckBoard) {
-    if (entry.kind === 'pending') {
-      openPending(entry);
-    } else {
-      openCard(entry, board);
-    }
-  }
-
-  function closeCard() {
-    modalSession.current += 1;
-    setOpened(null);
-  }
-
-  function closePending() {
-    modalSession.current += 1;
-    setOpenedPending(null);
-  }
-
-  const session = modalSession.current;
-  function showSwapped(next: EditionSource) {
-    if (modalSession.current !== session) {
-      return;
-    }
-    if (next.kind === 'card') {
-      openCard(next.card, next.board);
-    } else {
-      openPending(pendingEntry(next.item));
-    }
-  }
+  const opened = useOpenedEntry(boards, {
+    refreshing: cards.isFetching || pending.isFetching,
+    imageUrl: visuals.imageUrl,
+    imagesFetching: visuals.imagesFetching,
+  });
 
   const commanderScryfallId = isCommanderFormat(deck.format) ? deck.commander_scryfall_id : null;
   const commanderCard = boards.main.stacks.find((entry) => boards.main.commanders.has(entry.key));
@@ -638,7 +561,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
             scryfallId: commanderScryfallId,
             foil: commanderCard?.foil,
             imageUrl: commanderImage,
-            open: commanderCard ? () => openEntry(commanderCard, 'main') : undefined,
+            open: commanderCard ? () => opened.open(commanderCard) : undefined,
           }
         : null,
       pathname,
@@ -760,7 +683,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
             }
             emptyBoardMessages={emptyBoardMessages}
             extras={{ tile: tileExtras, groupDrop: tagDrop }}
-            onOpen={openEntry}
+            onOpen={opened.open}
           />
         )}
 
@@ -787,21 +710,21 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
         <DeckCardModal
           deck={deck}
           deckCardIds={new Set(deckCards.map((card) => card.id))}
-          card={openedCard?.card ?? null}
-          board={openedCard?.board ?? 'main'}
-          imageUrl={openedCardImage}
-          loading={cardLoading}
-          onClose={closeCard}
-          onSwapped={showSwapped}
+          card={opened.entry?.kind === 'owned' ? opened.entry : null}
+          board={opened.entry?.board ?? 'main'}
+          imageUrl={opened.imageUrl}
+          loading={opened.loading}
+          onClose={opened.close}
+          onSwapped={opened.showSwapped}
         />
         <PendingCardModal
           deck={deck}
           deckCardIds={new Set(deckCards.map((card) => card.id))}
-          entry={shownPending}
-          imageUrl={pendingImage}
-          loading={pendingLoading}
-          onClose={closePending}
-          onSwapped={showSwapped}
+          entry={opened.entry?.kind === 'pending' ? opened.entry : null}
+          imageUrl={opened.imageUrl}
+          loading={opened.loading}
+          onClose={opened.close}
+          onSwapped={opened.showSwapped}
         />
       </Stack>
     </DeckDragProvider>
