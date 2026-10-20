@@ -20,13 +20,12 @@ import { ApiError, errorMessage } from '../api/errors';
 import type { Card, ComparedCard, ComparedDeck } from '../api/types';
 import { useSession } from '../auth/useSession';
 import { type CardDisplay, CardDisplayControls, useCardDisplay } from '../cards/CardDisplay';
-import { CardGrid } from '../cards/CardLayout';
-import { CardTile } from '../cards/CardTile';
 import { useCardVisuals } from '../cards/useCardVisuals';
 import { useDeckComparison } from '../decks/api';
-import { DeckCardGroups, useDeckCardGroups } from '../decks/DeckCardGroups';
+import type { CollapsibleBoard } from '../decks/boards';
+import { DeckBoards, type DeckBoardsExtras, useDeckBoards } from '../decks/DeckBoards';
+import type { BoardCard } from '../decks/deckBoards';
 import { FormatSticker } from '../decks/FormatSticker';
-import { sortDeckCards } from '../decks/pendingCards';
 import { SharedCardModal } from '../decks/SharedCardModal';
 import { type SharedDeckSort, sharedDeckSortOptions } from '../decks/shared';
 import { type CardGrouping, groupingOptions, parseGrouping } from '../cards/grouping';
@@ -215,7 +214,7 @@ function TabLabel({ title, cards, side, active }: TabLabelProps) {
   );
 }
 
-function toCards(cards: ComparedCard[], side: Side): Card[] {
+function toCards(cards: ComparedCard[], side: Side): BoardCard[] {
   return cards.map((card, index) => ({
     id: index + 1,
     name: card.name,
@@ -232,6 +231,7 @@ function toCards(cards: ComparedCard[], side: Side): Card[] {
     added: '',
     updated: '',
     quantity: copies(card, side),
+    board: 'main',
   }));
 }
 
@@ -243,13 +243,14 @@ interface ComparedCardsProps {
   options: DisplayOptions;
 }
 
+const noFoldedBoards: CollapsibleBoard[] = [];
+
 function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps) {
   const [opened, setOpened] = useState<Card | null>(null);
   const converted = toCards(cards, side);
   const byId = new Map(converted.map((card, index) => [card.id, cards[index]]));
-  const sorted = sortDeckCards(converted, options.sort);
-  const visuals = useCardVisuals(sorted, options.display);
-  const grouped = useDeckCardGroups(sorted, options.grouping);
+  const boards = useDeckBoards({ cards: converted, sort: options.sort, grouping: options.grouping });
+  const visuals = useCardVisuals(converted, options.display);
 
   function isCommander(card: Card) {
     const compared = byId.get(card.id);
@@ -280,43 +281,30 @@ function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps
     );
   }
 
-  function renderTile(card: Card) {
-    return (
-      <CardTile
-        key={card.id}
-        card={card}
-        imageUrl={visuals.imageUrl(card)}
-        backImageUrl={visuals.backImageUrl(card)}
-        imageLoading={visuals.imageLoading}
-        display={options.display}
-        commander={isCommander(card)}
-        manaCost={visuals.manaCost(card)}
-        details={details(card, false)}
-        onOpen={setOpened}
-      />
-    );
-  }
-
-  if (cards.length === 0) {
-    return (
-      <Center p="xl">
-        <Text c="dimmed">Aucune carte.</Text>
-      </Center>
-    );
-  }
+  const extras: DeckBoardsExtras = {
+    tile: (card) => ({ props: { commander: isCommander(card), details: details(card, false) } }),
+  };
 
   return (
     <Stack>
-      {side === 'both' && (
+      {side === 'both' && cards.length > 0 && (
         <Text size="sm" c="dimmed">
           Exemplaires dans {deck.name} / dans {other.name}, en orange quand ils diffèrent.
         </Text>
       )}
-      {options.grouping ? (
-        <DeckCardGroups {...grouped} display={options.display} renderTile={renderTile} />
-      ) : (
-        <CardGrid display={options.display} cards={sorted} renderTile={renderTile} />
-      )}
+      <DeckBoards
+        boards={boards}
+        display={options.display}
+        folded={noFoldedBoards}
+        onToggleBoard={() => {}}
+        emptyDeck={
+          <Center p="xl">
+            <Text c="dimmed">Aucune carte.</Text>
+          </Center>
+        }
+        extras={extras}
+        onOpen={setOpened}
+      />
       <SharedCardModal
         card={opened}
         imageUrl={opened ? visuals.imageUrl(opened) : undefined}
