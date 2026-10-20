@@ -1,0 +1,249 @@
+import type { ScryfallCard } from './client';
+
+export const grizzlyBears: ScryfallCard = {
+  id: 'fixture-grizzly-bears',
+  layout: 'normal',
+  name: 'Grizzly Bears',
+  set: 'm10',
+  set_name: 'Magic 2010',
+  collector_number: '186',
+  released_at: '2009-07-17',
+  cmc: 2,
+  type_line: 'Creature — Bear',
+  mana_cost: '{1}{G}',
+  oracle_text: '',
+  power: '2',
+  toughness: '2',
+  rarity: 'common',
+  colors: ['G'],
+  color_identity: ['G'],
+};
+
+export const esperSentinel: ScryfallCard = {
+  id: 'fixture-esper-sentinel',
+  layout: 'normal',
+  name: 'Esper Sentinel',
+  set: 'mh2',
+  set_name: 'Modern Horizons 2',
+  collector_number: '12',
+  released_at: '2021-06-18',
+  cmc: 1,
+  type_line: 'Artifact Creature — Human Soldier',
+  mana_cost: '{W}',
+  oracle_text:
+    "Whenever an opponent casts their first noncreature spell each turn, draw a card unless that player pays {X}, where X is Esper Sentinel's power.",
+  power: '1',
+  toughness: '1',
+  rarity: 'rare',
+  colors: ['W'],
+  color_identity: ['W'],
+};
+
+export const sproutingThrinax: ScryfallCard = {
+  id: 'fixture-sprouting-thrinax',
+  layout: 'normal',
+  name: 'Sprouting Thrinax',
+  set: 'ala',
+  set_name: 'Shards of Alara',
+  collector_number: '198',
+  released_at: '2008-10-03',
+  cmc: 3,
+  type_line: 'Creature — Lizard',
+  mana_cost: '{B}{R}{G}',
+  oracle_text: 'When Sprouting Thrinax dies, create three 1/1 green Saproling creature tokens.',
+  power: '3',
+  toughness: '3',
+  rarity: 'uncommon',
+  colors: ['B', 'G', 'R'],
+  color_identity: ['B', 'G', 'R'],
+};
+
+export const solRing: ScryfallCard = {
+  id: 'fixture-sol-ring',
+  layout: 'normal',
+  name: 'Sol Ring',
+  set: 'cmr',
+  set_name: 'Commander Legends',
+  collector_number: '472',
+  released_at: '2020-11-20',
+  cmc: 1,
+  type_line: 'Artifact',
+  mana_cost: '{1}',
+  oracle_text: '{T}: Add {C}{C}.',
+  rarity: 'uncommon',
+  colors: [],
+  color_identity: [],
+};
+
+export const alrundGodOfTheCosmos: ScryfallCard = {
+  id: 'fixture-alrund-god-of-the-cosmos',
+  layout: 'modal_dfc',
+  name: 'Alrund, God of the Cosmos // Hakka, Whispering Raven',
+  set: 'khm',
+  set_name: 'Kaldheim',
+  collector_number: '40',
+  released_at: '2021-02-05',
+  cmc: 4,
+  type_line: 'Legendary Creature — God // Legendary Creature — Bird',
+  rarity: 'mythic',
+  color_identity: ['U'],
+  card_faces: [
+    {
+      name: 'Alrund, God of the Cosmos',
+      mana_cost: '{3}{U}',
+      type_line: 'Legendary Creature — God',
+      oracle_text:
+        'Alrund gets +1/+1 for each card in your hand and each foretold card you own in exile.\nAt the beginning of your end step, choose a card type, then reveal the top two cards of your library. Put all cards of the chosen type revealed this way into your hand and the rest on the bottom of your library in any order.',
+      colors: ['U'],
+      power: '1',
+      toughness: '1',
+    },
+    {
+      name: 'Hakka, Whispering Raven',
+      mana_cost: '{1}{U}',
+      type_line: 'Legendary Creature — Bird',
+      oracle_text:
+        "Flying\nWhenever Hakka, Whispering Raven deals combat damage to a player, return it to its owner's hand, then scry 2.",
+      colors: ['U'],
+      power: '2',
+      toughness: '3',
+    },
+  ],
+};
+
+export const westvaleAbbey: ScryfallCard = {
+  id: 'fixture-westvale-abbey',
+  layout: 'transform',
+  name: 'Westvale Abbey // Ormendahl, Profane Prince',
+  set: 'soi',
+  set_name: 'Shadows over Innistrad',
+  collector_number: '281',
+  released_at: '2016-04-08',
+  cmc: 0,
+  type_line: 'Land // Legendary Creature — Demon',
+  rarity: 'rare',
+  color_identity: ['B'],
+  card_faces: [
+    {
+      name: 'Westvale Abbey',
+      mana_cost: '',
+      type_line: 'Land',
+      oracle_text:
+        '{T}: Add {C}.\n{5}, {T}, Pay 1 life: Create a 1/1 colorless Human Cleric creature token.\n{5}, {T}, Sacrifice five creatures: Transform Westvale Abbey, then untap it.',
+      colors: [],
+    },
+    {
+      name: 'Ormendahl, Profane Prince',
+      mana_cost: '',
+      type_line: 'Legendary Creature — Demon',
+      oracle_text: 'Flying, lifelink, indestructible, haste',
+      colors: ['B'],
+      power: '9',
+      toughness: '7',
+    },
+  ],
+};
+
+export const commitMemory: ScryfallCard = {
+  id: 'fixture-commit-memory',
+  layout: 'split',
+  name: 'Commit // Memory',
+  set: 'akh',
+  set_name: 'Amonkhet',
+  collector_number: '211',
+  released_at: '2017-04-28',
+  cmc: 10,
+  type_line: 'Instant // Sorcery',
+  mana_cost: '{3}{U} // {4}{U}{U}',
+  rarity: 'rare',
+  colors: ['U'],
+  color_identity: ['U'],
+  card_faces: [
+    {
+      name: 'Commit',
+      mana_cost: '{3}{U}',
+      type_line: 'Instant',
+      oracle_text: "Put target spell or nonland permanent into its owner's library second from the top.",
+    },
+    {
+      name: 'Memory',
+      mana_cost: '{4}{U}{U}',
+      type_line: 'Sorcery',
+      oracle_text:
+        'Aftermath (Cast this spell only from your graveyard. Then exile it.)\nEach player shuffles their hand and graveyard into their library, then draws seven cards.',
+    },
+  ],
+};
+
+export const forest: ScryfallCard = {
+  id: 'fixture-forest',
+  layout: 'normal',
+  name: 'Forest',
+  set: 'dmu',
+  set_name: 'Dominaria United',
+  collector_number: '277',
+  released_at: '2022-09-09',
+  cmc: 0,
+  type_line: 'Basic Land — Forest',
+  mana_cost: '',
+  oracle_text: '({T}: Add {G}.)',
+  rarity: 'common',
+  colors: [],
+  color_identity: ['G'],
+};
+
+export const tarmogoyf: ScryfallCard = {
+  id: 'fixture-tarmogoyf',
+  layout: 'normal',
+  name: 'Tarmogoyf',
+  set: 'mh2',
+  set_name: 'Modern Horizons 2',
+  collector_number: '414',
+  released_at: '2021-06-18',
+  cmc: 2,
+  type_line: 'Creature — Lhurgoyf',
+  mana_cost: '{1}{G}',
+  oracle_text:
+    "Tarmogoyf's power is equal to the number of card types among cards in all graveyards and its toughness is equal to that number plus 1.",
+  power: '*',
+  toughness: '1+*',
+  rarity: 'mythic',
+  colors: ['G'],
+  color_identity: ['G'],
+};
+
+export const delverOfSecrets: ScryfallCard = {
+  id: 'fixture-delver-of-secrets',
+  layout: 'transform',
+  name: 'Delver of Secrets // Insectile Aberration',
+  set: 'isd',
+  set_name: 'Innistrad',
+  collector_number: '51',
+  released_at: '2011-09-30',
+  cmc: 1,
+  type_line: 'Creature — Human Wizard // Creature — Human Insect',
+  mana_cost: '',
+  rarity: 'common',
+  color_identity: ['U'],
+  card_faces: [
+    {
+      name: 'Delver of Secrets',
+      mana_cost: '{U}',
+      type_line: 'Creature — Human Wizard',
+      oracle_text:
+        'At the beginning of your upkeep, look at the top card of your library. You may reveal that card. If an instant or sorcery card is revealed this way, transform Delver of Secrets.',
+      colors: ['U'],
+      power: '1',
+      toughness: '1',
+    },
+    {
+      name: 'Insectile Aberration',
+      mana_cost: '',
+      type_line: 'Creature — Human Insect',
+      oracle_text: 'Flying',
+      colors: ['U'],
+      power: '3',
+      toughness: '2',
+    },
+  ],
+};
