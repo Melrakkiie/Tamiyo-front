@@ -14,7 +14,7 @@ import {
   tarmogoyf,
   westvaleAbbey,
 } from './fixtures';
-import { allOf, matchesScryfallQuery, parseScryfallQuery, term } from './query';
+import { allOf, matchesScryfallQuery, parseScryfallQuery, subtypeTerm } from './query';
 import { cases, matches, parsedQuery } from './queryTestHelpers';
 
 function failsToParse(rows: [string, RegExp][]) {
@@ -672,13 +672,17 @@ describe('allOf', () => {
     expect(allOf([])).toBeNull();
   });
 
+  it('drops missing nodes', () => {
+    expect(allOf([null, null])).toBeNull();
+  });
+
   it('gives the node itself for a single one', () => {
     const node = parsedQuery('t:creature');
-    expect(allOf([node!])).toBe(node);
+    expect(allOf([node])).toBe(node);
   });
 
   it('requires every node to match', () => {
-    const node = allOf([parsedQuery('t:creature')!, parsedQuery('c:g')!]);
+    const node = allOf([parsedQuery('t:creature'), null, parsedQuery('c:g')]);
     expect(matchesScryfallQuery(node, grizzlyBears, grizzlyBears.name)).toBe(true);
     expect(matchesScryfallQuery(node, westvaleAbbey, westvaleAbbey.name)).toBe(false);
   });
@@ -697,6 +701,6 @@ describe('subtype term', () => {
     ['basic', forest, false],
   ];
   it.each(cases)('subtype %s on %s gives %s', (text, card, expected) => {
-    expect(matchesScryfallQuery(term('subtype', '=', text), card, card.name)).toBe(expected);
+    expect(matchesScryfallQuery(subtypeTerm(text), card, card.name)).toBe(expected);
   });
 });

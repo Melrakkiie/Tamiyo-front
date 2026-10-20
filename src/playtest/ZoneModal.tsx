@@ -69,7 +69,7 @@ export function ZoneModal({ zone, onClose }: { zone: ViewedZone | null; onClose:
   }, [parsed]);
   const query = parsed.error ? lastValid.current : parsed.node;
   const libraryQuery = useMemo(
-    () => (searching ? allOf([query, libraryFiltersToQuery(filters)].filter((node) => node !== null)) : query),
+    () => (searching ? allOf([query, libraryFiltersToQuery(filters)]) : query),
     [searching, query, filters],
   );
   const [settledSearch] = useDebouncedValue(search, 400);

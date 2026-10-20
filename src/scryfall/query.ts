@@ -2,7 +2,7 @@ import { cardColors, cardManaValue, type ScryfallCard } from './client';
 
 export type Op = '=' | '<' | '<=' | '>' | '>=';
 
-export type Field =
+type Field =
   | 'name'
   | 'exact'
   | 'type'
@@ -235,8 +235,28 @@ function lex(chars: string[]): Token[] {
   return tokens;
 }
 
-export function term(field: Field, op: Op, text: string, number = 0): QueryNode {
+function term(field: Field, op: Op, text: string, number = 0): QueryNode {
   return { kind: 'term', field, op, text, number };
+}
+
+export function colorTerm(op: Op, letters: string): QueryNode {
+  return term('color', op, colorCode(letters));
+}
+
+export function colorlessTerm(): QueryNode {
+  return term('color', '=', '');
+}
+
+export function statTerm(field: 'manaValue' | 'power' | 'toughness', op: Op, number: number): QueryNode {
+  return term(field, op, '', number);
+}
+
+export function typeTerm(text: string): QueryNode {
+  return term('type', '=', text);
+}
+
+export function subtypeTerm(text: string): QueryNode {
+  return term('subtype', '=', text);
 }
 
 function comparison(op: string): Op {
@@ -546,6 +566,10 @@ function faceTexts(card: ScryfallCard, top: string | undefined, face: (index: nu
   return (card.card_faces ?? []).map((_, index) => face(index)).filter((text): text is string => !!text);
 }
 
+function typeLines(card: ScryfallCard) {
+  return faceTexts(card, card.type_line, (i) => card.card_faces?.[i].type_line);
+}
+
 function manaCost(card: ScryfallCard) {
   return card.mana_cost || card.card_faces?.[0]?.mana_cost || '';
 }
@@ -589,12 +613,10 @@ function termMatches(node: Extract<QueryNode, { kind: 'term' }>, card: ScryfallC
   const faces = card.card_faces ?? [];
   switch (field) {
     case 'type':
-      return faceTexts(card, card.type_line, (i) => faces[i].type_line).some((line) =>
-        line.toLowerCase().includes(text.toLowerCase()),
-      );
+      return typeLines(card).some((line) => line.toLowerCase().includes(text.toLowerCase()));
     case 'subtype': {
       const wanted = normalized(text);
-      return faceTexts(card, card.type_line, (i) => faces[i].type_line)
+      return typeLines(card)
         .flatMap((line) => line.split('//'))
         .some((line) => normalized(line.split('—').slice(1).join('—')).includes(wanted));
     }
@@ -650,8 +672,9 @@ function termMatches(node: Extract<QueryNode, { kind: 'term' }>, card: ScryfallC
   }
 }
 
-export function allOf(nodes: QueryNode[]): QueryNode | null {
-  return nodes.length <= 1 ? (nodes[0] ?? null) : { kind: 'and', children: nodes };
+export function allOf(nodes: (QueryNode | null)[]): QueryNode | null {
+  const present = nodes.filter((node) => node !== null);
+  return present.length <= 1 ? (present[0] ?? null) : { kind: 'and', children: present };
 }
 
 export function matchesScryfallQuery(node: QueryNode | null, card: ScryfallCard | undefined, name: string): boolean {

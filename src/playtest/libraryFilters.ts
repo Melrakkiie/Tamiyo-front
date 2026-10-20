@@ -1,5 +1,14 @@
 import { type AdvancedFilters, COLORLESS, type ColorMode, type ComparisonOp } from '../cards/advancedFilters';
-import { allOf, type Op, type QueryNode, term } from '../scryfall/query';
+import {
+  allOf,
+  colorlessTerm,
+  colorTerm,
+  type Op,
+  type QueryNode,
+  statTerm,
+  subtypeTerm,
+  typeTerm,
+} from '../scryfall/query';
 
 export type LibraryFilters = Pick<
   AdvancedFilters,
@@ -39,30 +48,28 @@ export function activeLibraryFilterCount(filters: LibraryFilters) {
   ].filter(Boolean).length;
 }
 
-const operators = { eq: '=', lt: '<', lte: '<=', gt: '>', gte: '>=' } as const satisfies Record<ComparisonOp, Op>;
+const comparisonOperators = { eq: '=', lt: '<', lte: '<=', gt: '>', gte: '>=' } as const satisfies Record<
+  ComparisonOp,
+  Op
+>;
 const colorOperators = { exact: '=', include: '>=', within: '<=' } as const satisfies Record<ColorMode, Op>;
 
 export function libraryFiltersToQuery(filters: LibraryFilters): QueryNode | null {
-  const nodes: QueryNode[] = [];
-  if (filters.colors === COLORLESS) {
-    nodes.push(term('color', '=', ''));
-  } else if (filters.colors !== '') {
-    nodes.push(term('color', colorOperators[filters.colorMode], filters.colors));
-  }
-  if (filters.manaValue !== null) {
-    nodes.push(term('manaValue', operators[filters.manaValueOp], '', filters.manaValue));
-  }
-  if (filters.power !== null) {
-    nodes.push(term('power', operators[filters.powerOp], '', filters.power));
-  }
-  if (filters.toughness !== null) {
-    nodes.push(term('toughness', operators[filters.toughnessOp], '', filters.toughness));
-  }
-  if (filters.type !== null) {
-    nodes.push(term('type', '=', filters.type));
-  }
-  if (filters.subtype.trim() !== '') {
-    nodes.push(term('subtype', '=', filters.subtype.trim()));
-  }
-  return allOf(nodes);
+  const subtype = filters.subtype.trim();
+  return allOf([
+    filters.colors === ''
+      ? null
+      : filters.colors === COLORLESS
+        ? colorlessTerm()
+        : colorTerm(colorOperators[filters.colorMode], filters.colors),
+    filters.manaValue === null
+      ? null
+      : statTerm('manaValue', comparisonOperators[filters.manaValueOp], filters.manaValue),
+    filters.power === null ? null : statTerm('power', comparisonOperators[filters.powerOp], filters.power),
+    filters.toughness === null
+      ? null
+      : statTerm('toughness', comparisonOperators[filters.toughnessOp], filters.toughness),
+    filters.type === null ? null : typeTerm(filters.type),
+    subtype === '' ? null : subtypeTerm(subtype),
+  ]);
 }
