@@ -7,8 +7,10 @@ import {
   esperSentinel,
   forest,
   grizzlyBears,
+  serraAngel,
   solRing,
   sproutingThrinax,
+  starredPromo,
   tarmogoyf,
   westvaleAbbey,
 } from './fixtures';
@@ -147,5 +149,63 @@ describe('oracle text', () => {
     ['o>flying', /« o » n'accepte pas « > »/],
     ['oracle<=flying', /« oracle » n'accepte pas « <= »/],
     ['o:', /attend une valeur/],
+  ]);
+});
+
+describe('keyword', () => {
+  it.each(
+    cases([
+      ['kw:flying', serraAngel, true],
+      ['keyword:flying', serraAngel, true],
+      ['kw=flying', serraAngel, true],
+      ['kw:FLYING', serraAngel, true],
+      ['kw:vigilance', serraAngel, true],
+      ['kw:fly', serraAngel, false],
+      ['kw:haste', serraAngel, false],
+      ['kw:flying', grizzlyBears, false],
+      ['kw!=flying', serraAngel, false],
+      ['-kw:flying', grizzlyBears, true],
+      ['kw:flying kw:vigilance', serraAngel, true],
+      ['kw:flying kw:haste', serraAngel, false],
+    ]),
+  )('$search on $card.name: $matches', ({ search, card, matches: expected }) => {
+    expect(matches(search, card)).toBe(expected);
+  });
+
+  failsToParse([
+    ['kw>flying', /« kw » n'accepte pas « > »/],
+    ['keyword<=flying', /« keyword » n'accepte pas « <= »/],
+    ['kw:', /attend une valeur/],
+  ]);
+});
+
+describe('format', () => {
+  it.each(
+    cases([
+      ['f:modern', serraAngel, true],
+      ['format:modern', serraAngel, true],
+      ['legal:modern', serraAngel, true],
+      ['f=modern', serraAngel, true],
+      ['f:MODERN', serraAngel, true],
+      ['f:vintage', serraAngel, true],
+      ['f:standard', serraAngel, false],
+      ['f:commander', serraAngel, false],
+      ['f:legacy', serraAngel, false],
+      ['f:modern', grizzlyBears, false],
+      ['f!=modern', serraAngel, false],
+      ['-f:standard', serraAngel, true],
+      ['f:modern f:vintage', serraAngel, true],
+      ['f:modern f:standard', serraAngel, false],
+    ]),
+  )('$search on $card.name: $matches', ({ search, card, matches: expected }) => {
+    expect(matches(search, card)).toBe(expected);
+  });
+
+  failsToParse([
+    ['f>modern', /« f » n'accepte pas « > »/],
+    ['format>=modern', /« format » n'accepte pas « >= »/],
+    ['legal<modern', /« legal » n'accepte pas « < »/],
+    ['f:bogus', /« bogus » n'est pas un format/],
+    ['f:', /attend une valeur/],
   ]);
 });
