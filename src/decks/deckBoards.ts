@@ -27,6 +27,7 @@ export interface BackFaceEntry {
 export interface BoardData {
   board: DeckBoard;
   stacks: BoardCard[];
+  commanders: Set<number>;
   groups: CardGroup[] | null;
   count: number;
   backFaces: Map<string, BackFaceEntry[]>;
@@ -45,7 +46,7 @@ function copies(cards: Card[]) {
   return cards.reduce((total, card) => total + (card.quantity ?? 1), 0);
 }
 
-export function commanderRank(card: Card, commanderIds: DeckBoardsInput['commanderIds']): number | null {
+function commanderRank(card: Card, commanderIds: DeckBoardsInput['commanderIds']): number | null {
   const ids = card.copy_ids?.length ? card.copy_ids : [card.id];
   const rank = commanderIds.findIndex((id) => id != null && ids.includes(id));
   return rank === -1 ? null : rank;
@@ -107,7 +108,10 @@ export function groupStacks(stacks: Card[], input: GroupingInput): GroupedStacks
 function buildBoard(board: DeckBoard, input: DeckBoardsInput): BoardData {
   const sorted = sortDeckCards(inBoard(input.cards, board), input.sort);
   const stacks = commandersFirst(stackCards(sorted, input.commanderIds, !input.separateByStorage), input.commanderIds);
-  return { board, stacks, count: copies(stacks), ...groupStacks(stacks, input) };
+  const commanders = new Set(
+    stacks.filter((card) => commanderRank(card, input.commanderIds) !== null).map((card) => card.id),
+  );
+  return { board, stacks, commanders, count: copies(stacks), ...groupStacks(stacks, input) };
 }
 
 export function buildDeckBoards(input: DeckBoardsInput): DeckBoardsData {

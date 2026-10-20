@@ -110,6 +110,14 @@ describe('buildDeckBoards commanders', () => {
     expect(boards.main.stacks.slice(0, 2).map((card) => card.quantity)).toEqual([1, 1]);
   });
 
+  it('marks the commander stacks of each board', () => {
+    const commander = deckCard(serraAngel, { board: 'sideboard' });
+    const cards = [deckCard(serraAngel), commander, deckCard(forest)];
+    const boards = buildDeckBoards(boardsInput(cards, [serraAngel, forest], { commanderIds: [commander.id] }));
+    expect([...boards.main.commanders]).toEqual([]);
+    expect([...boards.sideboard.commanders]).toEqual([commander.id]);
+  });
+
   it('puts a pending commander first', () => {
     const [commander] = pendingToCards([pendingCard(serraAngel, { id: 7, quantity: 1 })]);
     const cards = [deckCard(forest), commander];
