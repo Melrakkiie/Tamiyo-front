@@ -295,3 +295,72 @@ describe('rarity', () => {
     ['r:', /attend une valeur/],
   ]);
 });
+
+describe('set', () => {
+  it.each(
+    cases([
+      ['s:m10', grizzlyBears, true],
+      ['set:m10', grizzlyBears, true],
+      ['e:m10', grizzlyBears, true],
+      ['edition:m10', grizzlyBears, true],
+      ['s=m10', grizzlyBears, true],
+      ['s:M10', grizzlyBears, true],
+      ['s:mh2', grizzlyBears, false],
+      ['s:mh2', esperSentinel, true],
+      ['s:mh2', tarmogoyf, true],
+      ['s:mh', esperSentinel, false],
+      ['s:mh22', esperSentinel, false],
+      ['s!=mh2', esperSentinel, false],
+      ['s!=mh2', grizzlyBears, true],
+      ['-s:mh2', grizzlyBears, true],
+      ['s:khm', alrundGodOfTheCosmos, true],
+      ['s:mh2 or s:m10', grizzlyBears, true],
+    ]),
+  )('$search on $card.name: $matches', ({ search, card, matches: expected }) => {
+    expect(matches(search, card)).toBe(expected);
+  });
+
+  failsToParse([
+    ['s>m10', /« s » n'accepte pas « > »/],
+    ['set<=m10', /« set » n'accepte pas « <= »/],
+    ['e<m10', /« e » n'accepte pas « < »/],
+    ['s:', /attend une valeur/],
+  ]);
+});
+
+describe('collector number', () => {
+  it.each(
+    cases([
+      ['cn:186', grizzlyBears, true],
+      ['number:186', grizzlyBears, true],
+      ['cn=186', grizzlyBears, true],
+      ['cn:18', grizzlyBears, false],
+      ['cn:1860', grizzlyBears, false],
+      ['cn:0186', grizzlyBears, false],
+      ['cn!=186', grizzlyBears, false],
+      ['cn!=186', esperSentinel, true],
+      ['cn>100', grizzlyBears, true],
+      ['cn>100', esperSentinel, false],
+      ['cn<100', esperSentinel, true],
+      ['cn<100', grizzlyBears, false],
+      ['cn>=186', grizzlyBears, true],
+      ['cn>186', grizzlyBears, false],
+      ['cn<=12', esperSentinel, true],
+      ['cn<12', esperSentinel, false],
+      ['cn>=100 cn<=200', grizzlyBears, true],
+      ['cn:12★', starredPromo, true],
+      ['cn:12', starredPromo, false],
+      ['cn>10', starredPromo, false],
+      ['cn<100', starredPromo, false],
+      ['cn>=0', starredPromo, false],
+    ]),
+  )('$search on $card.name: $matches', ({ search, card, matches: expected }) => {
+    expect(matches(search, card)).toBe(expected);
+  });
+
+  failsToParse([
+    ['cn>x', /« x » n'est pas un nombre/],
+    ['cn<=abc', /« abc » n'est pas un nombre/],
+    ['cn:', /attend une valeur/],
+  ]);
+});
