@@ -23,6 +23,15 @@ export function commanderSlotOf(deck: DeckCommanders, card: Card): CommanderSlot
   return isPendingCard(card) ? pendingSlot(deck, pendingIdOf(card)) : cardSlot(deck, card.id);
 }
 
+export function commanderCardIds(deck: Partial<DeckCommanders>, cards: Card[]): number[] {
+  const pendingCopy = (pendingId: number | null | undefined) =>
+    pendingId == null ? undefined : cards.find((card) => isPendingCard(card) && pendingIdOf(card) === pendingId)?.id;
+  return [
+    deck.commander_id ?? pendingCopy(deck.commander_pending_id),
+    deck.partner_id ?? pendingCopy(deck.partner_pending_id),
+  ].filter((id): id is number => id !== undefined);
+}
+
 export function hasCommander(deck: DeckCommanders) {
   return deck.commander_id != null || deck.commander_pending_id != null;
 }
