@@ -8,6 +8,7 @@ import {
   forest,
   grizzlyBears,
   solRing,
+  sproutingThrinax,
   westvaleAbbey,
 } from './fixtures';
 import { matchesScryfallQuery, parseScryfallQuery } from './query';
@@ -69,6 +70,55 @@ describe('type', () => {
       ['t:instant', commitMemory, true],
       ['t:sorcery', commitMemory, true],
       ['t:creature', commitMemory, false],
+    ]),
+  )('$search on $card.name: $matches', ({ search, card, matches: expected }) => {
+    expect(matches(search, card)).toBe(expected);
+  });
+});
+
+describe('colors', () => {
+  it.each(
+    cases([
+      ['c=g', grizzlyBears, true],
+      ['c=g', sproutingThrinax, false],
+      ['c=g', solRing, false],
+      ['c=brg', sproutingThrinax, true],
+      ['c=gbr', sproutingThrinax, true],
+      ['c=jund', sproutingThrinax, true],
+      ['c=br', sproutingThrinax, false],
+      ['c>=g', grizzlyBears, true],
+      ['c>=g', sproutingThrinax, true],
+      ['c>=g', solRing, false],
+      ['c>=br', sproutingThrinax, true],
+      ['c>=br', grizzlyBears, false],
+      ['c:g', sproutingThrinax, true],
+      ['color:green', grizzlyBears, true],
+      ['c<=g', grizzlyBears, true],
+      ['c<=g', solRing, true],
+      ['c<=g', sproutingThrinax, false],
+      ['c<=brg', sproutingThrinax, true],
+      ['c<=brg', grizzlyBears, true],
+      ['c<=brg', esperSentinel, false],
+      ['c=u', delverOfSecrets, true],
+      ['c=u', alrundGodOfTheCosmos, true],
+      ['c=b', westvaleAbbey, true],
+      ['c=u', commitMemory, true],
+    ]),
+  )('$search on $card.name: $matches', ({ search, card, matches: expected }) => {
+    expect(matches(search, card)).toBe(expected);
+  });
+});
+
+describe('colorless', () => {
+  it.each(
+    cases([
+      ['c=c', solRing, true],
+      ['c=c', forest, true],
+      ['c:c', solRing, true],
+      ['c:colorless', solRing, true],
+      ['c=c', grizzlyBears, false],
+      ['c:c', esperSentinel, false],
+      ['c=c', westvaleAbbey, false],
     ]),
   )('$search on $card.name: $matches', ({ search, card, matches: expected }) => {
     expect(matches(search, card)).toBe(expected);
