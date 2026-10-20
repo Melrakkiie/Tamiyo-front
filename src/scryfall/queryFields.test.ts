@@ -209,3 +209,89 @@ describe('format', () => {
     ['f:', /attend une valeur/],
   ]);
 });
+
+describe('mana cost', () => {
+  it.each(
+    cases([
+      ['m:{1}{G}', grizzlyBears, true],
+      ['m:1g', grizzlyBears, true],
+      ['mana:1G', grizzlyBears, true],
+      ['m:g', grizzlyBears, true],
+      ['m:1', grizzlyBears, true],
+      ['m:gg', grizzlyBears, false],
+      ['m:2', grizzlyBears, false],
+      ['m:{G}{G}', grizzlyBears, false],
+      ['m=1g', grizzlyBears, true],
+      ['m=g', grizzlyBears, false],
+      ['m>=1g', grizzlyBears, true],
+      ['m>1g', grizzlyBears, false],
+      ['m>g', grizzlyBears, true],
+      ['m!=1g', grizzlyBears, false],
+      ['m!=g', grizzlyBears, true],
+      ['m:brg', sproutingThrinax, true],
+      ['m:rrr', sproutingThrinax, false],
+      ['m:3ww', serraAngel, true],
+      ['m:www', serraAngel, false],
+      ['m:uu', commitMemory, true],
+      ['m:uuu', commitMemory, true],
+      ['m:uuuuu', commitMemory, false],
+      ['m=3u', commitMemory, false],
+      ['m:u', delverOfSecrets, true],
+      ['m=u', delverOfSecrets, true],
+      ['m=3u', alrundGodOfTheCosmos, true],
+      ['m:w', westvaleAbbey, false],
+      ['m:g', forest, false],
+    ]),
+  )('$search on $card.name: $matches', ({ search, card, matches: expected }) => {
+    expect(matches(search, card)).toBe(expected);
+  });
+
+  failsToParse([
+    ['m<1g', /« m » n'accepte pas « < »/],
+    ['mana<=1g', /« mana » n'accepte pas « <= »/],
+    ['m:q', /« q » n'est pas un coût de mana/],
+    ['m:{}', /« \{\} » n'est pas un coût de mana/],
+    ['m:', /attend une valeur/],
+  ]);
+});
+
+describe('rarity', () => {
+  it.each(
+    cases([
+      ['r:common', grizzlyBears, true],
+      ['rarity:common', grizzlyBears, true],
+      ['r:c', grizzlyBears, true],
+      ['r:COMMON', grizzlyBears, true],
+      ['r=common', grizzlyBears, true],
+      ['r:common', esperSentinel, false],
+      ['r:uncommon', sproutingThrinax, true],
+      ['r:u', sproutingThrinax, true],
+      ['r:rare', esperSentinel, true],
+      ['r:mythic', tarmogoyf, true],
+      ['r:m', tarmogoyf, true],
+      ['r>=rare', esperSentinel, true],
+      ['r>=rare', tarmogoyf, true],
+      ['r>=rare', sproutingThrinax, false],
+      ['r>uncommon', esperSentinel, true],
+      ['r>uncommon', sproutingThrinax, false],
+      ['r<rare', sproutingThrinax, true],
+      ['r<rare', grizzlyBears, true],
+      ['r<rare', esperSentinel, false],
+      ['r<=common', grizzlyBears, true],
+      ['r<=common', sproutingThrinax, false],
+      ['r!=common', grizzlyBears, false],
+      ['r!=common', esperSentinel, true],
+      ['r:rare', starredPromo, false],
+      ['r>=common', starredPromo, false],
+      ['r<mythic', starredPromo, false],
+    ]),
+  )('$search on $card.name: $matches', ({ search, card, matches: expected }) => {
+    expect(matches(search, card)).toBe(expected);
+  });
+
+  failsToParse([
+    ['r:special', /« special » n'est pas une rareté/],
+    ['r>epic', /« epic » n'est pas une rareté/],
+    ['r:', /attend une valeur/],
+  ]);
+});
