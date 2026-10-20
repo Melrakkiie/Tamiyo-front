@@ -208,3 +208,76 @@ describe('toughness', () => {
     expect(matches(search, card)).toBe(expected);
   });
 });
+
+describe('and, or, not', () => {
+  it.each(
+    cases([
+      ['t:creature c=g', grizzlyBears, true],
+      ['t:creature c=g', esperSentinel, false],
+      ['t:creature c=g', forest, false],
+      ['t:artifact or t:land', solRing, true],
+      ['t:artifact or t:land', forest, true],
+      ['t:artifact or t:land', grizzlyBears, false],
+      ['t:artifact OR t:land', forest, true],
+      ['-t:creature', forest, true],
+      ['-t:creature', grizzlyBears, false],
+      ['t!=creature', forest, true],
+      ['t!=creature', grizzlyBears, false],
+      ['-(t:artifact or t:land)', grizzlyBears, true],
+      ['-(t:artifact or t:land)', solRing, false],
+      ['(t:artifact or t:land) c=c', solRing, true],
+      ['(t:artifact or t:land) c=c', forest, true],
+      ['(t:artifact or t:land) c=c', esperSentinel, false],
+      ['t:creature mv<=2 or t:land', grizzlyBears, true],
+      ['t:creature mv<=2 or t:land', forest, true],
+      ['t:creature mv<=2 or t:land', sproutingThrinax, false],
+    ]),
+  )('$search on $card.name: $matches', ({ search, card, matches: expected }) => {
+    expect(matches(search, card)).toBe(expected);
+  });
+});
+
+describe('quoting', () => {
+  it.each(
+    cases([
+      ['"grizzly bears"', grizzlyBears, true],
+      ['"grizzly bears"', tarmogoyf, false],
+      ['grizzly bears', grizzlyBears, true],
+      ['"bears grizzly"', grizzlyBears, false],
+      ['!"Grizzly Bears"', grizzlyBears, true],
+      ['!"Grizzly"', grizzlyBears, false],
+      ['t:"legendary creature"', westvaleAbbey, true],
+      ['t:"legendary creature"', grizzlyBears, false],
+      ['t:"creature — bear"', grizzlyBears, true],
+    ]),
+  )('$search on $card.name: $matches', ({ search, card, matches: expected }) => {
+    expect(matches(search, card)).toBe(expected);
+  });
+});
+
+describe('parse errors', () => {
+  it.each([
+    ['t:creature)', /\)/],
+    ['(t:creature', /parenthèse fermante manquante/],
+    ['()', /parenthèses vides/],
+    ['t:"legendary creature', /guillemet fermant manquant/],
+    ['mv>two', /« two » n'est pas un nombre/],
+    ['pow>=x', /« x » n'est pas un nombre/],
+    ['c=purple', /« purple » n'est pas une couleur/],
+    ['foo:bar', /mot-clé inconnu « foo »/],
+    ['t>creature', /« t » n'accepte pas « > »/],
+    ['t:', /attend une valeur/],
+    ['or t:land', /« or » doit être entre deux termes/],
+    ['is:commander', /ne s'applique qu'à ta collection/],
+  ])('%s fails with an error message', (search, message) => {
+    const parsed = parseScryfallQuery(search);
+    expect(parsed.node).toBeNull();
+    expect(parsed.error).toMatch(message);
+  });
+
+  it('treats a blank search as no search', () => {
+    const parsed = parseScryfallQuery('   ');
+    expect(parsed.error).toBeNull();
+    expect(matchesScryfallQuery(parsed.node, grizzlyBears, grizzlyBears.name)).toBe(true);
+  });
+});
