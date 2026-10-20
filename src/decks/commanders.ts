@@ -5,14 +5,14 @@ export type CommanderSlot = 'commander' | 'partner';
 
 export type DeckCommanders = Pick<Deck, 'commander_id' | 'commander_pending_id' | 'partner_id' | 'partner_pending_id'>;
 
-export function cardSlot(deck: DeckCommanders, cardId: number): CommanderSlot | null {
+function cardSlot(deck: DeckCommanders, cardId: number): CommanderSlot | null {
   if (deck.commander_id === cardId) {
     return 'commander';
   }
   return deck.partner_id === cardId ? 'partner' : null;
 }
 
-export function pendingSlot(deck: DeckCommanders, pendingId: number): CommanderSlot | null {
+function pendingSlot(deck: DeckCommanders, pendingId: number): CommanderSlot | null {
   if (deck.commander_pending_id === pendingId) {
     return 'commander';
   }
