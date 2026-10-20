@@ -7,11 +7,9 @@ import type { CardDisplay } from '../cards/CardDisplay';
 import { CardGroupsLayout } from '../cards/CardLayout';
 import { SectionTitle } from '../theme/SectionTitle';
 import type { CardGroup } from '../cards/grouping';
-import { useCardFaceTypes, useCardSubtypes } from '../scryfall/hooks';
-import { type BackFaceEntry, groupStacks } from './deckBoards';
+import type { BackFaceEntry } from './deckBoards';
 import { type DragItem, useDropTarget } from './dragDrop';
 import { StorageIcon } from '../storages/StorageLabel';
-import type { DeckCardGrouping } from './storageGrouping';
 
 function GroupCount({ label, cards, backFaces }: { label: string; cards: Card[]; backFaces: BackFaceEntry[] }) {
   const count = cards.reduce((total, card) => total + copyCount(card), 0);
@@ -64,29 +62,6 @@ export function BackFacesExtra({ label, count, backFaces }: BackFacesExtraProps)
   );
 }
 
-export interface DeckCardGrouped {
-  groups: CardGroup[];
-  backFaces: Map<string, BackFaceEntry[]>;
-}
-
-export function useDeckCardGroups(
-  stacks: Card[],
-  grouping: DeckCardGrouping | null,
-  storageNames: Map<number, string> = new Map(),
-  tagsOf: (card: Card) => string[] = () => [],
-): DeckCardGrouped {
-  const faceTypes = useCardFaceTypes(stacks.map((card) => card.scryfall_id));
-  const subtypes = useCardSubtypes(stacks.map((card) => card.scryfall_id));
-  const { groups, backFaces } = groupStacks(stacks, {
-    grouping,
-    faceTypes: faceTypes.data ?? {},
-    subtypes: subtypes.data ?? {},
-    storageNames,
-    tagsOf,
-  });
-  return { groups: groups ?? [], backFaces };
-}
-
 export interface GroupDrop {
   id: (group: CardGroup) => string | null;
   accepts: (group: CardGroup, item: DragItem) => boolean;
@@ -105,7 +80,9 @@ function GroupDropArea({ group, drop, children }: { group: CardGroup; drop?: Gro
   );
 }
 
-interface DeckCardGroupsProps extends DeckCardGrouped {
+interface DeckCardGroupsProps {
+  groups: CardGroup[];
+  backFaces: Map<string, BackFaceEntry[]>;
   display: CardDisplay;
   renderTile: (card: Card, group: CardGroup) => ReactNode;
   drop?: GroupDrop;
