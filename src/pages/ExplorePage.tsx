@@ -26,7 +26,7 @@ import { errorMessage } from '../api/errors';
 import { COLORLESS } from '../cards/advancedFilters';
 import { ColorChips } from '../cards/AdvancedSearch';
 import { COMMON_FORMATS } from '../decks/api';
-import { deckArtId } from '../decks/art';
+import { useDeckArts } from '../decks/art';
 import { BRACKETS, bracketName, GaugeIcon } from '../decks/bracket';
 import {
   activePublicFilterCount,
@@ -41,7 +41,6 @@ import {
 import { PublicDeckTile } from '../decks/PublicDeckTile';
 import { DebouncedTextInput } from '../layout/DebouncedTextInput';
 import { FilterIcon } from '../layout/FilterIcon';
-import { useCardArts } from '../scryfall/hooks';
 import { EmptyNote } from '../theme/EmptyNote';
 import { usePageTitle } from '../layout/usePageTitle';
 
@@ -179,7 +178,7 @@ export function ExplorePage() {
   const [advancedOpen, setAdvancedOpen] = useState(activeFilters > 0);
   const decks = usePublicDecks(filters);
   const results = decks.data?.data ?? [];
-  const arts = useCardArts(results.map(deckArtId));
+  const artOf = useDeckArts(results);
   const totalPages = decks.data?.total_pages ?? 0;
   const searching = filters.name !== '' || activeFilters > 0;
 
@@ -280,10 +279,9 @@ export function ExplorePage() {
         />
       ) : (
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} style={{ opacity: decks.isPlaceholderData ? 0.6 : undefined }}>
-          {results.map((deck) => {
-            const artId = deckArtId(deck);
-            return <PublicDeckTile key={deck.id} deck={deck} art={artId ? (arts.data?.[artId] ?? null) : null} />;
-          })}
+          {results.map((deck) => (
+            <PublicDeckTile key={deck.id} deck={deck} art={artOf(deck)} />
+          ))}
         </SimpleGrid>
       )}
 

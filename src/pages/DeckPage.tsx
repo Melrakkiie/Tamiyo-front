@@ -575,8 +575,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
             : ({ kind: 'none' } as const)
           : undefined,
         pendingStatus: showCollection && entry.kind === 'pending' ? pendingStatus(entry.pending) : undefined,
-        onContextMenu: (event, clicked) =>
-          contextMenu.open(event, cardMenu.menuFor(clicked, board, visuals.imageUrl(clicked))),
+        onContextMenu: (event, clicked, shown) => contextMenu.open(event, cardMenu.menuFor(clicked, board, shown)),
       },
       wrap: (tile) => <DraggableCard item={{ entry, board, tag: group?.tag ?? null, imageUrl }}>{tile}</DraggableCard>,
     };

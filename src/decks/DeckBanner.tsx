@@ -2,9 +2,8 @@ import { Box, Group, Paper, Stack, Text, Title } from '@mantine/core';
 import type { ReactNode } from 'react';
 
 import type { Deck } from '../api/types';
-import { useCardArts } from '../scryfall/hooks';
 import { isCommanderFormat } from './api';
-import { artBackground, artCredit, deckArtId } from './art';
+import { artBackground, artCredit, useDeckArts } from './art';
 import { BracketSticker } from './bracket';
 import { FormatSticker } from './FormatSticker';
 import { VisibilitySticker } from './visibility';
@@ -12,7 +11,16 @@ import { VisibilitySticker } from './visibility';
 type OnImageSlot = (onImage: boolean) => ReactNode;
 
 interface DeckBannerProps {
-  deck: Pick<Deck, 'name' | 'format' | 'visibility' | 'bracket' | 'background_scryfall_id' | 'commander_scryfall_id'>;
+  deck: Pick<
+    Deck,
+    | 'name'
+    | 'format'
+    | 'visibility'
+    | 'bracket'
+    | 'background_scryfall_id'
+    | 'background_face'
+    | 'commander_scryfall_id'
+  >;
   menu: OnImageSlot;
   like: OnImageSlot;
   value: OnImageSlot;
@@ -20,9 +28,7 @@ interface DeckBannerProps {
 }
 
 export function DeckBanner({ deck, menu, like, value, byline }: DeckBannerProps) {
-  const artId = deckArtId(deck);
-  const arts = useCardArts([artId]);
-  const art = artId ? (arts.data?.[artId] ?? null) : null;
+  const art = useDeckArts([deck])(deck);
   const onImage = art !== null;
 
   return (

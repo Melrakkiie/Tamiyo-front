@@ -3,6 +3,7 @@ import { notifications } from '@mantine/notifications';
 import { type ReactNode, useState } from 'react';
 
 import type { Card } from '../api/types';
+import type { CardFace } from '../scryfall/client';
 import { useScryfallCard } from '../scryfall/hooks';
 import { canBeFoil, canBeNonFoil } from '../scryfall/printing';
 
@@ -19,6 +20,11 @@ export interface ContextMenuEvent {
   shiftKey: boolean;
   nativeEvent: Event;
   preventDefault: () => void;
+}
+
+export interface ShownFace {
+  face: CardFace;
+  imageUrl: string | undefined;
 }
 
 export type OpenCardMenu = (event: ContextMenuEvent, content: ReactNode) => void;

@@ -21,10 +21,10 @@ import { useAccount } from '../auth/account';
 import { useCards } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
 import { useAllDecks } from '../decks/api';
-import { artBackground, deckArtId } from '../decks/art';
+import { artBackground, useDeckArts } from '../decks/art';
 import { DeckTile } from '../decks/DeckTile';
 import { usePageTitle } from '../layout/usePageTitle';
-import { useCardArts, useCardImages } from '../scryfall/hooks';
+import { useCardImages } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
 import { StorageArt } from '../storages/StorageArt';
 import { EmptyNote } from '../theme/EmptyNote';
@@ -172,8 +172,8 @@ export function HomePage() {
 
   const recentDecks = [...(decks.data ?? [])].sort((a, b) => b.updated.localeCompare(a.updated)).slice(0, RECENT_DECKS);
   const lastDeck = recentDecks[0];
-  const arts = useCardArts(recentDecks.map(deckArtId));
-  const lastArt = lastDeck ? arts.data?.[deckArtId(lastDeck) ?? ''] : undefined;
+  const artOf = useDeckArts(recentDecks);
+  const lastArt = lastDeck ? artOf(lastDeck) : undefined;
 
   const recentCards = latestCards(cards.data?.data ?? []);
   const images = useCardImages(recentCards.map((card) => card.scryfall_id));
@@ -243,17 +243,9 @@ export function HomePage() {
                 <SeeAll to="/decks">Tous les decks</SeeAll>
               </Group>
               <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="xl" verticalSpacing="xl" pt={6}>
-                {recentDecks.map((deck) => {
-                  const artId = deckArtId(deck);
-                  return (
-                    <DeckTile
-                      key={deck.id}
-                      deck={deck}
-                      art={artId ? (arts.data?.[artId] ?? null) : null}
-                      showVisibility={false}
-                    />
-                  );
-                })}
+                {recentDecks.map((deck) => (
+                  <DeckTile key={deck.id} deck={deck} art={artOf(deck)} showVisibility={false} />
+                ))}
               </SimpleGrid>
             </Stack>
           )}

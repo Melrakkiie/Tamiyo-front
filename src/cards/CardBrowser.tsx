@@ -191,9 +191,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
         manaCost={visuals.manaCost(card)}
         storageName={showStorage ? storageDirectory.nameOf(card.storage_id) : undefined}
         onOpen={openCard}
-        onContextMenu={(event, clicked) =>
-          contextMenu.open(event, cardMenu.menuFor(clicked, visuals.imageUrl(clicked)))
-        }
+        onContextMenu={(event, clicked, shown) => contextMenu.open(event, cardMenu.menuFor(clicked, shown))}
       />
     );
   }
