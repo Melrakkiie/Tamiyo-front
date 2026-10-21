@@ -1,3 +1,5 @@
+import { normalized } from '../scryfall/query';
+
 export interface CardPrinting {
   name: string;
   set: string;
@@ -14,11 +16,11 @@ function frontFace(name: string) {
   return name.split(' // ')[0];
 }
 
+const transliterations: Record<string, string> = { æ: 'ae', ø: 'o', ß: 'ss' };
+
 function edhrecSlug(name: string) {
-  return frontFace(name)
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
+  return normalized(frontFace(name))
+    .replace(/[æøß]/g, (letter) => transliterations[letter])
     .replace(/[^a-z0-9\s-]/g, '')
     .trim()
     .replace(/[\s-]+/g, '-');

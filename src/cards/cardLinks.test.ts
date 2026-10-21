@@ -34,6 +34,12 @@ describe('cardLinks edhrec', () => {
     expect(edhrec('Lim-Dûl the Necromancer')).toBe('https://edhrec.com/cards/lim-dul-the-necromancer');
   });
 
+  it('transliterates letters that do not decompose', () => {
+    expect(edhrec('Æther Vial')).toBe('https://edhrec.com/cards/aether-vial');
+    expect(edhrec('Jötun Grunt')).toBe('https://edhrec.com/cards/jotun-grunt');
+    expect(edhrec('Gauntlet of Pøwer ß')).toBe('https://edhrec.com/cards/gauntlet-of-power-ss');
+  });
+
   it('drops ampersands and collapses hyphens', () => {
     expect(edhrec('Fire & Ice')).toBe('https://edhrec.com/cards/fire-ice');
   });
