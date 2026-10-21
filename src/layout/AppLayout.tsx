@@ -81,7 +81,12 @@ export function AppLayout() {
               {navItems.map((item) => (
                 <Fragment key={item.to}>
                   {item.separated && <Divider orientation="vertical" mx={6} my={4} />}
-                  <HeaderNavLink label={item.label} to={item.to} active={isActive(item, pathname)} />
+                  <HeaderNavLink
+                    label={item.label}
+                    to={item.to}
+                    active={isActive(item, pathname)}
+                    withMoth={item.to !== '/'}
+                  />
                 </Fragment>
               ))}
             </Group>

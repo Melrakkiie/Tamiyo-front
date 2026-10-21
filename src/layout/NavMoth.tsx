@@ -76,10 +76,17 @@ function spotStyle(spot: { left: number; top: number }) {
   return { '--tamiyo-moth-left': `${spot.left}px`, '--tamiyo-moth-top': `${spot.top}px` } as CSSProperties;
 }
 
+export interface NavMothProps {
+  // CSS selector of the element whose hover (closest ancestor of the moth) makes it take off; none, no take-off.
+  trigger?: string;
+  // Also take off when the trigger gets keyboard focus.
+  focusTakeOff?: boolean;
+  // Drop shadow, for perches over an illustration.
+  shadow?: boolean;
+}
+
 // Perches on the last letter of its parent element, sized by that element's font.
-// trigger: CSS selector of the element whose hover (closest ancestor of the moth) makes it take off.
-// focusTakeOff: also take off when the trigger gets keyboard focus.
-export function NavMoth({ trigger, focusTakeOff = false }: { trigger: string; focusTakeOff?: boolean }) {
+export function NavMoth({ trigger, focusTakeOff = false, shadow = false }: NavMothProps) {
   const ref = useRef<HTMLSpanElement>(null);
   const [phase, setPhase] = useState<Phase>('land');
   const [style, setStyle] = useState<CSSProperties>();
@@ -89,8 +96,9 @@ export function NavMoth({ trigger, focusTakeOff = false }: { trigger: string; fo
   useLayoutEffect(() => {
     const moth = ref.current;
     const perch = moth?.parentElement;
-    const link = moth?.closest<HTMLElement>(trigger);
-    if (!moth || !perch || !link) return;
+    if (!moth || !perch) return;
+    const link = trigger ? moth.closest<HTMLElement>(trigger) : null;
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     let spot = restingSpot(perch);
     setHeight(mothSize(spot.fontSize).height);
@@ -104,7 +112,6 @@ export function NavMoth({ trigger, focusTakeOff = false }: { trigger: string; fo
       if (lastSpot && !lastSpot.flown && performance.now() - lastSpot.leftAt < 500) {
         const dx = lastSpot.x - here.x;
         const dy = lastSpot.y - here.y;
-        const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
         if ((dx || dy) && !still) journey.current = { dx, dy };
       }
     }
@@ -123,16 +130,25 @@ export function NavMoth({ trigger, focusTakeOff = false }: { trigger: string; fo
       setStyle(spotStyle(spot));
     }
 
-    let mounted = true;
-    void document.fonts.ready.then(() => {
-      if (!mounted) return;
+    // The perch's font can change with the web font loading or a breakpoint.
+    const refresh = () => {
       spot = restingSpot(perch);
       here = locate();
       setHeight(mothSize(spot.fontSize).height);
       setStyle((current) => ({ ...current, ...spotStyle(spot) }));
+    };
+    let mounted = true;
+    void document.fonts.ready.then(() => {
+      if (mounted) refresh();
     });
+    let resizing = 0;
+    const onResize = () => {
+      cancelAnimationFrame(resizing);
+      resizing = requestAnimationFrame(refresh);
+    };
+    window.addEventListener('resize', onResize);
 
-    let armed = !link.matches(':hover') && !(focusTakeOff && link.matches(':focus-visible'));
+    let armed = !!link && !still && !link.matches(':hover') && !(focusTakeOff && link.matches(':focus-visible'));
     let flown = false;
     const takeOff = () => {
       if (!armed) return;
@@ -141,27 +157,24 @@ export function NavMoth({ trigger, focusTakeOff = false }: { trigger: string; fo
       setPhase('flown');
     };
     const takeOffOnFocus = () => {
-      if (focusTakeOff && link.matches(':focus-visible')) takeOff();
+      if (focusTakeOff && link?.matches(':focus-visible')) takeOff();
     };
     const arm = () => {
-      armed = true;
+      armed = !still;
     };
-    const relocate = () => {
-      here = locate();
-    };
-    window.addEventListener('resize', relocate);
-    link.addEventListener('mouseenter', takeOff);
-    link.addEventListener('focus', takeOffOnFocus);
-    link.addEventListener('mouseleave', arm);
-    link.addEventListener('blur', arm);
+    link?.addEventListener('mouseenter', takeOff);
+    link?.addEventListener('focus', takeOffOnFocus);
+    link?.addEventListener('mouseleave', arm);
+    link?.addEventListener('blur', arm);
     return () => {
       mounted = false;
       flight?.cancel();
-      link.removeEventListener('mouseenter', takeOff);
-      link.removeEventListener('focus', takeOffOnFocus);
-      link.removeEventListener('mouseleave', arm);
-      link.removeEventListener('blur', arm);
-      window.removeEventListener('resize', relocate);
+      cancelAnimationFrame(resizing);
+      link?.removeEventListener('mouseenter', takeOff);
+      link?.removeEventListener('focus', takeOffOnFocus);
+      link?.removeEventListener('mouseleave', arm);
+      link?.removeEventListener('blur', arm);
+      window.removeEventListener('resize', onResize);
       lastSpot = { ...here, leftAt: performance.now(), flown };
     };
   }, []);
@@ -171,6 +184,7 @@ export function NavMoth({ trigger, focusTakeOff = false }: { trigger: string; fo
       ref={ref}
       className="tamiyo-nav-moth"
       data-phase={phase}
+      data-shadow={shadow || undefined}
       style={style}
       aria-hidden
       onAnimationEnd={(event) => {
