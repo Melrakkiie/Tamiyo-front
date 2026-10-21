@@ -1,15 +1,14 @@
 import { splitLastLetter } from './mothSpot';
-import { NavMoth, type NavMothProps } from './NavMoth';
+import { PerchingMoth, type PerchingMothProps } from './PerchingMoth';
 
-// The text, with the moth perched on its last letter.
-export function MothPerch({ text, ...moth }: { text: string } & NavMothProps) {
+export function MothPerch({ text, ...moth }: { text: string } & PerchingMothProps) {
   const { head, last } = splitLastLetter(text);
   return (
     <>
       {head}
       <span className="tamiyo-nav-perch">
         {last}
-        <NavMoth {...moth} />
+        <PerchingMoth {...moth} />
       </span>
     </>
   );

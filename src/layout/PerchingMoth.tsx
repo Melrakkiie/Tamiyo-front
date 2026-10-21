@@ -1,12 +1,12 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 
 import { LunaMoth } from '../theme/LunaMoth';
-import { flightPose, isRendered, mothSize, restingOffset } from './mothSpot';
+import { flightPose, isRendered, restingOffset, type Trip } from './mothSpot';
 
 type Phase = 'land' | 'travel' | 'perched' | 'flown';
 
 const restAngle = -20;
-const scale = 4;
+const oversample = 4;
 
 let lastSpot: { x: number; y: number; height: number; leftAt: number; flown: boolean } | null = null;
 
@@ -17,14 +17,14 @@ function restingSpot(perch: HTMLElement) {
 }
 
 function letterTip(style: CSSStyleDeclaration, fontSize: number, letter: string) {
-  const size = Math.ceil(fontSize * scale * 2);
+  const size = Math.ceil(fontSize * oversample * 2);
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
   const context = canvas.getContext('2d', { willReadFrequently: true });
   if (!context || !size) return null;
 
-  context.font = `${style.fontStyle} ${style.fontWeight} ${fontSize * scale}px ${style.fontFamily}`;
+  context.font = `${style.fontStyle} ${style.fontWeight} ${fontSize * oversample}px ${style.fontFamily}`;
   const origin = { x: size / 4, y: (size * 3) / 4 };
   context.fillText(letter, origin.x, origin.y);
   const { data } = context.getImageData(0, 0, size, size);
@@ -42,7 +42,7 @@ function letterTip(style: CSSStyleDeclaration, fontSize: number, letter: string)
   if (top < 0) return null;
 
   let tip = { x: -1, y: top };
-  for (let y = top; y <= top + scale / 2 && y < size; y++) {
+  for (let y = top; y <= top + oversample / 2 && y < size; y++) {
     for (let x = size - 1; x > tip.x; x--) {
       if (inked(x, y)) {
         tip = { x, y };
@@ -51,13 +51,22 @@ function letterTip(style: CSSStyleDeclaration, fontSize: number, letter: string)
     }
   }
 
-  const ascent = context.measureText(letter).fontBoundingBoxAscent / scale;
-  return { x: (tip.x + 0.5 - origin.x) / scale, y: ascent + (tip.y - origin.y) / scale };
+  const ascent = context.measureText(letter).fontBoundingBoxAscent / oversample;
+  return { x: (tip.x + 0.5 - origin.x) / oversample, y: ascent + (tip.y - origin.y) / oversample };
 }
 
-// Where the element will be once running CSS transitions have finished.
-function settledRect(element: HTMLElement) {
-  const running = document.getAnimations().filter((animation) => animation instanceof CSSTransition);
+function transitionsAround(element: HTMLElement) {
+  return document
+    .getAnimations()
+    .filter(
+      (animation): animation is CSSTransition =>
+        animation instanceof CSSTransition &&
+        animation.effect instanceof KeyframeEffect &&
+        !!animation.effect.target?.contains(element),
+    );
+}
+
+function rectAfterTransitions(element: HTMLElement, running = transitionsAround(element)) {
   const times = running.map((animation) => animation.currentTime);
   running.forEach((animation) => {
     animation.currentTime = animation.effect?.getComputedTiming().endTime ?? 0;
@@ -69,10 +78,7 @@ function settledRect(element: HTMLElement) {
   return box;
 }
 
-function journeyFrames(
-  trip: { dx: number; dy: number; fromHeight: number; toHeight: number },
-  duration: number,
-): Keyframe[] {
+function journeyFrames(trip: Trip, duration: number): Keyframe[] {
   const lift = Math.min(22, 10 + Math.abs(trip.dx) * 0.06);
   const bobs = Math.max(2, Math.round(duration / 300));
   const lean = -Math.sign(trip.dx) * 14;
@@ -93,24 +99,22 @@ function spotStyle(spot: { left: number; top: number }) {
   return { '--tamiyo-moth-left': `${spot.left}px`, '--tamiyo-moth-top': `${spot.top}px` } as CSSProperties;
 }
 
-export interface NavMothProps {
-  // CSS selector of the element whose hover (closest ancestor of the moth) makes it take off; none, no take-off.
+export interface PerchingMothProps {
+  // No trigger, no take-off.
   trigger?: string;
-  // Also take off when the trigger gets keyboard focus.
   focusTakeOff?: boolean;
-  // Drop shadow, for perches over an illustration.
   shadow?: boolean;
-  // Milliseconds after the pointer leaves before a moth that took off lands back; none, it stays flown.
+  // Without it, a moth that took off stays flown.
   returnAfter?: number;
 }
 
-// Perches on the last letter of its parent element, sized by that element's font.
-export function NavMoth({ trigger, focusTakeOff = false, shadow = false, returnAfter }: NavMothProps) {
+export function PerchingMoth({ trigger, focusTakeOff = false, shadow = false, returnAfter }: PerchingMothProps) {
   const ref = useRef<HTMLSpanElement>(null);
   const [phase, setPhase] = useState<Phase>('land');
   const [style, setStyle] = useState<CSSProperties>();
   const [height, setHeight] = useState(0);
-  const journey = useRef<{ dx: number; dy: number; fromHeight: number; toHeight: number } | null>(undefined);
+  const journey = useRef<Trip | null>(undefined);
+  const landing = useRef(false);
 
   useLayoutEffect(() => {
     const moth = ref.current;
@@ -120,10 +124,10 @@ export function NavMoth({ trigger, focusTakeOff = false, shadow = false, returnA
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     let spot = restingSpot(perch);
-    setHeight(mothSize(spot.fontSize).height);
+    setHeight(spot.fontSize);
     // A perch behind display: none (the header links on mobile) has no position to fly from or to.
     const locate = (settled = false) => {
-      const box = settled ? settledRect(perch) : perch.getBoundingClientRect();
+      const box = settled ? rectAfterTransitions(perch) : perch.getBoundingClientRect();
       return { x: box.left + spot.left, y: box.top + spot.top, rendered: isRendered(box) };
     };
     let here = locate(true);
@@ -132,7 +136,7 @@ export function NavMoth({ trigger, focusTakeOff = false, shadow = false, returnA
       if (here.rendered && lastSpot && !lastSpot.flown && performance.now() - lastSpot.leftAt < 500) {
         const dx = lastSpot.x - here.x;
         const dy = lastSpot.y - here.y;
-        const toHeight = mothSize(spot.fontSize).height;
+        const toHeight = spot.fontSize;
         if ((dx || dy || lastSpot.height !== toHeight) && !still) {
           journey.current = { dx, dy, fromHeight: lastSpot.height, toHeight };
         }
@@ -152,15 +156,19 @@ export function NavMoth({ trigger, focusTakeOff = false, shadow = false, returnA
       );
       // The page may still be sliding into place (the main area's padding eases when the sidebar goes);
       // keep the moth's path anchored to where the perch will end up.
-      const target = perch.getBoundingClientRect();
-      const settledTarget = settledRect(perch);
+      const startedFollowing = performance.now();
       const follow = () => {
+        const running = transitionsAround(perch);
+        if (!running.length || performance.now() - startedFollowing > 2000) {
+          moth.style.translate = '';
+          return;
+        }
         const box = perch.getBoundingClientRect();
-        const moving = settledTarget.left !== box.left || settledTarget.top !== box.top;
-        moth.style.translate = moving ? `${settledTarget.left - box.left}px ${settledTarget.top - box.top}px` : '';
-        if (moving) following = requestAnimationFrame(follow);
+        const settled = rectAfterTransitions(perch, running);
+        moth.style.translate = `${settled.left - box.left}px ${settled.top - box.top}px`;
+        following = requestAnimationFrame(follow);
       };
-      if (target.left !== settledTarget.left || target.top !== settledTarget.top) follow();
+      follow();
     } else {
       setStyle(spotStyle(spot));
     }
@@ -169,7 +177,7 @@ export function NavMoth({ trigger, focusTakeOff = false, shadow = false, returnA
     const refresh = () => {
       spot = restingSpot(perch);
       here = locate();
-      setHeight(mothSize(spot.fontSize).height);
+      setHeight(spot.fontSize);
       setStyle((current) => ({ ...current, ...spotStyle(spot) }));
     };
     let mounted = true;
@@ -188,7 +196,7 @@ export function NavMoth({ trigger, focusTakeOff = false, shadow = false, returnA
     let returning = 0;
     const takeOff = () => {
       clearTimeout(returning);
-      if (!armed) return;
+      if (!armed || landing.current) return;
       flown = true;
       flight?.cancel();
       setPhase('flown');
@@ -205,6 +213,7 @@ export function NavMoth({ trigger, focusTakeOff = false, shadow = false, returnA
       clearTimeout(returning);
       returning = window.setTimeout(() => {
         flown = false;
+        landing.current = true;
         setPhase('land');
       }, returnAfter);
     };
@@ -218,6 +227,7 @@ export function NavMoth({ trigger, focusTakeOff = false, shadow = false, returnA
       flight?.cancel();
       cancelAnimationFrame(resizing);
       cancelAnimationFrame(following);
+      moth.style.translate = '';
       link?.removeEventListener('pointerenter', takeOffOnPointer);
       link?.removeEventListener('focus', takeOffOnFocus);
       link?.removeEventListener('pointerleave', arm);
@@ -226,7 +236,7 @@ export function NavMoth({ trigger, focusTakeOff = false, shadow = false, returnA
       const last = locate();
       const leaving = last.rendered ? last : here;
       lastSpot = leaving.rendered
-        ? { x: leaving.x, y: leaving.y, height: mothSize(spot.fontSize).height, leftAt: performance.now(), flown }
+        ? { x: leaving.x, y: leaving.y, height: spot.fontSize, leftAt: performance.now(), flown }
         : null;
     };
   }, []);
@@ -240,7 +250,9 @@ export function NavMoth({ trigger, focusTakeOff = false, shadow = false, returnA
       style={style}
       aria-hidden
       onAnimationEnd={(event) => {
-        if (event.target === event.currentTarget && phase !== 'flown') setPhase('perched');
+        if (event.target !== event.currentTarget || phase === 'flown') return;
+        landing.current = false;
+        setPhase('perched');
       }}
     >
       <span className="tamiyo-nav-moth-wings">

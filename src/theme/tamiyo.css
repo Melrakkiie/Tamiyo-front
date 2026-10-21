@@ -331,6 +331,10 @@ h6,
   animation: tamiyo-moth-land 1.1s ease-in-out;
 }
 
+.tamiyo-nav-moth[data-phase='travel'] {
+  z-index: 200;
+}
+
 .tamiyo-nav-moth[data-phase='flown'] {
   animation: tamiyo-moth-flight 1.2s ease-in forwards;
 }
