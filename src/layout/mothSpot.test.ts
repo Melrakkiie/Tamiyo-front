@@ -1,6 +1,24 @@
 import { describe, expect, it } from 'vitest';
 
-import { mothSize, restingOffset } from './mothSpot';
+import { mothSize, restingOffset, splitLastLetter } from './mothSpot';
+
+describe('splitLastLetter', () => {
+  it('splits a title before its last letter', () => {
+    expect(splitLastLetter("Le carnet d'Aurore")).toEqual({ head: "Le carnet d'Auror", last: 'e' });
+  });
+
+  it('keeps a combining accent with its letter', () => {
+    expect(splitLastLetter('Le carnet de Zoë')).toEqual({ head: 'Le carnet de Zo', last: 'ë' });
+  });
+
+  it('keeps an emoji whole', () => {
+    expect(splitLastLetter('Le carnet de Lune 🌙')).toEqual({ head: 'Le carnet de Lune ', last: '🌙' });
+  });
+
+  it('perches a single letter on itself', () => {
+    expect(splitLastLetter('A')).toEqual({ head: '', last: 'A' });
+  });
+});
 
 describe('mothSize', () => {
   it('keeps the nav moth at 16px on a 16px perch', () => {
