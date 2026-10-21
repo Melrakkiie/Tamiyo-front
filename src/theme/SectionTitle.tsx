@@ -22,7 +22,7 @@ interface SectionTitleProps {
 export function SectionTitle({ children, count }: SectionTitleProps) {
   return (
     <Group gap={8} wrap="nowrap" align="center">
-      <Title order={4} style={{ flexShrink: 0, minWidth: 0 }}>
+      <Title order={4} style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
         {children}
       </Title>
       {count !== undefined && (
