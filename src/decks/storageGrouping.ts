@@ -1,4 +1,5 @@
 import { type CardGroup, type CardGrouping, groupingOptions, noSubtypeLabel } from '../cards/grouping';
+import { UNKNOWN_STORAGE } from '../storages/storageDirectory';
 import type { DeckEntry } from './deckEntries';
 
 export type DeckCardGrouping = CardGrouping | 'storage' | 'tag';
@@ -66,7 +67,10 @@ export function groupBySubtype<T>(cards: T[], subtypesOf: (card: T) => string[])
   return groups;
 }
 
-export function groupByStorage<E extends DeckEntry>(entries: E[], storageNames: Map<number, string>): CardGroup<E>[] {
+export function groupByStorage<E extends DeckEntry>(
+  entries: E[],
+  storageNames: ReadonlyMap<number, string>,
+): CardGroup<E>[] {
   const byStorage = new Map<number, E[]>();
   const unknownStorage: E[] = [];
   const withoutStorage: E[] = [];
@@ -90,7 +94,7 @@ export function groupByStorage<E extends DeckEntry>(entries: E[], storageNames: 
     }))
     .sort((a, b) => a.label.localeCompare(b.label, 'fr', { sensitivity: 'base' }));
   if (unknownStorage.length > 0) {
-    groups.push({ label: 'Rangement inconnu', cards: unknownStorage, storage: true });
+    groups.push({ label: UNKNOWN_STORAGE, cards: unknownStorage, storage: true });
   }
   if (withoutStorage.length > 0) {
     groups.push({ label: 'Sans rangement', cards: withoutStorage, storage: true });

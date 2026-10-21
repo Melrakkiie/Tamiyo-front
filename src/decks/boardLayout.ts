@@ -16,7 +16,7 @@ export interface DeckBoardsInput<E extends DeckEntry = DeckEntry> {
   separateByStorage: boolean;
   faceTypes: Record<string, FaceTypes | undefined>;
   subtypes: Record<string, string[] | undefined>;
-  storageNames: Map<number, string>;
+  storageNames: ReadonlyMap<number, string>;
   tagsOf: (entry: Taggable) => string[];
 }
 
