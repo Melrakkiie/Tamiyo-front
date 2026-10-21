@@ -1,14 +1,14 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 
 import { LunaMoth } from '../theme/LunaMoth';
-import { mothSize, restingOffset } from './mothSpot';
+import { flightPose, isRendered, mothSize, restingOffset } from './mothSpot';
 
 type Phase = 'land' | 'travel' | 'perched' | 'flown';
 
 const restAngle = -20;
 const scale = 4;
 
-let lastSpot: { x: number; y: number; leftAt: number; flown: boolean } | null = null;
+let lastSpot: { x: number; y: number; height: number; leftAt: number; flown: boolean } | null = null;
 
 function restingSpot(perch: HTMLElement) {
   const style = getComputedStyle(perch);
@@ -55,20 +55,37 @@ function letterTip(style: CSSStyleDeclaration, fontSize: number, letter: string)
   return { x: (tip.x + 0.5 - origin.x) / scale, y: ascent + (tip.y - origin.y) / scale };
 }
 
-function journeyFrames(dx: number, dy: number, duration: number): Keyframe[] {
-  const lift = Math.min(22, 10 + Math.abs(dx) * 0.06);
+// Where the element will be once running CSS transitions have finished.
+function settledRect(element: HTMLElement) {
+  const running = document.getAnimations().filter((animation) => animation instanceof CSSTransition);
+  const times = running.map((animation) => animation.currentTime);
+  running.forEach((animation) => {
+    animation.currentTime = animation.effect?.getComputedTiming().endTime ?? 0;
+  });
+  const box = element.getBoundingClientRect();
+  running.forEach((animation, i) => {
+    animation.currentTime = times[i];
+  });
+  return box;
+}
+
+function journeyFrames(
+  trip: { dx: number; dy: number; fromHeight: number; toHeight: number },
+  duration: number,
+): Keyframe[] {
+  const lift = Math.min(22, 10 + Math.abs(trip.dx) * 0.06);
   const bobs = Math.max(2, Math.round(duration / 300));
-  const lean = -Math.sign(dx) * 14;
+  const lean = -Math.sign(trip.dx) * 14;
   const steps = Math.ceil(duration / 16);
   return Array.from({ length: steps + 1 }, (_, i) => {
     const t = i / steps;
     const progress = (1 - Math.cos(Math.PI * t)) / 2;
     const airborne = Math.sin(Math.PI * t);
     const flutter = Math.sin(2 * Math.PI * bobs * t) + 0.5 * Math.sin(2 * Math.PI * bobs * 1.7 * t + 0.5);
-    const x = dx * (1 - progress);
-    const y = dy * (1 - progress) - lift * Math.sin(Math.PI * progress) - 2 * flutter * airborne;
+    const pose = flightPose(trip, progress);
+    const y = pose.y - lift * Math.sin(Math.PI * progress) - 2 * flutter * airborne;
     const angle = restAngle * (1 - airborne) + (lean + 6 * flutter) * airborne;
-    return { transform: `translate(${x}px, ${y}px) rotate(${angle}deg)` };
+    return { transform: `translate(${pose.x}px, ${y}px) rotate(${angle}deg) scale(${pose.scale})` };
   });
 }
 
@@ -93,7 +110,7 @@ export function NavMoth({ trigger, focusTakeOff = false, shadow = false, returnA
   const [phase, setPhase] = useState<Phase>('land');
   const [style, setStyle] = useState<CSSProperties>();
   const [height, setHeight] = useState(0);
-  const journey = useRef<{ dx: number; dy: number } | null>(undefined);
+  const journey = useRef<{ dx: number; dy: number; fromHeight: number; toHeight: number } | null>(undefined);
 
   useLayoutEffect(() => {
     const moth = ref.current;
@@ -104,30 +121,46 @@ export function NavMoth({ trigger, focusTakeOff = false, shadow = false, returnA
 
     let spot = restingSpot(perch);
     setHeight(mothSize(spot.fontSize).height);
-    const locate = () => {
-      const box = perch.getBoundingClientRect();
-      return { x: box.left + spot.left, y: box.top + spot.top };
+    // A perch behind display: none (the header links on mobile) has no position to fly from or to.
+    const locate = (settled = false) => {
+      const box = settled ? settledRect(perch) : perch.getBoundingClientRect();
+      return { x: box.left + spot.left, y: box.top + spot.top, rendered: isRendered(box) };
     };
-    let here = locate();
+    let here = locate(true);
     if (journey.current === undefined) {
       journey.current = null;
-      if (lastSpot && !lastSpot.flown && performance.now() - lastSpot.leftAt < 500) {
+      if (here.rendered && lastSpot && !lastSpot.flown && performance.now() - lastSpot.leftAt < 500) {
         const dx = lastSpot.x - here.x;
         const dy = lastSpot.y - here.y;
-        if ((dx || dy) && !still) journey.current = { dx, dy };
+        const toHeight = mothSize(spot.fontSize).height;
+        if ((dx || dy || lastSpot.height !== toHeight) && !still) {
+          journey.current = { dx, dy, fromHeight: lastSpot.height, toHeight };
+        }
       }
     }
     const trip = journey.current;
     let flight: Animation | null = null;
+    let following = 0;
     if (trip) {
       const duration = Math.min(1800, 900 + Math.hypot(trip.dx, trip.dy) * 2.5);
       setStyle({ ...spotStyle(spot), '--tamiyo-moth-duration': `${duration}ms` } as CSSProperties);
       setPhase((current) => (current === 'land' ? 'travel' : current));
-      flight = moth.animate(journeyFrames(trip.dx, trip.dy, duration), duration);
+      flight = moth.animate(journeyFrames(trip, duration), duration);
       flight.finished.then(
         () => setPhase((current) => (current === 'travel' ? 'perched' : current)),
         () => {},
       );
+      // The page may still be sliding into place (the main area's padding eases when the sidebar goes);
+      // keep the moth's path anchored to where the perch will end up.
+      const target = perch.getBoundingClientRect();
+      const settledTarget = settledRect(perch);
+      const follow = () => {
+        const box = perch.getBoundingClientRect();
+        const moving = settledTarget.left !== box.left || settledTarget.top !== box.top;
+        moth.style.translate = moving ? `${settledTarget.left - box.left}px ${settledTarget.top - box.top}px` : '';
+        if (moving) following = requestAnimationFrame(follow);
+      };
+      if (target.left !== settledTarget.left || target.top !== settledTarget.top) follow();
     } else {
       setStyle(spotStyle(spot));
     }
@@ -184,12 +217,17 @@ export function NavMoth({ trigger, focusTakeOff = false, shadow = false, returnA
       clearTimeout(returning);
       flight?.cancel();
       cancelAnimationFrame(resizing);
+      cancelAnimationFrame(following);
       link?.removeEventListener('pointerenter', takeOffOnPointer);
       link?.removeEventListener('focus', takeOffOnFocus);
       link?.removeEventListener('pointerleave', arm);
       link?.removeEventListener('blur', arm);
       window.removeEventListener('resize', onResize);
-      lastSpot = { ...here, leftAt: performance.now(), flown };
+      const last = locate();
+      const leaving = last.rendered ? last : here;
+      lastSpot = leaving.rendered
+        ? { x: leaving.x, y: leaving.y, height: mothSize(spot.fontSize).height, leftAt: performance.now(), flown }
+        : null;
     };
   }, []);
 
