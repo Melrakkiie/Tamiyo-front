@@ -35,7 +35,7 @@ export function CardLinkTiles({ printing, placement }: CardLinkTilesProps) {
       gap={0}
       wrap="nowrap"
       w="fit-content"
-      mx={underImage ? 'auto' : undefined}
+      mx="auto"
       mt={underImage ? 'xs' : undefined}
       visibleFrom={underImage ? 'sm' : undefined}
       hiddenFrom={underImage ? undefined : 'sm'}
