@@ -209,6 +209,7 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
             ? { kind: 'pending', item: entry.pending }
             : { kind: 'card', card: entry, board: entry.board }
         }
+        entry={entry}
         deckCardIds={deckCardIds}
         commanderSlot={commanderSlot}
         onSwapped={onSwapped}

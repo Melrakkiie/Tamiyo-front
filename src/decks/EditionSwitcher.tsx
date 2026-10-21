@@ -21,7 +21,7 @@ import { PrintingPrice } from '../cards/price';
 import type { ScryfallCard } from '../scryfall/client';
 import { useCardImages, usePrintings } from '../scryfall/hooks';
 import { EditionSearchInput, NoEditionMatch } from '../scryfall/EditionSearchInput';
-import { foilFor, matchesEdition, printingDetails } from '../scryfall/printing';
+import { foilFor, printingDetails } from '../scryfall/printing';
 import { PrintingGrid } from '../scryfall/PrintingGrid';
 import { SetIcon } from '../scryfall/SetIcon';
 import { useStorageDirectory } from '../storages/useStorageDirectory';
@@ -34,12 +34,15 @@ import {
   useSwapDeckCard,
 } from './api';
 import type { CommanderSlot } from './commanders';
+import type { DeckEntry } from './deckEntries';
+import { editionChoices } from './editionChoices';
 
 export type EditionSource = { kind: 'card'; card: Card; board: DeckBoard } | { kind: 'pending'; item: PendingCard };
 
 interface EditionSwitcherProps {
   deckId: string;
   source: EditionSource;
+  entry: DeckEntry;
   deckCardIds: Set<number>;
   commanderSlot: CommanderSlot | null;
   onSwapped: (next: EditionSource) => void;
@@ -49,30 +52,35 @@ function sourceDetails(source: EditionSource) {
   return source.kind === 'card' ? source.card : source.item;
 }
 
-export function EditionSwitcher({ deckId, source, deckCardIds, commanderSlot, onSwapped }: EditionSwitcherProps) {
+export function EditionSwitcher({
+  deckId,
+  source,
+  entry,
+  deckCardIds,
+  commanderSlot,
+  onSwapped,
+}: EditionSwitcherProps) {
   const becomes = commanderSlot === 'partner' ? 'le second commandant' : 'le commandant';
   const current = sourceDetails(source);
   const copies = useCollectionCopies(current.name, current.scryfall_id);
-  const owned = (copies.data ?? []).filter(
-    (copy) => !(source.kind === 'card' && copy.id === source.card.id) && !deckCardIds.has(copy.id),
-  );
   const printings = usePrintings(current.name);
+  const storages = useStorageDirectory(deckId);
+  const [showClosed, setShowClosed] = useState(false);
+  const [query, setQuery] = useState('');
+  const choices = editionChoices({
+    source: entry,
+    copies: copies.data ?? [],
+    printings: printings.data ?? [],
+    deckCardIds,
+    isLocked: storages.isLocked,
+    showLocked: showClosed,
+    query,
+  });
   const images = useCardImages(
-    owned.map((copy) => copy.scryfall_id),
+    choices.offered.map((copy) => copy.scryfall_id),
     'small',
   );
-  const storages = useStorageDirectory(deckId);
-  const isClosed = (copy: Card) => storages.isLocked(copy.storage_id);
-  const ownedPrintings = new Set(owned.filter((copy) => !isClosed(copy)).map((copy) => copy.scryfall_id));
-  const others = (printings.data ?? []).filter(
-    (printing) => printing.id !== current.scryfall_id && !ownedPrintings.has(printing.id),
-  );
-  const closedCount = owned.filter(isClosed).length;
-  const [showClosed, setShowClosed] = useState(false);
-  const unlocked = showClosed ? owned : owned.filter((copy) => !isClosed(copy));
   const byId = new Map((printings.data ?? []).map((printing) => [printing.id, printing]));
-  const [query, setQuery] = useState('');
-  const shown = unlocked.filter((copy) => matchesEdition(query, byId.get(copy.scryfall_id)?.set_name, copy.set_code));
 
   const swap = useSwapDeckCard();
   const swapPending = useReplacePendingWithOwned();
@@ -128,26 +136,27 @@ export function EditionSwitcher({ deckId, source, deckCardIds, commanderSlot, on
           </Center>
         ) : copies.error ? (
           <Alert color="red">{errorMessage(copies.error)}</Alert>
-        ) : owned.length === 0 ? (
+        ) : choices.offered.length === 0 && choices.hiddenLocked === 0 ? (
           <Text size="sm" c="dimmed">
             Aucun autre exemplaire de cette carte dans ta collection (en dehors de ce deck).
           </Text>
         ) : (
           <>
             <Text size="xs" c="dimmed">
-              {unlocked.length === 0
+              {choices.offered.length === 0
                 ? 'Tous les autres exemplaires de ta collection sont dans des rangements verrouillés pour ce deck.'
                 : `Dans ta collection : clique sur un exemplaire pour le mettre dans le deck à la place de celui-ci.${commanderSlot ? ` Il deviendra aussi ${becomes}.` : ''}`}
             </Text>
-            {closedCount > 0 && !showClosed && (
+            {choices.hiddenLocked > 0 && (
               <Anchor component="button" type="button" size="xs" ta="left" onClick={() => setShowClosed(true)}>
-                Voir {closedCount} exemplaire{closedCount > 1 ? 's' : ''} dans des rangements verrouillés
+                Voir {choices.hiddenLocked} exemplaire{choices.hiddenLocked > 1 ? 's' : ''} dans des rangements
+                verrouillés
               </Anchor>
             )}
-            {unlocked.length > 0 && <EditionSearchInput value={query} onChange={setQuery} />}
-            {unlocked.length > 0 && shown.length === 0 && <NoEditionMatch />}
+            {choices.offered.length > 0 && <EditionSearchInput value={query} onChange={setQuery} />}
+            {choices.offered.length > 0 && choices.copies.length === 0 && <NoEditionMatch />}
             <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
-              {shown.map((copy) => {
+              {choices.copies.map((copy) => {
                 const printing = byId.get(copy.scryfall_id);
                 return (
                   <UnstyledButton key={copy.id} onClick={() => chooseOwned(copy)} disabled={busy}>
@@ -161,7 +170,10 @@ export function EditionSwitcher({ deckId, source, deckCardIds, commanderSlot, on
                         {copy.proxy && <ProxySticker />}
                       </Group>
                       <Group gap={4} justify="space-between" align="center" wrap="nowrap">
-                        <StorageLabel name={storages.nameOf(copy.storage_id)} locked={isClosed(copy)} />
+                        <StorageLabel
+                          name={storages.nameOf(copy.storage_id)}
+                          locked={storages.isLocked(copy.storage_id)}
+                        />
                         <SetIcon setCode={copy.set_code} size={22} />
                       </Group>
                       {printing && <PrintingPrice printing={printing} foil={copy.foil} size="sm" />}
@@ -184,7 +196,7 @@ export function EditionSwitcher({ deckId, source, deckCardIds, commanderSlot, on
           </Center>
         ) : printings.error ? (
           <Alert color="red">{errorMessage(printings.error)}</Alert>
-        ) : others.length === 0 ? (
+        ) : choices.others.length === 0 ? (
           <Text size="sm" c="dimmed">
             Aucune autre édition papier de cette carte sur Scryfall.
           </Text>
@@ -196,7 +208,7 @@ export function EditionSwitcher({ deckId, source, deckCardIds, commanderSlot, on
                 : "L'édition choisie remplace celle-ci dans le deck, toujours en orange."}
               {commanderSlot ? ` Elle deviendra aussi ${becomes}.` : ''}
             </Text>
-            <PrintingGrid printings={others} disabled={busy} foil={current.foil} onSelect={choosePrinting} />
+            <PrintingGrid printings={choices.others} disabled={busy} foil={current.foil} onSelect={choosePrinting} />
           </>
         )}
       </Stack>
