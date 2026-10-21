@@ -2,14 +2,19 @@ import { Alert, Card, Center, Grid, Loader, SimpleGrid, Stack, Text, Title } fro
 import { type ReactNode, useState } from 'react';
 
 import { ApiError, errorMessage } from '../api/errors';
-import type { DeckStats } from '../api/types';
+import type { Deck, DeckStats } from '../api/types';
 import { formatPrice, PriceText, usePriceCurrency } from '../cards/price';
-import { useDeckStats } from './api';
+import { useDeckCards, useDeckCombos, useDeckStats, usePendingCards } from './api';
 import { withSymbols } from '../scryfall/manaSymbols';
 import { BarList } from './charts';
+import { type CombosQuery, comboDeckList, commanderSpellbookUrl } from './combos';
+import { CombosSection, CombosTileValue } from './CombosSection';
+import { commanderTargets } from './commanders';
 import { BackFacesExtra } from './DeckCardGroups';
 import { CurveCardList } from './CurveCardList';
+import { deckEntries, entryMatches } from './deckEntries';
 import { CurveLegend, fullCurve, ManaCurveChart } from './ManaCurveChart';
+import { formatTotalManaValue } from './manaValue';
 
 const COLORS: { key: string; name: string; color: string }[] = [
   { key: 'W', name: 'Blanc', color: '#F8F6D8' },
@@ -46,17 +51,37 @@ function StatTile({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
-export function DeckStatsPanel({ deckId }: { deckId: string }) {
-  return <DeckStatsView stats={useDeckStats(deckId, true)} />;
+function useComboCreditUrl(deck: Deck) {
+  const cards = useDeckCards(deck.id, 'name');
+  const pending = usePendingCards(deck.id);
+  const commanders = commanderTargets(deck);
+  if (!cards.data || !pending.data) {
+    return undefined;
+  }
+  const entries = deckEntries(cards.data, pending.data).map((entry) => ({
+    name: entry.name,
+    board: entry.board,
+    commander: commanders.some((target) => entryMatches(entry, target)),
+  }));
+  return commanderSpellbookUrl(comboDeckList(entries));
+}
+
+export function DeckStatsPanel({ deck }: { deck: Deck }) {
+  const stats = useDeckStats(deck.id, true);
+  const combos = useDeckCombos(deck.id, (stats.data?.card_count ?? 0) > 0);
+  const creditUrl = useComboCreditUrl(deck);
+  return <DeckStatsView stats={stats} combos={{ query: combos, creditUrl }} />;
 }
 
 interface DeckStatsViewProps {
   stats: { data: DeckStats | undefined; error: Error | null; isLoading: boolean };
+  combos?: { query: CombosQuery; creditUrl: string | undefined };
   emptyMessage?: string;
 }
 
 export function DeckStatsView({
   stats,
+  combos,
   emptyMessage = 'Ajoute des cartes au deck pour voir ses statistiques.',
 }: DeckStatsViewProps) {
   const [selectedManaValue, setSelectedManaValue] = useState<number | null>(null);
@@ -101,36 +126,41 @@ export function DeckStatsView({
   const curve = fullCurve(data.mana_curve ?? []);
   const selectedBucket = curve.find((bucket) => bucket.mana_value === selectedManaValue && bucket.count > 0);
 
+  const tiles = [
+    <StatTile key="cards" label="Cartes" value={data.card_count} />,
+    <StatTile
+      key="lands"
+      label="Terrains"
+      value={
+        <>
+          {data.land_count}{' '}
+          <Text span size="sm" fw={400} c="dimmed">
+            <BackFacesExtra label="Terrains" count={data.land_count} backFaces={data.back_face_lands ?? []} />
+          </Text>
+        </>
+      }
+    />,
+    <StatTile key="total" label="Coût de mana total" value={formatTotalManaValue(data.total_mana_value)} />,
+    <StatTile key="average" label="Coût de mana moyen" value={data.average_mana_value.toFixed(2)} />,
+    combos && <StatTile key="combos" label="Combos" value={<CombosTileValue combos={combos.query} />} />,
+    currency && (
+      <StatTile
+        key="price"
+        label="Prix"
+        value={
+          <PriceText span fz={26} lh={1}>
+            {formatPrice(data.value[currency], currency)}
+          </PriceText>
+        }
+      />
+    ),
+  ].filter(Boolean);
+
   return (
     <Stack gap="xl">
       {stats.error instanceof ApiError && <Alert color="orange">{errorMessage(stats.error)}</Alert>}
 
-      <SimpleGrid cols={{ base: 2, sm: currency ? 5 : 4 }}>
-        <StatTile label="Cartes" value={data.card_count} />
-        <StatTile
-          label="Terrains"
-          value={
-            <>
-              {data.land_count}{' '}
-              <Text span size="sm" fw={400} c="dimmed">
-                <BackFacesExtra label="Terrains" count={data.land_count} backFaces={data.back_face_lands ?? []} />
-              </Text>
-            </>
-          }
-        />
-        <StatTile label="Hors terrains" value={data.nonland_count} />
-        <StatTile label="Coût de mana moyen" value={data.average_mana_value.toFixed(2)} />
-        {currency && (
-          <StatTile
-            label="Prix"
-            value={
-              <PriceText span fz={26} lh={1}>
-                {formatPrice(data.value[currency], currency)}
-              </PriceText>
-            }
-          />
-        )}
-      </SimpleGrid>
+      <SimpleGrid cols={{ base: 2, sm: tiles.length }}>{tiles}</SimpleGrid>
 
       <Stack gap="xs">
         <Title order={3} size="h5">
@@ -188,6 +218,8 @@ export function DeckStatsView({
           <BarList data={types} ariaLabel="Répartition par type" />
         </Stack>
       </SimpleGrid>
+
+      {combos && <CombosSection combos={combos.query} creditUrl={combos.creditUrl} />}
     </Stack>
   );
 }

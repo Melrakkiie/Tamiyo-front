@@ -24,6 +24,7 @@ import { LikeButton, LikeCount } from '../decks/LikeButton';
 import { CollectionToggle } from '../decks/CollectionToggle';
 import { CompareDeckModal } from '../decks/CompareDeckModal';
 import { useDeckCopyActions } from '../decks/DeckCopyActions';
+import { comboDeckList, commanderSpellbookUrl } from '../decks/combos';
 import { DeckStatsView } from '../decks/DeckStatsPanel';
 import { ExportDeckModal } from '../decks/ExportDeckModal';
 import {
@@ -32,6 +33,7 @@ import {
   sharedDeckSortOptions,
   useDeckOwnership,
   useSharedDeck,
+  useSharedDeckCombos,
   useSharedDeckLegality,
   useSharedDeckStats,
 } from '../decks/shared';
@@ -56,6 +58,7 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
   const [tab, setTab] = useState<string | null>('cards');
   const currency = usePriceCurrency();
   const stats = useSharedDeckStats(deckId, tab === 'stats' || currency !== null);
+  const combos = useSharedDeckCombos(deckId, tab === 'stats' && (stats.data?.card_count ?? 0) > 0);
   const { status } = useSession();
   const signedIn = status === 'authenticated';
 
@@ -150,7 +153,13 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
           <SharedDeckCards shared={shared.data} signedIn={signedIn} />
         </Tabs.Panel>
         <Tabs.Panel value="stats" pt="md">
-          {tab === 'stats' && <DeckStatsView stats={stats} emptyMessage="Ce deck est vide." />}
+          {tab === 'stats' && (
+            <DeckStatsView
+              stats={stats}
+              combos={{ query: combos, creditUrl: commanderSpellbookUrl(comboDeckList(shared.data.cards)) }}
+              emptyMessage="Ce deck est vide."
+            />
+          )}
         </Tabs.Panel>
       </Tabs>
     </Stack>

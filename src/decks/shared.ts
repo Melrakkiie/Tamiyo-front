@@ -31,6 +31,16 @@ export function useSharedDeckStats(deckId: string, enabled: boolean) {
   });
 }
 
+export function useSharedDeckCombos(deckId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['shared', deckId, 'combos'],
+    queryFn: async () => unwrap(await api.GET('/shared/decks/{id}/combos', { params: { path: { id: deckId } } })),
+    enabled,
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+}
+
 export function useSharedDeckLegality(deckId: string) {
   return useQuery({
     queryKey: ['shared', deckId, 'legality'],
