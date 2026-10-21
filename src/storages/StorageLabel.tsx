@@ -1,6 +1,8 @@
 import { Group, Text } from '@mantine/core';
 import type { ReactNode } from 'react';
 
+import { UNKNOWN_STORAGE } from './storageDirectory';
+
 export function StorageIcon({ size = 12 }: { size?: number }) {
   return (
     <svg
@@ -45,17 +47,16 @@ export function LockIcon({ size = 12 }: { size?: number }) {
 
 interface StorageLabelProps {
   name: string | null;
-  unknown?: boolean;
   locked?: boolean;
 }
 
-export function StorageLabel({ name, unknown = false, locked = false }: StorageLabelProps) {
-  const missing = name === null;
+export function StorageLabel({ name, locked = false }: StorageLabelProps) {
+  const missing = name === null || name === UNKNOWN_STORAGE;
   return (
     <Group gap={4} wrap="nowrap" c="dimmed" style={{ minWidth: 0 }}>
       <StorageIcon />
       <Text size="xs" c="dimmed" fs={missing ? 'italic' : undefined} lineClamp={1}>
-        {name ?? (unknown ? 'Rangement inconnu' : 'Sans rangement')}
+        {name ?? 'Sans rangement'}
       </Text>
       {locked && (
         <span title="Rangement verrouillé pour ce deck" style={{ display: 'inline-flex' }}>

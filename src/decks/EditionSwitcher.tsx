@@ -24,7 +24,7 @@ import { EditionSearchInput, NoEditionMatch } from '../scryfall/EditionSearchInp
 import { foilFor, matchesEdition, printingDetails } from '../scryfall/printing';
 import { PrintingGrid } from '../scryfall/PrintingGrid';
 import { SetIcon } from '../scryfall/SetIcon';
-import { isOpenTo, useAllStorages } from '../storages/api';
+import { useStorageDirectory } from '../storages/useStorageDirectory';
 import { StorageLabel } from '../storages/StorageLabel';
 import { FoilSticker, ProxySticker } from '../theme/Sticker';
 import {
@@ -61,12 +61,8 @@ export function EditionSwitcher({ deckId, source, deckCardIds, commanderSlot, on
     owned.map((copy) => copy.scryfall_id),
     'small',
   );
-  const storages = useAllStorages();
-  const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
-  const closedStorageIds = new Set(
-    (storages.data ?? []).filter((storage) => !isOpenTo(storage, deckId)).map((storage) => storage.id),
-  );
-  const isClosed = (copy: Card) => copy.storage_id != null && closedStorageIds.has(copy.storage_id);
+  const storages = useStorageDirectory(deckId);
+  const isClosed = (copy: Card) => storages.isLocked(copy.storage_id);
   const ownedPrintings = new Set(owned.filter((copy) => !isClosed(copy)).map((copy) => copy.scryfall_id));
   const others = (printings.data ?? []).filter(
     (printing) => printing.id !== current.scryfall_id && !ownedPrintings.has(printing.id),
@@ -165,11 +161,7 @@ export function EditionSwitcher({ deckId, source, deckCardIds, commanderSlot, on
                         {copy.proxy && <ProxySticker />}
                       </Group>
                       <Group gap={4} justify="space-between" align="center" wrap="nowrap">
-                        <StorageLabel
-                          name={copy.storage_id ? (storageNames.get(copy.storage_id) ?? null) : null}
-                          unknown={copy.storage_id != null && !storageNames.has(copy.storage_id)}
-                          locked={isClosed(copy)}
-                        />
+                        <StorageLabel name={storages.nameOf(copy.storage_id)} locked={isClosed(copy)} />
                         <SetIcon setCode={copy.set_code} size={22} />
                       </Group>
                       {printing && <PrintingPrice printing={printing} foil={copy.foil} size="sm" />}

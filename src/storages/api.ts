@@ -24,10 +24,6 @@ export function useAllStorages() {
   });
 }
 
-export function isOpenTo(storage: Storage, deckId: string) {
-  return !storage.locked || storage.allowed_deck_ids.includes(deckId);
-}
-
 export function useStorageOptions() {
   const { data } = useAllStorages();
   return (data ?? []).map((storage) => ({
