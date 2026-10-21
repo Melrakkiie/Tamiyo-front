@@ -17,7 +17,7 @@ export function HeaderNavLink({ label, to, active }: { label: string; to: string
           {label.slice(0, -1)}
           <span className="tamiyo-nav-perch">
             {label.slice(-1)}
-            <NavMoth />
+            <NavMoth trigger=".tamiyo-nav-link" focusTakeOff />
           </span>
         </>
       ) : (
