@@ -55,6 +55,20 @@ function letterTip(style: CSSStyleDeclaration, fontSize: number, letter: string)
   return { x: (tip.x + 0.5 - origin.x) / scale, y: ascent + (tip.y - origin.y) / scale };
 }
 
+// Where the element will be once running CSS transitions have finished.
+function settledRect(element: HTMLElement) {
+  const running = document.getAnimations().filter((animation) => animation instanceof CSSTransition);
+  const times = running.map((animation) => animation.currentTime);
+  running.forEach((animation) => {
+    animation.currentTime = animation.effect?.getComputedTiming().endTime ?? 0;
+  });
+  const box = element.getBoundingClientRect();
+  running.forEach((animation, i) => {
+    animation.currentTime = times[i];
+  });
+  return box;
+}
+
 function journeyFrames(
   trip: { dx: number; dy: number; fromHeight: number; toHeight: number },
   duration: number,
@@ -106,11 +120,11 @@ export function NavMoth({ trigger, focusTakeOff = false, shadow = false }: NavMo
     let spot = restingSpot(perch);
     setHeight(mothSize(spot.fontSize).height);
     // A perch behind display: none (the header links on mobile) has no position to fly from or to.
-    const locate = () => {
-      const box = perch.getBoundingClientRect();
+    const locate = (settled = false) => {
+      const box = settled ? settledRect(perch) : perch.getBoundingClientRect();
       return { x: box.left + spot.left, y: box.top + spot.top, rendered: isRendered(box) };
     };
-    let here = locate();
+    let here = locate(true);
     if (journey.current === undefined) {
       journey.current = null;
       if (here.rendered && lastSpot && !lastSpot.flown && performance.now() - lastSpot.leftAt < 500) {
@@ -124,6 +138,7 @@ export function NavMoth({ trigger, focusTakeOff = false, shadow = false }: NavMo
     }
     const trip = journey.current;
     let flight: Animation | null = null;
+    let following = 0;
     if (trip) {
       const duration = Math.min(1800, 900 + Math.hypot(trip.dx, trip.dy) * 2.5);
       setStyle({ ...spotStyle(spot), '--tamiyo-moth-duration': `${duration}ms` } as CSSProperties);
@@ -133,6 +148,17 @@ export function NavMoth({ trigger, focusTakeOff = false, shadow = false }: NavMo
         () => setPhase((current) => (current === 'travel' ? 'perched' : current)),
         () => {},
       );
+      // The page may still be sliding into place (the main area's padding eases when the sidebar goes);
+      // keep the moth's path anchored to where the perch will end up.
+      const target = perch.getBoundingClientRect();
+      const settledTarget = settledRect(perch);
+      const follow = () => {
+        const box = perch.getBoundingClientRect();
+        const moving = settledTarget.left !== box.left || settledTarget.top !== box.top;
+        moth.style.translate = moving ? `${settledTarget.left - box.left}px ${settledTarget.top - box.top}px` : '';
+        if (moving) following = requestAnimationFrame(follow);
+      };
+      if (target.left !== settledTarget.left || target.top !== settledTarget.top) follow();
     } else {
       setStyle(spotStyle(spot));
     }
@@ -177,6 +203,7 @@ export function NavMoth({ trigger, focusTakeOff = false, shadow = false }: NavMo
       mounted = false;
       flight?.cancel();
       cancelAnimationFrame(resizing);
+      cancelAnimationFrame(following);
       link?.removeEventListener('mouseenter', takeOff);
       link?.removeEventListener('focus', takeOffOnFocus);
       link?.removeEventListener('mouseleave', arm);
