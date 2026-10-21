@@ -30,6 +30,8 @@ import { FoilSticker, ProxySticker } from '../theme/Sticker';
 import { useUpdateCopies } from './api';
 import { copyIds } from './copies';
 import { CardImage } from './CardImage';
+import { cardPrinting } from './cardLinks';
+import { CardLinkTiles } from './CardLinkTiles';
 import { CollectionQuantityControl } from './CollectionQuantityControl';
 import { PrintPrice } from './price';
 
@@ -94,6 +96,12 @@ function CardDetail({ card, imageUrl, onUpdated, onClose }: CardDetailProps) {
 
   const update = useUpdateCopies();
 
+  const linkedPrinting = cardPrinting({
+    name: card.name,
+    set_code: printing?.set ?? card.set_code,
+    collector_number: printing?.collector_number ?? card.collector_number,
+  });
+
   const storageChanged = storageId !== (card.storage_id ? String(card.storage_id) : null);
   const changed = foil !== card.foil || proxy !== card.proxy || storageChanged || printing !== null;
 
@@ -147,6 +155,7 @@ function CardDetail({ card, imageUrl, onUpdated, onClose }: CardDetailProps) {
             loading={false}
           />
           <PrintPrice scryfallId={printing?.id ?? card.scryfall_id} foil={foil} ta="center" mt="xs" />
+          <CardLinkTiles printing={linkedPrinting} placement="image" />
         </Grid.Col>
         <Grid.Col span={{ base: 12, sm: 7 }}>
           <Stack>
@@ -168,6 +177,7 @@ function CardDetail({ card, imageUrl, onUpdated, onClose }: CardDetailProps) {
             </div>
 
             <CardRulesText scryfallId={printing?.id ?? card.scryfall_id} />
+            <CardLinkTiles printing={linkedPrinting} placement="text" />
 
             {error && <Alert color="red">{errorMessage(error)}</Alert>}
 
