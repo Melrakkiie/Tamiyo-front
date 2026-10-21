@@ -1,5 +1,6 @@
 import type { Card } from '../api/types';
 import type { ScryfallCard } from '../scryfall/client';
+import { matchesEdition } from '../scryfall/printing';
 import type { DeckEntry } from './deckEntries';
 
 export interface EditionChoicesInput {
@@ -26,6 +27,7 @@ export function editionChoices({
   deckCardIds,
   isLocked,
   showLocked,
+  query,
 }: EditionChoicesInput): EditionChoices {
   const sourceIds = new Set(source.kind === 'owned' ? source.copy_ids : []);
   const available = copies.filter((copy) => !sourceIds.has(copy.id) && !deckCardIds.has(copy.id));
@@ -34,5 +36,7 @@ export function editionChoices({
   const others = printings.filter(
     (printing) => printing.id !== source.scryfall_id && !offeredPrintings.has(printing.id),
   );
-  return { offered, copies: offered, others, hiddenLocked: available.length - offered.length };
+  const setNames = new Map(printings.map((printing) => [printing.id, printing.set_name]));
+  const shown = offered.filter((copy) => matchesEdition(query, setNames.get(copy.scryfall_id), copy.set_code));
+  return { offered, copies: shown, others, hiddenLocked: available.length - offered.length };
 }

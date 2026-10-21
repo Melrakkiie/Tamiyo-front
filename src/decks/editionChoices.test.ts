@@ -84,4 +84,17 @@ describe('editionChoices', () => {
     expect(other.copies).toEqual([]);
     expect(other.hiddenLocked).toBe(1);
   });
+
+  it('filters copies by set name and by set code', () => {
+    const betaCopy = deckCard(beta);
+    const tenthCopy = deckCard(tenth);
+    const copies = [betaCopy, tenthCopy];
+
+    const byName = editionChoices(input({ copies, query: 'beta' }));
+    const byCode = editionChoices(input({ copies, query: '10E' }));
+
+    expect(byName.copies.map((copy) => copy.id)).toEqual([betaCopy.id]);
+    expect(byCode.copies.map((copy) => copy.id)).toEqual([tenthCopy.id]);
+    expect(byName.offered.map((copy) => copy.id)).toEqual([betaCopy.id, tenthCopy.id]);
+  });
 });
