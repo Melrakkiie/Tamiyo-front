@@ -5,7 +5,7 @@ import type { ScryfallCard } from '../scryfall/client';
 import { boardsInput, copies, deckCard, pendingCard } from './boardTestHelpers';
 import { buildDeckBoards } from './boardLayout';
 import { BOARDS } from './boards';
-import { type DeckEntry } from './deckEntries';
+import { type DeckEntry, ownedEntry, pendingEntry } from './deckEntries';
 import {
   closedEntry,
   closeEntry,
@@ -80,7 +80,7 @@ describe('showSwapResult', () => {
     const opened = openEntry(closedEntry, stackOf([], [wanted], 'Sol Ring'));
     const bought = deckCard(solRing, { board: 'sideboard' });
 
-    const swapped = showSwapResult(opened, opened.session, { kind: 'card', card: bought, board: 'sideboard' });
+    const swapped = showSwapResult(opened, opened.session, ownedEntry({ ...bought, board: 'sideboard' }));
     const live = resolveOpenedEntry(swapped, boardsOf([bought]));
 
     expect(live?.kind).toBe('owned');
@@ -93,7 +93,7 @@ describe('showSwapResult', () => {
     const opened = openEntry(closedEntry, stackOf([bears], [], 'Grizzly Bears'));
     const wanted = pendingCard(grizzlyBears);
 
-    const swapped = showSwapResult(opened, opened.session, { kind: 'pending', item: wanted });
+    const swapped = showSwapResult(opened, opened.session, pendingEntry(wanted));
     const live = resolveOpenedEntry(swapped, boardsOf([], [wanted]));
 
     expect(live?.kind === 'pending' && live.pending.id).toBe(wanted.id);
@@ -104,7 +104,7 @@ describe('showSwapResult', () => {
     const opened = openEntry(closedEntry, stackOf([bears], [], 'Grizzly Bears'));
     const closed = closeEntry(opened);
 
-    const swapped = showSwapResult(closed, opened.session, { kind: 'pending', item: pendingCard(grizzlyBears) });
+    const swapped = showSwapResult(closed, opened.session, pendingEntry(pendingCard(grizzlyBears)));
 
     expect(swapped.opened).toBeNull();
   });
@@ -115,7 +115,7 @@ describe('showSwapResult', () => {
     const first = openEntry(closedEntry, stackOf([bears, lands], [], 'Grizzly Bears'));
     const reopened = openEntry(closeEntry(first), stackOf([bears, lands], [], 'Forest'));
 
-    const swapped = showSwapResult(reopened, first.session, { kind: 'pending', item: pendingCard(grizzlyBears) });
+    const swapped = showSwapResult(reopened, first.session, pendingEntry(pendingCard(grizzlyBears)));
 
     expect(resolveOpenedEntry(swapped, boardsOf([bears, lands]))?.name).toBe('Forest');
   });
@@ -127,7 +127,7 @@ describe('showSwapResult', () => {
     const refreshed = boardsOf([bought]);
 
     const vanished = forgetVanishedEntry(opened, refreshed);
-    const swapped = showSwapResult(vanished, opened.session, { kind: 'card', card: bought, board: 'main' });
+    const swapped = showSwapResult(vanished, opened.session, ownedEntry(bought));
 
     expect(vanished.opened).toBeNull();
     expect(resolveOpenedEntry(swapped, refreshed)?.kind).toBe('owned');

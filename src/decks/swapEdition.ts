@@ -53,9 +53,7 @@ export function swapEdition(
 ): SwapRequest {
   const pending = source.kind === 'pending' ? source.pending : null;
   const remove: SwapRemoval =
-    source.kind === 'pending'
-      ? { kind: 'pending', pendingId: source.pending.id }
-      : { kind: 'card', cardId: source.id };
+    source.kind === 'pending' ? { kind: 'pending', pendingId: source.pending.id } : { kind: 'card', cardId: source.id };
   if (target.kind === 'printing') {
     const { printing } = target;
     return {

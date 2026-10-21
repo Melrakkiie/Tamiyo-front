@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api, unwrap } from '../api/client';
-import type { AddPendingCardInput, Deck, DeckBoard, DeckCardSort, PendingCard, UpdateDeckInput } from '../api/types';
-import { clearSlotChanges, type CommanderSlot, setSlotChanges } from './commanders';
+import type { AddPendingCardInput, Deck, DeckBoard, DeckCardSort, UpdateDeckInput } from '../api/types';
+import { clearSlotChanges, type CommanderSlot } from './commanders';
 import type { DeckVisibility } from './visibility';
 
 export const COMMON_FORMATS = [
@@ -84,7 +84,7 @@ export function useDeckLegality(id: string, enabled: boolean) {
   });
 }
 
-function useInvalidateDecks() {
+export function useInvalidateDecks() {
   const queryClient = useQueryClient();
   return () => queryClient.invalidateQueries({ queryKey: ['decks'] });
 }
@@ -198,43 +198,6 @@ export function useRemoveCopiesFromDeck() {
       for (const cardId of cardIds) {
         unwrap(await api.DELETE('/deck/{id}/cards/{card_id}', { params: { path: { id: deckId, card_id: cardId } } }));
       }
-    },
-    onSettled: invalidate,
-  });
-}
-
-export function useSwapDeckCard() {
-  const invalidate = useInvalidateDecks();
-
-  return useMutation({
-    mutationFn: async ({
-      deckId,
-      fromCardId,
-      toCardId,
-      board,
-      commanderSlot,
-    }: {
-      deckId: string;
-      fromCardId: number;
-      toCardId: number;
-      board: DeckBoard;
-      commanderSlot: CommanderSlot | null;
-    }) => {
-      unwrap(
-        await api.PUT('/deck/{id}/cards/{card_id}', {
-          params: { path: { id: deckId, card_id: toCardId } },
-          body: { board },
-        }),
-      );
-      if (commanderSlot) {
-        unwrap(
-          await api.PATCH('/deck/{id}', {
-            params: { path: { id: deckId } },
-            body: setSlotChanges(commanderSlot, { cardId: toCardId }),
-          }),
-        );
-      }
-      unwrap(await api.DELETE('/deck/{id}/cards/{card_id}', { params: { path: { id: deckId, card_id: fromCardId } } }));
     },
     onSettled: invalidate,
   });
@@ -486,140 +449,6 @@ export function useDuplicateDeck() {
           body: { name, folder_id: folderId ?? undefined, visibility },
         }),
       ),
-    onSettled: invalidate,
-  });
-}
-
-function pendingInput(item: PendingCard, quantity: number): AddPendingCardInput {
-  return {
-    name: item.name,
-    scryfall_id: item.scryfall_id,
-    set_code: item.set_code,
-    collector_number: item.collector_number,
-    foil: item.foil,
-    quantity,
-    mana_value: item.mana_value,
-    colors: item.colors,
-    card_type: item.card_type,
-    color_identity: item.color_identity,
-    board: item.board,
-  };
-}
-
-export function useReplaceDeckCardWithPending() {
-  const invalidate = useInvalidateDecks();
-
-  return useMutation({
-    mutationFn: async ({
-      deckId,
-      fromCardId,
-      commanderSlot,
-      card,
-    }: {
-      deckId: string;
-      fromCardId: number;
-      commanderSlot: CommanderSlot | null;
-      card: AddPendingCardInput;
-    }) => {
-      const added = unwrap(await api.POST('/deck/{id}/pending', { params: { path: { id: deckId } }, body: card }));
-      if (commanderSlot) {
-        unwrap(
-          await api.PATCH('/deck/{id}', {
-            params: { path: { id: deckId } },
-            body: setSlotChanges(commanderSlot, { pendingId: added.id }),
-          }),
-        );
-      }
-      unwrap(await api.DELETE('/deck/{id}/cards/{card_id}', { params: { path: { id: deckId, card_id: fromCardId } } }));
-      return added;
-    },
-    onSettled: invalidate,
-  });
-}
-
-export function useReplacePendingCard() {
-  const invalidate = useInvalidateDecks();
-
-  return useMutation({
-    mutationFn: async ({
-      deckId,
-      from,
-      commanderSlot,
-      card,
-    }: {
-      deckId: string;
-      from: PendingCard;
-      commanderSlot: CommanderSlot | null;
-      card: AddPendingCardInput;
-    }) => {
-      const added = unwrap(
-        await api.POST('/deck/{id}/pending', {
-          params: { path: { id: deckId } },
-          body: { ...card, quantity: from.quantity, board: from.board },
-        }),
-      );
-      if (commanderSlot) {
-        unwrap(
-          await api.PATCH('/deck/{id}', {
-            params: { path: { id: deckId } },
-            body: setSlotChanges(commanderSlot, { pendingId: added.id }),
-          }),
-        );
-      }
-      unwrap(
-        await api.DELETE('/deck/{id}/pending/{pending_id}', {
-          params: { path: { id: deckId, pending_id: from.id } },
-        }),
-      );
-      return added;
-    },
-    onSettled: invalidate,
-  });
-}
-
-export function useReplacePendingWithOwned() {
-  const invalidate = useInvalidateDecks();
-
-  return useMutation({
-    mutationFn: async ({
-      deckId,
-      from,
-      toCardId,
-      commanderSlot,
-    }: {
-      deckId: string;
-      from: PendingCard;
-      toCardId: number;
-      commanderSlot: CommanderSlot | null;
-    }) => {
-      unwrap(
-        await api.PUT('/deck/{id}/cards/{card_id}', {
-          params: { path: { id: deckId, card_id: toCardId } },
-          body: { board: from.board },
-        }),
-      );
-      if (commanderSlot) {
-        unwrap(
-          await api.PATCH('/deck/{id}', {
-            params: { path: { id: deckId } },
-            body: setSlotChanges(commanderSlot, { cardId: toCardId }),
-          }),
-        );
-      }
-      unwrap(
-        await api.DELETE('/deck/{id}/pending/{pending_id}', {
-          params: { path: { id: deckId, pending_id: from.id } },
-        }),
-      );
-      if (from.quantity > 1) {
-        unwrap(
-          await api.POST('/deck/{id}/pending', {
-            params: { path: { id: deckId } },
-            body: pendingInput(from, from.quantity - 1),
-          }),
-        );
-      }
-    },
     onSettled: invalidate,
   });
 }

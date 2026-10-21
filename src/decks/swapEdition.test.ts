@@ -25,7 +25,7 @@ describe('swapEdition to an owned copy', () => {
   });
 
   it('moves the commander slot onto the new copy', () => {
-    const from = deckCard(grizzlyBears, { board: 'commander' });
+    const from = deckCard(grizzlyBears, { board: 'main' });
     const copy = deckCard(grizzlyBears);
 
     const request = swapEdition('deck-1', ownedEntry(from), { kind: 'owned', copy }, 'commander');
@@ -77,7 +77,7 @@ describe('swapEdition to a printing', () => {
   });
 
   it('keeps the commander slot for the pending printing', () => {
-    const from = deckCard(serraAngel, { board: 'commander' });
+    const from = deckCard(serraAngel, { board: 'main' });
 
     const request = swapEdition('deck-1', ownedEntry(from), { kind: 'printing', printing: serraAngel }, 'partner');
 
