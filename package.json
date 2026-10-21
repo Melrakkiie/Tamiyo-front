@@ -12,6 +12,10 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "test": "vitest run",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "git config core.hooksPath .githooks",
     "gen:api": "openapi-typescript https://raw.githubusercontent.com/Melrakkiie/tamiyo/main/doc/openapi.yaml -o src/api/schema.d.ts"
   },
   "dependencies": {
@@ -30,11 +34,14 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "eslint": "10.12.0",
     "openapi-typescript": "^7.0.0",
     "postcss": "^8.5.0",
     "postcss-preset-mantine": "^1.17.0",
     "postcss-simple-vars": "^7.0.1",
+    "prettier": "3.9.9",
     "typescript": "~5.9.2",
+    "typescript-eslint": "8.71.1",
     "vite": "^7.0.0",
     "vitest": "5.0.3"
   }

@@ -5,15 +5,18 @@ React SPA for Tamiyo, a Magic: The Gathering collection and deck manager. React 
 ## Commands
 
 ```bash
-npm run dev          # http://localhost:5173, proxies /api to localhost:8080 (run the API with API_BASE_PATH=/api)
+npm run dev          # http://localhost:5173, proxies /api to $API_PROXY (default localhost:8080; run the API with API_BASE_PATH=/api)
 npm run build        # type check + production build; CI runs it after the tests
 npm test             # Vitest suite, run once (node environment, no DOM)
 npm run typecheck
+npm run lint         # ESLint: the mechanical rules of this file (eslint.config.js)
+npm run format       # Prettier on the whole repo; CI and the pre-commit hook run format:check
 npm run gen:api      # regenerate src/api/schema.d.ts from the API's doc/openapi.yaml (main branch)
-npx prettier --write <files>   # options in .prettierrc
 ```
 
 Vitest covers pure TypeScript only; tests sit next to their module (`foo.test.ts`), and shared Scryfall card fixtures live in `src/scryfall/fixtures.ts`. There are no rendering tests: run `npm test` and `npm run build` before calling a change done, and check UI changes in the browser.
+
+To check a front branch against an unmerged API branch: `make check-stack-up PORT=8081` in the API checkout (fresh Postgres, seed account `seed@tamiyo.local` / `password123`), then `API_PROXY=http://localhost:8081 npx vite --port 5174 --strictPort` here; `make check-stack-down PORT=8081` afterwards.
 
 ## Layout
 
@@ -25,15 +28,9 @@ Vitest covers pure TypeScript only; tests sit next to their module (`foo.test.ts
 ## Rules
 
 - **Auth:** the access token stays in memory, never in `localStorage`; the refresh token is an `httpOnly` cookie. Every request sends `X-Refresh-Token-Transport: cookie`. Don't change the refresh flow without reading `src/auth/session.ts`.
-- **Scryfall:** go through `src/scryfall` hooks; never `fetch` Scryfall elsewhere, or the cache and the rate limit are bypassed. Images are hotlinked, never stored.
-- **Preferences** (display mode, columns, grouping, sort, day/night) are saved through the API (`useUpdatePreferences`, per-deck `useSaveDeckView`), never in browser storage. Anonymous visitors keep them in component state.
-- **Identity:** a collector's notebook in the luna moth's colors. Use theme colors (`lune`, `prune`, `ocelle`, `gray`, `dark`) and the `src/theme` components; no raw hex in components except illustrations (moth, storage drawings), which keep fixed day colors in both themes. Fonts: Fraunces (headings), Karla (UI), Patrick Hand (`tamiyo-hand` class, short notes only), self-hosted in `public/fonts`. Keep whimsy (tilts, tape, stickers, scribbles) on tiles, titles and empty states; long card lists and forms stay plain.
-- **Day and night:** every visual change must read well in both. Filled components get dark text at night (handled by the theme's `variantColorResolver`).
+- **Visual changes** follow the identity and day/night rules in `CODING_STANDARDS.md`.
 - **Mantine:** a `Select` inside a `Popover` needs `comboboxProps={{ withinPortal: false }}`.
 - **UI text in French**, addressing the user as « tu ». Code, README and commit messages in English.
-- **Comments:** names carry the meaning; a comment only states a constraint the code can't show.
-- **Remove dead code** a change leaves behind.
-- Every page calls `usePageTitle(...)` (`src/layout/usePageTitle.ts`) so the tab reads "Tamiyo - <page>".
 
 ## Commits
 

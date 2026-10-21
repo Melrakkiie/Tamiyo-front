@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Les vérifications de la CI, sauf le build : format, lint, types, tests.
+# Activé par `npm install` (script prepare : core.hooksPath=.githooks).
+
+if git diff --cached --quiet; then
+    exit 0
+fi
+
+echo "pre-commit: format..."
+if ! git diff --cached --name-only -z --diff-filter=ACM | xargs -0 -r npx --no-install prettier --check --ignore-unknown; then
+    echo "pre-commit: fichiers mal formatés (npm run format). Commit annulé." >&2
+    exit 1
+fi
+
+echo "pre-commit: lint..."
+if ! npx --no-install eslint .; then
+    echo "pre-commit: ESLint a trouvé des problèmes. Commit annulé." >&2
+    exit 1
+fi
+
+echo "pre-commit: types..."
+if ! npx --no-install tsc -b; then
+    echo "pre-commit: erreurs de typage. Commit annulé." >&2
+    exit 1
+fi
+
+echo "pre-commit: tests..."
+# Un log par exécution : des worktrees parallèles peuvent commiter en même temps.
+test_log=$(mktemp)
+trap 'rm -f "$test_log"' EXIT
+if ! npx --no-install vitest run >"$test_log" 2>&1; then
+    cat "$test_log"
+    echo "pre-commit: tests en échec. Commit annulé." >&2
+    exit 1
+fi
+
+echo "pre-commit: OK"
