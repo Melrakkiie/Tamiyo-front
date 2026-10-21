@@ -71,7 +71,7 @@ describe('swapEdition to a printing', () => {
       kind: 'pending',
       deckId: 'deck-1',
       card: { ...printingDetails(printing), foil: foilFor(printing, true), quantity: 1, board: 'sideboard' },
-      slot: null,
+      slotChanges: null,
       remove: { kind: 'card', cardId: from.id },
     });
   });
@@ -81,7 +81,7 @@ describe('swapEdition to a printing', () => {
 
     const request = swapEdition('deck-1', ownedEntry(from), { kind: 'printing', printing: serraAngel }, 'partner');
 
-    expect(request.kind === 'pending' && request.slot).toBe('partner');
+    expect(request.kind === 'pending' && request.slotChanges?.(77)).toEqual({ partner_pending_id: 77 });
   });
 
   it('keeps a pending entry pending in that printing with its board and quantity', () => {
@@ -94,8 +94,9 @@ describe('swapEdition to a printing', () => {
       kind: 'pending',
       deckId: 'deck-1',
       card: expect.objectContaining({ scryfall_id: 'other-forest', quantity: 4, board: 'considering' }),
-      slot: 'commander',
+      slotChanges: expect.any(Function),
       remove: { kind: 'pending', pendingId: from.id },
     });
+    expect(request.kind === 'pending' && request.slotChanges?.(5)).toEqual({ commander_pending_id: 5 });
   });
 });

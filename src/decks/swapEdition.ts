@@ -23,7 +23,7 @@ export interface SwapToPending {
   kind: 'pending';
   deckId: string;
   card: AddPendingCardInput;
-  slot: CommanderSlot | null;
+  slotChanges: ((addedPendingId: number) => UpdateDeckInput) | null;
   remove: SwapRemoval;
 }
 
@@ -65,7 +65,7 @@ export function swapEdition(
         quantity: pending ? pending.quantity : 1,
         board: source.board,
       },
-      slot: commanderSlot,
+      slotChanges: commanderSlot ? (pendingId) => setSlotChanges(commanderSlot, { pendingId }) : null,
       remove,
     };
   }

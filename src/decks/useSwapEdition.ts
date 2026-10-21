@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 
 import { api, unwrap } from '../api/client';
 import { useInvalidateDecks } from './api';
-import { type CommanderSlot, setSlotChanges } from './commanders';
+import type { CommanderSlot } from './commanders';
 import { type DeckEntry, pendingEntry } from './deckEntries';
 import { swapEdition, type SwapRequest, type SwapTarget } from './swapEdition';
 
@@ -40,13 +40,8 @@ async function run(request: SwapRequest): Promise<DeckEntry> {
     return request.entry;
   }
   const added = unwrap(await api.POST('/deck/{id}/pending', { params: { path: { id: deckId } }, body: request.card }));
-  if (request.slot) {
-    unwrap(
-      await api.PATCH('/deck/{id}', {
-        params: { path: { id: deckId } },
-        body: setSlotChanges(request.slot, { pendingId: added.id }),
-      }),
-    );
+  if (request.slotChanges) {
+    unwrap(await api.PATCH('/deck/{id}', { params: { path: { id: deckId } }, body: request.slotChanges(added.id) }));
   }
   await removeSource(request);
   return pendingEntry(added);
