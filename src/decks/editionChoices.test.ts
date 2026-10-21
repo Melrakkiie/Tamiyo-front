@@ -1,12 +1,26 @@
 import { describe, expect, it } from 'vitest';
+import type { Storage } from '../api/types';
 import type { ScryfallCard } from '../scryfall/client';
 import { grizzlyBears } from '../scryfall/fixtures';
+import { storageDirectory } from '../storages/storageDirectory';
 import { deckCard } from './boardTestHelpers';
 import { ownedEntry } from './deckEntries';
 import { editionChoices, type EditionChoicesInput } from './editionChoices';
 
 const beta: ScryfallCard = { ...grizzlyBears, id: 'beta-bears', set: '2ed', set_name: 'Limited Edition Beta' };
 const tenth: ScryfallCard = { ...grizzlyBears, id: 'tenth-bears', set: '10e', set_name: 'Tenth Edition' };
+
+const vault: Storage = {
+  id: 7,
+  name: 'Coffre',
+  type: 'binder',
+  card_count: 1,
+  value: { eur: 0, usd: 0 },
+  added: '2026-01-01T00:00:00Z',
+  updated: '2026-01-01T00:00:00Z',
+  locked: true,
+  allowed_deck_ids: ['deck-a'],
+};
 
 function input(changes: Partial<EditionChoicesInput>): EditionChoicesInput {
   const source = deckCard(grizzlyBears);
@@ -57,5 +71,17 @@ describe('editionChoices', () => {
     expect(choices.copies.map((copy) => copy.id)).toEqual([locked.id]);
     expect(choices.hiddenLocked).toBe(0);
     expect(choices.others.map((printing) => printing.id)).toEqual(['tenth-bears']);
+  });
+
+  it('lets a deck allowed on a locked storage see that storage copies', () => {
+    const stored = deckCard(beta, { storage_id: vault.id });
+
+    const allowed = editionChoices(input({ copies: [stored], isLocked: storageDirectory([vault], 'deck-a').isLocked }));
+    const other = editionChoices(input({ copies: [stored], isLocked: storageDirectory([vault], 'deck-b').isLocked }));
+
+    expect(allowed.copies.map((copy) => copy.id)).toEqual([stored.id]);
+    expect(allowed.hiddenLocked).toBe(0);
+    expect(other.copies).toEqual([]);
+    expect(other.hiddenLocked).toBe(1);
   });
 });
