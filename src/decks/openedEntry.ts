@@ -1,8 +1,7 @@
 import type { DeckBoardsData } from './boardLayout';
 import { BOARDS } from './boards';
 import type { SlotTarget } from './commanders';
-import { type DeckEntry, entryMatches, entryTargets, ownedEntry, pendingEntry } from './deckEntries';
-import type { EditionSource } from './EditionSwitcher';
+import { type DeckEntry, entryMatches, entryTargets } from './deckEntries';
 
 export interface OpenedEntryState {
   session: number;
@@ -19,11 +18,10 @@ export function closeEntry(state: OpenedEntryState): OpenedEntryState {
   return { session: state.session + 1, opened: null };
 }
 
-export function showSwapResult(state: OpenedEntryState, session: number, next: EditionSource): OpenedEntryState {
+export function showSwapResult(state: OpenedEntryState, session: number, entry: DeckEntry): OpenedEntryState {
   if (session !== state.session) {
     return state;
   }
-  const entry = next.kind === 'card' ? ownedEntry({ ...next.card, board: next.board }) : pendingEntry(next.item);
   return { session: state.session, opened: { targets: entryTargets(entry), entry } };
 }
 
