@@ -1,30 +1,30 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 
 import { LunaMoth } from '../theme/LunaMoth';
+import { mothSize, restingOffset } from './mothSpot';
 
 type Phase = 'land' | 'travel' | 'perched' | 'flown';
 
-const mothHeight = 16;
-const mothWidth = (mothHeight * 120) / 140;
-const bellyTip = 0.53;
 const restAngle = -20;
 const scale = 4;
 
 let lastSpot: { x: number; y: number; leftAt: number; flown: boolean } | null = null;
 
 function restingSpot(perch: HTMLElement) {
-  const fallback = { left: -mothWidth / 2, top: -mothHeight * bellyTip };
   const style = getComputedStyle(perch);
   const fontSize = parseFloat(style.fontSize);
+  return { ...restingOffset(fontSize, letterTip(style, fontSize, perch.firstChild?.textContent ?? '')), fontSize };
+}
+
+function letterTip(style: CSSStyleDeclaration, fontSize: number, letter: string) {
   const size = Math.ceil(fontSize * scale * 2);
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
   const context = canvas.getContext('2d', { willReadFrequently: true });
-  if (!context || !size) return fallback;
+  if (!context || !size) return null;
 
   context.font = `${style.fontStyle} ${style.fontWeight} ${fontSize * scale}px ${style.fontFamily}`;
-  const letter = perch.firstChild?.textContent ?? '';
   const origin = { x: size / 4, y: (size * 3) / 4 };
   context.fillText(letter, origin.x, origin.y);
   const { data } = context.getImageData(0, 0, size, size);
@@ -39,7 +39,7 @@ function restingSpot(perch: HTMLElement) {
       }
     }
   }
-  if (top < 0) return fallback;
+  if (top < 0) return null;
 
   let tip = { x: -1, y: top };
   for (let y = top; y <= top + scale / 2 && y < size; y++) {
@@ -52,10 +52,7 @@ function restingSpot(perch: HTMLElement) {
   }
 
   const ascent = context.measureText(letter).fontBoundingBoxAscent / scale;
-  return {
-    left: (tip.x + 0.5 - origin.x) / scale - mothWidth / 2 + 1,
-    top: ascent + (tip.y - origin.y) / scale - mothHeight * bellyTip + 1,
-  };
+  return { x: (tip.x + 0.5 - origin.x) / scale, y: ascent + (tip.y - origin.y) / scale };
 }
 
 function journeyFrames(dx: number, dy: number, duration: number): Keyframe[] {
@@ -79,19 +76,24 @@ function spotStyle(spot: { left: number; top: number }) {
   return { '--tamiyo-moth-left': `${spot.left}px`, '--tamiyo-moth-top': `${spot.top}px` } as CSSProperties;
 }
 
-export function NavMoth() {
+// Perches on the last letter of its parent element, sized by that element's font.
+// trigger: CSS selector of the element whose hover (closest ancestor of the moth) makes it take off.
+// focusTakeOff: also take off when the trigger gets keyboard focus.
+export function NavMoth({ trigger, focusTakeOff = false }: { trigger: string; focusTakeOff?: boolean }) {
   const ref = useRef<HTMLSpanElement>(null);
   const [phase, setPhase] = useState<Phase>('land');
   const [style, setStyle] = useState<CSSProperties>();
+  const [height, setHeight] = useState(0);
   const journey = useRef<{ dx: number; dy: number } | null>(undefined);
 
   useLayoutEffect(() => {
     const moth = ref.current;
     const perch = moth?.parentElement;
-    const link = moth?.closest<HTMLElement>('.tamiyo-nav-link');
+    const link = moth?.closest<HTMLElement>(trigger);
     if (!moth || !perch || !link) return;
 
     let spot = restingSpot(perch);
+    setHeight(mothSize(spot.fontSize).height);
     const locate = () => {
       const box = perch.getBoundingClientRect();
       return { x: box.left + spot.left, y: box.top + spot.top };
@@ -126,10 +128,11 @@ export function NavMoth() {
       if (!mounted) return;
       spot = restingSpot(perch);
       here = locate();
+      setHeight(mothSize(spot.fontSize).height);
       setStyle((current) => ({ ...current, ...spotStyle(spot) }));
     });
 
-    let armed = !link.matches(':hover') && !link.matches(':focus-visible');
+    let armed = !link.matches(':hover') && !(focusTakeOff && link.matches(':focus-visible'));
     let flown = false;
     const takeOff = () => {
       if (!armed) return;
@@ -138,7 +141,7 @@ export function NavMoth() {
       setPhase('flown');
     };
     const takeOffOnFocus = () => {
-      if (link.matches(':focus-visible')) takeOff();
+      if (focusTakeOff && link.matches(':focus-visible')) takeOff();
     };
     const arm = () => {
       armed = true;
@@ -175,7 +178,7 @@ export function NavMoth() {
       }}
     >
       <span className="tamiyo-nav-moth-wings">
-        <LunaMoth size={mothHeight} />
+        <LunaMoth size={height} />
       </span>
     </span>
   );
