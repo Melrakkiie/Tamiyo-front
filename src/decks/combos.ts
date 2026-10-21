@@ -1,4 +1,4 @@
-import type { DeckBoard } from '../api/types';
+import type { Combo, DeckBoard } from '../api/types';
 
 export interface ComboDeckList {
   main: string[];
@@ -24,4 +24,10 @@ export function comboDeckList(cards: ComboCard[]): ComboDeckList {
   const commanders = new Set(mainBoard.filter((card) => card.commander).map((card) => card.name));
   const main = new Set(mainBoard.map((card) => card.name).filter((name) => !commanders.has(name)));
   return { main: [...main], commanders: [...commanders] };
+}
+
+export interface DeckCombos {
+  data: { combos: Combo[] } | undefined;
+  error: Error | null;
+  isLoading: boolean;
 }

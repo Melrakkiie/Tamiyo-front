@@ -75,6 +75,16 @@ export function useDeckStats(id: string, enabled: boolean) {
   });
 }
 
+export function useDeckCombos(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['decks', 'combos', id],
+    queryFn: async () => unwrap(await api.GET('/deck/{id}/combos', { params: { path: { id } } })),
+    enabled,
+    staleTime: Infinity,
+    retry: false,
+  });
+}
+
 export function useDeckLegality(id: string, enabled: boolean) {
   return useQuery({
     queryKey: ['decks', 'legality', id],
