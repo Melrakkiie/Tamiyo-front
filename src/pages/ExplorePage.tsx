@@ -25,6 +25,7 @@ import { useSearchParams } from 'react-router';
 import { errorMessage } from '../api/errors';
 import { COLORLESS } from '../cards/advancedFilters';
 import { ColorChips } from '../cards/AdvancedSearch';
+import { PriceText } from '../cards/price';
 import { COMMON_FORMATS } from '../decks/api';
 import { useDeckArts } from '../decks/art';
 import { BRACKETS, bracketName, GaugeIcon } from '../decks/bracket';
@@ -217,11 +218,11 @@ export function ExplorePage() {
     <Stack>
       <div>
         <Title order={2}>Explorer les decks</Title>
-        <Text size="sm" c="dimmed">
+        <PriceText>
           {decks.data
             ? `${decks.data.total} deck${decks.data.total > 1 ? 's' : ''} public${decks.data.total > 1 ? 's' : ''}${searching ? ' correspondant' + (decks.data.total > 1 ? 's' : '') : ''}`
             : ' '}
-        </Text>
+        </PriceText>
       </div>
 
       <Group grow align="flex-end">
