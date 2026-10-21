@@ -3,8 +3,8 @@ import type { Storage } from '../api/types';
 import type { ScryfallCard } from '../scryfall/client';
 import { grizzlyBears } from '../scryfall/fixtures';
 import { storageDirectory } from '../storages/storageDirectory';
-import { deckCard } from './boardTestHelpers';
-import { ownedEntry } from './deckEntries';
+import { deckCard, pendingCard } from './boardTestHelpers';
+import { ownedEntry, pendingEntry } from './deckEntries';
 import { editionChoices, type EditionChoicesInput } from './editionChoices';
 
 const beta: ScryfallCard = { ...grizzlyBears, id: 'beta-bears', set: '2ed', set_name: 'Limited Edition Beta' };
@@ -96,5 +96,15 @@ describe('editionChoices', () => {
     expect(byName.copies.map((copy) => copy.id)).toEqual([betaCopy.id]);
     expect(byCode.copies.map((copy) => copy.id)).toEqual([tenthCopy.id]);
     expect(byName.offered.map((copy) => copy.id)).toEqual([betaCopy.id, tenthCopy.id]);
+  });
+
+  it('never lists the source printing in the other editions', () => {
+    const pending = pendingEntry(pendingCard(beta));
+
+    const owned = editionChoices(input({ copies: [] }));
+    const fromPending = editionChoices(input({ source: pending, copies: [], deckCardIds: new Set() }));
+
+    expect(owned.others.map((printing) => printing.id)).toEqual(['beta-bears', 'tenth-bears']);
+    expect(fromPending.others.map((printing) => printing.id)).toEqual(['fixture-grizzly-bears', 'tenth-bears']);
   });
 });
