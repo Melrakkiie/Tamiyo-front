@@ -36,7 +36,7 @@ export function useSharedDeckCombos(deckId: string, enabled: boolean) {
     queryKey: ['shared', deckId, 'combos'],
     queryFn: async () => unwrap(await api.GET('/shared/decks/{id}/combos', { params: { path: { id: deckId } } })),
     enabled,
-    staleTime: Infinity,
+    staleTime: 5 * 60_000,
     retry: false,
   });
 }
