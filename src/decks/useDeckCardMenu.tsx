@@ -22,7 +22,7 @@ import {
 } from './api';
 import { BOARDS } from './boards';
 import { type CommanderSlot, commanderSlotOf, hasCommander, hasPartner, setSlotChanges } from './commanders';
-import type { DeckEntry } from './deckEntries';
+import { type DeckEntry, entrySlotTarget, entrySources } from './deckEntries';
 import { deckListErrorMessage, deckListSummary } from './DeckListInput';
 import { SplitPrintingsModal, summaryDetails } from './SplitPrintingsModal';
 import type { DeckCardActions } from './useDeckCardActions';
@@ -58,9 +58,7 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
   function toggleFoil(card: DeckEntry, foil: boolean) {
     const finish = foil ? 'foil' : 'non-foil';
     switchFoil.mutate(
-      card.kind === 'pending'
-        ? { deckId: deck.id, pendingIds: [card.pending.id], foil }
-        : { deckId: deck.id, cardIds: card.copy_ids, foil },
+      { deckId: deck.id, ...entrySources(card), foil },
       {
         onSuccess: (summary) =>
           notifications.show({
@@ -75,9 +73,7 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
   function toggleProxy(card: DeckEntry, proxy: boolean) {
     const state = proxy ? 'est maintenant proxy' : "n'est plus proxy";
     switchProxy.mutate(
-      card.kind === 'pending'
-        ? { deckId: deck.id, pendingIds: [card.pending.id], proxy }
-        : { deckId: deck.id, cardIds: card.copy_ids, proxy },
+      { deckId: deck.id, ...entrySources(card), proxy },
       {
         onSuccess: (summary) =>
           notifications.show({
@@ -122,10 +118,9 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
   }
 
   function makeCommander(card: DeckEntry, slot: CommanderSlot) {
-    const target = card.kind === 'pending' ? { pendingId: card.pending.id } : { cardId: card.id };
     const role = slot === 'commander' ? 'le commandant' : 'le second commandant';
     updateDeck.mutate(
-      { id: deck.id, changes: setSlotChanges(slot, target) },
+      { id: deck.id, changes: setSlotChanges(slot, entrySlotTarget(card)) },
       done(`${card.name} est maintenant ${role} du deck.`),
     );
   }

@@ -24,7 +24,7 @@ import { usePrintings } from '../scryfall/hooks';
 import { canBeFoil, canBeNonFoil, foilFor } from '../scryfall/printing';
 import { SetIcon } from '../scryfall/SetIcon';
 import { useSplitPrintings } from './api';
-import type { DeckEntry } from './deckEntries';
+import { type DeckEntry, entrySources } from './deckEntries';
 
 export function summaryDetails(summary: ImportSummary) {
   const linked = summary.cards_linked ?? 0;
@@ -89,9 +89,8 @@ function SplitPrintingsForm({ deckId, card, onClose }: { deckId: string; card: D
         foil: row.foil,
       };
     });
-    const sources = card.kind === 'pending' ? { pendingIds: [card.pending.id] } : { cardIds: card.copy_ids };
     split.mutate(
-      { deckId, ...sources, printings: printingsOfRows },
+      { deckId, ...entrySources(card), printings: printingsOfRows },
       {
         onSuccess: (summary) => {
           notifications.show({

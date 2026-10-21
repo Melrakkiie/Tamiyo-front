@@ -79,6 +79,18 @@ export function entryMatches(entry: DeckEntry, target: SlotTarget): boolean {
   return 'cardId' in target && entry.copy_ids.includes(target.cardId);
 }
 
+export function entryTargets(entry: DeckEntry): SlotTarget[] {
+  return entry.kind === 'pending' ? [{ pendingId: entry.pending.id }] : entry.copy_ids.map((cardId) => ({ cardId }));
+}
+
+export function entrySlotTarget(entry: DeckEntry): SlotTarget {
+  return entry.kind === 'pending' ? { pendingId: entry.pending.id } : { cardId: entry.id };
+}
+
+export function entrySources(entry: DeckEntry): { pendingIds: number[] } | { cardIds: number[] } {
+  return entry.kind === 'pending' ? { pendingIds: [entry.pending.id] } : { cardIds: entry.copy_ids };
+}
+
 function stackKey(entry: DeckEntry, commanders: SlotTarget[], byPrinting: boolean) {
   if (entry.kind === 'pending') {
     return entry.key;

@@ -34,7 +34,7 @@ import { CardTagsInput } from './CardTagsInput';
 import { CommanderControl } from './CommanderControl';
 import { commanderSlotOf } from './commanders';
 import { DeckQuantityControl } from './DeckQuantityControl';
-import type { DeckEntry, OwnedEntry, PendingEntry } from './deckEntries';
+import { type DeckEntry, type OwnedEntry, type PendingEntry, entrySlotTarget } from './deckEntries';
 import { type EditionSource, EditionSwitcher } from './EditionSwitcher';
 import { pendingStatus } from './pendingCards';
 import { useMoveEntry } from './useMoveEntry';
@@ -109,12 +109,13 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
   const backImage = useBackImage(entry.scryfall_id);
   const status = entry.kind === 'pending' ? pendingStatus(entry.pending) : null;
 
-  function ignore() {}
-
-  function moveToBoard(next: Parameters<typeof mover.move>[1]) {
-    mover
-      .move(entry, next)
-      .then((count) => notifications.show({ color: 'green', message: movedMessage(entry.name, count, next) }), ignore);
+  async function moveToBoard(next: Parameters<typeof mover.move>[1]) {
+    try {
+      const count = await mover.move(entry, next);
+      notifications.show({ color: 'green', message: movedMessage(entry.name, count, next) });
+    } catch {
+      return;
+    }
   }
 
   return (
@@ -167,7 +168,7 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
                 name={entry.name}
                 scryfallId={entry.scryfall_id}
                 slot={commanderSlot}
-                target={entry.kind === 'pending' ? { pendingId: entry.pending.id } : { cardId: entry.id }}
+                target={entrySlotTarget(entry)}
               />
             )}
 
@@ -216,8 +217,30 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
   );
 }
 
-function OwnedStorageSection({ entry }: { entry: OwnedEntry }) {
+interface StorageSelectProps {
+  value: string | null;
+  onChange: (value: string | null) => void;
+  disabled?: boolean;
+}
+
+function StorageSelect({ value, onChange, disabled }: StorageSelectProps) {
   const storageOptions = useStorageOptions();
+
+  return (
+    <Select
+      label={<StorageFieldLabel>Rangement</StorageFieldLabel>}
+      placeholder="Aucun rangement"
+      data={storageOptions}
+      value={value}
+      onChange={onChange}
+      clearable
+      searchable
+      disabled={disabled}
+    />
+  );
+}
+
+function OwnedStorageSection({ entry }: { entry: OwnedEntry }) {
   const storages = useAllStorages();
   const updateCard = useUpdateCard();
   const [storageId, setStorageId] = useState<string | null>(entry.storage_id ? String(entry.storage_id) : null);
@@ -248,16 +271,7 @@ function OwnedStorageSection({ entry }: { entry: OwnedEntry }) {
           que pour l'un d'eux.
         </Text>
       )}
-      <Select
-        label={<StorageFieldLabel>Rangement</StorageFieldLabel>}
-        placeholder="Aucun rangement"
-        data={storageOptions}
-        value={storageId}
-        onChange={moveToStorage}
-        clearable
-        searchable
-        disabled={updateCard.isPending}
-      />
+      <StorageSelect value={storageId} onChange={moveToStorage} disabled={updateCard.isPending} />
       {updateCard.error && <Alert color="red">{errorMessage(updateCard.error)}</Alert>}
     </Stack>
   );
@@ -271,7 +285,6 @@ interface PendingCollectionSectionProps {
 
 function PendingCollectionSection({ deckId, entry, onClose }: PendingCollectionSectionProps) {
   const commit = useCommitPendingCards();
-  const storageOptions = useStorageOptions();
   const [storageId, setStorageId] = useState<string | null>(null);
   const [count, setCount] = useState<number | string>('');
   const total = entry.quantity;
@@ -325,15 +338,7 @@ function PendingCollectionSection({ deckId, entry, onClose }: PendingCollectionS
             onChange={setCount}
           />
         )}
-        <Select
-          label={<StorageFieldLabel>Rangement</StorageFieldLabel>}
-          placeholder="Aucun rangement"
-          data={storageOptions}
-          value={storageId}
-          onChange={setStorageId}
-          clearable
-          searchable
-        />
+        <StorageSelect value={storageId} onChange={setStorageId} />
       </Group>
       <Button color="orange" onClick={addToCollection} loading={commit.isPending}>
         {selected < total ? `Ajouter ${selected} sur ${total} à ma collection` : 'Ajouter à ma collection'}
