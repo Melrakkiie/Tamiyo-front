@@ -128,7 +128,7 @@ export function DecksPage() {
 
   return (
     <Stack>
-      <Group justify="space-between">
+      <Group justify="space-between" align="flex-start">
         <div>
           <Title order={2}>Decks</Title>
           {decks.data && (
@@ -137,7 +137,7 @@ export function DecksPage() {
             </Text>
           )}
         </div>
-        <Group gap="xs">
+        <Group gap="xs" ml="auto">
           <Button variant="default" onClick={() => setFolderEdit({ kind: 'create', parent: null })}>
             Nouveau dossier
           </Button>
