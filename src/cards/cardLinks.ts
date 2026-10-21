@@ -6,6 +6,10 @@ export interface CardPrinting {
   collectorNumber: string;
 }
 
+export function cardPrinting(card: { name: string; set_code: string; collector_number: string }): CardPrinting {
+  return { name: card.name, set: card.set_code, collectorNumber: card.collector_number };
+}
+
 export interface CardLinks {
   scryfall: string;
   edhrec: string;

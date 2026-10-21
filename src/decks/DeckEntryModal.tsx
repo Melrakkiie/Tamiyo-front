@@ -20,6 +20,7 @@ import { errorMessage } from '../api/errors';
 import type { Deck } from '../api/types';
 import { useUpdateCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
+import { cardPrinting } from '../cards/cardLinks';
 import { CardLinkTiles } from '../cards/CardLinkTiles';
 import { PendingBadge, pendingStatusDescription } from '../cards/PendingBadge';
 import { PrintPrice } from '../cards/price';
@@ -109,7 +110,7 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
   const mover = useMoveEntry(deckId);
   const backImage = useBackImage(entry.scryfall_id);
   const status = entry.kind === 'pending' ? pendingStatus(entry.pending) : null;
-  const linkedPrinting = { name: entry.name, set: entry.set_code, collectorNumber: entry.collector_number };
+  const linkedPrinting = cardPrinting(entry);
 
   async function moveToBoard(next: Parameters<typeof mover.move>[1]) {
     try {
@@ -126,7 +127,7 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
         <Grid.Col span={{ base: 12, sm: 5 }}>
           <CardImage key={entry.key} name={entry.name} url={imageUrl} backUrl={backImage} loading={false} />
           <PrintPrice scryfallId={entry.scryfall_id} foil={entry.foil} ta="center" mt="xs" />
-          <CardLinkTiles printing={linkedPrinting} visibleFrom="sm" mt="xs" ta="center" />
+          <CardLinkTiles printing={linkedPrinting} placement="image" />
         </Grid.Col>
         <Grid.Col span={{ base: 12, sm: 7 }}>
           <Stack>
@@ -147,7 +148,7 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
             </div>
 
             <CardRulesText scryfallId={entry.scryfall_id} />
-            <CardLinkTiles printing={linkedPrinting} hiddenFrom="sm" />
+            <CardLinkTiles printing={linkedPrinting} placement="text" />
 
             <CardTagsInput deckId={deckId} cardName={entry.name} />
 

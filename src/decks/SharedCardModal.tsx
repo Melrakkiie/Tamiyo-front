@@ -5,6 +5,7 @@ import type { Card, DeckBoard } from '../api/types';
 import { useSession } from '../auth/useSession';
 import { AddCardModal, type AddTarget } from '../cards/AddCardModal';
 import { CardImage } from '../cards/CardImage';
+import { cardPrinting } from '../cards/cardLinks';
 import { CardLinkTiles } from '../cards/CardLinkTiles';
 import { PrintPrice } from '../cards/price';
 import { CardRulesText } from '../scryfall/CardRulesText';
@@ -63,14 +64,14 @@ interface SharedCardDetailProps {
 function SharedCardDetail({ card, imageUrl, details, onAdd }: SharedCardDetailProps) {
   const backImage = useBackImage(card.scryfall_id);
   const quantity = card.quantity ?? 1;
-  const linkedPrinting = { name: card.name, set: card.set_code, collectorNumber: card.collector_number };
+  const linkedPrinting = cardPrinting(card);
 
   return (
     <Grid gutter="lg">
       <Grid.Col span={{ base: 12, sm: 5 }}>
         <CardImage name={card.name} url={imageUrl} backUrl={backImage} loading={false} />
         <PrintPrice scryfallId={card.scryfall_id} foil={card.foil} ta="center" mt="xs" />
-        <CardLinkTiles printing={linkedPrinting} visibleFrom="sm" mt="xs" ta="center" />
+        <CardLinkTiles printing={linkedPrinting} placement="image" />
       </Grid.Col>
       <Grid.Col span={{ base: 12, sm: 7 }}>
         <Stack>
@@ -91,7 +92,7 @@ function SharedCardDetail({ card, imageUrl, details, onAdd }: SharedCardDetailPr
             )}
           </div>
           <CardRulesText scryfallId={card.scryfall_id} />
-          <CardLinkTiles printing={linkedPrinting} hiddenFrom="sm" />
+          <CardLinkTiles printing={linkedPrinting} placement="text" />
           {onAdd && <AddSharedCard onAdd={onAdd} />}
         </Stack>
       </Grid.Col>
