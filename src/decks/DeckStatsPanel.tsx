@@ -10,6 +10,7 @@ import { BarList } from './charts';
 import { BackFacesExtra } from './DeckCardGroups';
 import { CurveCardList } from './CurveCardList';
 import { CurveLegend, fullCurve, ManaCurveChart } from './ManaCurveChart';
+import { formatTotalManaValue } from './manaValue';
 
 const COLORS: { key: string; name: string; color: string }[] = [
   { key: 'W', name: 'Blanc', color: '#F8F6D8' },
@@ -118,7 +119,7 @@ export function DeckStatsView({
             </>
           }
         />
-        <StatTile label="Hors terrains" value={data.nonland_count} />
+        <StatTile label="Coût de mana total" value={formatTotalManaValue(data.total_mana_value)} />
         <StatTile label="Coût de mana moyen" value={data.average_mana_value.toFixed(2)} />
         {currency && (
           <StatTile
