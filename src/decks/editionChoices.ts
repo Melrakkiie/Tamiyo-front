@@ -19,8 +19,19 @@ export interface EditionChoices {
   hiddenLocked: number;
 }
 
-export function editionChoices({ source, copies, deckCardIds }: EditionChoicesInput): EditionChoices {
+export function editionChoices({
+  source,
+  copies,
+  printings,
+  deckCardIds,
+  isLocked,
+}: EditionChoicesInput): EditionChoices {
   const sourceIds = new Set(source.kind === 'owned' ? source.copy_ids : []);
-  const offered = copies.filter((copy) => !sourceIds.has(copy.id) && !deckCardIds.has(copy.id));
-  return { offered, copies: offered, others: [], hiddenLocked: 0 };
+  const available = copies.filter((copy) => !sourceIds.has(copy.id) && !deckCardIds.has(copy.id));
+  const offered = available.filter((copy) => !isLocked(copy.storage_id));
+  const offeredPrintings = new Set(offered.map((copy) => copy.scryfall_id));
+  const others = printings.filter(
+    (printing) => printing.id !== source.scryfall_id && !offeredPrintings.has(printing.id),
+  );
+  return { offered, copies: offered, others, hiddenLocked: available.length - offered.length };
 }
