@@ -274,18 +274,14 @@ function CommanderCard({ card, label, imageUrl, onOpen }: CommanderCardProps) {
   );
 }
 
-function useSharedDeckTiles(
-  signedIn: boolean,
-  collectionCounts: Map<string, number> | null,
-  imageUrl: (card: Card) => string | undefined,
-) {
+function useSharedDeckTiles(signedIn: boolean, collectionCounts: Map<string, number> | null) {
   const contextMenu = useCardContextMenu();
   const cardMenu = useSharedCardMenu(signedIn);
   const extras: DeckBoardsExtras<OwnedEntry> = {
     tile: (card) => ({
       props: {
         collectionCount: collectionCounts ? collectionCounts.get(cardNameKey(card.name)) : undefined,
-        onContextMenu: (event, clicked) => contextMenu.open(event, cardMenu.menuFor(clicked, imageUrl(clicked))),
+        onContextMenu: (event, clicked, shown) => contextMenu.open(event, cardMenu.menuFor(clicked, shown)),
       },
     }),
   };
@@ -330,7 +326,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
     tagsOf: (card) => tagsOf(cardTags, card.name),
   });
   const visuals = useCardVisuals(all, display);
-  const tiles = useSharedDeckTiles(signedIn, showCollection ? ownedByName : null, visuals.imageUrl);
+  const tiles = useSharedDeckTiles(signedIn, showCollection ? ownedByName : null);
 
   function toggleBoard(board: CollapsibleBoard) {
     setCollapsed((current) =>

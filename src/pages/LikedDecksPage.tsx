@@ -2,11 +2,10 @@ import { Alert, Anchor, Center, Loader, SimpleGrid, Stack, Text, Title } from '@
 import { Link } from 'react-router';
 
 import { errorMessage } from '../api/errors';
-import { deckArtId } from '../decks/art';
+import { useDeckArts } from '../decks/art';
 import { useLikedDecks } from '../decks/likes';
 import { PublicDeckTile } from '../decks/PublicDeckTile';
 import { capitalize, groupByRecent } from '../layout/groupByRecent';
-import { useCardArts } from '../scryfall/hooks';
 import { EmptyNote } from '../theme/EmptyNote';
 import { usePageTitle } from '../layout/usePageTitle';
 
@@ -14,7 +13,7 @@ export function LikedDecksPage() {
   usePageTitle('Decks aimés');
   const liked = useLikedDecks();
   const decks = liked.data ?? [];
-  const arts = useCardArts(decks.map(deckArtId));
+  const artOf = useDeckArts(decks);
 
   return (
     <Stack gap="xl">
@@ -49,10 +48,9 @@ export function LikedDecksPage() {
                 </Text>
               </Title>
               <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
-                {group.items.map((deck) => {
-                  const artId = deckArtId(deck);
-                  return <PublicDeckTile key={deck.id} deck={deck} art={artId ? (arts.data?.[artId] ?? null) : null} />;
-                })}
+                {group.items.map((deck) => (
+                  <PublicDeckTile key={deck.id} deck={deck} art={artOf(deck)} />
+                ))}
               </SimpleGrid>
             </Stack>
           ))}

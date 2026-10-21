@@ -6,13 +6,12 @@ import { Link, useParams } from 'react-router';
 import { errorMessage } from '../api/errors';
 import { useAccount } from '../auth/account';
 import { ProfileAvatar, useAvatarArt } from '../auth/UserAvatar';
-import { artCredit, deckArtId } from '../decks/art';
+import { artCredit, useDeckArts } from '../decks/art';
 import type { Deck } from '../api/types';
 import { DeckFormatGroups, FolderTreeView } from '../decks/DeckFolderTree';
 import { DeckTile } from '../decks/DeckTile';
 import { buildFolderTree, usePublicFolders } from '../decks/folders';
 import { CheckIcon, Sticker } from '../theme/Sticker';
-import { useCardArts } from '../scryfall/hooks';
 import { connectionsUrl, useFollowStatus, usePublicDecks, useProfile } from '../users/api';
 import { FollowButton } from '../users/FollowButton';
 import { usePageTitle } from '../layout/usePageTitle';
@@ -30,7 +29,7 @@ export function ProfilePage() {
       setCollapsedFolders(new Set(folders.data.map((f) => f.id)));
     }
   }, [folders.data]);
-  const deckArts = useCardArts((decks.data ?? []).map(deckArtId));
+  const artOf = useDeckArts(decks.data ?? []);
   const avatarArt = useAvatarArt(profile.data?.avatar_scryfall_id);
   const follow = useFollowStatus(id);
   const own = !!account.data && account.data.id === id;
@@ -61,15 +60,7 @@ export function ProfilePage() {
   const publicFolders = folders.data ?? [];
 
   const tile = (deck: Deck) => {
-    const artId = deckArtId(deck);
-    return (
-      <DeckTile
-        key={deck.id}
-        deck={deck}
-        art={artId ? (deckArts.data?.[artId] ?? null) : null}
-        showVisibility={false}
-      />
-    );
+    return <DeckTile key={deck.id} deck={deck} art={artOf(deck)} showVisibility={false} />;
   };
 
   function toggleFolder(folderId: number) {

@@ -173,7 +173,13 @@ export interface CardArt {
   artist: string | null;
 }
 
-export function cardArt(card: ScryfallCard): CardArt | null {
+export type CardFace = 'front' | 'back';
+
+export function cardArt(card: ScryfallCard, shown: CardFace = 'front'): CardArt | null {
+  const back = shown === 'back' && isDoubleFaced(card) ? card.card_faces?.[1] : undefined;
+  if (back?.image_uris?.art_crop) {
+    return { url: back.image_uris.art_crop, artist: back.artist ?? card.artist ?? null };
+  }
   const face = card.card_faces?.[0];
   const url = card.image_uris?.art_crop ?? face?.image_uris?.art_crop;
   if (!url) {

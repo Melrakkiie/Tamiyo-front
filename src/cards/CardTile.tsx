@@ -8,7 +8,7 @@ import { withSymbols } from '../scryfall/manaSymbols';
 import { StorageLabel } from '../storages/StorageLabel';
 import type { StorageName } from '../storages/storageDirectory';
 import { FoilSticker, ProxySticker } from '../theme/Sticker';
-import type { ContextMenuEvent } from './CardContextMenu';
+import type { ContextMenuEvent, ShownFace } from './CardContextMenu';
 import type { CardDisplay } from './CardDisplay';
 import { CardImage } from './CardImage';
 import { CommanderBadge, CommanderInlineMark } from './CommanderMark';
@@ -32,7 +32,7 @@ export interface CardTileProps<T extends TileCard = Card> {
   manaCost?: string | null;
   details?: ReactNode;
   onOpen: (card: T) => void;
-  onContextMenu?: (event: ContextMenuEvent, card: T) => void;
+  onContextMenu?: (event: ContextMenuEvent, card: T, shown: ShownFace) => void;
 }
 
 function ManaCost({ card, manaCost }: { card: TileCard; manaCost: string | null | undefined }) {
@@ -69,16 +69,17 @@ function CardRow<T extends TileCard>({
   onContextMenu,
 }: Pick<
   CardTileProps<T>,
-  'card' | 'commander' | 'pendingStatus' | 'collectionCount' | 'manaCost' | 'details' | 'onOpen' | 'onContextMenu'
+  'card' | 'commander' | 'pendingStatus' | 'collectionCount' | 'manaCost' | 'details' | 'onOpen'
 > & {
   onPreview: () => void;
+  onContextMenu?: (event: ContextMenuEvent) => void;
 }) {
   const quantity = card.quantity ?? 1;
   return (
     <UnstyledButton
       onClick={() => onOpen(card)}
       className="tamiyo-touch-menu"
-      onContextMenu={onContextMenu && ((event) => onContextMenu(event, card))}
+      onContextMenu={onContextMenu}
       onMouseEnter={onPreview}
       onFocus={onPreview}
       aria-label={quantity > 1 ? `${card.name}, ${quantity} exemplaires` : card.name}
@@ -139,6 +140,9 @@ export function CardTile<T extends TileCard = Card>({
       imageUrl: shownUrl ?? imageUrl,
       open: () => onOpen(card),
     });
+  const shown: ShownFace =
+    backImageUrl && shownUrl === backImageUrl ? { face: 'back', imageUrl: backImageUrl } : { face: 'front', imageUrl };
+  const openMenu = onContextMenu && ((event: ContextMenuEvent) => onContextMenu(event, card, shown));
   const { textOnly, compact, stacked, overlapped, showDetails } = display;
   if (textOnly) {
     return (
@@ -151,7 +155,7 @@ export function CardTile<T extends TileCard = Card>({
         details={details}
         onOpen={onOpen}
         onPreview={onPreview}
-        onContextMenu={onContextMenu}
+        onContextMenu={openMenu}
       />
     );
   }
@@ -161,7 +165,7 @@ export function CardTile<T extends TileCard = Card>({
     <UnstyledButton
       onClick={() => onOpen(card)}
       className="tamiyo-touch-menu"
-      onContextMenu={onContextMenu && ((event) => onContextMenu(event, card))}
+      onContextMenu={openMenu}
       onMouseEnter={onPreview}
       onFocus={onPreview}
       aria-label={quantity > 1 ? `${card.name}, ${quantity} exemplaires` : card.name}

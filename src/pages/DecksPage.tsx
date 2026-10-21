@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router';
 
 import { errorMessage } from '../api/errors';
 import type { Deck, DeckFolder } from '../api/types';
-import { deckArtId } from '../decks/art';
+import { useDeckArts } from '../decks/art';
 import { useImportIntoDeck } from '../bulk/api';
 import { type DeckInput, useAllDecks, useCreateDeck, useDeleteDeck } from '../decks/api';
 import { DeckFormModal, type DeckListSubmission } from '../decks/DeckFormModal';
@@ -22,7 +22,6 @@ import {
 } from '../decks/folders';
 import { useCardContextMenu } from '../cards/CardContextMenu';
 import { useDeckTileMenu } from '../decks/useDeckTileMenu';
-import { useCardArts } from '../scryfall/hooks';
 import { EmptyNote } from '../theme/EmptyNote';
 import { usePageTitle } from '../layout/usePageTitle';
 
@@ -31,7 +30,7 @@ export function DecksPage() {
   const navigate = useNavigate();
   const decks = useAllDecks();
   const folders = useDeckFolders();
-  const arts = useCardArts((decks.data ?? []).map(deckArtId));
+  const artOf = useDeckArts(decks.data ?? []);
   const updateFolder = useUpdateFolder();
   const moveDeck = useMoveDeckToFolder();
   const setFavorite = useSetFavorite();
@@ -100,11 +99,10 @@ export function DecksPage() {
   };
 
   const tile = (deck: Deck) => {
-    const artId = deckArtId(deck);
     return (
       <DeckTile
         deck={deck}
-        art={artId ? (arts.data?.[artId] ?? null) : null}
+        art={artOf(deck)}
         onToggleFavorite={() => setFavorite.mutate({ deckId: deck.id, favorite: !deck.favorite })}
         onContextMenu={(event) => contextMenu.open(event, deckMenu.menuFor(deck))}
       />

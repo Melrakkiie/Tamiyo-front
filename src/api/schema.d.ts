@@ -819,7 +819,7 @@ export interface paths {
                     /** @description Compared with toughness_op. A card matches if any of its faces does; only numeric toughnesses are compared (*, 1+*, X never match). */
                     toughness?: number;
                     toughness_op?: "eq" | "lt" | "lte" | "gt" | "gte";
-                    /** @description Matches the primary type and any type of the card's type line (fetched from Scryfall in the background). */
+                    /** @description Same as the search's t: key: matches anywhere in the printing's full type line (fetched from Scryfall in the background), case-insensitive, so Creature also returns artifact, enchantment and land creatures. A card whose printing isn't known yet matches on its primary type. */
                     type?: "Creature" | "Planeswalker" | "Battle" | "Instant" | "Sorcery" | "Artifact" | "Enchantment" | "Land";
                     /** @description Part of the subtypes, after the dash of the type line, case-insensitive. */
                     subtype?: string;
@@ -3258,7 +3258,7 @@ export interface paths {
         put?: never;
         /**
          * Create the pending cards in the collection and put them in the deck
-         * @description Creates one card per copy of every pending card (or only the one given as pending_id), in the given storage (or without storage), adds each one to the deck on the board it was pending on, and removes it from the pending list. Without pending_id, pending cards on the considering board are left out. Items are handled one at a time: if something fails, the items already handled stay done and the rest stay pending.
+         * @description Creates one card per copy of every pending card (or only the one given as pending_id), in the given storage (or without storage), adds each one to the deck on the board it was pending on, and removes it from the pending list. Without pending_id, pending cards on the considering board are left out. A pending commander or second commander keeps its slot: its first new copy fills it. All or nothing: on a failure the error comes alone (no summary) and nothing changed, so retrying never creates duplicates. The deck's updated date moves once per commit.
          */
         post: {
             parameters: {
@@ -3333,7 +3333,7 @@ export interface paths {
         put?: never;
         /**
          * Make a deck match a list
-         * @description Every card on the list ends up in the deck, every card not on it leaves it. Lines are matched against the deck's copies and pending cards on the same board (by printing and finish, or by name for a line without printing); unmatched copies leave the deck (owned ones stay in the collection, a removed commander is cleared), and what the deck lacks is added as POST /deck/{id}/import adds it. Each listed card gets exactly the tags its lines give. Sending back the moxfield export with tags=true changes nothing.
+         * @description Every card on the list ends up in the deck, every card not on it leaves it. Lines are matched against the deck's copies and pending cards on the same board (by printing and finish, or by name for a line without printing); unmatched copies leave the deck (owned ones stay in the collection, a removed commander is cleared), and what the deck lacks is added as POST /deck/{id}/import adds it, all at once and without setting a commander. Each listed card gets exactly the tags its lines give. Removals, additions and tag changes are applied in one transaction: when it fails, the error comes alone, with no summary, and the deck, its pending cards, its commander slots and its tags stay as they were. Sending back the moxfield export with tags=true changes nothing.
          */
         post: {
             parameters: {
@@ -3409,7 +3409,7 @@ export interface paths {
         put?: never;
         /**
          * Switch cards of a deck to the other finish
-         * @description Each listed owned copy or pending card not already in that finish leaves the deck (an owned copy stays in the collection as it is) and is replaced on the same board by copies of the same printing in that finish and with the same proxy state: ones in no deck first, then ones another deck uses, and pending cards for the rest. The commander stays the commander. The collection itself is never modified.
+         * @description Each listed owned copy or pending card not already in that finish leaves the deck (an owned copy stays in the collection as it is) and is replaced on the same board by copies of the same printing in that finish and with the same proxy state: ones in no deck first, then ones another deck uses, and pending cards for the rest. The commander stays the commander. The collection itself is never modified. The whole change is applied in one transaction; on a failure the route returns the error with no summary and nothing changes.
          */
         post: {
             parameters: {
@@ -3483,7 +3483,7 @@ export interface paths {
         put?: never;
         /**
          * Switch cards of a deck between a real card and a proxy
-         * @description Each listed owned copy or pending card not already in that proxy state leaves the deck (an owned copy stays in the collection as it is) and is replaced on the same board by copies of the same printing and finish with that proxy state: ones in no deck first, then ones another deck uses, and pending cards (with that proxy flag) for the rest. The commander stays the commander. The collection itself is never modified.
+         * @description Each listed owned copy or pending card not already in that proxy state leaves the deck (an owned copy stays in the collection as it is) and is replaced on the same board by copies of the same printing and finish with that proxy state: ones in no deck first, then ones another deck uses, and pending cards (with that proxy flag) for the rest. The commander stays the commander. The collection itself is never modified. The whole change is applied in one transaction; on a failure the route returns the error with no summary and nothing changes.
          */
         post: {
             parameters: {
@@ -3557,7 +3557,7 @@ export interface paths {
         put?: never;
         /**
          * Give each copy of a card in a deck its own printing and finish
-         * @description The listed owned copies and pending cards, all the same card on the same board and not the commander, get one printing each. Copies that already have a wanted printing and finish stay; the others leave the deck (an owned copy stays in the collection as it is, a pending card loses those copies) and the remaining printings are added on the same board: owned copies in no deck first, then ones another deck uses (never from a storage locked against the deck), and pending cards for the rest. The collection itself is never modified.
+         * @description The listed owned copies and pending cards, all the same card on the same board and not the commander, get one printing each. Copies that already have a wanted printing and finish stay; the others leave the deck (an owned copy stays in the collection as it is, a pending card loses those copies) and the remaining printings are added on the same board: owned copies in no deck first, then ones another deck uses (never from a storage locked against the deck), and pending cards for the rest. The collection itself is never modified. The whole change is applied in one transaction; on a failure the route returns the error with no summary and nothing changes.
          */
         post: {
             parameters: {
@@ -3637,7 +3637,7 @@ export interface paths {
         put?: never;
         /**
          * Add a list of cards to an existing deck
-         * @description Adds a decklist to this deck, without ever creating cards in the collection. Accepts a Moxfield plain-text export ("1 Sol Ring (SLD) 1011 *F*", resolved by set and collector number against Scryfall), a plain "4 Lightning Bolt" list (resolved by name, any owned printing can be used, missing copies are added in Scryfall's default printing), or a mix of both. Owned copies go in the deck (cards_linked), copies in no deck and of the same finish first, each copy used once and copies already in this deck never used twice, copies in storages locked against this deck left out unless include_locked_storages is true; missing copies become pending cards (cards_pending). Section headers choose the board of the lines below them: Sideboard for sideboard, Maybeboard or Considering for considering, main otherwise. The lines under a Commander header (two at most) become the commander and the second commander, only if the deck has none yet; without that header, commander_from_first_line makes the first card line of the main board the commander. An owned one becomes commander_id (partner_id), a missing one the pending commander (commander_pending_id, partner_pending_id). Moxfield tags at the end of a line ("#ramp #food generator") are added to that card's tags. Pending cards and tags use the English Scryfall name, whatever the list's language. A file starting with "{" is read as a Tamiyo deck file (see TamiyoFile): cards go on their boards, its commanders become the deck's when it has none, and its tags are added to the deck's.
+         * @description Adds a decklist to this deck, without ever creating cards in the collection. Accepts a Moxfield plain-text export ("1 Sol Ring (SLD) 1011 *F*", resolved by set and collector number against Scryfall), a plain "4 Lightning Bolt" list (resolved by name, any owned printing can be used, missing copies are added in Scryfall's default printing), or a mix of both. Owned copies go in the deck (cards_linked), copies in no deck and of the same finish first, each copy used once and copies already in this deck never used twice, copies in storages locked against this deck left out unless include_locked_storages is true; missing copies become pending cards (cards_pending). Section headers choose the board of the lines below them: Sideboard for sideboard, Maybeboard or Considering for considering, main otherwise. The lines under a Commander header (two at most) become the commander and the second commander, only if the deck has none yet; without that header, commander_from_first_line makes the first card line of the main board the commander. An owned one becomes commander_id (partner_id), a missing one the pending commander (commander_pending_id, partner_pending_id). Moxfield tags at the end of a line ("#ramp #food generator") are added to that card's tags. Pending cards and tags use the English Scryfall name, whatever the list's language. A file starting with "{" is read as a Tamiyo deck file (see TamiyoFile): cards go on their boards, its commanders become the deck's when it has none, and its tags are added to the deck's. A proxy entry only uses the collection's proxies and becomes a pending proxy for the rest; an entry without proxy, or false, only uses real copies. The resolved lines, commanders and tags are placed all at once: on a failure nothing is placed and the error comes alone, with no summary. Unresolved lines are skipped and noted in warnings. The deck's updated date moves once per import.
          */
         post: {
             parameters: {
@@ -3723,7 +3723,7 @@ export interface paths {
         put?: never;
         /**
          * Copy a deck into the authenticated user's decks
-         * @description Copies one of the user's decks, or someone else's public or unlisted deck, into a new deck with the same format and background, named after the body's name or "<name> (copie)" when it is absent or blank, in the body's folder_id or at the root, with the body's visibility or private. Its cards, boards, commander and tags are added as POST /deck/{id}/import does with a Tamiyo deck file: owned copies go in the copy, missing ones become pending cards. If adding the cards fails, the copy is removed.
+         * @description Copies one of the user's decks, or someone else's public or unlisted deck, into a new deck with the same format and background, named after the body's name or "<name> (copie)" when it is absent or blank, in the body's folder_id or at the root, with the body's visibility or private. Its cards, boards, commander, second commander, finishes, proxies and tags are copied from the database, with no Scryfall call: owned copies go in the copy (proxies for proxies, real copies for real cards), missing ones become pending cards, pending proxies for proxies. The deck and its cards are created in one transaction: on a failure no deck is created.
          */
         post: {
             parameters: {
@@ -3774,7 +3774,6 @@ export interface paths {
                     };
                 };
                 500: components["responses"]["InternalError"];
-                502: components["responses"]["BadGateway"];
             };
         };
         delete?: never;
@@ -3797,7 +3796,7 @@ export interface paths {
         put?: never;
         /**
          * Add a deck's cards to the authenticated user's collection
-         * @description Creates cards in the user's collection from the cards of the chosen boards of a deck, owned and pending alike, in their exact printing and finish, in storage_id when given. On one of the user's own decks, mode "pending" adds the pending cards and puts them in the deck, like POST /deck/{id}/pending/commit; "all" does the same and also adds one more copy of every card already in the deck, which stays out of any deck. On someone else's public or unlisted deck, "all" adds every copy and "missing" only the copies the user lacks, counted by card name whatever the printing, every copy of the collection counting. Cards are handled one at a time: on a failure, those already added stay added.
+         * @description Creates cards in the user's collection from the cards of the chosen boards of a deck, owned and pending alike, in their exact printing and finish, in storage_id when given. A proxy in the deck, owned or pending, is created as a proxy. On one of the user's own decks, mode "pending" adds the pending cards and puts them in the deck, like POST /deck/{id}/pending/commit; "all" does the same and also adds one more copy of every card already in the deck, which stays out of any deck. On someone else's public or unlisted deck, "all" adds every copy and "missing" only the copies the user lacks, counted by card name whatever the printing, every copy of the collection counting. Everything happens in one transaction: every card is created, or none, and a failure leaves the deck, its pending cards and the collection as they were. The summary has no warnings.
          */
         post: {
             parameters: {
@@ -3820,7 +3819,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Cards added; cards_linked counts those also put in the deck. */
+                /** @description All cards added; cards_linked counts those also put in the deck. */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -3944,7 +3943,7 @@ export interface paths {
         };
         /**
          * Check a deck's legality for its own format
-         * @description Checks every card in the deck against the deck's own format field, using each card's Scryfall legalities. For the "commander" format specifically, also checks singleton (one copy of each card by name, basic lands excepted), color identity (every card within the union of the commanders' color identities) and, with a second commander, that the two can be paired (Partner, Partner with, Partner—quality, Friends forever, Choose a Background with a Background, Doctor's companion with a Time Lord Doctor). Nothing is persisted — computed fresh from Scryfall data on every call.
+         * @description Checks every card in the deck against the deck's own format field, using the format lists stored with each card's printing (legal, restricted, banned; a card in none of them is not legal), refreshed daily, so a change can take up to a day to show. For the "commander" format specifically, also checks singleton (one copy of each card by name, basic lands excepted), color identity (every card within the union of the commanders' color identities) and, with a second commander, that the two can be paired (Partner, Partner with, Partner—quality, Friends forever, Choose a Background with a Background, Doctor's companion with a Time Lord Doctor). Nothing is persisted. A card whose printing isn't stored yet is reported as unverified.
          */
         get: {
             parameters: {
@@ -3987,7 +3986,6 @@ export interface paths {
                     };
                 };
                 500: components["responses"]["InternalError"];
-                502: components["responses"]["BadGateway"];
             };
         };
         put?: never;
@@ -4010,7 +4008,7 @@ export interface paths {
         };
         /**
          * Summarize a deck's composition
-         * @description Mana curve, color breakdown and primary card types, computed from Scryfall data. Lands are excluded from the mana curve, color breakdown and average mana value, but still counted in card_count, land_count and type_breakdown.
+         * @description Mana curve, color breakdown and primary card types, computed from the stored printing of each card, without calling Scryfall (up to a day behind it). A card whose printing isn't stored yet, or that Scryfall doesn't know, counts as "Unknown" in type_breakdown. Lands are excluded from the mana curve, color breakdown and average mana value, but still counted in card_count, land_count and type_breakdown.
          */
         get: {
             parameters: {
@@ -4033,7 +4031,7 @@ export interface paths {
                         "application/json": components["schemas"]["DeckStats"];
                     };
                 };
-                /** @description id is not a UUID, or the deck's format isn't one Scryfall recognizes. */
+                /** @description id is not a UUID. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -4053,7 +4051,6 @@ export interface paths {
                     };
                 };
                 500: components["responses"]["InternalError"];
-                502: components["responses"]["BadGateway"];
             };
         };
         put?: never;
@@ -4244,7 +4241,6 @@ export interface paths {
                 };
                 429: components["responses"]["SharedTooManyRequests"];
                 500: components["responses"]["InternalError"];
-                502: components["responses"]["BadGateway"];
             };
         };
         put?: never;
@@ -4290,15 +4286,6 @@ export interface paths {
                         "application/json": components["schemas"]["DeckStats"];
                     };
                 };
-                /** @description The deck's format isn't one Scryfall recognizes */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
                 /** @description No deck has this id, or the deck is private. */
                 404: {
                     headers: {
@@ -4310,7 +4297,6 @@ export interface paths {
                 };
                 429: components["responses"]["SharedTooManyRequests"];
                 500: components["responses"]["InternalError"];
-                502: components["responses"]["BadGateway"];
             };
         };
         put?: never;
@@ -5332,7 +5318,7 @@ export interface paths {
         };
         /**
          * Export one deck as text, in a chosen format
-         * @description Exports the deck's cards, pending ones included, as plain text, or as a Tamiyo deck file with format=tamiyo (with the deck's tags when tags=true). cardmarket: a list for a Cardmarket wants list, the cards of the boards listed in boards, main and sideboard by default (only the pending ones with pending=true), one line per card name, "4 Dark Ritual", or per card and expansion with printings=true, "2 Dark Confidant (Modern Masters)", expansion names being Scryfall's, without the basic lands with basic_lands=false. moxfield: one line per printing, "1 Sol Ring (SLD) 1011 *F*", the commanders' lines first with their full quantity, the rest sorted alphabetically, so importing the file back reconstructs the same commander. plain: one line per card name, "4 Lightning Bolt", the commanders first. arena: MTG Arena's format, a "Commander" section (when the deck has one) then a "Deck" section, one line per card name, split cards written with " // ". The sideboard follows in a section of its own ("SIDEBOARD:" in moxfield, "Sideboard" otherwise), then the considered cards ("MAYBEBOARD:" in moxfield, "Maybeboard" in plain, left out of arena), each section only when it has cards.
+         * @description Exports the deck's cards, pending ones included, as plain text, or as a Tamiyo deck file with format=tamiyo (with the deck's tags when tags=true). cardmarket: a list for a Cardmarket wants list, the cards of the boards listed in boards, main and sideboard by default (only the pending ones with pending=true), one line per card name, "4 Dark Ritual", or per card and expansion with printings=true, "2 Dark Confidant (Modern Masters)", expansion names being Scryfall's, without the basic lands with basic_lands=false. moxfield: one line per printing, "1 Sol Ring (SLD) 1011 *F*", the commanders first on lines of their own with a quantity of 1 (other copies of their card stay with the rest of the deck), the rest sorted alphabetically, so importing the file back reconstructs the same commander; proxies are added up with the real copies of their printing. plain: one line per card name, "4 Lightning Bolt", the commanders first on lines of their own. arena: MTG Arena's format, a "Commander" section (when the deck has one) then a "Deck" section, one line per card name, split cards written with " // ". The sideboard follows in a section of its own ("SIDEBOARD:" in moxfield, "Sideboard" otherwise), then the considered cards ("MAYBEBOARD:" in moxfield, "Maybeboard" in plain, left out of arena), each section only when it has cards.
          */
         get: {
             parameters: {
@@ -5504,7 +5490,7 @@ export interface components {
                 owned: number;
             }[];
         };
-        /** @description Tamiyo's own versioned file format, for a collection, a storage or a deck. Collection and storage files list storages and cards with their storage and proxy status; deck files have a deck object, cards with their board and commander flag, and optionally tags. */
+        /** @description Tamiyo's own versioned file format, for a collection, a storage or a deck. Collection and storage files list storages and cards with their storage and proxy status; deck files have a deck object, cards with their board, proxy status and commander flag, and optionally tags. */
         TamiyoFile: {
             /** @description Format version, currently 1. */
             tamiyo: number;
@@ -5527,8 +5513,11 @@ export interface components {
                 set_code?: string;
                 collector_number?: string;
                 foil?: boolean;
-                /** @description Collection and storage files only. */
-                proxy?: boolean;
+                /**
+                 * @description Whether the entry's copies are proxies. Optional on import: a deck file without it imports as real cards.
+                 * @default false
+                 */
+                proxy: boolean;
                 quantity: number;
                 /** @description Collection and storage files only; the name of one of the storages, null for no storage. */
                 storage?: string | null;
@@ -5551,6 +5540,7 @@ export interface components {
             price: number | null;
         };
         LegalityIssue: {
+            /** @description One of the card's owned copies in the deck. Absent when the card is only pending, or for an issue about the whole deck. */
             card_id?: number;
             /** @description Empty for an issue about the whole deck, such as its size. */
             card_name: string;
@@ -5594,7 +5584,7 @@ export interface components {
             };
             /** @description Cards whose front face isn't a land but whose back face is (modal double-faced cards), by name. They aren't in land_count. */
             back_face_lands: components["schemas"]["BackFaceCard"][];
-            /** @description Value of the main board, owned and pending cards, proxies left out, from Scryfall's current prices, rounded to the cent. */
+            /** @description Value of the main board, owned and pending cards, proxies left out, from the stored printing prices the deck's card list shows, rounded to the cent. */
             value: components["schemas"]["Value"];
             /** @description Part of value coming from the cards the deck holds, rounded to the cent on its own. */
             owned_value: components["schemas"]["Value"];
@@ -5685,6 +5675,7 @@ export interface components {
             bracket?: number | null;
             /** Format: uuid */
             background_scryfall_id: string | null;
+            background_face: components["schemas"]["DeckBackgroundFace"];
             /** Format: uuid */
             commander_scryfall_id: string | null;
             commander_name: string | null;
@@ -5990,6 +5981,7 @@ export interface components {
              * @description Scryfall id of the printing whose art (art_crop) is shown behind the deck, null when none was chosen.
              */
             background_scryfall_id?: string | null;
+            background_face: components["schemas"]["DeckBackgroundFace"];
             /**
              * Format: uuid
              * @description Scryfall id of the commander card, null without a commander.
@@ -6047,6 +6039,7 @@ export interface components {
             bracket?: number | null;
             /** Format: uuid */
             background_scryfall_id: string | null;
+            background_face: components["schemas"]["DeckBackgroundFace"];
             /** Format: uuid */
             commander_scryfall_id: string | null;
             /**
@@ -6061,7 +6054,7 @@ export interface components {
             added: string;
             updated: string;
         };
-        /** @description One printing of a card in a shared deck, with how many copies the deck holds. */
+        /** @description One printing, finish, proxy state and board of a card in a shared deck, with how many copies the deck holds. Proxies are entries of their own, though the proxy flag isn't exposed. */
         SharedDeckCard: {
             name: string;
             /** Format: uuid */
@@ -6205,15 +6198,26 @@ export interface components {
             partner_pending_id?: number;
             /** @description Set to true to clear the second commander (partner_id and partner_pending_id). */
             clear_partner_id?: boolean;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Shows the printing's front unless background_face says otherwise.
+             */
             background_scryfall_id?: string;
-            /** @description Set to true to remove the chosen art (set background_scryfall_id to null). */
+            /** @description Only accepted with background_scryfall_id (400 otherwise). */
+            background_face?: components["schemas"]["DeckBackgroundFace"];
+            /** @description Set to true to remove the chosen art (set background_scryfall_id to null and background_face to front). */
             clear_background_scryfall_id?: boolean;
             visibility?: components["schemas"]["DeckVisibility"];
             bracket?: number;
             /** @description Set to true to remove the bracket. */
             clear_bracket?: boolean;
         };
+        /**
+         * @description The face of background_scryfall_id whose art is shown: front, or back for the back face of a double-faced or reversible card. A meld card's back is its own printing, picked with front. Always front without a chosen printing.
+         * @default front
+         * @enum {string}
+         */
+        DeckBackgroundFace: "front" | "back";
         /**
          * @description Who may see the deck once decks can be shared: only its owner (private), anyone with its link (unlisted), or anyone, listed when browsing decks (public). No effect yet: deck routes only serve the owner's decks.
          * @default unlisted
