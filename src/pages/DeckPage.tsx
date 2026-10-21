@@ -15,7 +15,7 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { type RefObject, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
@@ -50,7 +50,14 @@ import {
   usePendingCards,
   useUpdateDeck,
 } from '../decks/api';
-import { clearSlotChanges, type CommanderSlot, commanderTargets, hasCommander, hasPartner } from '../decks/commanders';
+import {
+  clearSlotChanges,
+  type CommanderSlot,
+  commanderSlotOf,
+  commanderTargets,
+  hasCommander,
+  hasPartner,
+} from '../decks/commanders';
 import { type DeckEntry, deckEntries, type Taggable } from '../decks/deckEntries';
 import { type CollapsibleBoard, COLLAPSIBLE_BOARDS, DEFAULT_COLLAPSED_BOARDS } from '../decks/boards';
 import { DeckBoards, type TileContext, type TileExtras, useDeckBoards } from '../decks/DeckBoards';
@@ -141,6 +148,7 @@ function DeckView({ id }: { id: string }) {
   usePageTitle(deck.data?.name ?? 'Deck');
   const update = useUpdateDeck();
   const remove = useDeleteDeck();
+  const openPartner = useRef<(() => void) | null>(null);
   const [editOpened, setEditOpened] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [tab, setTab] = useState<string | null>('cards');
@@ -272,7 +280,7 @@ function DeckView({ id }: { id: string }) {
       )}
       {remove.error && <Alert color="red">{errorMessage(remove.error)}</Alert>}
 
-      <CommanderSection deck={current} />
+      <CommanderSection deck={current} openPartner={openPartner} />
 
       <Tabs value={tab} onChange={setTab}>
         <Tabs.List>
@@ -281,7 +289,7 @@ function DeckView({ id }: { id: string }) {
         </Tabs.List>
 
         <Tabs.Panel value="cards" pt="md">
-          <DeckCardsWithView deck={current} />
+          <DeckCardsWithView deck={current} openPartner={openPartner} />
         </Tabs.Panel>
         <Tabs.Panel value="stats" pt="md">
           {tab === 'stats' && <DeckStatsPanel deck={current} />}
@@ -335,7 +343,9 @@ function DeckView({ id }: { id: string }) {
   );
 }
 
-function CommanderSection({ deck }: { deck: Deck }) {
+type PartnerOpener = RefObject<(() => void) | null>;
+
+function CommanderSection({ deck, openPartner }: { deck: Deck; openPartner: PartnerOpener }) {
   if (!hasCommander(deck)) {
     return isCommanderFormat(deck.format) ? (
       <Text size="sm" c="dimmed">
@@ -348,7 +358,13 @@ function CommanderSection({ deck }: { deck: Deck }) {
     <Group align="stretch" gap="sm">
       <CommanderPanel deck={deck} slot="commander" cardId={deck.commander_id} pendingId={deck.commander_pending_id} />
       {hasPartner(deck) && (
-        <CommanderPanel deck={deck} slot="partner" cardId={deck.partner_id} pendingId={deck.partner_pending_id} />
+        <CommanderPanel
+          deck={deck}
+          slot="partner"
+          cardId={deck.partner_id}
+          pendingId={deck.partner_pending_id}
+          openPartner={openPartner}
+        />
       )}
     </Group>
   );
@@ -359,9 +375,10 @@ interface CommanderPanelProps {
   slot: CommanderSlot;
   cardId: number | null | undefined;
   pendingId: number | null | undefined;
+  openPartner?: PartnerOpener;
 }
 
-function CommanderPanel({ deck, slot, cardId, pendingId }: CommanderPanelProps) {
+function CommanderPanel({ deck, slot, cardId, pendingId, openPartner }: CommanderPanelProps) {
   const showCollection = useShowCollectionInDecks();
   const commander = useCard(cardId);
   const pending = usePendingCards(deck.id);
@@ -380,6 +397,7 @@ function CommanderPanel({ deck, slot, cardId, pendingId }: CommanderPanelProps) 
         scryfallId: commanderScryfallId,
         foil: commander.data?.foil,
         imageUrl: undefined,
+        open: openPartner?.current ?? undefined,
       });
     }
   }
@@ -425,7 +443,7 @@ function CommanderPanel({ deck, slot, cardId, pendingId }: CommanderPanelProps) 
   );
 }
 
-function DeckCardsWithView({ deck }: { deck: Deck }) {
+function DeckCardsWithView({ deck, openPartner }: { deck: Deck; openPartner: PartnerOpener }) {
   const view = useDeckView(deck.id);
 
   if (view.isLoading) {
@@ -450,6 +468,7 @@ function DeckCardsWithView({ deck }: { deck: Deck }) {
       initialGrouping={initialGrouping}
       initialCollapsed={initialCollapsed}
       initialDisplay={displayFromStored(saved)}
+      openPartner={openPartner}
     />
   );
 }
@@ -460,6 +479,7 @@ interface DeckCardsProps {
   initialGrouping: DeckCardGrouping | null;
   initialCollapsed: CollapsibleBoard[];
   initialDisplay: DisplaySettings;
+  openPartner: PartnerOpener;
 }
 
 interface DeckViewChange {
@@ -476,7 +496,14 @@ const emptyBoardMessages: Record<CollapsibleBoard, string> = {
     "Aucune carte envisagée pour ce deck : ouvre une carte pour l'y déplacer, ou choisis cette section en ajoutant des cartes.",
 };
 
-function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initialDisplay }: DeckCardsProps) {
+function DeckCards({
+  deck,
+  initialSort,
+  initialGrouping,
+  initialCollapsed,
+  initialDisplay,
+  openPartner,
+}: DeckCardsProps) {
   const { pathname } = useLocation();
   const [sort, setSort] = useState<DeckCardSort>(initialSort);
   const currency = usePriceCurrency();
@@ -572,6 +599,18 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
     );
   });
   useEffect(() => () => setDefaultCardPreview(null), []);
+  const partnerCard = boards.main.stacks.find(
+    (entry) => boards.main.commanders.has(entry.key) && commanderSlotOf(deck, entry) === 'partner',
+  );
+  useEffect(() => {
+    openPartner.current = partnerCard ? () => opened.open(partnerCard) : null;
+  });
+  useEffect(
+    () => () => {
+      openPartner.current = null;
+    },
+    [openPartner],
+  );
 
   function tileExtras(entry: DeckEntry, { board, group, imageUrl }: TileContext): TileExtras {
     return {
