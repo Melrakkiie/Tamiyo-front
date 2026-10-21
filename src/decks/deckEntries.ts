@@ -25,15 +25,17 @@ interface EntryFields extends EntryPrinting {
   quantity: number;
 }
 
+export type Taggable = Pick<Card, 'name'>;
+
 export type OwnedEntry = Card & EntryFields & { kind: 'owned'; copy_ids: number[] };
 
 export type PendingEntry = EntryFields & { kind: 'pending'; pending: PendingCard };
 
 export type DeckEntry = OwnedEntry | PendingEntry;
 
-export type OwnedCard = Card & { board: DeckBoard; price?: number | null };
+export type OwnedSource = Card & { board: DeckBoard; price?: number | null };
 
-export function ownedEntry(card: OwnedCard): OwnedEntry {
+export function ownedEntry(card: OwnedSource): OwnedEntry {
   return {
     ...card,
     kind: 'owned',
@@ -68,7 +70,7 @@ export function pendingEntry(pending: PendingCard): PendingEntry {
   };
 }
 
-export function deckEntries(cards: OwnedCard[], pending: PendingCard[] = []): DeckEntry[] {
+export function deckEntries(cards: OwnedSource[], pending: PendingCard[] = []): DeckEntry[] {
   return [...cards.map(ownedEntry), ...pending.map(pendingEntry)];
 }
 

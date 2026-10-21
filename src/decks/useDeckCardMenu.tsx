@@ -55,61 +55,61 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
     onError: notifyError,
   });
 
-  function toggleFoil(card: DeckEntry, foil: boolean) {
+  function toggleFoil(entry: DeckEntry, foil: boolean) {
     const finish = foil ? 'foil' : 'non-foil';
     switchFoil.mutate(
-      { deckId: deck.id, ...entrySources(card), foil },
+      { deckId: deck.id, ...entrySources(entry), foil },
       {
         onSuccess: (summary) =>
           notifications.show({
             color: 'green',
-            message: `${card.name} est maintenant ${finish} dans ce deck${summaryDetails(summary)}. Ta collection n'a pas changé.`,
+            message: `${entry.name} est maintenant ${finish} dans ce deck${summaryDetails(summary)}. Ta collection n'a pas changé.`,
           }),
         onError: notifyError,
       },
     );
   }
 
-  function toggleProxy(card: DeckEntry, proxy: boolean) {
+  function toggleProxy(entry: DeckEntry, proxy: boolean) {
     const state = proxy ? 'est maintenant proxy' : "n'est plus proxy";
     switchProxy.mutate(
-      { deckId: deck.id, ...entrySources(card), proxy },
+      { deckId: deck.id, ...entrySources(entry), proxy },
       {
         onSuccess: (summary) =>
           notifications.show({
             color: 'green',
-            message: `${card.name} ${state} dans ce deck${summaryDetails(summary)}. Ta collection n'a pas changé.`,
+            message: `${entry.name} ${state} dans ce deck${summaryDetails(summary)}. Ta collection n'a pas changé.`,
           }),
         onError: notifyError,
       },
     );
   }
 
-  function addOne(card: DeckEntry, board: DeckBoard) {
+  function addOne(entry: DeckEntry, board: DeckBoard) {
     importLine.mutate(
-      { deckId: deck.id, file: deckLineFile(card, 1, board), commanderFromFirstLine: false },
+      { deckId: deck.id, file: deckLineFile(entry, 1, board), commanderFromFirstLine: false },
       {
         onSuccess: (summary) =>
           notifications.show({
             color: (summary.cards_skipped ?? 0) > 0 ? 'yellow' : 'green',
-            message: `${card.name} ajoutée : ${deckListSummary(summary)}.`,
+            message: `${entry.name} ajoutée : ${deckListSummary(summary)}.`,
           }),
         onError: (err) => notifications.show({ color: 'red', message: deckListErrorMessage(err) }),
       },
     );
   }
 
-  function removeOne(card: DeckEntry) {
-    const message = `Un exemplaire de ${card.name} retiré du deck.`;
-    if (card.kind === 'owned') {
-      const ids = card.copy_ids;
+  function removeOne(entry: DeckEntry) {
+    const message = `Un exemplaire de ${entry.name} retiré du deck.`;
+    if (entry.kind === 'owned') {
+      const ids = entry.copy_ids;
       removeOwned.mutate(
-        { deckId: deck.id, cardId: ids[ids.length - 1], commanderSlot: commanderSlotOf(deck, card) },
+        { deckId: deck.id, cardId: ids[ids.length - 1], commanderSlot: commanderSlotOf(deck, entry) },
         done(message),
       );
       return;
     }
-    const item = card.pending;
+    const item = entry.pending;
     if (item.quantity > 1) {
       setPendingQuantity.mutate({ deckId: deck.id, pendingId: item.id, quantity: item.quantity - 1 }, done(message));
     } else {
@@ -117,23 +117,23 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
     }
   }
 
-  function makeCommander(card: DeckEntry, slot: CommanderSlot) {
+  function makeCommander(entry: DeckEntry, slot: CommanderSlot) {
     const role = slot === 'commander' ? 'le commandant' : 'le second commandant';
     updateDeck.mutate(
-      { id: deck.id, changes: setSlotChanges(slot, entrySlotTarget(card)) },
-      done(`${card.name} est maintenant ${role} du deck.`),
+      { id: deck.id, changes: setSlotChanges(slot, entrySlotTarget(entry)) },
+      done(`${entry.name} est maintenant ${role} du deck.`),
     );
   }
 
-  function addToCollection(card: DeckEntry) {
-    if (card.kind === 'pending') {
-      const count = card.quantity;
+  function addToCollection(entry: DeckEntry) {
+    if (entry.kind === 'pending') {
+      const count = entry.quantity;
       commit.mutate(
-        { deckId: deck.id, storageId: null, pendingId: card.pending.id },
+        { deckId: deck.id, storageId: null, pendingId: entry.pending.id },
         done(
           count > 1
-            ? `${count} exemplaires de ${card.name} ajoutés à ta collection, sans rangement.`
-            : `${card.name} ajoutée à ta collection, sans rangement.`,
+            ? `${count} exemplaires de ${entry.name} ajoutés à ta collection, sans rangement.`
+            : `${entry.name} ajoutée à ta collection, sans rangement.`,
         ),
       );
       return;
@@ -141,45 +141,45 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
     createCards.mutate(
       {
         card: {
-          name: card.name,
-          scryfall_id: card.scryfall_id,
-          set_code: card.set_code,
-          collector_number: card.collector_number,
-          foil: card.foil,
+          name: entry.name,
+          scryfall_id: entry.scryfall_id,
+          set_code: entry.set_code,
+          collector_number: entry.collector_number,
+          foil: entry.foil,
           proxy: false,
           storage_id: null,
-          mana_value: card.mana_value,
-          colors: card.colors,
-          card_type: card.card_type,
-          color_identity: card.color_identity,
+          mana_value: entry.mana_value,
+          colors: entry.colors,
+          card_type: entry.card_type,
+          color_identity: entry.color_identity,
         },
         quantity: 1,
       },
-      done(`Un exemplaire de plus de ${card.name} dans ta collection, hors de ce deck.`),
+      done(`Un exemplaire de plus de ${entry.name} dans ta collection, hors de ce deck.`),
     );
   }
 
-  function setDeckImage(card: DeckEntry) {
+  function setDeckImage(entry: DeckEntry) {
     updateDeck.mutate(
-      { id: deck.id, changes: { background_scryfall_id: card.scryfall_id } },
-      done(`L'illustration de ${card.name} est maintenant celle du deck.`),
+      { id: deck.id, changes: { background_scryfall_id: entry.scryfall_id } },
+      done(`L'illustration de ${entry.name} est maintenant celle du deck.`),
     );
   }
 
-  function menuFor(card: DeckEntry, board: DeckBoard, imageUrl: string | undefined) {
-    const item = { entry: card, board, tag: null, imageUrl };
-    const commander = commanderSlotOf(deck, card) !== null;
-    const { quantity } = card;
+  function menuFor(entry: DeckEntry, board: DeckBoard, imageUrl: string | undefined) {
+    const item = { entry: entry, board, tag: null, imageUrl };
+    const commander = commanderSlotOf(deck, entry) !== null;
+    const { quantity } = entry;
     return (
       <>
-        <FoilToggleItem card={card} onToggle={(foil) => toggleFoil(card, foil)} divider={false} />
-        <ProxyToggleItem card={card} onToggle={(proxy) => toggleProxy(card, proxy)} />
+        <FoilToggleItem card={entry} onToggle={(foil) => toggleFoil(entry, foil)} divider={false} />
+        <ProxyToggleItem card={entry} onToggle={(proxy) => toggleProxy(entry, proxy)} />
         <Menu.Divider />
         {quantity >= 2 && !commander && (
-          <Menu.Item onClick={() => setSplitEntry(card)}>Séparer les éditions…</Menu.Item>
+          <Menu.Item onClick={() => setSplitEntry(entry)}>Séparer les éditions…</Menu.Item>
         )}
-        <Menu.Item onClick={() => addOne(card, board)}>Ajouter un exemplaire</Menu.Item>
-        <Menu.Item onClick={() => removeOne(card)} disabled={commander && quantity <= 1}>
+        <Menu.Item onClick={() => addOne(entry, board)}>Ajouter un exemplaire</Menu.Item>
+        <Menu.Item onClick={() => removeOne(entry)} disabled={commander && quantity <= 1}>
           Retirer un exemplaire
         </Menu.Item>
         <Menu.Item color="red" onClick={() => actions.remove(item)} disabled={commander}>
@@ -193,18 +193,18 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
         ))}
         {isCommanderFormat(deck.format) && !commander && board === 'main' && (
           <CommanderItem
-            card={card}
+            entry={entry}
             pairWith={hasCommander(deck) && !hasPartner(deck) ? deck.commander_scryfall_id : null}
-            onClick={(slot) => makeCommander(card, slot)}
+            onClick={(slot) => makeCommander(entry, slot)}
           />
         )}
-        <Menu.Item onClick={() => setOtherDeckEntry(card)}>Ajouter à un autre deck</Menu.Item>
-        <Menu.Item onClick={() => addToCollection(card)}>
-          {card.kind === 'pending' ? 'Ajouter à ma collection' : 'Ajouter un exemplaire à ma collection'}
+        <Menu.Item onClick={() => setOtherDeckEntry(entry)}>Ajouter à un autre deck</Menu.Item>
+        <Menu.Item onClick={() => addToCollection(entry)}>
+          {entry.kind === 'pending' ? 'Ajouter à ma collection' : 'Ajouter un exemplaire à ma collection'}
         </Menu.Item>
         <Menu.Divider />
-        <CardCopyItems card={card} imageUrl={imageUrl} />
-        <Menu.Item onClick={() => setDeckImage(card)} disabled={deck.background_scryfall_id === card.scryfall_id}>
+        <CardCopyItems card={entry} imageUrl={imageUrl} />
+        <Menu.Item onClick={() => setDeckImage(entry)} disabled={deck.background_scryfall_id === entry.scryfall_id}>
           Utiliser comme image du deck
         </Menu.Item>
       </>
@@ -222,13 +222,13 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
 }
 
 interface CommanderItemProps {
-  card: DeckEntry;
+  entry: DeckEntry;
   pairWith: string | null | undefined;
   onClick: (slot: CommanderSlot) => void;
 }
 
-function CommanderItem({ card, pairWith, onClick }: CommanderItemProps) {
-  const scryfallCard = useScryfallCard(card.scryfall_id);
+function CommanderItem({ entry, pairWith, onClick }: CommanderItemProps) {
+  const scryfallCard = useScryfallCard(entry.scryfall_id);
   const commander = useScryfallCard(pairWith ?? null);
   if (scryfallCard.isLoading || commander.isLoading) {
     return <Menu.Item disabled>Définir comme commandant</Menu.Item>;

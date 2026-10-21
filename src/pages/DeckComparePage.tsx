@@ -24,7 +24,7 @@ import { useCardVisuals } from '../cards/useCardVisuals';
 import { useDeckComparison } from '../decks/api';
 import { comparedStackTotals } from '../decks/comparedStack';
 import { DeckBoards, type DeckBoardsExtras, useDeckBoards } from '../decks/DeckBoards';
-import { type OwnedCard, type OwnedEntry, ownedEntry } from '../decks/deckEntries';
+import { type OwnedSource, type OwnedEntry, ownedEntry } from '../decks/deckEntries';
 import { FormatSticker } from '../decks/FormatSticker';
 import { SharedCardModal } from '../decks/SharedCardModal';
 import { type SharedDeckSort, sharedDeckSortOptions } from '../decks/shared';
@@ -214,7 +214,7 @@ function TabLabel({ title, cards, side, active }: TabLabelProps) {
   );
 }
 
-function toCards(cards: ComparedCard[], side: Side): OwnedCard[] {
+function toOwnedSources(cards: ComparedCard[], side: Side): OwnedSource[] {
   return cards.map((card, index) => ({
     id: index + 1,
     name: card.name,
@@ -244,22 +244,22 @@ interface ComparedCardsProps {
 }
 
 function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps) {
-  const [opened, setOpened] = useState<Card | null>(null);
-  const converted = toCards(cards, side);
+  const [opened, setOpened] = useState<OwnedEntry | null>(null);
+  const converted = toOwnedSources(cards, side);
   const byId = new Map<number, ComparedCard>(converted.map((card, index) => [card.id, cards[index]]));
   const boards = useDeckBoards({ entries: converted.map(ownedEntry), sort: options.sort, grouping: options.grouping });
   const visuals = useCardVisuals(converted, options.display);
 
-  function isCommander(card: Card) {
-    const totals = comparedStackTotals(card, byId);
+  function isCommander(entry: OwnedEntry) {
+    const totals = comparedStackTotals(entry, byId);
     return (side !== 'other' && totals.commander) || (side !== 'deck' && totals.otherCommander);
   }
 
-  function details(card: Card, long: boolean): ReactNode {
+  function details(entry: OwnedEntry, long: boolean): ReactNode {
     if (side !== 'both') {
       return null;
     }
-    const { quantity, otherQuantity } = comparedStackTotals(card, byId);
+    const { quantity, otherQuantity } = comparedStackTotals(entry, byId);
     const differs = quantity !== otherQuantity;
     return (
       <Text
@@ -277,7 +277,7 @@ function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps
   }
 
   const extras: DeckBoardsExtras<OwnedEntry> = {
-    tile: (card) => ({ props: { commander: isCommander(card), details: details(card, false) } }),
+    tile: (entry) => ({ props: { commander: isCommander(entry), details: details(entry, false) } }),
   };
 
   return (

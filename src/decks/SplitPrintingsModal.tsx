@@ -45,7 +45,7 @@ interface SplitPrintingsModalProps {
 export function SplitPrintingsModal({ deckId, entry, onClose }: SplitPrintingsModalProps) {
   return (
     <Modal opened={entry !== null} onClose={onClose} title="Séparer les éditions" size="lg">
-      {entry && <SplitPrintingsForm deckId={deckId} card={entry} onClose={onClose} />}
+      {entry && <SplitPrintingsForm deckId={deckId} entry={entry} onClose={onClose} />}
     </Modal>
   );
 }
@@ -55,18 +55,18 @@ interface Row {
   foil: boolean;
 }
 
-function SplitPrintingsForm({ deckId, card, onClose }: { deckId: string; card: DeckEntry; onClose: () => void }) {
-  const printings = usePrintings(card.name);
+function SplitPrintingsForm({ deckId, entry, onClose }: { deckId: string; entry: DeckEntry; onClose: () => void }) {
+  const printings = usePrintings(entry.name);
   const split = useSplitPrintings();
   const [rows, setRows] = useState<Row[]>(() =>
-    Array.from({ length: card.quantity }, () => ({ scryfallId: card.scryfall_id, foil: card.foil })),
+    Array.from({ length: entry.quantity }, () => ({ scryfallId: entry.scryfall_id, foil: entry.foil })),
   );
   const byId = new Map((printings.data ?? []).map((printing) => [printing.id, printing]));
   const options = (printings.data ?? []).map((printing) => ({
     value: printing.id,
     label: `${printing.set_name} · ${printing.set.toUpperCase()} #${printing.collector_number}`,
   }));
-  const changed = rows.some((row) => row.scryfallId !== card.scryfall_id || row.foil !== card.foil);
+  const changed = rows.some((row) => row.scryfallId !== entry.scryfall_id || row.foil !== entry.foil);
 
   function update(index: number, row: Row) {
     setRows((current) => current.map((other, i) => (i === index ? row : other)));
@@ -84,18 +84,18 @@ function SplitPrintingsForm({ deckId, card, onClose }: { deckId: string; card: D
       const printing = byId.get(row.scryfallId);
       return {
         scryfall_id: row.scryfallId,
-        set_code: printing?.set ?? card.set_code,
-        collector_number: printing?.collector_number ?? card.collector_number,
+        set_code: printing?.set ?? entry.set_code,
+        collector_number: printing?.collector_number ?? entry.collector_number,
         foil: row.foil,
       };
     });
     split.mutate(
-      { deckId, ...entrySources(card), printings: printingsOfRows },
+      { deckId, ...entrySources(entry), printings: printingsOfRows },
       {
         onSuccess: (summary) => {
           notifications.show({
             color: 'green',
-            message: `Les exemplaires de ${card.name} ont leur édition${summaryDetails(summary)}. Ta collection n'a pas changé.`,
+            message: `Les exemplaires de ${entry.name} ont leur édition${summaryDetails(summary)}. Ta collection n'a pas changé.`,
           });
           onClose();
         },
@@ -117,7 +117,7 @@ function SplitPrintingsForm({ deckId, card, onClose }: { deckId: string; card: D
   return (
     <Stack>
       <Text size="sm">
-        Choisis l'édition de chaque exemplaire de <b>{card.name}</b> :
+        Choisis l'édition de chaque exemplaire de <b>{entry.name}</b> :
       </Text>
       <Stack gap="xs">
         {rows.map((row, index) => {

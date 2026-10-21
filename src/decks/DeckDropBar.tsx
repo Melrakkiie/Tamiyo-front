@@ -1,8 +1,8 @@
 import { Box, Group, Paper, Portal, ScrollArea, Stack, Text, UnstyledButton } from '@mantine/core';
 import type { ReactNode } from 'react';
 
-import type { Card } from '../api/types';
 import { BOARDS, boardLabels } from './boards';
+import type { Taggable } from './deckEntries';
 import { type DragItem, useDraggedCard, useDropTarget } from './dragDrop';
 import type { DeckCardActions } from './useDeckCardActions';
 
@@ -77,7 +77,7 @@ interface QuickTagsPanelProps {
   tags: string[];
   dragged: DragItem;
   actions: DeckCardActions;
-  tagsOf: (card: Pick<Card, 'name'>) => string[];
+  tagsOf: (entry: Taggable) => string[];
 }
 
 function QuickTagsPanel({ tags, dragged, actions, tagsOf }: QuickTagsPanelProps) {
@@ -132,7 +132,7 @@ function QuickTagsPanel({ tags, dragged, actions, tagsOf }: QuickTagsPanelProps)
 interface DeckDropBarProps {
   actions: DeckCardActions;
   tagMode: boolean;
-  tagsOf: (card: Pick<Card, 'name'>) => string[];
+  tagsOf: (entry: Taggable) => string[];
   deckTags: string[];
 }
 

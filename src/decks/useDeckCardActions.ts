@@ -1,24 +1,17 @@
 import { notifications } from '@mantine/notifications';
 
 import { errorMessage } from '../api/errors';
-import type { Card, Deck, DeckBoard } from '../api/types';
-import {
-  useMoveDeckCards,
-  useMovePendingCard,
-  useRemoveCardFromDeck,
-  useRemoveCopiesFromDeck,
-  useRemovePendingCard,
-} from './api';
+import type { Deck, DeckBoard } from '../api/types';
+import { useRemoveCardFromDeck, useRemoveCopiesFromDeck, useRemovePendingCard } from './api';
 import { movedMessage } from './boards';
 import { commanderSlotOf } from './commanders';
 import type { DragItem } from './dragDrop';
+import type { Taggable } from './deckEntries';
 import { useSetCardTags } from './tags';
+import { useMoveEntry } from './useMoveEntry';
 
-type Named = Pick<Card, 'name'>;
-
-export function useDeckCardActions(deck: Deck, tagsOfCard: (card: Named) => string[]) {
-  const moveCards = useMoveDeckCards();
-  const movePending = useMovePendingCard();
+export function useDeckCardActions(deck: Deck, tagsOfCard: (entry: Taggable) => string[]) {
+  const mover = useMoveEntry(deck.id);
   const removeOne = useRemoveCardFromDeck();
   const removeCopies = useRemoveCopiesFromDeck();
   const removePending = useRemovePendingCard();
@@ -33,12 +26,12 @@ export function useDeckCardActions(deck: Deck, tagsOfCard: (card: Named) => stri
     return board !== item.board && commanderSlotOf(deck, item.entry) === null;
   }
 
-  function moveToBoard({ entry }: DragItem, board: DeckBoard) {
-    const message = movedMessage(entry.name, entry.quantity, board);
-    if (entry.kind === 'pending') {
-      movePending.mutate({ deckId: deck.id, pendingId: entry.pending.id, board }, callbacks(message));
-    } else {
-      moveCards.mutate({ deckId: deck.id, cardIds: entry.copy_ids, board }, callbacks(message));
+  async function moveToBoard({ entry }: DragItem, board: DeckBoard) {
+    try {
+      const count = await mover.move(entry, board);
+      notifications.show({ color: 'green', message: movedMessage(entry.name, count, board) });
+    } catch (err) {
+      notifications.show({ color: 'red', message: errorMessage(err) });
     }
   }
 
@@ -61,29 +54,29 @@ export function useDeckCardActions(deck: Deck, tagsOfCard: (card: Named) => stri
     }
   }
 
-  function changeTags(card: Named, tags: string[], message: string) {
-    setTags.mutate({ deckId: deck.id, name: card.name, tags }, callbacks(message));
+  function changeTags(entry: Taggable, tags: string[], message: string) {
+    setTags.mutate({ deckId: deck.id, name: entry.name, tags }, callbacks(message));
   }
 
-  function addTag({ entry: card }: DragItem, tag: string) {
-    const current = tagsOfCard(card);
+  function addTag({ entry }: DragItem, tag: string) {
+    const current = tagsOfCard(entry);
     if (!current.includes(tag)) {
-      changeTags(card, [...current, tag], `${card.name} : tag « ${tag} » ajouté.`);
+      changeTags(entry, [...current, tag], `${entry.name} : tag « ${tag} » ajouté.`);
     }
   }
 
-  function removeTag({ entry: card, tag }: DragItem) {
+  function removeTag({ entry, tag }: DragItem) {
     if (tag !== null) {
       changeTags(
-        card,
-        tagsOfCard(card).filter((other) => other !== tag),
-        `${card.name} : tag « ${tag} » retiré.`,
+        entry,
+        tagsOfCard(entry).filter((other) => other !== tag),
+        `${entry.name} : tag « ${tag} » retiré.`,
       );
     }
   }
 
-  function removeAllTags({ entry: card }: DragItem) {
-    changeTags(card, [], `${card.name} n'a plus de tag.`);
+  function removeAllTags({ entry }: DragItem) {
+    changeTags(entry, [], `${entry.name} n'a plus de tag.`);
   }
 
   return { canMoveTo, moveToBoard, remove, addTag, removeTag, removeAllTags };

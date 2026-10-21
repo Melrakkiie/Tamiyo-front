@@ -1,10 +1,10 @@
-import type { Card, DeckBoard, DeckCardSort } from '../api/types';
+import type { DeckBoard, DeckCardSort } from '../api/types';
 import { copyCount, totalCopies } from '../cards/copies';
 import { type CardGroup, groupCards, sortIntoGroups, typeLabels } from '../cards/grouping';
 import type { FaceTypes } from '../scryfall/classify';
 import { inBoard } from './boards';
 import type { SlotTarget } from './commanders';
-import { type DeckEntry, entryMatches, stackEntries } from './deckEntries';
+import { type DeckEntry, entryMatches, stackEntries, type Taggable } from './deckEntries';
 import { sortDeckCards } from './pendingCards';
 import { type DeckCardGrouping, groupByStorage, groupBySubtype, groupByTag } from './storageGrouping';
 
@@ -17,7 +17,7 @@ export interface DeckBoardsInput<E extends DeckEntry = DeckEntry> {
   faceTypes: Record<string, FaceTypes | undefined>;
   subtypes: Record<string, string[] | undefined>;
   storageNames: Map<number, string>;
-  tagsOf: (entry: Pick<Card, 'name'>) => string[];
+  tagsOf: (entry: Taggable) => string[];
 }
 
 export interface BackFaceEntry {

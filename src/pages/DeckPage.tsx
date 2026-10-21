@@ -19,7 +19,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
-import type { Card, Deck, DeckBoard, DeckCardSort } from '../api/types';
+import type { Deck, DeckBoard, DeckCardSort } from '../api/types';
 import { useShowCollectionInDecks } from '../auth/preferences';
 import { useSession } from '../auth/useSession';
 import { useCard } from '../cards/api';
@@ -52,7 +52,7 @@ import {
   useUpdateDeck,
 } from '../decks/api';
 import { clearSlotChanges, type CommanderSlot, commanderTargets, hasCommander, hasPartner } from '../decks/commanders';
-import { type DeckEntry, deckEntries } from '../decks/deckEntries';
+import { type DeckEntry, deckEntries, type Taggable } from '../decks/deckEntries';
 import { type CollapsibleBoard, COLLAPSIBLE_BOARDS, DEFAULT_COLLAPSED_BOARDS } from '../decks/boards';
 import { DeckBoards, type TileContext, type TileExtras, useDeckBoards } from '../decks/DeckBoards';
 import type { GroupDrop } from '../decks/DeckCardGroups';
@@ -523,7 +523,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
   const deckTags = useDeckTags(deck.id);
   const cardTags = tagsByName(deckTags.data?.cards ?? []);
-  const cardTagsOf = (card: Pick<Card, 'name'>) => tagsOf(cardTags, card.name);
+  const cardTagsOf = (entry: Taggable) => tagsOf(cardTags, entry.name);
   const boards = useDeckBoards({
     entries,
     sort: shownSort,
