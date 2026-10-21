@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { forest, grizzlyBears } from '../scryfall/fixtures';
+import { foilFor, printingDetails } from '../scryfall/printing';
+import { forest, grizzlyBears, serraAngel } from '../scryfall/fixtures';
 import { deckCard, pendingCard } from './boardTestHelpers';
 import { ownedEntry, pendingEntry } from './deckEntries';
 import { swapEdition } from './swapEdition';
@@ -56,5 +57,45 @@ describe('swapEdition to an owned copy', () => {
     const request = swapEdition('deck-1', pendingEntry(from), { kind: 'owned', copy: deckCard(forest) }, null);
 
     expect(request.kind === 'owned' && request.remainder).toBeNull();
+  });
+});
+
+describe('swapEdition to a printing', () => {
+  it('turns an owned entry pending in that printing, keeping the board and finish', () => {
+    const from = deckCard(grizzlyBears, { board: 'sideboard', foil: true });
+    const printing = { ...grizzlyBears, id: 'beta-bears', set: '2ed', finishes: ['nonfoil', 'foil'] };
+
+    const request = swapEdition('deck-1', ownedEntry(from), { kind: 'printing', printing }, null);
+
+    expect(request).toEqual({
+      kind: 'pending',
+      deckId: 'deck-1',
+      card: { ...printingDetails(printing), foil: foilFor(printing, true), quantity: 1, board: 'sideboard' },
+      slot: null,
+      remove: { kind: 'card', cardId: from.id },
+    });
+  });
+
+  it('keeps the commander slot for the pending printing', () => {
+    const from = deckCard(serraAngel, { board: 'commander' });
+
+    const request = swapEdition('deck-1', ownedEntry(from), { kind: 'printing', printing: serraAngel }, 'partner');
+
+    expect(request.kind === 'pending' && request.slot).toBe('partner');
+  });
+
+  it('keeps a pending entry pending in that printing with its board and quantity', () => {
+    const from = pendingCard(forest, { board: 'considering', quantity: 4 });
+    const printing = { ...forest, id: 'other-forest', set: 'unf' };
+
+    const request = swapEdition('deck-1', pendingEntry(from), { kind: 'printing', printing }, 'commander');
+
+    expect(request).toEqual({
+      kind: 'pending',
+      deckId: 'deck-1',
+      card: expect.objectContaining({ scryfall_id: 'other-forest', quantity: 4, board: 'considering' }),
+      slot: 'commander',
+      remove: { kind: 'pending', pendingId: from.id },
+    });
   });
 });
