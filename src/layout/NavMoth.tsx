@@ -100,10 +100,12 @@ export interface NavMothProps {
   focusTakeOff?: boolean;
   // Drop shadow, for perches over an illustration.
   shadow?: boolean;
+  // Milliseconds after the pointer leaves before a moth that took off lands back; none, it stays flown.
+  returnAfter?: number;
 }
 
 // Perches on the last letter of its parent element, sized by that element's font.
-export function NavMoth({ trigger, focusTakeOff = false, shadow = false }: NavMothProps) {
+export function NavMoth({ trigger, focusTakeOff = false, shadow = false, returnAfter }: NavMothProps) {
   const ref = useRef<HTMLSpanElement>(null);
   const [phase, setPhase] = useState<Phase>('land');
   const [style, setStyle] = useState<CSSProperties>();
@@ -183,30 +185,42 @@ export function NavMoth({ trigger, focusTakeOff = false, shadow = false }: NavMo
 
     let armed = !!link && !still && !link.matches(':hover') && !(focusTakeOff && link.matches(':focus-visible'));
     let flown = false;
+    let returning = 0;
     const takeOff = () => {
+      clearTimeout(returning);
       if (!armed) return;
       flown = true;
       flight?.cancel();
       setPhase('flown');
+    };
+    const takeOffOnPointer = (event: PointerEvent) => {
+      if (event.pointerType !== 'touch') takeOff();
     };
     const takeOffOnFocus = () => {
       if (focusTakeOff && link?.matches(':focus-visible')) takeOff();
     };
     const arm = () => {
       armed = !still;
+      if (!flown || returnAfter === undefined || still) return;
+      clearTimeout(returning);
+      returning = window.setTimeout(() => {
+        flown = false;
+        setPhase('land');
+      }, returnAfter);
     };
-    link?.addEventListener('mouseenter', takeOff);
+    link?.addEventListener('pointerenter', takeOffOnPointer);
     link?.addEventListener('focus', takeOffOnFocus);
-    link?.addEventListener('mouseleave', arm);
+    link?.addEventListener('pointerleave', arm);
     link?.addEventListener('blur', arm);
     return () => {
       mounted = false;
+      clearTimeout(returning);
       flight?.cancel();
       cancelAnimationFrame(resizing);
       cancelAnimationFrame(following);
-      link?.removeEventListener('mouseenter', takeOff);
+      link?.removeEventListener('pointerenter', takeOffOnPointer);
       link?.removeEventListener('focus', takeOffOnFocus);
-      link?.removeEventListener('mouseleave', arm);
+      link?.removeEventListener('pointerleave', arm);
       link?.removeEventListener('blur', arm);
       window.removeEventListener('resize', onResize);
       const last = locate();
