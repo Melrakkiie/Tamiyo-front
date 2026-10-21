@@ -265,7 +265,14 @@ interface CommanderCardProps {
 
 function CommanderCard({ card, label, imageUrl, onOpen }: CommanderCardProps) {
   return (
-    <Paper withBorder p="sm" maw={420} onMouseEnter={() => showCardPreview(null)}>
+    <Paper
+      withBorder
+      p="sm"
+      maw={420}
+      onMouseEnter={() =>
+        showCardPreview({ name: card.name, scryfallId: card.scryfall_id, foil: card.foil, imageUrl, open: onOpen })
+      }
+    >
       <Group wrap="nowrap" align="center">
         <Box w={72} style={{ flexShrink: 0, cursor: 'pointer' }} onClick={onOpen}>
           <CardImage name={card.name} url={imageUrl} loading={!imageUrl} />
