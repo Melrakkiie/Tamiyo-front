@@ -48,9 +48,9 @@ export function StoragesPage() {
         <div>
           <Title order={2}>Rangements</Title>
           {storages.data && (
-            <Text size="sm" c="dimmed">
+            <PriceText>
               {storages.data.length} rangement{storages.data.length > 1 ? 's' : ''}
-            </Text>
+            </PriceText>
           )}
         </div>
         <Button onClick={() => setCreateOpened(true)}>Nouveau rangement</Button>

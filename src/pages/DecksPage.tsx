@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router';
 
 import { errorMessage } from '../api/errors';
 import type { Deck, DeckFolder } from '../api/types';
+import { PriceText } from '../cards/price';
 import { useDeckArts } from '../decks/art';
 import { useImportIntoDeck } from '../bulk/api';
 import { type DeckInput, useAllDecks, useCreateDeck, useDeleteDeck } from '../decks/api';
@@ -132,9 +133,9 @@ export function DecksPage() {
         <div>
           <Title order={2}>Decks</Title>
           {decks.data && (
-            <Text size="sm" c="dimmed">
+            <PriceText>
               {decks.data.length} deck{decks.data.length > 1 ? 's' : ''}
-            </Text>
+            </PriceText>
           )}
         </div>
         <Group gap="xs" ml="auto">
