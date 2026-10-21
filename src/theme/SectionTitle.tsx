@@ -21,17 +21,20 @@ interface SectionTitleProps {
 
 export function SectionTitle({ children, count }: SectionTitleProps) {
   return (
-    <Group gap={8} wrap="nowrap" align="center">
-      <Title order={4} style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+    <Group gap={8} align="center" style={{ rowGap: 0 }}>
+      <Title order={4} style={{ minWidth: 0, overflowWrap: 'break-word' }}>
         {children}
       </Title>
-      {count !== undefined && (
-        <Text span className="tamiyo-hand" c="dimmed" size="lg" style={{ flexShrink: 0 }}>
-          {count}
-        </Text>
-      )}
-      <span className="tamiyo-flight" />
-      <Crescent />
+      {/* Moves below the title as one piece when the row is too narrow for both. */}
+      <Group gap={8} wrap="nowrap" align="center" style={{ flex: 1 }}>
+        {count !== undefined && (
+          <Text span className="tamiyo-hand" c="dimmed" size="lg" style={{ flexShrink: 0 }}>
+            {count}
+          </Text>
+        )}
+        <span className="tamiyo-flight" />
+        <Crescent />
+      </Group>
     </Group>
   );
 }
