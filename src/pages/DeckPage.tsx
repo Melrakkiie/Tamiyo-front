@@ -372,8 +372,15 @@ function CommanderPanel({ deck, slot, cardId, pendingId }: CommanderPanelProps) 
   const update = useUpdateDeck();
 
   function previewCommander() {
-    if (commanderScryfallId) {
+    if (slot === 'commander') {
       showCardPreview(null);
+    } else if (commanderScryfallId) {
+      showCardPreview({
+        name: commanderName ?? 'Second commandant',
+        scryfallId: commanderScryfallId,
+        foil: commander.data?.foil,
+        imageUrl: undefined,
+      });
     }
   }
 
