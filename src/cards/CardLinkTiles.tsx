@@ -1,4 +1,4 @@
-import { Box, type BoxProps, Group, Tooltip, UnstyledButton } from '@mantine/core';
+import { Box, type BoxProps, Tooltip, UnstyledButton } from '@mantine/core';
 
 import commanderSpellbookLogo from '../assets/logos/commander-spellbook.svg';
 import edhrecLogo from '../assets/logos/edhrec.svg';
@@ -29,7 +29,7 @@ export function CardLinkTiles({ printing, ...boxProps }: CardLinkTilesProps) {
 
   return (
     <Box {...boxProps}>
-      <Group gap={0} wrap="nowrap" justify="inherit">
+      <Box display="inline-flex">
         {sites.map(({ key, label, logo, color }, index) => (
           <Tooltip key={key} label={label}>
             <UnstyledButton
@@ -55,7 +55,7 @@ export function CardLinkTiles({ printing, ...boxProps }: CardLinkTilesProps) {
             </UnstyledButton>
           </Tooltip>
         ))}
-      </Group>
+      </Box>
     </Box>
   );
 }
