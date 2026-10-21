@@ -1,5 +1,6 @@
 export function notebookTitle(displayName?: string | null): string {
-  const name = displayName ?? '';
+  const name = displayName?.trim();
+  if (!name) return 'Ton carnet';
   return startsWithVowel(name) ? `Le carnet d'${name}` : `Le carnet de ${name}`;
 }
 
