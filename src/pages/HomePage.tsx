@@ -130,7 +130,7 @@ function Hero({
         ) : (
           <Title order={1} fz={{ base: 28, sm: 34 }} c={onArt ? 'white' : undefined}>
             <span className="tamiyo-home-title">
-              <MothPerch key={title} text={title} shadow={onArt} trigger=".tamiyo-home-title" returnAfter={3000} />
+              <MothPerch key={title} text={title} shadow={onArt} trigger=".tamiyo-home-title" returnAfter={6000} />
             </span>
           </Title>
         )}
