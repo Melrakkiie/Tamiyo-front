@@ -1,18 +1,17 @@
 import { Alert, Anchor, Center, Divider, Group, Loader, Stack, Text, Title } from '@mantine/core';
 
-import { errorMessage } from '../api/errors';
-import type { DeckCombos } from './combos';
+import type { CombosQuery } from './combos';
 
 const UNAVAILABLE = 'Commander Spellbook ne répond pas, réessaie plus tard.';
 
-export function CombosTileValue({ combos }: { combos: DeckCombos }) {
+export function CombosTileValue({ combos }: { combos: CombosQuery }) {
   if (combos.isLoading) {
     return <Loader size="sm" />;
   }
   return combos.data ? combos.data.combos.length : '—';
 }
 
-function CombosBody({ combos }: { combos: DeckCombos }) {
+function CombosBody({ combos }: { combos: CombosQuery }) {
   if (combos.isLoading) {
     return (
       <Center p="md">
@@ -23,7 +22,7 @@ function CombosBody({ combos }: { combos: DeckCombos }) {
   if (!combos.data) {
     return (
       <Alert color="orange" variant="light">
-        {errorMessage(combos.error, { 502: UNAVAILABLE, 503: UNAVAILABLE, 504: UNAVAILABLE })}
+        {UNAVAILABLE}
       </Alert>
     );
   }
@@ -48,7 +47,14 @@ function CombosBody({ combos }: { combos: DeckCombos }) {
                 {combo.results.join(' · ')}
               </Text>
             </Stack>
-            <Anchor href={combo.url} target="_blank" rel="noreferrer" size="sm" style={{ whiteSpace: 'nowrap' }}>
+            <Anchor
+              href={combo.url}
+              aria-label={`Voir le combo ${combo.cards.join(' + ')} sur Commander Spellbook`}
+              target="_blank"
+              rel="noreferrer"
+              size="sm"
+              style={{ whiteSpace: 'nowrap' }}
+            >
               Voir le combo
             </Anchor>
           </Group>
@@ -58,7 +64,7 @@ function CombosBody({ combos }: { combos: DeckCombos }) {
   );
 }
 
-export function CombosSection({ combos, creditUrl }: { combos: DeckCombos; creditUrl: string }) {
+export function CombosSection({ combos, creditUrl }: { combos: CombosQuery; creditUrl: string | undefined }) {
   return (
     <Stack gap="xs">
       <Title order={3} size="h5">
@@ -68,11 +74,13 @@ export function CombosSection({ combos, creditUrl }: { combos: DeckCombos; credi
         Combos connus dont toutes les cartes sont dans le deck principal.
       </Text>
       <CombosBody combos={combos} />
-      <Text size="xs" c="dimmed">
-        <Anchor href={creditUrl} target="_blank" rel="noreferrer" inherit>
-          Combos fournis par Commander Spellbook
-        </Anchor>
-      </Text>
+      {creditUrl && (
+        <Text size="xs" c="dimmed">
+          <Anchor href={creditUrl} target="_blank" rel="noreferrer" inherit>
+            Combos fournis par Commander Spellbook
+          </Anchor>
+        </Text>
+      )}
     </Stack>
   );
 }

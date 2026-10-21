@@ -7,7 +7,7 @@ import { formatPrice, PriceText, usePriceCurrency } from '../cards/price';
 import { useDeckCards, useDeckCombos, useDeckStats, usePendingCards } from './api';
 import { withSymbols } from '../scryfall/manaSymbols';
 import { BarList } from './charts';
-import { type DeckCombos, comboDeckList, commanderSpellbookUrl } from './combos';
+import { type CombosQuery, comboDeckList, commanderSpellbookUrl } from './combos';
 import { CombosSection, CombosTileValue } from './CombosSection';
 import { commanderTargets } from './commanders';
 import { BackFacesExtra } from './DeckCardGroups';
@@ -55,7 +55,10 @@ function useComboCreditUrl(deck: Deck) {
   const cards = useDeckCards(deck.id, 'name');
   const pending = usePendingCards(deck.id);
   const commanders = commanderTargets(deck);
-  const entries = deckEntries(cards.data ?? [], pending.data ?? []).map((entry) => ({
+  if (!cards.data || !pending.data) {
+    return undefined;
+  }
+  const entries = deckEntries(cards.data, pending.data).map((entry) => ({
     name: entry.name,
     board: entry.board,
     commander: commanders.some((target) => entryMatches(entry, target)),
@@ -72,7 +75,7 @@ export function DeckStatsPanel({ deck }: { deck: Deck }) {
 
 interface DeckStatsViewProps {
   stats: { data: DeckStats | undefined; error: Error | null; isLoading: boolean };
-  combos?: { query: DeckCombos; creditUrl: string };
+  combos?: { query: CombosQuery; creditUrl: string | undefined };
   emptyMessage?: string;
 }
 
@@ -120,41 +123,44 @@ export function DeckStatsView({
   const types = Object.entries(data.type_breakdown)
     .map(([key, value]) => ({ key, label: TYPE_LABELS[key] ?? key, value: Number(value) }))
     .sort((a, b) => b.value - a.value);
-  const tileCount = 4 + (currency ? 1 : 0) + (combos ? 1 : 0);
   const curve = fullCurve(data.mana_curve ?? []);
   const selectedBucket = curve.find((bucket) => bucket.mana_value === selectedManaValue && bucket.count > 0);
+
+  const tiles = [
+    <StatTile key="cards" label="Cartes" value={data.card_count} />,
+    <StatTile
+      key="lands"
+      label="Terrains"
+      value={
+        <>
+          {data.land_count}{' '}
+          <Text span size="sm" fw={400} c="dimmed">
+            <BackFacesExtra label="Terrains" count={data.land_count} backFaces={data.back_face_lands ?? []} />
+          </Text>
+        </>
+      }
+    />,
+    <StatTile key="total" label="Coût de mana total" value={formatTotalManaValue(data.total_mana_value)} />,
+    <StatTile key="average" label="Coût de mana moyen" value={data.average_mana_value.toFixed(2)} />,
+    combos && <StatTile key="combos" label="Combos" value={<CombosTileValue combos={combos.query} />} />,
+    currency && (
+      <StatTile
+        key="price"
+        label="Prix"
+        value={
+          <PriceText span fz={26} lh={1}>
+            {formatPrice(data.value[currency], currency)}
+          </PriceText>
+        }
+      />
+    ),
+  ].filter(Boolean);
 
   return (
     <Stack gap="xl">
       {stats.error instanceof ApiError && <Alert color="orange">{errorMessage(stats.error)}</Alert>}
 
-      <SimpleGrid cols={{ base: 2, sm: tileCount }}>
-        <StatTile label="Cartes" value={data.card_count} />
-        <StatTile
-          label="Terrains"
-          value={
-            <>
-              {data.land_count}{' '}
-              <Text span size="sm" fw={400} c="dimmed">
-                <BackFacesExtra label="Terrains" count={data.land_count} backFaces={data.back_face_lands ?? []} />
-              </Text>
-            </>
-          }
-        />
-        <StatTile label="Coût de mana total" value={formatTotalManaValue(data.total_mana_value)} />
-        <StatTile label="Coût de mana moyen" value={data.average_mana_value.toFixed(2)} />
-        {combos && <StatTile label="Combos" value={<CombosTileValue combos={combos.query} />} />}
-        {currency && (
-          <StatTile
-            label="Prix"
-            value={
-              <PriceText span fz={26} lh={1}>
-                {formatPrice(data.value[currency], currency)}
-              </PriceText>
-            }
-          />
-        )}
-      </SimpleGrid>
+      <SimpleGrid cols={{ base: 2, sm: tiles.length }}>{tiles}</SimpleGrid>
 
       <Stack gap="xs">
         <Title order={3} size="h5">

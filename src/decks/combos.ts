@@ -26,7 +26,7 @@ export function comboDeckList(cards: ComboCard[]): ComboDeckList {
   return { main: [...main], commanders: [...commanders] };
 }
 
-export interface DeckCombos {
+export interface CombosQuery {
   data: { combos: Combo[] } | undefined;
   error: Error | null;
   isLoading: boolean;
