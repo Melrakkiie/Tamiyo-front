@@ -284,7 +284,7 @@ function DeckView({ id }: { id: string }) {
           <DeckCardsWithView deck={current} />
         </Tabs.Panel>
         <Tabs.Panel value="stats" pt="md">
-          {tab === 'stats' && <DeckStatsPanel deckId={current.id} />}
+          {tab === 'stats' && <DeckStatsPanel deck={current} />}
         </Tabs.Panel>
       </Tabs>
 
