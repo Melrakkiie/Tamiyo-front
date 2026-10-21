@@ -23,24 +23,18 @@ import { CardImage } from '../cards/CardImage';
 import { useAllDecks } from '../decks/api';
 import { artBackground, useDeckArts } from '../decks/art';
 import { DeckTile } from '../decks/DeckTile';
+import { MothPerch } from '../layout/MothPerch';
 import { usePageTitle } from '../layout/usePageTitle';
 import { useCardImages } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
+import { notebookTitle } from './notebookTitle';
 import { StorageArt } from '../storages/StorageArt';
 import { EmptyNote } from '../theme/EmptyNote';
-import { LunaMoth } from '../theme/LunaMoth';
 import { SectionTitle } from '../theme/SectionTitle';
 import { tapeProps } from '../theme/tape';
 
 const RECENT_DECKS = 3;
 const RECENT_CARDS = 6;
-
-function greeting(hour: number) {
-  if (hour < 6) {
-    return 'Bonne nuit';
-  }
-  return hour < 18 ? 'Bonjour' : 'Bonsoir';
-}
 
 function plural(count: number, word: string) {
   return `${count} ${word}${count > 1 ? 's' : ''}`;
@@ -102,7 +96,17 @@ function SeeAll({ to, children }: { to: string; children: ReactNode }) {
   );
 }
 
-function Hero({ name, deck, artUrl, artist }: { name?: string; deck?: Deck; artUrl?: string; artist?: string | null }) {
+function Hero({
+  title,
+  deck,
+  artUrl,
+  artist,
+}: {
+  title?: string;
+  deck?: Deck;
+  artUrl?: string;
+  artist?: string | null;
+}) {
   const onArt = !!artUrl;
   return (
     <Paper
@@ -120,40 +124,38 @@ function Hero({ name, deck, artUrl, artist }: { name?: string; deck?: Deck; artU
         ...(onArt ? { ...artBackground(artUrl, 'light'), color: 'white' } : {}),
       }}
     >
-      <Group gap="lg" wrap="nowrap" align="flex-end">
-        {!onArt && (
-          <Box visibleFrom="xs" style={{ transform: 'rotate(-8deg)' }}>
-            <LunaMoth size={96} />
-          </Box>
-        )}
-        <Stack gap={4} style={{ minWidth: 0 }}>
-          <Title order={1} c={onArt ? 'white' : undefined}>
-            {greeting(new Date().getHours())}
-            {name ? `, ${name}` : ''}
+      <Stack gap={4} style={{ minWidth: 0 }}>
+        {title === undefined ? (
+          <Skeleton h={44} w={320} maw="100%" />
+        ) : (
+          <Title order={1} fz={{ base: 28, sm: 34 }} c={onArt ? 'white' : undefined}>
+            <span className="tamiyo-home-title">
+              <MothPerch key={title} text={title} shadow={onArt} trigger=".tamiyo-home-title" returnAfter={3000} />
+            </span>
           </Title>
-          <Text
-            className="tamiyo-hand"
-            fz={24}
-            c={onArt ? 'prune.2' : 'prune'}
-            style={{ transform: 'rotate(-1.5deg)', transformOrigin: 'left' }}
-          >
-            {deck ? `on reprend « ${deck.name} » ?` : 'par quelle page du carnet on commence ?'}
-          </Text>
-          <Group gap="sm" mt="md">
-            {deck && (
-              <Button component={Link} to={`/decks/${deck.id}`}>
-                Reprendre le deck
-              </Button>
-            )}
-            <Button component={Link} to="/cards" variant={deck ? 'default' : 'filled'}>
-              Ouvrir la collection
+        )}
+        <Text
+          className="tamiyo-hand"
+          fz={24}
+          c={onArt ? 'prune.2' : 'prune'}
+          style={{ transform: 'rotate(-1.5deg)', transformOrigin: 'left' }}
+        >
+          {deck ? `on reprend « ${deck.name} » ?` : 'par quelle page on commence ?'}
+        </Text>
+        <Group gap="sm" mt="md">
+          {deck && (
+            <Button component={Link} to={`/decks/${deck.id}`}>
+              Reprendre le deck
             </Button>
-            <Button component={Link} to="/explorer" variant="default">
-              Explorer les decks
-            </Button>
-          </Group>
-        </Stack>
-      </Group>
+          )}
+          <Button component={Link} to="/cards" variant={deck ? 'default' : 'filled'}>
+            Ouvrir la collection
+          </Button>
+          <Button component={Link} to="/explorer" variant="default">
+            Explorer les decks
+          </Button>
+        </Group>
+      </Stack>
       {onArt && artist && (
         <Text size="xs" c="gray.4" pos="absolute" bottom={8} right={12} visibleFrom="sm">
           Illustration : {artist}
@@ -187,7 +189,7 @@ export function HomePage() {
   return (
     <Stack gap={40} pt="xs">
       <Hero
-        name={account.data?.display_name || undefined}
+        title={account.isPending ? undefined : notebookTitle(account.data?.display_name)}
         deck={lastDeck}
         artUrl={lastArt?.url}
         artist={lastArt?.artist}

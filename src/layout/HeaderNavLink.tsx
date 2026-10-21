@@ -1,9 +1,19 @@
 import { UnstyledButton } from '@mantine/core';
 import { Link } from 'react-router';
 
-import { NavMoth } from './NavMoth';
+import { MothPerch } from './MothPerch';
 
-export function HeaderNavLink({ label, to, active }: { label: string; to: string; active: boolean }) {
+export function HeaderNavLink({
+  label,
+  to,
+  active,
+  withMoth = true,
+}: {
+  label: string;
+  to: string;
+  active: boolean;
+  withMoth?: boolean;
+}) {
   return (
     <UnstyledButton
       component={Link}
@@ -12,17 +22,7 @@ export function HeaderNavLink({ label, to, active }: { label: string; to: string
       data-active={active || undefined}
       aria-current={active ? 'page' : undefined}
     >
-      {active ? (
-        <>
-          {label.slice(0, -1)}
-          <span className="tamiyo-nav-perch">
-            {label.slice(-1)}
-            <NavMoth />
-          </span>
-        </>
-      ) : (
-        label
-      )}
+      {active && withMoth ? <MothPerch text={label} trigger=".tamiyo-nav-link" focusTakeOff /> : label}
     </UnstyledButton>
   );
 }
