@@ -4,6 +4,7 @@ import {
   Burger,
   Divider,
   Drawer,
+  getDefaultZIndex,
   Group,
   Menu,
   NavLink,
@@ -65,7 +66,8 @@ export function AppLayout() {
       navbar={{ width: { sm: 300, lg: 360 }, breakpoint: 'sm', collapsed: { mobile: true, desktop: !showPreview } }}
       padding="md"
     >
-      <AppShell.Header>
+      {/* Mantine puts the navbar one above the header; the moth flies out of the header over the navbar. */}
+      <AppShell.Header zIndex={getDefaultZIndex('app') + 2}>
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
           <Group gap="lg" wrap="nowrap">
             <Group gap="sm" wrap="nowrap">
