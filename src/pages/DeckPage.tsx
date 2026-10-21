@@ -569,7 +569,11 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   function tileExtras(entry: DeckEntry, { board, group, imageUrl }: TileContext): TileExtras {
     return {
       props: {
-        storageName: showCollection ? (entry.kind === 'owned' ? storages.nameOf(entry.storage_id) : null) : undefined,
+        storageName: showCollection
+          ? entry.kind === 'owned'
+            ? storages.nameOf(entry.storage_id)
+            : ({ kind: 'none' } as const)
+          : undefined,
         pendingStatus: showCollection && entry.kind === 'pending' ? pendingStatus(entry.pending) : undefined,
         onContextMenu: (event, clicked) =>
           contextMenu.open(event, cardMenu.menuFor(clicked, board, visuals.imageUrl(clicked))),

@@ -22,16 +22,39 @@ const sealed = storage({ id: 3, name: 'Scellé', locked: true });
 
 describe('storageDirectory name lookup', () => {
   it('names a storage from the list', () => {
-    expect(storageDirectory([binder, vault]).nameOf(2)).toBe('Coffre');
+    expect(storageDirectory([binder, vault]).nameOf(2)).toEqual({ kind: 'named', name: 'Coffre' });
   });
 
   it('calls a storage missing from the list an unknown storage', () => {
-    expect(storageDirectory([binder]).nameOf(42)).toBe('Rangement inconnu');
+    expect(storageDirectory([binder]).nameOf(42)).toEqual({ kind: 'unknown' });
   });
 
-  it('gives no name to a copy without storage', () => {
-    expect(storageDirectory([binder]).nameOf(null)).toBeNull();
-    expect(storageDirectory([binder]).nameOf(undefined)).toBeNull();
+  it('keeps a storage really named like the unknown label a named storage', () => {
+    const lookalike = storage({ id: 5, name: 'Rangement inconnu' });
+    expect(storageDirectory([lookalike]).nameOf(5)).toEqual({ kind: 'named', name: 'Rangement inconnu' });
+  });
+
+  it('gives no storage to a copy without storage', () => {
+    expect(storageDirectory([binder]).nameOf(null)).toEqual({ kind: 'none' });
+    expect(storageDirectory([binder]).nameOf(undefined)).toEqual({ kind: 'none' });
+  });
+
+  it('names nothing while the storages are loading', () => {
+    expect(storageDirectory(undefined).nameOf(1)).toEqual({ kind: 'loading' });
+    expect(storageDirectory(undefined).nameOf(null)).toEqual({ kind: 'none' });
+  });
+});
+
+describe('storageDirectory membership', () => {
+  it('tells whether a storage is in the list', () => {
+    const directory = storageDirectory([binder]);
+    expect(directory.has(1)).toBe(true);
+    expect(directory.has(42)).toBe(false);
+  });
+
+  it('knows no storage while loading', () => {
+    expect(storageDirectory(undefined).loaded).toBe(false);
+    expect(storageDirectory([]).loaded).toBe(true);
   });
 });
 

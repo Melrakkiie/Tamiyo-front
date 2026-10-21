@@ -24,7 +24,6 @@ import { useScryfallDrop } from '../scryfall/useScryfallDrop';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import { FilterIcon } from '../layout/FilterIcon';
 import { usePreferences, useUpdatePreferences } from '../auth/preferences';
-import { useAllStorages } from '../storages/api';
 import { useStorageDirectory } from '../storages/useStorageDirectory';
 import { AddCardModal, type CardToAdd } from './AddCardModal';
 import { AdvancedSearch } from './AdvancedSearch';
@@ -128,7 +127,6 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const contextMenu = useCardContextMenu();
   const cardMenu = useCollectionCardMenu();
 
-  const storages = useAllStorages();
   const storageDirectory = useStorageDirectory();
   const showStorage = !storageId;
   const cards = useCards({
@@ -218,7 +216,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   }
 
   const filteredStorageMissing =
-    !fixedStorageId && !!storageId && !!storages.data && !storages.data.some((storage) => storage.id === storageId);
+    !fixedStorageId && !!storageId && storageDirectory.loaded && !storageDirectory.has(storageId);
   useEffect(() => {
     if (filteredStorageMissing) {
       changeFilters({ storageId: null });

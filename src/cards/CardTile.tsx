@@ -6,6 +6,7 @@ import type { Card } from '../api/types';
 import { showCardPreview } from '../layout/cardPreview';
 import { withSymbols } from '../scryfall/manaSymbols';
 import { StorageLabel } from '../storages/StorageLabel';
+import type { StorageName } from '../storages/storageDirectory';
 import { FoilSticker, ProxySticker } from '../theme/Sticker';
 import type { ContextMenuEvent } from './CardContextMenu';
 import type { CardDisplay } from './CardDisplay';
@@ -23,7 +24,7 @@ export interface CardTileProps<T extends TileCard = Card> {
   imageUrl: string | undefined;
   backImageUrl?: string;
   imageLoading: boolean;
-  storageName?: string | null;
+  storageName?: StorageName;
   pendingStatus?: PendingStatus;
   collectionCount?: number;
   display: Pick<CardDisplay, 'textOnly' | 'compact' | 'stacked' | 'overlapped' | 'showDetails'>;
@@ -262,7 +263,7 @@ export function CardTile<T extends TileCard = Card>({
                 En attente
               </Text>
             ) : (
-              storageName !== undefined && <StorageLabel name={storageName} />
+              storageName !== undefined && <StorageLabel storage={storageName} />
             )}
           </div>
         )}

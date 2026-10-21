@@ -218,8 +218,8 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
                           <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>
                             {card.set_code.toUpperCase()} · #{card.collector_number}
                           </Text>
-                          {storageName && (
-                            <StorageLabel name={storageName} locked={storages.isLocked(card.storage_id)} />
+                          {storageName.kind !== 'none' && (
+                            <StorageLabel storage={storageName} locked={storages.isLocked(card.storage_id)} />
                           )}
                         </Group>
                       </div>

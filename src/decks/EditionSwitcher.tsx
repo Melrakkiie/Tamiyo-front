@@ -44,7 +44,7 @@ export function EditionSwitcher({ deckId, entry, deckCardIds, commanderSlot, onS
   const copies = useCollectionCopies(entry.name, entry.scryfall_id);
   const printings = usePrintings(entry.name);
   const storages = useStorageDirectory(deckId);
-  const [showClosed, setShowClosed] = useState(false);
+  const [showLocked, setShowLocked] = useState(false);
   const [query, setQuery] = useState('');
   const choices = editionChoices({
     source: entry,
@@ -52,7 +52,7 @@ export function EditionSwitcher({ deckId, entry, deckCardIds, commanderSlot, onS
     printings: printings.data ?? [],
     deckCardIds,
     isLocked: storages.isLocked,
-    showLocked: showClosed,
+    showLocked: showLocked,
     query,
   });
   const images = useCardImages(
@@ -104,7 +104,7 @@ export function EditionSwitcher({ deckId, entry, deckCardIds, commanderSlot, onS
                 : `Dans ta collection : clique sur un exemplaire pour le mettre dans le deck à la place de celui-ci.${commanderSlot ? ` Il deviendra aussi ${becomes}.` : ''}`}
             </Text>
             {choices.hiddenLocked > 0 && (
-              <Anchor component="button" type="button" size="xs" ta="left" onClick={() => setShowClosed(true)}>
+              <Anchor component="button" type="button" size="xs" ta="left" onClick={() => setShowLocked(true)}>
                 Voir {choices.hiddenLocked} exemplaire{choices.hiddenLocked > 1 ? 's' : ''} dans des rangements
                 verrouillés
               </Anchor>
@@ -127,7 +127,7 @@ export function EditionSwitcher({ deckId, entry, deckCardIds, commanderSlot, onS
                       </Group>
                       <Group gap={4} justify="space-between" align="center" wrap="nowrap">
                         <StorageLabel
-                          name={storages.nameOf(copy.storage_id)}
+                          storage={storages.nameOf(copy.storage_id)}
                           locked={storages.isLocked(copy.storage_id)}
                         />
                         <SetIcon setCode={copy.set_code} size={22} />

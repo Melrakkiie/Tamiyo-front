@@ -1,7 +1,7 @@
 import { Group, Text } from '@mantine/core';
 import type { ReactNode } from 'react';
 
-import { UNKNOWN_STORAGE } from './storageDirectory';
+import { UNKNOWN_STORAGE, type StorageName } from './storageDirectory';
 
 export function StorageIcon({ size = 12 }: { size?: number }) {
   return (
@@ -46,17 +46,31 @@ export function LockIcon({ size = 12 }: { size?: number }) {
 }
 
 interface StorageLabelProps {
-  name: string | null;
+  storage: StorageName;
   locked?: boolean;
 }
 
-export function StorageLabel({ name, locked = false }: StorageLabelProps) {
-  const missing = name === null || name === UNKNOWN_STORAGE;
+function storageText(storage: Exclude<StorageName, { kind: 'loading' }>) {
+  switch (storage.kind) {
+    case 'named':
+      return { text: storage.name, italic: false };
+    case 'unknown':
+      return { text: UNKNOWN_STORAGE, italic: true };
+    case 'none':
+      return { text: 'Sans rangement', italic: true };
+  }
+}
+
+export function StorageLabel({ storage, locked = false }: StorageLabelProps) {
+  if (storage.kind === 'loading') {
+    return null;
+  }
+  const { text, italic } = storageText(storage);
   return (
     <Group gap={4} wrap="nowrap" c="dimmed" style={{ minWidth: 0 }}>
       <StorageIcon />
-      <Text size="xs" c="dimmed" fs={missing ? 'italic' : undefined} lineClamp={1}>
-        {name ?? 'Sans rangement'}
+      <Text size="xs" c="dimmed" fs={italic ? 'italic' : undefined} lineClamp={1}>
+        {text}
       </Text>
       {locked && (
         <span title="Rangement verrouillé pour ce deck" style={{ display: 'inline-flex' }}>
