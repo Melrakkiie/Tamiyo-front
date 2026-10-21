@@ -4061,6 +4061,72 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deck/{id}/combos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * List the combos a deck holds
+         * @description Looks the deck's combos up on Commander Spellbook (find-my-combos); the answer for an identical list of cards is cached in memory for 24 hours per instance. Only combos whose every card is in the main board are listed, with any card the combo needs as commander set as the deck's commander or second commander. The main board is sent with its pending cards, each card once by its stored printing's name (both faces of a double-faced card), the commander and second commander apart; cards without a stored printing are left out. A deck with an empty main board answers an empty list without calling Commander Spellbook. Each call times out after 10 seconds; a 429 is retried once after a short wait.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeckCombos"];
+                    };
+                };
+                /** @description id is not a UUID. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or not owned by the authenticated user */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+                502: components["responses"]["CombosUnavailable"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/shared/decks": {
         parameters: {
             query?: never;
@@ -4297,6 +4363,63 @@ export interface paths {
                 };
                 429: components["responses"]["SharedTooManyRequests"];
                 500: components["responses"]["InternalError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shared/decks/{id}/combos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Combos of a shared deck
+         * @description Same combos as GET /deck/{id}/combos, looked up for the deck's owner. Works without authentication.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeckCombos"];
+                    };
+                };
+                /** @description No deck has this id, or the deck is private. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                429: components["responses"]["SharedTooManyRequests"];
+                500: components["responses"]["InternalError"];
+                502: components["responses"]["CombosUnavailable"];
             };
         };
         put?: never;
@@ -5575,6 +5698,8 @@ export interface components {
             land_count: number;
             nonland_count: number;
             average_mana_value: number;
+            /** @description Sum of the mana values of the main board's nonland cards, each counted once per copy. Same scope as `average_mana_value`; a modal double-faced card with a spell front counts its front face. Can be fractional. */
+            total_mana_value: number;
             mana_curve: components["schemas"]["ManaCurveBucket"][];
             color_breakdown: {
                 [key: string]: number;
@@ -5591,6 +5716,28 @@ export interface components {
             /** @description Part of value coming from the deck's pending cards, rounded to the cent on its own. */
             pending_value: components["schemas"]["Value"];
             board_values: components["schemas"]["BoardValues"];
+        };
+        DeckCombos: {
+            /** @description Combos the deck holds; empty when it holds none. */
+            combos: components["schemas"]["Combo"][];
+        };
+        /** @description A combo listed by Commander Spellbook. */
+        Combo: {
+            /**
+             * @description Commander Spellbook's id for the combo.
+             * @example 1414-2730
+             */
+            id: string;
+            /** @description Names of the cards the combo uses. */
+            cards: string[];
+            /** @description Names of what the combo produces, in English. */
+            results: string[];
+            /**
+             * Format: uri
+             * @description The combo's page on commanderspellbook.com.
+             * @example https://commanderspellbook.com/combo/1414-2730/
+             */
+            url: string;
         };
         /** @description Value of the side boards, owned and pending cards together, proxies left out, rounded to the cent. */
         BoardValues: {
@@ -6319,6 +6466,15 @@ export interface components {
         };
         /** @description A bulk import couldn't reach or parse a response from the Scryfall API while resolving Moxfield rows. */
         BadGateway: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Commander Spellbook couldn't be reached, timed out, answered an error or was still rate-limiting after one retry. The body is {"error": "commander spellbook is unavailable"}. */
+        CombosUnavailable: {
             headers: {
                 [name: string]: unknown;
             };
