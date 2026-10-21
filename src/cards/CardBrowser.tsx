@@ -24,7 +24,7 @@ import { useScryfallDrop } from '../scryfall/useScryfallDrop';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import { FilterIcon } from '../layout/FilterIcon';
 import { usePreferences, useUpdatePreferences } from '../auth/preferences';
-import { useAllStorages } from '../storages/api';
+import { useStorageDirectory } from '../storages/useStorageDirectory';
 import { AddCardModal, type CardToAdd } from './AddCardModal';
 import { AdvancedSearch } from './AdvancedSearch';
 import {
@@ -36,7 +36,6 @@ import {
   parseAdvancedFilters,
 } from './advancedFilters';
 import { useCard, useCards } from './api';
-import { storageNameOf } from '../storages/storageName';
 import { copyIds, totalCopies } from './copies';
 import { useCardContextMenu } from './CardContextMenu';
 import { CardDetailModal } from './CardDetailModal';
@@ -128,8 +127,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   const contextMenu = useCardContextMenu();
   const cardMenu = useCollectionCardMenu();
 
-  const storages = useAllStorages();
-  const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
+  const storageDirectory = useStorageDirectory();
   const showStorage = !storageId;
   const cards = useCards({
     page,
@@ -191,7 +189,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
         imageLoading={visuals.imageLoading}
         display={display}
         manaCost={visuals.manaCost(card)}
-        storageName={showStorage ? storageNameOf(card, storageNames) : undefined}
+        storageName={showStorage ? storageDirectory.nameOf(card.storage_id) : undefined}
         onOpen={openCard}
         onContextMenu={(event, clicked) =>
           contextMenu.open(event, cardMenu.menuFor(clicked, visuals.imageUrl(clicked)))
@@ -218,7 +216,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
   }
 
   const filteredStorageMissing =
-    !fixedStorageId && !!storageId && !!storages.data && !storages.data.some((storage) => storage.id === storageId);
+    !fixedStorageId && !!storageId && storageDirectory.loaded && !storageDirectory.has(storageId);
   useEffect(() => {
     if (filteredStorageMissing) {
       changeFilters({ storageId: null });

@@ -25,7 +25,7 @@ import { MissingDetailsAlert } from '../cards/MissingDetailsAlert';
 import { isScryfallOnlySearch, SearchSyntaxHelp, searchSyntaxError } from '../cards/SearchSyntaxHelp';
 import { colorCode } from '../scryfall/classify';
 import { useScryfallCard } from '../scryfall/hooks';
-import { isOpenTo, useAllStorages } from '../storages/api';
+import { useStorageDirectory } from '../storages/useStorageDirectory';
 import { StorageLabel } from '../storages/StorageLabel';
 import { FoilSticker } from '../theme/Sticker';
 import { isCommanderFormat, useAddCardToDeck } from './api';
@@ -80,11 +80,7 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
   const [restrictToIdentity, setRestrictToIdentity] = useState(true);
   const identityFilter = commanderIdentity !== null && restrictToIdentity ? commanderIdentity : undefined;
   const [query, setQuery] = useState('');
-  const storages = useAllStorages();
-  const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
-  const closedStorageIds = new Set(
-    (storages.data ?? []).filter((storage) => !isOpenTo(storage, deckId)).map((storage) => storage.id),
-  );
+  const storages = useStorageDirectory(deckId);
   const [showLocked, setShowLocked] = useState(false);
   const openToDeck = showLocked ? undefined : deckId;
   const cards = useCards({
@@ -163,7 +159,7 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
           onChange={(event) => setRestrictToIdentity(event.currentTarget.checked)}
         />
       )}
-      {closedStorageIds.size > 0 && (
+      {storages.anyLocked && (
         <Switch
           label="Montrer aussi les rangements verrouillés"
           checked={showLocked}
@@ -206,7 +202,7 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
               <Stack gap="xs">
                 {results.map((card) => {
                   const inDeck = deckCardIds.has(card.id);
-                  const storageName = card.storage_id ? storageNames.get(card.storage_id) : undefined;
+                  const storageName = storages.nameOf(card.storage_id);
                   return (
                     <Group key={card.id} justify="space-between" wrap="nowrap">
                       <div style={{ minWidth: 0 }}>
@@ -222,11 +218,8 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
                           <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>
                             {card.set_code.toUpperCase()} · #{card.collector_number}
                           </Text>
-                          {storageName && (
-                            <StorageLabel
-                              name={storageName}
-                              locked={card.storage_id != null && closedStorageIds.has(card.storage_id)}
-                            />
+                          {storageName.kind !== 'none' && (
+                            <StorageLabel storage={storageName} locked={storages.isLocked(card.storage_id)} />
                           )}
                         </Group>
                       </div>

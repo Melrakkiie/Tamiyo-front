@@ -23,7 +23,6 @@ import type { Deck, DeckBoard, DeckCardSort } from '../api/types';
 import { useShowCollectionInDecks } from '../auth/preferences';
 import { useSession } from '../auth/useSession';
 import { useCard } from '../cards/api';
-import { storageNameOf } from '../storages/storageName';
 import { CardImage } from '../cards/CardImage';
 import {
   cardDisplay,
@@ -87,7 +86,7 @@ import { useDeckView, useSaveDeckView } from '../decks/view';
 import { setDefaultCardPreview, showCardPreview } from '../layout/cardPreview';
 import { SettingsMenu } from '../layout/SettingsMenu';
 import { useCardImages } from '../scryfall/hooks';
-import { useAllStorages } from '../storages/api';
+import { useStorageDirectory } from '../storages/useStorageDirectory';
 import { EmptyNote } from '../theme/EmptyNote';
 import { usePageTitle } from '../layout/usePageTitle';
 import { SharedDeckView } from './SharedDeckPage';
@@ -519,8 +518,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   const entries = deckEntries(deckCards, pendingItems);
   const showMissingDetails = (grouping === 'type' || grouping === 'color') && hasMissingDetails(deckCards);
   const visuals = useCardVisuals(entries, display);
-  const storages = useAllStorages();
-  const storageNames = new Map<number, string>((storages.data ?? []).map((storage) => [storage.id, storage.name]));
+  const storages = useStorageDirectory();
   const deckTags = useDeckTags(deck.id);
   const cardTags = tagsByName(deckTags.data?.cards ?? []);
   const cardTagsOf = (entry: Taggable) => tagsOf(cardTags, entry.name);
@@ -530,7 +528,7 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
     grouping,
     commanders: commanderTargets(deck),
     separateByStorage: showCollection,
-    storageNames,
+    storageNames: storages.names,
     tagsOf: cardTagsOf,
   });
   const actions = useDeckCardActions(deck, cardTagsOf);
@@ -571,7 +569,11 @@ function DeckCards({ deck, initialSort, initialGrouping, initialCollapsed, initi
   function tileExtras(entry: DeckEntry, { board, group, imageUrl }: TileContext): TileExtras {
     return {
       props: {
-        storageName: showCollection ? (entry.kind === 'owned' ? storageNameOf(entry, storageNames) : null) : undefined,
+        storageName: showCollection
+          ? entry.kind === 'owned'
+            ? storages.nameOf(entry.storage_id)
+            : ({ kind: 'none' } as const)
+          : undefined,
         pendingStatus: showCollection && entry.kind === 'pending' ? pendingStatus(entry.pending) : undefined,
         onContextMenu: (event, clicked) =>
           contextMenu.open(event, cardMenu.menuFor(clicked, board, visuals.imageUrl(clicked))),

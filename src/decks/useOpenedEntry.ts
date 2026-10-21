@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 
 import type { DeckBoardsData } from './boardLayout';
 import type { DeckEntry } from './deckEntries';
-import type { EditionSource } from './EditionSwitcher';
 import {
   closedEntry,
   closeEntry,
@@ -24,7 +23,7 @@ export interface OpenedEntry {
   loading: boolean;
   open: (entry: DeckEntry) => void;
   close: () => void;
-  showSwapped: (next: EditionSource) => void;
+  showSwapped: (next: DeckEntry) => void;
 }
 
 export function useOpenedEntry(

@@ -35,7 +35,7 @@ import { CommanderControl } from './CommanderControl';
 import { commanderSlotOf } from './commanders';
 import { DeckQuantityControl } from './DeckQuantityControl';
 import { type DeckEntry, type OwnedEntry, type PendingEntry, entrySlotTarget } from './deckEntries';
-import { type EditionSource, EditionSwitcher } from './EditionSwitcher';
+import { EditionSwitcher } from './EditionSwitcher';
 import { pendingStatus } from './pendingCards';
 import { useMoveEntry } from './useMoveEntry';
 
@@ -46,7 +46,7 @@ interface DeckEntryModalProps {
   imageUrl: string | undefined;
   loading: boolean;
   onClose: () => void;
-  onSwapped: (next: EditionSource) => void;
+  onSwapped: (next: DeckEntry) => void;
 }
 
 export function DeckEntryModal({
@@ -98,7 +98,7 @@ interface DeckEntryDetailProps {
   entry: DeckEntry;
   imageUrl: string | undefined;
   onClose: () => void;
-  onSwapped: (next: EditionSource) => void;
+  onSwapped: (next: DeckEntry) => void;
 }
 
 function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwapped }: DeckEntryDetailProps) {
@@ -204,11 +204,7 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
       <Divider />
       <EditionSwitcher
         deckId={deckId}
-        source={
-          entry.kind === 'pending'
-            ? { kind: 'pending', item: entry.pending }
-            : { kind: 'card', card: entry, board: entry.board }
-        }
+        entry={entry}
         deckCardIds={deckCardIds}
         commanderSlot={commanderSlot}
         onSwapped={onSwapped}
