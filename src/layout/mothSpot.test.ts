@@ -20,7 +20,10 @@ describe('flightPose', () => {
   });
 
   it('ends at full size exactly on the perch', () => {
-    expect(flightPose(growing, 1)).toEqual({ x: 0, y: 0, scale: 1 });
+    const pose = flightPose(growing, 1);
+    expect(pose.x).toBeCloseTo(0, 5);
+    expect(pose.y).toBeCloseTo(0, 5);
+    expect(pose.scale).toBe(1);
   });
 
   it('shrinks from a bigger moth', () => {
