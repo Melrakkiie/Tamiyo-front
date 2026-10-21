@@ -1,7 +1,7 @@
 import { Stack, Text } from '@mantine/core';
 import { Fragment, type ReactNode } from 'react';
 
-import type { Card, DeckBoard, DeckStats } from '../api/types';
+import type { DeckBoard, DeckStats } from '../api/types';
 import type { CardDisplay } from '../cards/CardDisplay';
 import { CardGrid } from '../cards/CardLayout';
 import { CardTile, type CardTileProps } from '../cards/CardTile';
@@ -13,30 +13,31 @@ import { BOARDS, COLLAPSIBLE_BOARDS, type CollapsibleBoard } from './boards';
 import { BoardSection } from './BoardSection';
 import { DeckCardGroups, type GroupDrop } from './DeckCardGroups';
 import { type BoardData, buildDeckBoards, type DeckBoardsData, type DeckBoardsInput } from './boardLayout';
+import type { DeckEntry } from './deckEntries';
 
-export type DeckBoardsOptions = Pick<DeckBoardsInput, 'cards' | 'sort' | 'grouping'> &
-  Partial<Pick<DeckBoardsInput, 'commanderIds' | 'separateByStorage' | 'storageNames' | 'tagsOf'>>;
+export type DeckBoardsOptions<E extends DeckEntry> = Pick<DeckBoardsInput<E>, 'entries' | 'sort' | 'grouping'> &
+  Partial<Pick<DeckBoardsInput<E>, 'commanders' | 'separateByStorage' | 'storageNames' | 'tagsOf'>>;
 
 const noCollapsedBoards: CollapsibleBoard[] = [];
 const noStorageNames = new Map<number, string>();
 
-export function useDeckBoards({
-  cards,
+export function useDeckBoards<E extends DeckEntry>({
+  entries,
   sort,
   grouping,
-  commanderIds = [],
+  commanders = [],
   separateByStorage = false,
   storageNames = noStorageNames,
   tagsOf = () => [],
-}: DeckBoardsOptions): DeckBoardsData {
-  const ids = cards.map((card) => card.scryfall_id);
+}: DeckBoardsOptions<E>): DeckBoardsData<E> {
+  const ids = entries.map((entry) => entry.scryfall_id);
   const faceTypes = useCardFaceTypes(ids);
   const subtypes = useCardSubtypes(ids);
   return buildDeckBoards({
-    cards,
+    entries,
     sort,
     grouping,
-    commanderIds,
+    commanders,
     separateByStorage,
     faceTypes: faceTypes.data ?? {},
     subtypes: subtypes.data ?? {},
@@ -45,37 +46,40 @@ export function useDeckBoards({
   });
 }
 
-export interface TileContext {
+export interface TileContext<E extends DeckEntry = DeckEntry> {
   board: DeckBoard;
-  group: CardGroup | null;
+  group: CardGroup<E> | null;
   imageUrl: string | undefined;
 }
 
-export interface TileExtras {
+export interface TileExtras<E extends DeckEntry = DeckEntry> {
   props?: Partial<
-    Pick<CardTileProps, 'storageName' | 'pendingStatus' | 'collectionCount' | 'commander' | 'details' | 'onContextMenu'>
+    Pick<
+      CardTileProps<E>,
+      'storageName' | 'pendingStatus' | 'collectionCount' | 'commander' | 'details' | 'onContextMenu'
+    >
   >;
   wrap?: (tile: ReactNode) => ReactNode;
 }
 
-export interface DeckBoardsExtras {
-  tile?: (card: Card, context: TileContext) => TileExtras;
+export interface DeckBoardsExtras<E extends DeckEntry = DeckEntry> {
+  tile?: (entry: E, context: TileContext<E>) => TileExtras<E>;
   groupDrop?: (board: DeckBoard) => GroupDrop | undefined;
 }
 
-interface DeckBoardsProps {
-  boards: DeckBoardsData;
+interface DeckBoardsProps<E extends DeckEntry> {
+  boards: DeckBoardsData<E>;
   display: CardDisplay;
   collapsed?: CollapsibleBoard[];
   onToggleBoard?: (board: CollapsibleBoard) => void;
   boardValues?: DeckStats['board_values'];
   emptyDeck: ReactNode;
   emptyBoardMessages?: Record<CollapsibleBoard, string>;
-  extras?: DeckBoardsExtras;
-  onOpen: (card: Card, board: DeckBoard) => void;
+  extras?: DeckBoardsExtras<E>;
+  onOpen: (entry: E, board: DeckBoard) => void;
 }
 
-export function DeckBoards({
+export function DeckBoards<E extends DeckEntry>({
   boards,
   display,
   collapsed = noCollapsedBoards,
@@ -85,31 +89,31 @@ export function DeckBoards({
   emptyBoardMessages,
   extras = {},
   onOpen,
-}: DeckBoardsProps) {
+}: DeckBoardsProps<E>) {
   const visuals = useCardVisuals(
     BOARDS.flatMap((board) => boards[board].stacks),
     display,
   );
   const currency = usePriceCurrency();
 
-  function renderBoard({ board, stacks, commanders, groups, backFaces }: BoardData) {
-    const renderTile = (card: Card, group: CardGroup | null) => {
-      const imageUrl = visuals.imageUrl(card);
-      const { props, wrap } = extras.tile?.(card, { board, group, imageUrl }) ?? {};
+  function renderBoard({ board, stacks, commanders, groups, backFaces }: BoardData<E>) {
+    const renderTile = (entry: E, group: CardGroup<E> | null) => {
+      const imageUrl = visuals.imageUrl(entry);
+      const { props, wrap } = extras.tile?.(entry, { board, group, imageUrl }) ?? {};
       const tile = (
         <CardTile
-          card={card}
+          card={entry}
           imageUrl={imageUrl}
-          backImageUrl={visuals.backImageUrl(card)}
+          backImageUrl={visuals.backImageUrl(entry)}
           imageLoading={visuals.imageLoading}
           display={display}
-          commander={commanders.has(card.id)}
-          manaCost={visuals.manaCost(card)}
+          commander={commanders.has(entry.key)}
+          manaCost={visuals.manaCost(entry)}
           onOpen={(clicked) => onOpen(clicked, board)}
           {...props}
         />
       );
-      return <Fragment key={card.id}>{wrap ? wrap(tile) : tile}</Fragment>;
+      return <Fragment key={entry.key}>{wrap ? wrap(tile) : tile}</Fragment>;
     };
     return groups ? (
       <DeckCardGroups
@@ -120,7 +124,7 @@ export function DeckBoards({
         drop={extras.groupDrop?.(board)}
       />
     ) : (
-      <CardGrid display={display} cards={stacks} renderTile={(card) => renderTile(card, null)} />
+      <CardGrid display={display} cards={stacks} renderTile={(entry) => renderTile(entry, null)} />
     );
   }
 

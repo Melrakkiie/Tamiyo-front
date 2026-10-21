@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Card, DeckCardSort } from '../api/types';
+import type { DeckCardSort } from '../api/types';
 import type { CardGroup } from '../cards/grouping';
 import type { ScryfallCard } from '../scryfall/client';
 import {
@@ -14,9 +14,9 @@ import {
 } from '../scryfall/fixtures';
 import { boardsInput, copies, deckCard, pendingCard } from './boardTestHelpers';
 import { buildDeckBoards } from './boardLayout';
-import { isPendingCard, pendingToCards } from './pendingCards';
+import type { DeckEntry } from './deckEntries';
 
-function names(cards: Card[]) {
+function names(cards: { name: string }[]) {
   return cards.map((card) => card.name);
 }
 
@@ -42,8 +42,12 @@ describe('buildDeckBoards boards', () => {
   });
 });
 
-function stackSummary(cards: Card[]) {
-  return cards.map((card) => [card.name, card.quantity]);
+function stackSummary(entries: DeckEntry[]) {
+  return entries.map((entry) => [entry.name, entry.quantity]);
+}
+
+function stackKinds(entries: DeckEntry[]) {
+  return entries.map((entry) => entry.kind);
 }
 
 describe('buildDeckBoards stacks', () => {
@@ -60,7 +64,7 @@ describe('buildDeckBoards stacks', () => {
       ['Forest', 1],
       ['Grizzly Bears', 1],
     ]);
-    expect(boards.main.stacks[0].copy_ids).toEqual(cards.slice(0, 3).map((card) => card.id));
+    expect(boards.main.stacks[0]).toMatchObject({ kind: 'owned', copy_ids: cards.slice(0, 3).map((card) => card.id) });
   });
 
   it('keeps copies from different storages apart when asked', () => {
@@ -80,15 +84,39 @@ describe('buildDeckBoards stacks', () => {
   });
 
   it('stacks the copies of a pending card apart from the owned ones', () => {
-    const pending = pendingToCards([pendingCard(forest, { id: 4, quantity: 2 })]);
-    const cards = [...copies(2, forest), ...pending, deckCard(grizzlyBears)];
-    const boards = buildDeckBoards(boardsInput(cards, [forest, grizzlyBears]));
+    const cards = [...copies(2, forest), deckCard(grizzlyBears)];
+    const pending = [pendingCard(forest, { id: 4, quantity: 2 })];
+    const boards = buildDeckBoards(boardsInput(cards, [forest, grizzlyBears], { pending }));
     expect(stackSummary(boards.main.stacks)).toEqual([
       ['Forest', 2],
       ['Forest', 2],
       ['Grizzly Bears', 1],
     ]);
-    expect(boards.main.stacks.map(isPendingCard)).toEqual([false, true, false]);
+    expect(stackKinds(boards.main.stacks)).toEqual(['owned', 'pending', 'owned']);
+  });
+
+  it.each([false, true])(
+    'keeps owned and pending copies of one printing apart (by storage: %s)',
+    (separateByStorage) => {
+      const cards = copies(2, forest);
+      const pending = [pendingCard(forest, { quantity: 3 })];
+      const boards = buildDeckBoards(boardsInput(cards, [forest], { pending, separateByStorage }));
+      expect(boards.main.stacks.map((entry) => [entry.kind, entry.quantity])).toEqual([
+        ['owned', 2],
+        ['pending', 3],
+      ]);
+    },
+  );
+
+  it('keeps a pending card of 150 copies apart from the next pending card', () => {
+    const pending = [pendingCard(forest, { id: 1, quantity: 150 }), pendingCard(forest, { id: 2, quantity: 3 })];
+    const boards = buildDeckBoards(boardsInput([], [forest], { pending }));
+    expect(stackSummary(boards.main.stacks)).toEqual([
+      ['Forest', 150],
+      ['Forest', 3],
+    ]);
+    expect(boards.main.stacks.map((entry) => entry.kind === 'pending' && entry.pending.id)).toEqual([1, 2]);
+    expect(boards.main.count).toBe(153);
   });
 });
 
@@ -98,31 +126,43 @@ describe('buildDeckBoards commanders', () => {
     const commander = deckCard(serraAngel);
     const cards = [deckCard(forest), deckCard(serraAngel), commander, partner, deckCard(tarmogoyf)];
     const boards = buildDeckBoards(
-      boardsInput(cards, [forest, serraAngel, tarmogoyf], { commanderIds: [commander.id, partner.id] }),
+      boardsInput(cards, [forest, serraAngel, tarmogoyf], {
+        commanders: [{ cardId: commander.id }, { cardId: partner.id }],
+      }),
     );
-    expect(boards.main.stacks.map((card) => card.id)).toEqual([
-      commander.id,
-      partner.id,
-      cards[0].id,
-      cards[1].id,
-      cards[4].id,
-    ]);
+    expect(boards.main.stacks.map((entry) => entry.key)).toEqual(
+      [commander, partner, cards[0], cards[1], cards[4]].map((card) => `owned-${card.id}`),
+    );
     expect(boards.main.stacks.slice(0, 2).map((card) => card.quantity)).toEqual([1, 1]);
   });
 
   it('marks the commander stacks of each board', () => {
     const commander = deckCard(serraAngel, { board: 'sideboard' });
     const cards = [deckCard(serraAngel), commander, deckCard(forest)];
-    const boards = buildDeckBoards(boardsInput(cards, [serraAngel, forest], { commanderIds: [commander.id] }));
+    const boards = buildDeckBoards(
+      boardsInput(cards, [serraAngel, forest], { commanders: [{ cardId: commander.id }] }),
+    );
     expect([...boards.main.commanders]).toEqual([]);
-    expect([...boards.sideboard.commanders]).toEqual([commander.id]);
+    expect([...boards.sideboard.commanders]).toEqual([`owned-${commander.id}`]);
   });
 
   it('puts a pending commander first', () => {
-    const [commander] = pendingToCards([pendingCard(serraAngel, { id: 7, quantity: 1 })]);
-    const cards = [deckCard(forest), commander];
-    const boards = buildDeckBoards(boardsInput(cards, [forest, serraAngel], { commanderIds: [commander.id] }));
+    const pending = [pendingCard(serraAngel, { id: 7, quantity: 1 })];
+    const boards = buildDeckBoards(
+      boardsInput([deckCard(forest)], [forest, serraAngel], { pending, commanders: [{ pendingId: 7 }] }),
+    );
     expect(names(boards.main.stacks)).toEqual(['Serra Angel', 'Forest']);
+  });
+
+  it('recognizes a pending commander as commander, alone in its stack', () => {
+    const pending = [pendingCard(serraAngel, { id: 8, quantity: 2 }), pendingCard(serraAngel, { id: 9 })];
+    const boards = buildDeckBoards(
+      boardsInput([deckCard(serraAngel)], [serraAngel], { pending, commanders: [{ pendingId: 9 }] }),
+    );
+    const [commander] = boards.main.stacks;
+    expect(commander).toMatchObject({ kind: 'pending', pending: { id: 9 }, quantity: 1 });
+    expect([...boards.main.commanders]).toEqual([commander.key]);
+    expect(stackKinds(boards.main.stacks)).toEqual(['pending', 'owned', 'pending']);
   });
 });
 
@@ -144,7 +184,7 @@ const valakutAwakening: ScryfallCard = {
   ],
 };
 
-function groupSummary(groups: CardGroup[] | null) {
+function groupSummary(groups: CardGroup<{ name: string }>[] | null) {
   return groups?.map((group) => [group.label, names(group.cards)]) ?? null;
 }
 
@@ -220,7 +260,6 @@ describe('buildDeckBoards groups', () => {
       deckCard(grizzlyBears, { storage_id: 1 }),
       deckCard(serraAngel, { storage_id: 9 }),
       deckCard(solRing),
-      ...pendingToCards([pendingCard(tarmogoyf)]),
     ];
     const storageNames = new Map([
       [1, 'Classeur'],
@@ -228,6 +267,7 @@ describe('buildDeckBoards groups', () => {
     ]);
     const boards = buildDeckBoards(
       boardsInput(cards, [forest, grizzlyBears, serraAngel, solRing, tarmogoyf], {
+        pending: [pendingCard(tarmogoyf)],
         grouping: 'storage',
         separateByStorage: true,
         storageNames,

@@ -1,6 +1,8 @@
 import type { Card } from '../api/types';
 import type { CardType } from '../scryfall/classify';
 
+export type GroupableCard = Pick<Card, 'card_type' | 'colors' | 'mana_value' | 'subtype'>;
+
 export type CardGrouping = 'type' | 'color' | 'mana' | 'subtype';
 
 export const groupingOptions: { value: CardGrouping; label: string }[] = [
@@ -34,7 +36,7 @@ const colorLabels: Record<string, string> = {
   G: 'Vert',
 };
 
-function colorGroup(card: Card): string {
+function colorGroup(card: GroupableCard): string {
   if (card.card_type === 'Land') {
     return 'Terrains';
   }
@@ -52,7 +54,7 @@ function colorGroup(card: Card): string {
 
 export const noSubtypeLabel = 'Sans sous-type';
 
-export function groupLabel(card: Card, grouping: CardGrouping): string {
+export function groupLabel(card: GroupableCard, grouping: CardGrouping): string {
   switch (grouping) {
     case 'type':
       return card.card_type ? typeLabels[card.card_type] : 'Type inconnu';
@@ -65,15 +67,15 @@ export function groupLabel(card: Card, grouping: CardGrouping): string {
   }
 }
 
-export interface CardGroup {
+export interface CardGroup<T = Card> {
   label: string;
-  cards: Card[];
+  cards: T[];
   storage?: boolean;
   tag?: string | null;
 }
 
-export function groupCards(cards: Card[], grouping: CardGrouping): CardGroup[] {
-  const groups: CardGroup[] = [];
+export function groupCards<T extends GroupableCard>(cards: T[], grouping: CardGrouping): CardGroup<T>[] {
+  const groups: CardGroup<T>[] = [];
   for (const card of cards) {
     const label = groupLabel(card, grouping);
     const last = groups[groups.length - 1];
@@ -100,7 +102,7 @@ const typeRanks: Record<CardType, number> = {
 
 const colorRanks: Record<string, number> = { W: 1, U: 2, B: 3, R: 4, G: 5 };
 
-function colorRank(card: Card): number {
+function colorRank(card: GroupableCard): number {
   if (card.card_type === 'Land') {
     return 8;
   }
@@ -116,7 +118,7 @@ function colorRank(card: Card): number {
   return colorRanks[card.colors] ?? 9;
 }
 
-function groupRank(card: Card, grouping: CardGrouping): number {
+function groupRank(card: GroupableCard, grouping: CardGrouping): number {
   switch (grouping) {
     case 'type':
       return card.card_type ? typeRanks[card.card_type] : 10;
@@ -129,7 +131,7 @@ function groupRank(card: Card, grouping: CardGrouping): number {
   }
 }
 
-export function sortIntoGroups(cards: Card[], grouping: CardGrouping): Card[] {
+export function sortIntoGroups<T extends GroupableCard>(cards: T[], grouping: CardGrouping): T[] {
   return cards
     .map((card, index) => ({ card, index, rank: groupRank(card, grouping) }))
     .sort((a, b) => a.rank - b.rank || a.index - b.index)

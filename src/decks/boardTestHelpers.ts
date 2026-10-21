@@ -1,7 +1,8 @@
 import type { DeckCard, PendingCard } from '../api/types';
 import { colorCode, faceTypes, type FaceTypes, primaryType, subtypes } from '../scryfall/classify';
 import type { ScryfallCard } from '../scryfall/client';
-import type { BoardCard, DeckBoardsInput } from './boardLayout';
+import type { DeckBoardsInput } from './boardLayout';
+import { deckEntries } from './deckEntries';
 
 let nextId = 1;
 
@@ -58,15 +59,15 @@ export function pendingCard(printing: ScryfallCard, changes: Partial<PendingCard
 }
 
 export function boardsInput(
-  cards: BoardCard[],
+  cards: DeckCard[],
   printings: ScryfallCard[],
-  changes: Partial<DeckBoardsInput> = {},
+  { pending = [], ...changes }: Partial<DeckBoardsInput> & { pending?: PendingCard[] } = {},
 ): DeckBoardsInput {
   return {
-    cards,
+    entries: deckEntries(cards, pending),
     sort: 'name',
     grouping: null,
-    commanderIds: [],
+    commanders: [],
     separateByStorage: false,
     faceTypes: Object.fromEntries(printings.map((printing) => [printing.id, faceTypes(printing)])) as Record<
       string,

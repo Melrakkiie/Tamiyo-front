@@ -1,35 +1,40 @@
-import type { Card, Deck, UpdateDeckInput } from '../api/types';
-import { isPendingCard, pendingIdOf } from './pendingCards';
+import type { Deck, UpdateDeckInput } from '../api/types';
+import type { DeckEntry } from './deckEntries';
 
 export type CommanderSlot = 'commander' | 'partner';
 
 export type DeckCommanders = Pick<Deck, 'commander_id' | 'commander_pending_id' | 'partner_id' | 'partner_pending_id'>;
 
-export function cardSlot(deck: DeckCommanders, cardId: number): CommanderSlot | null {
+function cardSlot(deck: DeckCommanders, cardId: number): CommanderSlot | null {
   if (deck.commander_id === cardId) {
     return 'commander';
   }
   return deck.partner_id === cardId ? 'partner' : null;
 }
 
-export function pendingSlot(deck: DeckCommanders, pendingId: number): CommanderSlot | null {
+function pendingSlot(deck: DeckCommanders, pendingId: number): CommanderSlot | null {
   if (deck.commander_pending_id === pendingId) {
     return 'commander';
   }
   return deck.partner_pending_id === pendingId ? 'partner' : null;
 }
 
-export function commanderSlotOf(deck: DeckCommanders, card: Card): CommanderSlot | null {
-  return isPendingCard(card) ? pendingSlot(deck, pendingIdOf(card)) : cardSlot(deck, card.id);
+export function commanderSlotOf(deck: DeckCommanders, entry: DeckEntry): CommanderSlot | null {
+  return entry.kind === 'pending' ? pendingSlot(deck, entry.pending.id) : cardSlot(deck, entry.id);
 }
 
-export function commanderCardIds(deck: Partial<DeckCommanders>, cards: Card[]): number[] {
-  const pendingCopy = (pendingId: number | null | undefined) =>
-    pendingId == null ? undefined : cards.find((card) => isPendingCard(card) && pendingIdOf(card) === pendingId)?.id;
+function slotTarget(cardId: number | null | undefined, pendingId: number | null | undefined): SlotTarget[] {
+  if (cardId != null) {
+    return [{ cardId }];
+  }
+  return pendingId != null ? [{ pendingId }] : [];
+}
+
+export function commanderTargets(deck: Partial<DeckCommanders>): SlotTarget[] {
   return [
-    deck.commander_id ?? pendingCopy(deck.commander_pending_id),
-    deck.partner_id ?? pendingCopy(deck.partner_pending_id),
-  ].filter((id): id is number => id !== undefined);
+    ...slotTarget(deck.commander_id, deck.commander_pending_id),
+    ...slotTarget(deck.partner_id, deck.partner_pending_id),
+  ];
 }
 
 export function hasCommander(deck: DeckCommanders) {
