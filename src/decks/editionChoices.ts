@@ -25,10 +25,11 @@ export function editionChoices({
   printings,
   deckCardIds,
   isLocked,
+  showLocked,
 }: EditionChoicesInput): EditionChoices {
   const sourceIds = new Set(source.kind === 'owned' ? source.copy_ids : []);
   const available = copies.filter((copy) => !sourceIds.has(copy.id) && !deckCardIds.has(copy.id));
-  const offered = available.filter((copy) => !isLocked(copy.storage_id));
+  const offered = showLocked ? available : available.filter((copy) => !isLocked(copy.storage_id));
   const offeredPrintings = new Set(offered.map((copy) => copy.scryfall_id));
   const others = printings.filter(
     (printing) => printing.id !== source.scryfall_id && !offeredPrintings.has(printing.id),

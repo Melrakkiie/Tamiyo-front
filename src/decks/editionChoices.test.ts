@@ -46,4 +46,16 @@ describe('editionChoices', () => {
     expect(choices.hiddenLocked).toBe(1);
     expect(choices.others.map((printing) => printing.id)).toEqual(['beta-bears']);
   });
+
+  it('offers a locked copy when locked copies are shown and drops its printing from the other editions', () => {
+    const locked = deckCard(beta, { storage_id: 7 });
+
+    const choices = editionChoices(
+      input({ copies: [locked], isLocked: (storageId) => storageId === 7, showLocked: true }),
+    );
+
+    expect(choices.copies.map((copy) => copy.id)).toEqual([locked.id]);
+    expect(choices.hiddenLocked).toBe(0);
+    expect(choices.others.map((printing) => printing.id)).toEqual(['tenth-bears']);
+  });
 });
