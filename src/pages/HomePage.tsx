@@ -23,6 +23,7 @@ import { CardImage } from '../cards/CardImage';
 import { useAllDecks } from '../decks/api';
 import { artBackground, useDeckArts } from '../decks/art';
 import { DeckTile } from '../decks/DeckTile';
+import { MothPerch } from '../layout/MothPerch';
 import { usePageTitle } from '../layout/usePageTitle';
 import { useCardImages } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
@@ -127,8 +128,10 @@ function Hero({
         {title === undefined ? (
           <Skeleton h={44} w={320} maw="100%" />
         ) : (
-          <Title order={1} c={onArt ? 'white' : undefined}>
-            {title}
+          <Title order={1} fz={{ base: 28, sm: 34 }} c={onArt ? 'white' : undefined}>
+            <span className="tamiyo-home-title">
+              <MothPerch text={title} shadow={onArt} />
+            </span>
           </Title>
         )}
         <Text
