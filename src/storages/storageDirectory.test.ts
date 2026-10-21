@@ -34,3 +34,34 @@ describe('storageDirectory name lookup', () => {
     expect(storageDirectory([binder]).nameOf(undefined)).toBeNull();
   });
 });
+
+describe('storageDirectory lock check', () => {
+  const directory = storageDirectory([binder, vault, sealed], 'deck-b');
+
+  it('leaves an unlocked storage open', () => {
+    expect(directory.isLocked(1)).toBe(false);
+  });
+
+  it('locks a locked storage for a deck it does not allow', () => {
+    expect(directory.isLocked(2)).toBe(true);
+    expect(directory.isLocked(3)).toBe(true);
+  });
+
+  it('opens a locked storage to a deck it allows', () => {
+    expect(storageDirectory([vault], 'deck-a').isLocked(2)).toBe(false);
+  });
+
+  it('never locks a copy without storage or in an unknown storage', () => {
+    expect(directory.isLocked(null)).toBe(false);
+    expect(directory.isLocked(42)).toBe(false);
+  });
+
+  it('locks nothing without a deck', () => {
+    expect(storageDirectory([vault, sealed]).isLocked(3)).toBe(false);
+  });
+
+  it('tells whether any storage is locked for the deck', () => {
+    expect(directory.anyLocked).toBe(true);
+    expect(storageDirectory([binder, vault], 'deck-a').anyLocked).toBe(false);
+  });
+});
