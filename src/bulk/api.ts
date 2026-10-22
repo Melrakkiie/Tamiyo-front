@@ -81,14 +81,16 @@ export function useBulkEditDeck() {
   );
 }
 
+export function importIntoDeck({ deckId, file, commanderFromFirstLine, includeLockedStorages }: DeckListImport) {
+  return postForm(`/deck/${deckId}/import`, {
+    file,
+    commander_from_first_line: String(commanderFromFirstLine),
+    include_locked_storages: includeLockedStorages ? 'true' : undefined,
+  });
+}
+
 export function useImportIntoDeck() {
-  return useImport(({ deckId, file, commanderFromFirstLine, includeLockedStorages }: DeckListImport) =>
-    postForm(`/deck/${deckId}/import`, {
-      file,
-      commander_from_first_line: String(commanderFromFirstLine),
-      include_locked_storages: includeLockedStorages ? 'true' : undefined,
-    }),
-  );
+  return useImport(importIntoDeck);
 }
 
 function filenameFrom(response: Response, fallback: string) {
