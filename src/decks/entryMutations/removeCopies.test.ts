@@ -88,3 +88,90 @@ describe('remove copies of a pending entry', () => {
     expect(plan.entry).toBeNull();
   });
 });
+
+const slots = [
+  {
+    slot: 'commander',
+    cardField: 'commander_id',
+    pendingField: 'commander_pending_id',
+    clear: { clear_commander_id: true },
+  },
+  { slot: 'partner', cardField: 'partner_id', pendingField: 'partner_pending_id', clear: { clear_partner_id: true } },
+] as const;
+
+describe.each(slots)('remove copies of the $slot', ({ cardField, pendingField, clear }) => {
+  it.each([{ count: 1 }, { count: 'all' as const }])(
+    'clears the slot before removing its only owned copy ($count)',
+    ({ count }) => {
+      const { ids, entry } = owned(1);
+      const slotDeck = { ...deck, [cardField]: ids[0] };
+
+      const plan = planEntryEdit(slotDeck, entry, { kind: 'removeCopies', count });
+
+      expect(plan.steps).toEqual([
+        { kind: 'patchDeck', deckId: 'deck-1', changes: clear },
+        { kind: 'removeCard', deckId: 'deck-1', cardId: ids[0] },
+      ]);
+      expect(plan.entry).toBeNull();
+    },
+  );
+
+  it('keeps the slot and its copy when removing some of several owned copies', () => {
+    const { ids, entry } = owned(4);
+    const slotDeck = { ...deck, [cardField]: ids[3] };
+
+    const one = planEntryEdit(slotDeck, entry, { kind: 'removeCopies', count: 1 });
+    const two = planEntryEdit(slotDeck, entry, { kind: 'removeCopies', count: 2 });
+
+    expect(one.steps).toEqual([{ kind: 'removeCard', deckId: 'deck-1', cardId: ids[2] }]);
+    expect(one.entry).toMatchObject({ copy_ids: [ids[0], ids[1], ids[3]] });
+    expect(two.steps).toEqual([{ kind: 'removeCopies', deckId: 'deck-1', cardIds: [ids[1], ids[2]] }]);
+    expect(two.entry).toMatchObject({ copy_ids: [ids[0], ids[3]] });
+  });
+
+  it('keeps the slot when removing a copy other than the first one', () => {
+    const { ids, entry } = owned(2);
+    const slotDeck = { ...deck, [cardField]: ids[1] };
+
+    const plan = planEntryEdit(slotDeck, entry, { kind: 'removeCopies', count: 1 });
+
+    expect(plan.steps).toEqual([{ kind: 'removeCard', deckId: 'deck-1', cardId: ids[0] }]);
+    expect(plan.entry).toMatchObject({ id: ids[1], quantity: 1, copy_ids: [ids[1]] });
+  });
+
+  it('clears the slot before removing every owned copy', () => {
+    const { ids, entry } = owned(3);
+    const slotDeck = { ...deck, [cardField]: ids[0] };
+
+    const plan = planEntryEdit(slotDeck, entry, { kind: 'removeCopies', count: 'all' });
+
+    expect(plan.steps).toEqual([
+      { kind: 'patchDeck', deckId: 'deck-1', changes: clear },
+      { kind: 'removeCopies', deckId: 'deck-1', cardIds: ids },
+    ]);
+  });
+
+  it.each([
+    { quantity: 1, count: 1 },
+    { quantity: 3, count: 'all' as const },
+  ])('clears the slot before deleting a pending card of quantity $quantity', ({ quantity, count }) => {
+    const entry = pendingEntry(pendingCard(forest, { id: 50, quantity }));
+    const slotDeck = { ...deck, [pendingField]: 50 };
+
+    const plan = planEntryEdit(slotDeck, entry, { kind: 'removeCopies', count });
+
+    expect(plan.steps).toEqual([
+      { kind: 'patchDeck', deckId: 'deck-1', changes: clear },
+      { kind: 'removePending', deckId: 'deck-1', pendingId: 50 },
+    ]);
+  });
+
+  it('keeps the slot when lowering the quantity of a pending card', () => {
+    const entry = pendingEntry(pendingCard(forest, { id: 51, quantity: 3 }));
+    const slotDeck = { ...deck, [pendingField]: 51 };
+
+    const plan = planEntryEdit(slotDeck, entry, { kind: 'removeCopies', count: 2 });
+
+    expect(plan.steps).toEqual([{ kind: 'setPendingQuantity', deckId: 'deck-1', pendingId: 51, quantity: 1 }]);
+  });
+});
