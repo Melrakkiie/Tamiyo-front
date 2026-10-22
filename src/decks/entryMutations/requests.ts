@@ -8,7 +8,7 @@ import type {
   PendingCard,
   UpdateDeckInput,
 } from '../../api/types';
-import type { components, paths } from '../../api/schema';
+import type { components } from '../../api/schema';
 import type { DeckCommanders } from '../commanders';
 import type { DeckEntry } from '../deckEntries';
 
@@ -16,7 +16,6 @@ import type { DeckEntry } from '../deckEntries';
 export type PlanDeck = Pick<Deck, 'id'> & DeckCommanders;
 
 export type PendingCommitSummary = components['schemas']['PendingCommitSummary'];
-export type SwitchSummary = paths['/deck/{id}/switch-foil']['post']['responses'][200]['content']['application/json'];
 
 type CardSources = { cardIds: number[] } | { pendingIds: number[] };
 
@@ -56,8 +55,8 @@ export interface DeckResponses {
   importDeckLine: ImportSummary;
   commitPending: PendingCommitSummary;
   createCards: Card[];
-  switchFinish: SwitchSummary;
-  switchProxy: SwitchSummary;
+  switchFinish: ImportSummary;
+  switchProxy: ImportSummary;
 }
 
 export type DeckResponse = DeckResponses[DeckRequestKind];
