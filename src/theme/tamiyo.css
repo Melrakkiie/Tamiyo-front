@@ -742,6 +742,86 @@ h6,
   z-index: 1;
 }
 
+:root {
+  --tamiyo-foil-size: max(16%, 22px);
+  --tamiyo-foil-inset: calc(var(--tamiyo-foil-size) * 0.45);
+}
+
+.tamiyo-foil-sparkles {
+  position: absolute;
+  z-index: 1;
+  top: 6%;
+  right: calc(var(--tamiyo-foil-inset) - var(--tamiyo-foil-size));
+  width: var(--tamiyo-foil-size);
+  aspect-ratio: 1;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.tamiyo-card-tile .tamiyo-foil-sparkles {
+  top: 36px;
+}
+
+.tamiyo-card-tile[data-stacked] .tamiyo-foil-sparkles {
+  top: 2px;
+}
+
+.tamiyo-foil-star {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.tamiyo-foil-outline {
+  fill: none;
+  stroke: var(--mantine-color-dark-9);
+  stroke-width: 5.2;
+  stroke-linejoin: round;
+}
+
+.tamiyo-foil-ink {
+  fill: var(--mantine-color-ocelle-2);
+  stroke: var(--mantine-color-ocelle-4);
+  stroke-width: 2.6;
+  stroke-linejoin: round;
+}
+
+.tamiyo-card-tile:hover .tamiyo-foil-star,
+.tamiyo-card-tile:focus-visible .tamiyo-foil-star {
+  animation: tamiyo-foil-twinkle 520ms ease-out backwards;
+}
+
+.tamiyo-card-tile:hover .tamiyo-foil-star:nth-child(2),
+.tamiyo-card-tile:focus-visible .tamiyo-foil-star:nth-child(2) {
+  animation-delay: 90ms;
+}
+
+.tamiyo-card-tile:hover .tamiyo-foil-star:nth-child(3),
+.tamiyo-card-tile:focus-visible .tamiyo-foil-star:nth-child(3) {
+  animation-delay: 170ms;
+}
+
+@keyframes tamiyo-foil-twinkle {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  40% {
+    transform: scale(1.35) rotate(14deg);
+  }
+  70% {
+    transform: scale(0.85) rotate(-6deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tamiyo-card-tile:hover .tamiyo-foil-star,
+  .tamiyo-card-tile:focus-visible .tamiyo-foil-star {
+    animation: none;
+  }
+}
+
 @media (pointer: coarse) {
   .tamiyo-touch-menu {
     -webkit-touch-callout: none;

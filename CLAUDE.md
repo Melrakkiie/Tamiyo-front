@@ -22,7 +22,7 @@ To check a front branch against an unmerged API branch: `make check-stack-up POR
 
 - `src/api/schema.d.ts`: generated and committed; regenerate it with `npm run gen:api` after any API change.
 - `src/scryfall/`: every browser call to Scryfall: `client.ts` (spaced 100 ms apart, retried on 429), `cardCache.ts` (per-card cache in memory and IndexedDB, 7 days), `hooks.ts`.
-- `src/theme/`: Mantine theme and palettes (`theme.ts`), day/night switch (`colorScheme.ts`), and the identity's building blocks: `LunaMoth`, `Sticker`, `SectionTitle`, `EmptyNote`, `MoonLoader`, `tapeProps`.
+- `src/theme/`: Mantine theme and palettes (`theme.ts`), day/night switch (`colorScheme.ts`), and the identity's building blocks: `LunaMoth`, `Sticker`, `FoilSparkles`, `SectionTitle`, `EmptyNote`, `MoonLoader`, `tapeProps`.
 - `src/layout/dragDrop.tsx`: the hand-made drag and drop every drag interaction goes through.
 
 ## Rules

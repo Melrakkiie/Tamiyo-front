@@ -170,7 +170,8 @@ export function CardTile<T extends TileCard = Card>({
   return (
     <UnstyledButton
       onClick={() => onOpen(card)}
-      className="tamiyo-touch-menu"
+      className="tamiyo-touch-menu tamiyo-card-tile"
+      data-stacked={stacked || undefined}
       onContextMenu={openMenu}
       onMouseEnter={onPreview}
       onFocus={onPreview}
@@ -185,6 +186,7 @@ export function CardTile<T extends TileCard = Card>({
             url={imageUrl}
             loading={imageLoading}
             backUrl={backImageUrl}
+            foil={card.foil}
             onFlip={(url) => {
               setShownUrl(url);
               showCardPreview({
@@ -208,7 +210,13 @@ export function CardTile<T extends TileCard = Card>({
             </Group>
           )}
           {stacked ? (
-            <Group pos="absolute" top={4} right={4} gap={4} wrap="nowrap">
+            <Group
+              pos="absolute"
+              top={4}
+              right={card.foil ? 'calc(var(--tamiyo-foil-inset) + 4px)' : 4}
+              gap={4}
+              wrap="nowrap"
+            >
               {quantity > 1 && (
                 <Badge
                   size="sm"
