@@ -178,24 +178,12 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
             )}
 
             <Divider />
-            {entry.kind === 'pending' ? (
-              <DeckQuantityControl
-                key={`${entry.pending.id}-${entry.quantity}`}
-                deckId={deckId}
-                card={entry}
-                board={entry.board}
-                source={{ kind: 'pending', item: entry.pending }}
-                onChanged={(removedAll) => removedAll && onClose()}
-              />
-            ) : (
-              <DeckQuantityControl
-                deckId={deckId}
-                card={entry}
-                board={entry.board}
-                source={{ kind: 'owned', copyIds: entry.copy_ids, commanderSlot }}
-                onChanged={onClose}
-              />
-            )}
+            <DeckQuantityControl
+              key={`${entry.key}-${entry.quantity}`}
+              deck={deck}
+              entry={entry}
+              onChanged={(removedAll) => (removedAll || entry.kind === 'owned') && onClose()}
+            />
 
             <Divider />
             {entry.kind === 'pending' ? (
