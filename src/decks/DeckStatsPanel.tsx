@@ -4,7 +4,7 @@ import { type ReactNode, useState } from 'react';
 import { ApiError, errorMessage } from '../api/errors';
 import type { Deck, DeckStats } from '../api/types';
 import { formatPrice, PriceText, usePriceCurrency } from '../cards/price';
-import { useDeckCards, useDeckCombos, useDeckStats, usePendingCards } from './api';
+import { isCommanderFormat, useDeckCards, useDeckCombos, useDeckStats, usePendingCards } from './api';
 import { withSymbols } from '../scryfall/manaSymbols';
 import { BarList } from './charts';
 import { type CombosQuery, comboDeckList, commanderSpellbookUrl } from './combos';
@@ -70,16 +70,18 @@ export function DeckStatsPanel({ deck }: { deck: Deck }) {
   const stats = useDeckStats(deck.id, true);
   const combos = useDeckCombos(deck.id, (stats.data?.card_count ?? 0) > 0);
   const creditUrl = useComboCreditUrl(deck);
-  return <DeckStatsView stats={stats} combos={{ query: combos, creditUrl }} />;
+  return <DeckStatsView format={deck.format} stats={stats} combos={{ query: combos, creditUrl }} />;
 }
 
 interface DeckStatsViewProps {
+  format: string;
   stats: { data: DeckStats | undefined; error: Error | null; isLoading: boolean };
   combos?: { query: CombosQuery; creditUrl: string | undefined };
   emptyMessage?: string;
 }
 
 export function DeckStatsView({
+  format,
   stats,
   combos,
   emptyMessage = 'Ajoute des cartes au deck pour voir ses statistiques.',
@@ -126,8 +128,9 @@ export function DeckStatsView({
   const curve = fullCurve(data.mana_curve ?? []);
   const selectedBucket = curve.find((bucket) => bucket.mana_value === selectedManaValue && bucket.count > 0);
 
+  const commander = isCommanderFormat(format);
   const tiles = [
-    <StatTile key="cards" label="Cartes" value={data.card_count} />,
+    !commander && <StatTile key="cards" label="Cartes" value={data.card_count} />,
     <StatTile
       key="lands"
       label="Terrains"
@@ -142,6 +145,7 @@ export function DeckStatsView({
     />,
     <StatTile key="total" label="Coût de mana total" value={formatTotalManaValue(data.total_mana_value)} />,
     <StatTile key="average" label="Coût de mana moyen" value={data.average_mana_value.toFixed(2)} />,
+    commander && <StatTile key="game-changers" label="Game changers" value={data.game_changer_count} />,
     combos && <StatTile key="combos" label="Combos" value={<CombosTileValue combos={combos.query} />} />,
     currency && (
       <StatTile
