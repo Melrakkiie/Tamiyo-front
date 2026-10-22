@@ -9,7 +9,7 @@ export function MothPerch({ text, ...moth }: { text: string } & PerchingMothProp
       {head}
       <span className="tamiyo-nav-perch">
         {last}
-        <PerchingMoth {...moth} />
+        <PerchingMoth {...moth} symbol={last} />
       </span>
       {tail}
     </span>

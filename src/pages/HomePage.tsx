@@ -23,7 +23,7 @@ import { CardImage } from '../cards/CardImage';
 import { useAllDecks } from '../decks/api';
 import { artBackground, useDeckArts } from '../decks/art';
 import { DeckTile } from '../decks/DeckTile';
-import { MothPerch } from '../layout/MothPerch';
+import { MothRoost, RoamingPerch } from '../layout/MothRoost';
 import { usePageTitle } from '../layout/usePageTitle';
 import { useCardImages } from '../scryfall/hooks';
 import { useAllStorages } from '../storages/api';
@@ -129,9 +129,7 @@ function Hero({
           <Skeleton h={44} w={320} maw="100%" />
         ) : (
           <Title order={1} fz={{ base: 28, sm: 34 }} c={onArt ? 'white' : undefined}>
-            <span className="tamiyo-home-title">
-              <MothPerch key={title} text={title} shadow={onArt} trigger=".tamiyo-home-title" returnAfter={6000} />
-            </span>
+            <RoamingPerch title text={title} shadow={onArt} />
           </Title>
         )}
         <Text
@@ -140,7 +138,10 @@ function Hero({
           c={onArt ? 'prune.2' : 'prune'}
           style={{ transform: 'rotate(-1.5deg)', transformOrigin: 'left' }}
         >
-          {deck ? `on reprend « ${deck.name} » ?` : 'par quelle page on commence ?'}
+          <RoamingPerch
+            text={deck ? `on reprend « ${deck.name} » ?` : 'par quelle page on commence ?'}
+            shadow={onArt}
+          />
         </Text>
         <Group gap="sm" mt="md">
           {deck && (
@@ -187,95 +188,97 @@ export function HomePage() {
   const empty = !loading && cardTotal === 0 && decks.data?.length === 0;
 
   return (
-    <Stack gap={40} pt="xs">
-      <Hero
-        title={account.isPending ? undefined : notebookTitle(account.data?.display_name)}
-        deck={lastDeck}
-        artUrl={lastArt?.url}
-        artist={lastArt?.artist}
-      />
-
-      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="xl" verticalSpacing="xl">
-        <StatTile
-          label={cardTotal === 1 ? 'Carte' : 'Cartes'}
-          value={cardTotal}
-          note={recentCards[0] ? `dernière : ${recentCards[0].name}` : undefined}
-          art={<StorageArt type="box" size={56} />}
-          to="/cards"
+    <MothRoost>
+      <Stack gap={40} pt="xs">
+        <Hero
+          title={account.isPending ? undefined : notebookTitle(account.data?.display_name)}
+          deck={lastDeck}
+          artUrl={lastArt?.url}
+          artist={lastArt?.artist}
         />
-        <StatTile
-          label={decks.data?.length === 1 ? 'Deck' : 'Decks'}
-          value={decks.data?.length}
-          note={favorites > 0 ? `dont ${plural(favorites, 'favori')}` : undefined}
-          art={<StorageArt type="deckbox" size={56} />}
-          to="/decks"
-        />
-        <StatTile
-          label={storages.data?.length === 1 ? 'Rangement' : 'Rangements'}
-          value={storages.data?.length}
-          note={storedCards > 0 ? `${plural(storedCards, 'carte')} rangée${storedCards > 1 ? 's' : ''}` : undefined}
-          art={<StorageArt type="binder" size={56} />}
-          to="/storages"
-        />
-      </SimpleGrid>
 
-      {loading ? (
-        <Center p="xl">
-          <Loader />
-        </Center>
-      ) : empty ? (
-        <EmptyNote title="Ton carnet est encore tout neuf" note="ajoute tes premières cartes, ou monte un deck">
-          <Group gap="sm" justify="center">
-            <Button component={Link} to="/cards">
-              Ajouter des cartes
-            </Button>
-            <Button component={Link} to="/decks" variant="default">
-              Créer un deck
-            </Button>
-          </Group>
-        </EmptyNote>
-      ) : (
-        <>
-          {recentDecks.length > 0 && (
-            <Stack gap="md">
-              <Group gap="md" wrap="nowrap">
-                <Box style={{ flex: 1, minWidth: 0 }}>
-                  <SectionTitle>Decks récents</SectionTitle>
-                </Box>
-                <SeeAll to="/decks">Tous les decks</SeeAll>
-              </Group>
-              <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="xl" verticalSpacing="xl" pt={6}>
-                {recentDecks.map((deck) => (
-                  <DeckTile key={deck.id} deck={deck} art={artOf(deck)} showVisibility={false} />
-                ))}
-              </SimpleGrid>
-            </Stack>
-          )}
+        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="xl" verticalSpacing="xl">
+          <StatTile
+            label={cardTotal === 1 ? 'Carte' : 'Cartes'}
+            value={cardTotal}
+            note={recentCards[0] ? `dernière : ${recentCards[0].name}` : undefined}
+            art={<StorageArt type="box" size={56} />}
+            to="/cards"
+          />
+          <StatTile
+            label={decks.data?.length === 1 ? 'Deck' : 'Decks'}
+            value={decks.data?.length}
+            note={favorites > 0 ? `dont ${plural(favorites, 'favori')}` : undefined}
+            art={<StorageArt type="deckbox" size={56} />}
+            to="/decks"
+          />
+          <StatTile
+            label={storages.data?.length === 1 ? 'Rangement' : 'Rangements'}
+            value={storages.data?.length}
+            note={storedCards > 0 ? `${plural(storedCards, 'carte')} rangée${storedCards > 1 ? 's' : ''}` : undefined}
+            art={<StorageArt type="binder" size={56} />}
+            to="/storages"
+          />
+        </SimpleGrid>
 
-          {recentCards.length > 0 && (
-            <Stack gap="md">
-              <Group gap="md" wrap="nowrap">
-                <Box style={{ flex: 1, minWidth: 0 }}>
-                  <SectionTitle>Dernières trouvailles</SectionTitle>
-                </Box>
-                <SeeAll to="/cards">Toute la collection</SeeAll>
-              </Group>
-              <SimpleGrid cols={{ base: 2, xs: 3, md: 6 }} spacing="lg" verticalSpacing="xl" pt={6}>
-                {recentCards.map((card) => (
-                  <Box
-                    key={card.id}
-                    component={Link}
-                    to={`/cards?carte=${card.id}`}
-                    {...tapeProps(`home-card-${card.id}`)}
-                  >
-                    <CardImage name={card.name} url={images.data?.[card.scryfall_id]} loading={images.isLoading} />
+        {loading ? (
+          <Center p="xl">
+            <Loader />
+          </Center>
+        ) : empty ? (
+          <EmptyNote title="Ton carnet est encore tout neuf" note="ajoute tes premières cartes, ou monte un deck">
+            <Group gap="sm" justify="center">
+              <Button component={Link} to="/cards">
+                Ajouter des cartes
+              </Button>
+              <Button component={Link} to="/decks" variant="default">
+                Créer un deck
+              </Button>
+            </Group>
+          </EmptyNote>
+        ) : (
+          <>
+            {recentDecks.length > 0 && (
+              <Stack gap="md">
+                <Group gap="md" wrap="nowrap">
+                  <Box style={{ flex: 1, minWidth: 0 }}>
+                    <SectionTitle>Decks récents</SectionTitle>
                   </Box>
-                ))}
-              </SimpleGrid>
-            </Stack>
-          )}
-        </>
-      )}
-    </Stack>
+                  <SeeAll to="/decks">Tous les decks</SeeAll>
+                </Group>
+                <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="xl" verticalSpacing="xl" pt={6}>
+                  {recentDecks.map((deck) => (
+                    <DeckTile key={deck.id} deck={deck} art={artOf(deck)} showVisibility={false} />
+                  ))}
+                </SimpleGrid>
+              </Stack>
+            )}
+
+            {recentCards.length > 0 && (
+              <Stack gap="md">
+                <Group gap="md" wrap="nowrap">
+                  <Box style={{ flex: 1, minWidth: 0 }}>
+                    <SectionTitle>Dernières trouvailles</SectionTitle>
+                  </Box>
+                  <SeeAll to="/cards">Toute la collection</SeeAll>
+                </Group>
+                <SimpleGrid cols={{ base: 2, xs: 3, md: 6 }} spacing="lg" verticalSpacing="xl" pt={6}>
+                  {recentCards.map((card) => (
+                    <Box
+                      key={card.id}
+                      component={Link}
+                      to={`/cards?carte=${card.id}`}
+                      {...tapeProps(`home-card-${card.id}`)}
+                    >
+                      <CardImage name={card.name} url={images.data?.[card.scryfall_id]} loading={images.isLoading} />
+                    </Box>
+                  ))}
+                </SimpleGrid>
+              </Stack>
+            )}
+          </>
+        )}
+      </Stack>
+    </MothRoost>
   );
 }
