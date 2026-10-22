@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 
 export type StickerTone = 'prune' | 'lune' | 'ocelle' | 'paper' | 'encre';
 
-interface StickerProps {
+export interface StickerProps {
   tone: StickerTone;
   icon?: ReactNode;
   children?: ReactNode;

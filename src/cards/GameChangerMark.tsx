@@ -1,9 +1,12 @@
-import { BoltStickerIcon, Sticker } from '../theme/Sticker';
+import { BoltStickerIcon } from '../theme/Sticker';
+import { CardInlineMark, CardMarkBadge } from './CardMark';
+
+const mark = { tone: 'encre', icon: <BoltStickerIcon />, tilt: 6, title: 'Game changer' } as const;
 
 export function GameChangerBadge({ size = 'md' }: { size?: 'sm' | 'md' }) {
-  return <Sticker tone="encre" icon={<BoltStickerIcon />} size={size} tilt={6} title="Game changer" />;
+  return <CardMarkBadge {...mark} size={size} />;
 }
 
 export function GameChangerInlineMark() {
-  return <Sticker tone="encre" icon={<BoltStickerIcon />} size="xs" tilt={6} title="Game changer" />;
+  return <CardInlineMark {...mark} />;
 }
