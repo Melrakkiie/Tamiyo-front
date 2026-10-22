@@ -23,6 +23,7 @@ interface EntryFields extends EntryPrinting {
   board: DeckBoard;
   price: number | null;
   quantity: number;
+  game_changer: boolean;
 }
 
 export type Taggable = Pick<Card, 'name'>;
@@ -33,7 +34,7 @@ export type PendingEntry = EntryFields & { kind: 'pending'; pending: PendingCard
 
 export type DeckEntry = OwnedEntry | PendingEntry;
 
-export type OwnedSource = Card & { board: DeckBoard; price?: number | null };
+export type OwnedSource = Card & { board: DeckBoard; price?: number | null; game_changer?: boolean };
 
 export function ownedEntry(card: OwnedSource): OwnedEntry {
   return {
@@ -42,6 +43,7 @@ export function ownedEntry(card: OwnedSource): OwnedEntry {
     key: `owned-${card.id}`,
     proxy: card.proxy ?? false,
     price: card.price ?? null,
+    game_changer: card.game_changer ?? false,
     quantity: copyCount(card),
     copy_ids: copyIds(card),
   };
@@ -66,6 +68,7 @@ export function pendingEntry(pending: PendingCard): PendingEntry {
     updated: pending.added,
     board: pending.board,
     price: pending.price,
+    game_changer: pending.game_changer,
     quantity: pending.quantity,
   };
 }
