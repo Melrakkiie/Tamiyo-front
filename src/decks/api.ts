@@ -158,24 +158,6 @@ export function useAddCardToDeck() {
   });
 }
 
-export function useMoveDeckCards() {
-  const invalidate = useInvalidateDecks();
-
-  return useMutation({
-    mutationFn: async ({ deckId, cardIds, board }: { deckId: string; cardIds: number[]; board: DeckBoard }) => {
-      for (const cardId of cardIds) {
-        unwrap(
-          await api.PUT('/deck/{id}/cards/{card_id}', {
-            params: { path: { id: deckId, card_id: cardId } },
-            body: { board },
-          }),
-        );
-      }
-    },
-    onSettled: invalidate,
-  });
-}
-
 export function useRemoveCardFromDeck() {
   const invalidate = useInvalidateDecks();
 
@@ -268,21 +250,6 @@ export function useSetPendingQuantity() {
         await api.PATCH('/deck/{id}/pending/{pending_id}', {
           params: { path: { id: deckId, pending_id: pendingId } },
           body: { quantity },
-        }),
-      ),
-    onSettled: invalidate,
-  });
-}
-
-export function useMovePendingCard() {
-  const invalidate = useInvalidateDecks();
-
-  return useMutation({
-    mutationFn: async ({ deckId, pendingId, board }: { deckId: string; pendingId: number; board: DeckBoard }) =>
-      unwrap(
-        await api.PATCH('/deck/{id}/pending/{pending_id}', {
-          params: { path: { id: deckId, pending_id: pendingId } },
-          body: { board },
         }),
       ),
     onSettled: invalidate,
