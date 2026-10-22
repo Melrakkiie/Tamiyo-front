@@ -18,7 +18,7 @@ export function pickPerch(
   left: string | null,
   random: () => number,
 ) {
-  const candidates = perches.filter((perch) => perch.id !== left);
+  const candidates = perches.filter((perch) => perch.visible && perch.id !== left);
   return candidates[Math.floor(random() * candidates.length)]?.id;
 }
 

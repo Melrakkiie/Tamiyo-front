@@ -141,4 +141,9 @@ describe('pickPerch', () => {
     expect(pickPerch([title, subtitle, note], 'note', () => 0.5)).toBe('subtitle');
     expect(pickPerch([title, subtitle, note], 'note', () => 0.99)).toBe('subtitle');
   });
+
+  it('ignores the perches out of sight', () => {
+    const hidden = { id: 'hidden', visible: false, title: false };
+    expect(pickPerch([hidden, title, subtitle], 'title', () => 0)).toBe('subtitle');
+  });
 });
