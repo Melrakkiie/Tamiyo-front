@@ -110,6 +110,8 @@ const priceSortOptions: { value: DeckCardSort; label: string }[] = [
   { value: 'price', label: 'Prix croissant' },
 ];
 
+const collectionToggleDescription = 'Les cartes en attente et le rangement de chaque exemplaire';
+
 export function DeckPage() {
   const id = useParams().id ?? '';
   return <DeckRoute key={id} id={id} />;
@@ -678,6 +680,8 @@ function DeckCards({
               clearable
               w={200}
             />
+            {/* On a phone, beside "Grouper par" rather than on a line of its own. */}
+            <CollectionToggle hiddenFrom="sm" description={collectionToggleDescription} />
             <CardDisplayControls
               display={display}
               wrap="nowrap"
@@ -693,7 +697,7 @@ function DeckCards({
                 />
               }
             />
-            <CollectionToggle description="Les cartes en attente et le rangement de chaque exemplaire" />
+            <CollectionToggle visibleFrom="sm" description={collectionToggleDescription} />
           </Group>
           <Group gap="xs" ml="auto">
             <Button variant="default" onClick={() => setImportOpened(true)}>
