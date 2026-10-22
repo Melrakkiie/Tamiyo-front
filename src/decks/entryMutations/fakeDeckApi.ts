@@ -36,6 +36,7 @@ export function fakeDeckApi({ failOn, nextPendingId = 1000 }: FakeOptions = {}) 
         quantity: card.quantity,
         board: card.board ?? 'main',
         price: null,
+        game_changer: false,
         added: '2026-01-01T00:00:00Z',
         owned_copies: 0,
         owned_same_printing: 0,
