@@ -17,21 +17,19 @@ import { type ReactNode, useState } from 'react';
 import { Link, useParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
-import type { Card, ComparedCard, ComparedDeck } from '../api/types';
+import type { ComparedCard, ComparedDeck } from '../api/types';
 import { useSession } from '../auth/useSession';
 import { type CardDisplay, CardDisplayControls, useCardDisplay } from '../cards/CardDisplay';
 import { useCardVisuals } from '../cards/useCardVisuals';
-import { useDeckComparison } from '../decks/api';
-import { comparedStackTotals } from '../decks/comparedStack';
+import { isCommanderFormat, useDeckComparison } from '../decks/api';
+import { comparedStackTotals, copies, type Side, toOwnedSources } from '../decks/comparedStack';
 import { DeckBoards, type DeckBoardsExtras, useDeckBoards } from '../decks/DeckBoards';
-import { type OwnedSource, type OwnedEntry, ownedEntry } from '../decks/deckEntries';
+import { type OwnedEntry, ownedEntry } from '../decks/deckEntries';
 import { FormatSticker } from '../decks/FormatSticker';
 import { SharedCardModal } from '../decks/SharedCardModal';
 import { type SharedDeckSort, sharedDeckSortOptions } from '../decks/shared';
 import { type CardGrouping, groupingOptions, parseGrouping } from '../cards/grouping';
 import { usePageTitle } from '../layout/usePageTitle';
-
-type Side = 'deck' | 'other' | 'both';
 
 const sideColors: Record<Side, string> = { deck: 'lune', both: 'ocelle', other: 'prune' };
 
@@ -182,17 +180,6 @@ function DeckSummary({ deck, color }: { deck: ComparedDeck; color: string }) {
   );
 }
 
-function copies(card: ComparedCard, side: Side) {
-  switch (side) {
-    case 'deck':
-      return card.quantity;
-    case 'other':
-      return card.other_quantity;
-    case 'both':
-      return 1;
-  }
-}
-
 interface TabLabelProps {
   title: string;
   cards: ComparedCard[];
@@ -212,27 +199,6 @@ function TabLabel({ title, cards, side, active }: TabLabelProps) {
       </Badge>
     </Group>
   );
-}
-
-function toOwnedSources(cards: ComparedCard[], side: Side): OwnedSource[] {
-  return cards.map((card, index) => ({
-    id: index + 1,
-    name: card.name,
-    scryfall_id: card.scryfall_id,
-    set_code: '',
-    collector_number: '',
-    foil: false,
-    proxy: false,
-    storage_id: null,
-    mana_value: card.mana_value,
-    colors: card.colors,
-    card_type: card.card_type as Card['card_type'],
-    color_identity: card.color_identity,
-    added: '',
-    updated: '',
-    quantity: copies(card, side),
-    board: 'main',
-  }));
 }
 
 interface ComparedCardsProps {
@@ -296,6 +262,7 @@ function ComparedCards({ cards, side, deck, other, options }: ComparedCardsProps
           </Center>
         }
         extras={extras}
+        showGameChangers={isCommanderFormat(deck.format) || isCommanderFormat(other.format)}
         onOpen={setOpened}
       />
       <SharedCardModal

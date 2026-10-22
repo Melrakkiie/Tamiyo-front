@@ -6260,6 +6260,8 @@ export interface components {
             other_quantity: number;
             commander: boolean;
             other_commander: boolean;
+            /** @description Whether the card is a game changer according to Scryfall, in either deck's stored printing. */
+            game_changer: boolean;
         };
         DeckComparison: {
             deck: components["schemas"]["ComparedDeck"];
