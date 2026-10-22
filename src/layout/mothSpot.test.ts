@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { flightPose, isRendered, mothSize, restingOffset, splitLastSymbol } from './mothSpot';
+import { flightPose, isRendered, mothSize, pickPerch, restingOffset, splitLastSymbol } from './mothSpot';
 
 describe('flightPose', () => {
   const growing = { dx: 100, dy: -50, fromHeight: 16, toHeight: 32 };
@@ -123,5 +123,22 @@ describe('restingOffset', () => {
     const spot = restingOffset(16, null);
     expect(spot.left).toBeCloseTo(-6.857, 3);
     expect(spot.top).toBeCloseTo(-8.48, 3);
+  });
+});
+
+describe('pickPerch', () => {
+  const title = { id: 'title', visible: true, title: true };
+  const subtitle = { id: 'subtitle', visible: true, title: false };
+
+  it('never picks the perch just left', () => {
+    expect(pickPerch([title, subtitle], 'title', () => 0)).toBe('subtitle');
+  });
+
+  it('lets the random source pick uniformly, the title included', () => {
+    const note = { id: 'note', visible: true, title: false };
+    expect(pickPerch([title, subtitle, note], 'note', () => 0)).toBe('title');
+    expect(pickPerch([title, subtitle, note], 'note', () => 0.49)).toBe('title');
+    expect(pickPerch([title, subtitle, note], 'note', () => 0.5)).toBe('subtitle');
+    expect(pickPerch([title, subtitle, note], 'note', () => 0.99)).toBe('subtitle');
   });
 });

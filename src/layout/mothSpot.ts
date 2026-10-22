@@ -13,6 +13,15 @@ export function splitLastSymbol(text: string) {
   return { head: trimmed.slice(0, trimmed.length - last.length), last, tail };
 }
 
+export function pickPerch(
+  perches: { id: string; visible: boolean; title: boolean }[],
+  left: string | null,
+  random: () => number,
+) {
+  const candidates = perches.filter((perch) => perch.id !== left);
+  return candidates[Math.floor(random() * candidates.length)]?.id;
+}
+
 export function isRendered(box: { width: number; height: number }) {
   return box.width > 0 && box.height > 0;
 }
