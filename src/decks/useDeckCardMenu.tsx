@@ -3,13 +3,12 @@ import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import type { Deck, DeckBoard, ImportSummary } from '../api/types';
-import { useImportIntoDeck } from '../bulk/api';
+import type { Deck, DeckBoard } from '../api/types';
 import { CardCopyItems, FoilToggleItem, ProxyToggleItem, type ShownFace } from '../cards/CardContextMenu';
 import type { CardFace } from '../scryfall/client';
 import { canPair, commanderEligibility } from '../scryfall/commander';
 import { useScryfallCard } from '../scryfall/hooks';
-import { AddCopiesToDeckModal, deckLineFile } from './AddCopiesToDeckModal';
+import { AddCopiesToDeckModal } from './AddCopiesToDeckModal';
 import { isCommanderFormat, useUpdateDeck } from './api';
 import { type ArtChoice, backArtChoice } from './art';
 import { BOARDS } from './boards';
@@ -33,7 +32,6 @@ function notifyError(err: unknown) {
 }
 
 export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
-  const importLine = useImportIntoDeck();
   const mutations = useDeckEntryMutations(deck);
   const updateDeck = useUpdateDeck();
   const [otherDeckEntry, setOtherDeckEntry] = useState<DeckEntry | null>(null);
@@ -46,9 +44,10 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
 
   async function switchCopies(entry: DeckEntry, intent: EntryIntent, describe: (details: string) => string) {
     try {
-      const { responses } = await mutations.run(entry, intent);
-      const [summary] = responses as [ImportSummary];
-      notifications.show({ color: 'green', message: describe(summaryDetails(summary)) });
+      const { summary } = await mutations.run(entry, intent);
+      if (summary) {
+        notifications.show({ color: 'green', message: describe(summaryDetails(summary)) });
+      }
     } catch (err) {
       notifyError(err);
     }
@@ -72,18 +71,18 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
     );
   }
 
-  function addOne(entry: DeckEntry, board: DeckBoard) {
-    importLine.mutate(
-      { deckId: deck.id, file: deckLineFile(entry, 1, board), commanderFromFirstLine: false },
-      {
-        onSuccess: (summary) =>
-          notifications.show({
-            color: (summary.cards_skipped ?? 0) > 0 ? 'yellow' : 'green',
-            message: `${entry.name} ajoutée : ${deckListSummary(summary)}.`,
-          }),
-        onError: (err) => notifications.show({ color: 'red', message: deckListErrorMessage(err) }),
-      },
-    );
+  async function addOne(entry: DeckEntry, board: DeckBoard) {
+    try {
+      const { summary } = await mutations.run(entry, { kind: 'addCopies', count: 1, board });
+      if (summary) {
+        notifications.show({
+          color: (summary.cards_skipped ?? 0) > 0 ? 'yellow' : 'green',
+          message: `${entry.name} ajoutée : ${deckListSummary(summary)}.`,
+        });
+      }
+    } catch (err) {
+      notifications.show({ color: 'red', message: deckListErrorMessage(err) });
+    }
   }
 
   async function removeOne(entry: DeckEntry) {

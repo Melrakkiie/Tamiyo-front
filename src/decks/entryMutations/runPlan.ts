@@ -1,14 +1,25 @@
-import type { PendingCard } from '../../api/types';
+import type { ImportSummary, PendingCard } from '../../api/types';
 import { type DeckEntry, pendingEntry } from '../deckEntries';
 import type { DeckApiPort, Invalidate } from './port';
-import { type AddedPendingId, type DeckRequest, type DeckResponse, type Plan, touchesCollection } from './requests';
+import {
+  type AddedPendingId,
+  type DeckRequest,
+  type DeckRequestKind,
+  type DeckResponse,
+  type Plan,
+  touchesCollection,
+} from './requests';
 
 export interface PlanResult {
   entry: DeckEntry | null;
   affected: number;
   // The response of each request, in plan order.
   responses: DeckResponse[];
+  // The summary of the plan's import or switch request, if it has one.
+  summary: ImportSummary | null;
 }
+
+const summarizing: DeckRequestKind[] = ['importDeckLine', 'switchFinish', 'switchProxy'];
 
 function isAddedPendingId(value: unknown): value is AddedPendingId {
   return typeof value === 'object' && value !== null && 'addedPendingOf' in value;
@@ -44,11 +55,16 @@ function send(port: DeckApiPort, request: DeckRequest): Promise<DeckResponse> {
 export async function runPlan(plan: Plan, port: DeckApiPort, invalidate: Invalidate): Promise<PlanResult> {
   const responses: DeckResponse[] = [];
   let collection = false;
+  let summary: ImportSummary | null = null;
   try {
     for (const step of plan.steps) {
       const request = resolve(step, responses) as DeckRequest;
       collection ||= touchesCollection[request.kind];
-      responses.push(await send(port, request));
+      const response = await send(port, request);
+      responses.push(response);
+      if (summarizing.includes(request.kind)) {
+        summary = response as ImportSummary;
+      }
     }
   } catch (error) {
     // The request error is the one to surface, even when refreshing fails too.
@@ -57,5 +73,5 @@ export async function runPlan(plan: Plan, port: DeckApiPort, invalidate: Invalid
   }
   await invalidate({ collection });
   const entry = isAddedPendingId(plan.entry) ? pendingEntry(addedPending(plan.entry, responses)) : plan.entry;
-  return { entry, affected: plan.affected, responses };
+  return { entry, affected: plan.affected, responses, summary };
 }

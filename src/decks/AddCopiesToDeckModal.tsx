@@ -2,34 +2,16 @@ import { Alert, Button, Group, Modal, NumberInput, Select, Stack, Text } from '@
 import { notifications } from '@mantine/notifications';
 import { useRef, useState } from 'react';
 
-import type { Card, DeckBoard } from '../api/types';
+import type { DeckBoard } from '../api/types';
 import { useImportIntoDeck } from '../bulk/api';
 import { useAllDecks } from './api';
-import { withBoardHeader } from './boards';
 import { BoardPicker } from './BoardSection';
 import { ADDED_TAGS_DESCRIPTION, TagsField } from './CardTagsInput';
+import { type DeckLinePrinting, deckLineFile } from './deckLine';
 import { deckListErrorMessage, deckListSummary } from './DeckListInput';
 import { useDeckTags } from './tags';
 
 const MAX_COPIES = 100;
-
-type DeckLinePrinting = Pick<Card, 'name' | 'set_code' | 'collector_number' | 'foil'>;
-
-export function deckLine(card: DeckLinePrinting, count: number, board: DeckBoard, tags: string[] = []) {
-  const tagSuffix = tags
-    .map((tag) => tag.replaceAll('#', '').trim())
-    .filter((tag) => tag.length > 0)
-    .map((tag) => ` #${tag}`)
-    .join('');
-  return withBoardHeader(
-    `${count} ${card.name} (${card.set_code}) ${card.collector_number}${card.foil ? ' *F*' : ''}${tagSuffix}\n`,
-    board,
-  );
-}
-
-export function deckLineFile(card: DeckLinePrinting, count: number, board: DeckBoard, tags: string[] = []) {
-  return new File([deckLine(card, count, board, tags)], 'deck.txt', { type: 'text/plain' });
-}
 
 function printingKey(card: DeckLinePrinting) {
   return `${card.name}|${card.set_code}|${card.collector_number}|${card.foil}`;

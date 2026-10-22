@@ -3,8 +3,8 @@ import { forest, grizzlyBears, serraAngel } from '../../scryfall/fixtures';
 import { copies, deckCard, pendingCard } from '../boardTestHelpers';
 import { type DeckEntry, ownedEntry, pendingEntry } from '../deckEntries';
 import { fakeDeckApi } from './fakeDeckApi';
-import { planEntryEdit, type PlanDeck } from './plan';
-import { addedPendingId } from './requests';
+import { planEntryEdit } from './plan';
+import { addedPendingId, type PlanDeck } from './requests';
 import { runPlan } from './runPlan';
 import type { SwapTarget } from './swapEdition';
 

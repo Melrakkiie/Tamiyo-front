@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { forest, grizzlyBears } from '../../scryfall/fixtures';
 import { copies, pendingCard } from '../boardTestHelpers';
 import { ownedEntry, pendingEntry } from '../deckEntries';
-import { planEntryEdit, type PlanDeck } from './plan';
+import { planEntryEdit } from './plan';
+import type { PlanDeck } from './requests';
 
 const deck: PlanDeck = { id: 'deck-1', commander_id: null, partner_id: null };
 

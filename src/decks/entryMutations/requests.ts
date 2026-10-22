@@ -11,6 +11,7 @@ import type {
 import type { components } from '../../api/schema';
 import type { DeckCommanders } from '../commanders';
 import type { DeckEntry } from '../deckEntries';
+import type { DeckLinePrinting } from '../deckLine';
 
 // What a planner reads of the deck.
 export type PlanDeck = Pick<Deck, 'id'> & DeckCommanders;
@@ -19,7 +20,7 @@ export type PendingCommitSummary = components['schemas']['PendingCommitSummary']
 
 type CardSources = { cardIds: number[] } | { pendingIds: number[] };
 
-export type DeckLineCard = Pick<Card, 'name' | 'set_code' | 'collector_number' | 'foil'>;
+export type DeckLineCard = DeckLinePrinting;
 
 // One request the deck API port runs. Each kind maps to one port function.
 export type DeckRequest =
