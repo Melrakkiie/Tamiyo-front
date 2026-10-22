@@ -3,10 +3,9 @@ import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import type { ImportSummary } from '../api/types';
 import type { DeckEntry } from './deckEntries';
 import { deckListErrorMessage, deckListSummary } from './DeckListInput';
-import type { PlanDeck } from './entryMutations/plan';
+import type { PlanDeck } from './entryMutations/requests';
 import { useDeckEntryMutations } from './entryMutations/useDeckEntryMutations';
 
 interface DeckQuantityControlProps {
@@ -36,8 +35,8 @@ export function DeckQuantityControl({ deck, entry, onChanged }: DeckQuantityCont
       return;
     }
     const count = result.affected;
-    if (difference > 0) {
-      const summary = result.responses[0] as ImportSummary;
+    if (result.summary) {
+      const { summary } = result;
       setValue(current);
       onChanged(false);
       notifications.show({

@@ -29,7 +29,7 @@ import { FoilSticker, ProxySticker } from '../theme/Sticker';
 import type { CommanderSlot } from './commanders';
 import type { DeckEntry } from './deckEntries';
 import { editionChoices } from './editionChoices';
-import type { PlanDeck } from './entryMutations/plan';
+import type { PlanDeck } from './entryMutations/requests';
 import type { SwapTarget } from './entryMutations/swapEdition';
 import { useDeckEntryMutations } from './entryMutations/useDeckEntryMutations';
 

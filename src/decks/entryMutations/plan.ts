@@ -1,5 +1,6 @@
 import type { DeckEntry } from '../deckEntries';
 import type { Plan, PlanDeck } from './requests';
+import { type AddCopies, planAddCopies } from './addCopies';
 import { type AddToCollection, planAddToCollection } from './addToCollection';
 import { type MoveToBoard, planMoveToBoard } from './moveToBoard';
 import { planRemoveCopies, type RemoveCopies } from './removeCopies';
@@ -8,14 +9,13 @@ import { planSwapEdition, type SwapEdition } from './swapEdition';
 import { planSwitchFinish, type SwitchFinish } from './switchFinish';
 import { planSwitchProxy, type SwitchProxy } from './switchProxy';
 
-export type { PlanDeck } from './requests';
-
-// What the person asks of an entry. Each intent has its own planner file.
 export type EntryIntent =
-  RemoveCopies | SetQuantity | MoveToBoard | SwapEdition | SwitchFinish | SwitchProxy | AddToCollection;
+  AddCopies | RemoveCopies | SetQuantity | MoveToBoard | SwapEdition | SwitchFinish | SwitchProxy | AddToCollection;
 
 export function planEntryEdit(deck: PlanDeck, entry: DeckEntry, intent: EntryIntent): Plan {
   switch (intent.kind) {
+    case 'addCopies':
+      return planAddCopies(deck, entry, intent);
     case 'removeCopies':
       return planRemoveCopies(deck, entry, intent);
     case 'setQuantity':

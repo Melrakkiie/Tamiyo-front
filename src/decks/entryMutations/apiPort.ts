@@ -1,7 +1,7 @@
 import { api, unwrap } from '../../api/client';
 import { importIntoDeck } from '../../bulk/api';
 import { createCopies } from '../../cards/api';
-import { deckLineFile } from '../AddCopiesToDeckModal';
+import { deckLineFile } from '../deckLine';
 import type { DeckApiPort } from './port';
 
 function cardPath(deckId: string, cardId: number) {
@@ -16,11 +16,10 @@ function deckPath(deckId: string) {
   return { params: { path: { id: deckId } } };
 }
 
-function sources(request: { cardIds: number[] } | { pendingIds: number[] }) {
+function switchedCopies(request: { cardIds: number[] } | { pendingIds: number[] }) {
   return 'cardIds' in request ? { card_ids: request.cardIds } : { pending_ids: request.pendingIds };
 }
 
-// The deck API port on the Tamiyo API.
 export const deckApi: DeckApiPort = {
   async removeCard({ deckId, cardId }) {
     unwrap(await api.DELETE('/deck/{id}/cards/{card_id}', cardPath(deckId, cardId)));
@@ -73,7 +72,7 @@ export const deckApi: DeckApiPort = {
     return unwrap(
       await api.POST('/deck/{id}/switch-foil', {
         ...deckPath(request.deckId),
-        body: { ...sources(request), foil: request.foil },
+        body: { ...switchedCopies(request), foil: request.foil },
       }),
     );
   },
@@ -81,7 +80,7 @@ export const deckApi: DeckApiPort = {
     return unwrap(
       await api.POST('/deck/{id}/switch-proxy', {
         ...deckPath(request.deckId),
-        body: { ...sources(request), proxy: request.proxy },
+        body: { ...switchedCopies(request), proxy: request.proxy },
       }),
     );
   },

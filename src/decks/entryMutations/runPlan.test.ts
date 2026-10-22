@@ -3,7 +3,7 @@ import { forest, grizzlyBears } from '../../scryfall/fixtures';
 import { copies, deckCard, pendingCard } from '../boardTestHelpers';
 import { ownedEntry, pendingEntry } from '../deckEntries';
 import { fakeDeckApi } from './fakeDeckApi';
-import { addedPendingId, type Plan } from './requests';
+import { addedPendingId, type Plan, type PlannedRequest } from './requests';
 import { runPlan } from './runPlan';
 
 const [first, second] = copies(2, grizzlyBears);
@@ -58,6 +58,36 @@ describe('runPlan', () => {
 
     expect(succeeded.invalidations).toEqual([{ collection: false }]);
     expect(failed.invalidations).toEqual([{ collection: false }]);
+  });
+
+  const cardIds = [first.id, second.id];
+  const summarizing: { name: string; step: PlannedRequest }[] = [
+    { name: 'an import', step: { kind: 'importDeckLine', deckId: 'deck-1', card: first, count: 2, board: 'main' } },
+    { name: 'a finish switch', step: { kind: 'switchFinish', deckId: 'deck-1', cardIds, foil: true } },
+    { name: 'a proxy switch', step: { kind: 'switchProxy', deckId: 'deck-1', cardIds, proxy: true } },
+  ];
+
+  it.each(summarizing)('returns the summary of $name', async ({ step }) => {
+    const api = fakeDeckApi();
+
+    const result = await runPlan({ steps: [step], affected: 2, entry }, api.port, api.invalidate);
+
+    expect(result.summary).toEqual({ cards_linked: 2 });
+  });
+
+  it('has no summary when no request returns one', async () => {
+    const api = fakeDeckApi();
+
+    const result = await runPlan(removePlan, api.port, api.invalidate);
+
+    expect(result.summary).toBeNull();
+  });
+
+  it('surfaces the request error when the invalidation fails too', async () => {
+    const api = fakeDeckApi({ failOn: 'removeCopies' });
+    const invalidate = () => Promise.reject(new Error('invalidation failed'));
+
+    await expect(runPlan(removePlan, api.port, invalidate)).rejects.toThrow('removeCopies failed');
   });
 
   it('also invalidates the collection when a request touched it', async () => {

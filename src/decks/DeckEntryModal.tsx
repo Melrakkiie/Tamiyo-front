@@ -34,10 +34,10 @@ import { movedMessage } from './boards';
 import { BoardPicker } from './BoardSection';
 import { CardTagsInput } from './CardTagsInput';
 import { CommanderControl } from './CommanderControl';
-import { commanderSlotOf } from './commanders';
 import { DeckQuantityControl } from './DeckQuantityControl';
 import { type DeckEntry, type OwnedEntry, type PendingEntry, entrySlotTarget } from './deckEntries';
 import { EditionSwitcher } from './EditionSwitcher';
+import { heldSlot } from './entryMutations/slots';
 import { useDeckEntryMutations } from './entryMutations/useDeckEntryMutations';
 import { pendingStatus } from './pendingCards';
 
@@ -105,7 +105,7 @@ interface DeckEntryDetailProps {
 
 function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwapped }: DeckEntryDetailProps) {
   const deckId = deck.id;
-  const commanderSlot = commanderSlotOf(deck, entry);
+  const commanderSlot = heldSlot(deck, entry)?.slot ?? null;
   const isCommander = commanderSlot !== null;
   const mutations = useDeckEntryMutations(deck);
   const backImage = useBackImage(entry.scryfall_id);

@@ -7,7 +7,6 @@ import type { Invalidate } from './port';
 import type { PlanDeck } from './requests';
 import { runPlan } from './runPlan';
 
-// Edits the entries of a deck: one operation for every intent, one busy flag and one error.
 export function useDeckEntryMutations(deck: PlanDeck) {
   const queryClient = useQueryClient();
   const invalidate: Invalidate = ({ collection }) =>

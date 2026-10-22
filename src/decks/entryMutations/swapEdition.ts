@@ -1,31 +1,17 @@
-import type { AddPendingCardInput, Card, PendingCard } from '../../api/types';
+import type { Card } from '../../api/types';
 import type { ScryfallCard } from '../../scryfall/client';
 import { foilFor, printingDetails } from '../../scryfall/printing';
-import { commanderSlotOf, setSlotChanges } from '../commanders';
+import { setSlotChanges, type SlotTarget } from '../commanders';
 import { type DeckEntry, ownedEntry } from '../deckEntries';
-import { addedPendingId, type Plan, type PlanDeck, type PlannedRequest } from './requests';
+import { printingFields } from './printingFields';
+import { addedPendingId, type AddedPendingId, type Plan, type PlanDeck, type PlannedRequest } from './requests';
+import { ownSlot } from './slots';
 
 export type SwapTarget = { kind: 'owned'; copy: Card } | { kind: 'printing'; printing: ScryfallCard };
 
 export interface SwapEdition {
   kind: 'swapEdition';
   target: SwapTarget;
-}
-
-function pendingInput(item: PendingCard, quantity: number): AddPendingCardInput {
-  return {
-    name: item.name,
-    scryfall_id: item.scryfall_id,
-    set_code: item.set_code,
-    collector_number: item.collector_number,
-    foil: item.foil,
-    quantity,
-    mana_value: item.mana_value,
-    colors: item.colors,
-    card_type: item.card_type,
-    color_identity: item.color_identity,
-    board: item.board,
-  };
 }
 
 function removeSource(deck: PlanDeck, source: DeckEntry): PlannedRequest {
@@ -35,24 +21,33 @@ function removeSource(deck: PlanDeck, source: DeckEntry): PlannedRequest {
 }
 
 // The pending copies a swap to one owned copy leaves wanted.
-function remainder(deck: PlanDeck, source: DeckEntry): PlannedRequest[] {
+function readdLeftoverPending(deck: PlanDeck, source: DeckEntry): PlannedRequest[] {
   if (source.kind !== 'pending' || source.pending.quantity <= 1) {
     return [];
   }
-  return [{ kind: 'addPending', deckId: deck.id, card: pendingInput(source.pending, source.pending.quantity - 1) }];
+  const { pending } = source;
+  return [
+    {
+      kind: 'addPending',
+      deckId: deck.id,
+      card: { ...printingFields(pending), quantity: pending.quantity - 1, board: pending.board },
+    },
+  ];
+}
+
+// The source gives its commander slot, if it holds one, to what replaces it.
+function carrySlot(deck: PlanDeck, source: DeckEntry, target: SlotTarget<AddedPendingId>): PlannedRequest[] {
+  const slot = ownSlot(deck, source);
+  return slot ? [{ kind: 'patchDeck', deckId: deck.id, changes: setSlotChanges(slot, target) }] : [];
 }
 
 function swapToOwned(deck: PlanDeck, source: DeckEntry, copy: Card): Plan {
-  const slot = commanderSlotOf(deck, source);
-  const slotChanges: PlannedRequest[] = slot
-    ? [{ kind: 'patchDeck', deckId: deck.id, changes: setSlotChanges(slot, { cardId: copy.id }) }]
-    : [];
   return {
     steps: [
       { kind: 'putCardOnBoard', deckId: deck.id, cardId: copy.id, board: source.board },
-      ...slotChanges,
+      ...carrySlot(deck, source, { cardId: copy.id }),
       removeSource(deck, source),
-      ...remainder(deck, source),
+      ...readdLeftoverPending(deck, source),
     ],
     affected: 1,
     entry: ownedEntry({ ...copy, board: source.board }),
@@ -62,16 +57,6 @@ function swapToOwned(deck: PlanDeck, source: DeckEntry, copy: Card): Plan {
 function swapToPrinting(deck: PlanDeck, source: DeckEntry, printing: ScryfallCard): Plan {
   const quantity = source.kind === 'pending' ? source.pending.quantity : 1;
   const added = addedPendingId(0);
-  const slot = commanderSlotOf(deck, source);
-  const slotChanges: PlannedRequest[] = slot
-    ? [
-        {
-          kind: 'patchDeck',
-          deckId: deck.id,
-          changes: slot === 'commander' ? { commander_pending_id: added } : { partner_pending_id: added },
-        },
-      ]
-    : [];
   return {
     steps: [
       {
@@ -79,7 +64,7 @@ function swapToPrinting(deck: PlanDeck, source: DeckEntry, printing: ScryfallCar
         deckId: deck.id,
         card: { ...printingDetails(printing), foil: foilFor(printing, source.foil), quantity, board: source.board },
       },
-      ...slotChanges,
+      ...carrySlot(deck, source, { pendingId: added }),
       removeSource(deck, source),
     ],
     affected: quantity,

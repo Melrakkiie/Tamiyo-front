@@ -1,12 +1,12 @@
 import type { Card, PendingCard } from '../../api/types';
 import type { DeckApiPort } from './port';
+import { printingFields } from './printingFields';
 import type { DeckRequest, DeckRequestKind, DeckResponses, RequestOf } from './requests';
 
 type Responders = { [K in DeckRequestKind]: (request: RequestOf<K>) => DeckResponses[K] };
 
 interface FakeOptions {
-  // A request kind, or the index of a request, that fails.
-  failOn?: DeckRequestKind | number;
+  failOn?: DeckRequestKind;
   nextPendingId?: number;
 }
 
@@ -31,17 +31,9 @@ export function fakeDeckApi({ failOn, nextPendingId = 1000 }: FakeOptions = {}) 
       const added: PendingCard = {
         id: pendingId++,
         deck_id: deckId,
-        name: card.name,
-        scryfall_id: card.scryfall_id,
-        set_code: card.set_code,
-        collector_number: card.collector_number,
-        foil: card.foil ?? false,
+        ...printingFields({ ...card, foil: card.foil ?? false, mana_value: card.mana_value ?? 0 }),
         proxy: card.proxy ?? false,
         quantity: card.quantity,
-        mana_value: card.mana_value ?? 0,
-        colors: card.colors,
-        card_type: card.card_type,
-        color_identity: card.color_identity,
         board: card.board ?? 'main',
         price: null,
         added: '2026-01-01T00:00:00Z',
@@ -64,9 +56,8 @@ export function fakeDeckApi({ failOn, nextPendingId = 1000 }: FakeOptions = {}) 
     kinds.map((kind) => [
       kind,
       async (request: DeckRequest) => {
-        const index = calls.length;
         calls.push(request);
-        if (failOn === kind || failOn === index) {
+        if (failOn === kind) {
           throw new Error(`${kind} failed`);
         }
         return (responders[kind] as (request: DeckRequest) => unknown)(request);
