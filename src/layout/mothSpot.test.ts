@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { flightPose, isRendered, mothSize, restingOffset, splitLastLetter } from './mothSpot';
+import { flightPose, isRendered, mothSize, restingOffset, splitLastSymbol } from './mothSpot';
 
 describe('flightPose', () => {
   const growing = { dx: 100, dy: -50, fromHeight: 16, toHeight: 32 };
@@ -48,21 +48,32 @@ describe('isRendered', () => {
   });
 });
 
-describe('splitLastLetter', () => {
+describe('splitLastSymbol', () => {
   it('splits a title before its last letter', () => {
-    expect(splitLastLetter("Le carnet d'Aurore")).toEqual({ head: "Le carnet d'Auror", last: 'e' });
+    expect(splitLastSymbol("Le carnet d'Aurore")).toEqual({ head: "Le carnet d'Auror", last: 'e' });
   });
 
   it('keeps a combining accent with its letter', () => {
-    expect(splitLastLetter('Le carnet de Zoë')).toEqual({ head: 'Le carnet de Zo', last: 'ë' });
+    expect(splitLastSymbol('Le carnet de Zoë')).toEqual({ head: 'Le carnet de Zo', last: 'ë' });
   });
 
   it('keeps an emoji whole', () => {
-    expect(splitLastLetter('Le carnet de Lune 🌙')).toEqual({ head: 'Le carnet de Lune ', last: '🌙' });
+    expect(splitLastSymbol('Le carnet de Lune 🌙')).toEqual({ head: 'Le carnet de Lune ', last: '🌙' });
   });
 
   it('perches a single letter on itself', () => {
-    expect(splitLastLetter('A')).toEqual({ head: '', last: 'A' });
+    expect(splitLastSymbol('A')).toEqual({ head: '', last: 'A' });
+  });
+
+  it('perches on a question mark', () => {
+    expect(splitLastSymbol('par quelle page on commence ?')).toEqual({
+      head: 'par quelle page on commence ',
+      last: '?',
+    });
+  });
+
+  it('perches on a closing guillemet', () => {
+    expect(splitLastSymbol('on reprend « Krark »')).toEqual({ head: 'on reprend « Krark ', last: '»' });
   });
 });
 
