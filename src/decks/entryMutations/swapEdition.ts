@@ -1,8 +1,9 @@
 import type { AddPendingCardInput, Card, PendingCard } from '../../api/types';
 import type { ScryfallCard } from '../../scryfall/client';
+import { foilFor, printingDetails } from '../../scryfall/printing';
 import { commanderSlotOf, setSlotChanges } from '../commanders';
 import { type DeckEntry, ownedEntry } from '../deckEntries';
-import type { Plan, PlanDeck, PlannedRequest } from './requests';
+import { addedPendingId, type Plan, type PlanDeck, type PlannedRequest } from './requests';
 
 export type SwapTarget = { kind: 'owned'; copy: Card } | { kind: 'printing'; printing: ScryfallCard };
 
@@ -58,9 +59,36 @@ function swapToOwned(deck: PlanDeck, source: DeckEntry, copy: Card): Plan {
   };
 }
 
+function swapToPrinting(deck: PlanDeck, source: DeckEntry, printing: ScryfallCard): Plan {
+  const quantity = source.kind === 'pending' ? source.pending.quantity : 1;
+  const added = addedPendingId(0);
+  const slot = commanderSlotOf(deck, source);
+  const slotChanges: PlannedRequest[] = slot
+    ? [
+        {
+          kind: 'patchDeck',
+          deckId: deck.id,
+          changes: slot === 'commander' ? { commander_pending_id: added } : { partner_pending_id: added },
+        },
+      ]
+    : [];
+  return {
+    steps: [
+      {
+        kind: 'addPending',
+        deckId: deck.id,
+        card: { ...printingDetails(printing), foil: foilFor(printing, source.foil), quantity, board: source.board },
+      },
+      ...slotChanges,
+      removeSource(deck, source),
+    ],
+    affected: quantity,
+    entry: added,
+  };
+}
+
 export function planSwapEdition(deck: PlanDeck, source: DeckEntry, { target }: SwapEdition): Plan {
-  if (target.kind === 'owned') {
-    return swapToOwned(deck, source, target.copy);
-  }
-  throw new Error('not yet');
+  return target.kind === 'owned'
+    ? swapToOwned(deck, source, target.copy)
+    : swapToPrinting(deck, source, target.printing);
 }
