@@ -4,7 +4,7 @@ import type { ComparedCard } from '../api/types';
 import { forest } from '../scryfall/fixtures';
 import { deckCard } from './boardTestHelpers';
 import { ownedEntry, stackEntries } from './deckEntries';
-import { comparedStackTotals } from './comparedStack';
+import { comparedStackTotals, toOwnedSources } from './comparedStack';
 
 function compared(quantity: number, otherQuantity: number, changes: Partial<ComparedCard> = {}): ComparedCard {
   return {
@@ -31,5 +31,16 @@ describe('comparedStackTotals', () => {
       commander: false,
       otherCommander: true,
     });
+  });
+});
+
+describe('toOwnedSources', () => {
+  it('carries the game changer flag of each compared card into its source', () => {
+    const cards = [
+      compared(1, 0, { name: 'Rhystic Study', game_changer: true }),
+      compared(1, 1, { name: 'Forest', game_changer: false }),
+    ];
+    expect(toOwnedSources(cards, 'deck').map((source) => source.game_changer)).toEqual([true, false]);
+    expect(toOwnedSources(cards, 'both').map((source) => source.game_changer)).toEqual([true, false]);
   });
 });

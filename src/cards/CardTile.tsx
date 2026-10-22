@@ -12,6 +12,7 @@ import type { ContextMenuEvent, ShownFace } from './CardContextMenu';
 import type { CardDisplay } from './CardDisplay';
 import { CardImage } from './CardImage';
 import { CommanderBadge, CommanderInlineMark } from './CommanderMark';
+import { GameChangerBadge, GameChangerInlineMark } from './GameChangerMark';
 import { CollectionBadge, PendingBadge, type PendingStatus } from './PendingBadge';
 
 export type TileCard = Pick<
@@ -29,6 +30,7 @@ export interface CardTileProps<T extends TileCard = Card> {
   collectionCount?: number;
   display: Pick<CardDisplay, 'textOnly' | 'compact' | 'stacked' | 'overlapped' | 'showDetails'>;
   commander?: boolean;
+  gameChanger?: boolean;
   manaCost?: string | null;
   details?: ReactNode;
   onOpen: (card: T) => void;
@@ -60,6 +62,7 @@ function ManaCost({ card, manaCost }: { card: TileCard; manaCost: string | null 
 function CardRow<T extends TileCard>({
   card,
   commander,
+  gameChanger,
   pendingStatus,
   collectionCount,
   manaCost,
@@ -69,7 +72,7 @@ function CardRow<T extends TileCard>({
   onContextMenu,
 }: Pick<
   CardTileProps<T>,
-  'card' | 'commander' | 'pendingStatus' | 'collectionCount' | 'manaCost' | 'details' | 'onOpen'
+  'card' | 'commander' | 'gameChanger' | 'pendingStatus' | 'collectionCount' | 'manaCost' | 'details' | 'onOpen'
 > & {
   onPreview: () => void;
   onContextMenu?: (event: ContextMenuEvent) => void;
@@ -98,6 +101,7 @@ function CardRow<T extends TileCard>({
               {card.name}
             </Text>
             {commander && <CommanderInlineMark />}
+            {gameChanger && <GameChangerInlineMark />}
             {card.foil && <FoilSticker />}
             {card.proxy && <ProxySticker />}
             {pendingStatus && <PendingBadge status={pendingStatus} size="xs" />}
@@ -125,6 +129,7 @@ export function CardTile<T extends TileCard = Card>({
   collectionCount,
   display,
   commander = false,
+  gameChanger = false,
   manaCost,
   details,
   onOpen,
@@ -149,6 +154,7 @@ export function CardTile<T extends TileCard = Card>({
       <CardRow
         card={card}
         commander={commander}
+        gameChanger={gameChanger}
         pendingStatus={pendingStatus}
         collectionCount={collectionCount}
         manaCost={manaCost}
@@ -190,7 +196,7 @@ export function CardTile<T extends TileCard = Card>({
               });
             }}
           />
-          {overlapped && (pendingStatus || hasCollection || commander) && (
+          {overlapped && (pendingStatus || hasCollection || commander || gameChanger) && (
             <Group pos="absolute" top={4} left={4} gap={4} wrap="nowrap">
               {pendingStatus ? (
                 <PendingBadge status={pendingStatus} size="sm" compact />
@@ -198,6 +204,7 @@ export function CardTile<T extends TileCard = Card>({
                 hasCollection && <CollectionBadge owned={collectionCount} size="sm" compact />
               )}
               {commander && <CommanderBadge size="sm" />}
+              {gameChanger && <GameChangerBadge size="sm" />}
             </Group>
           )}
           {stacked ? (
@@ -215,10 +222,11 @@ export function CardTile<T extends TileCard = Card>({
             </Group>
           ) : (
             <>
-              {commander && !overlapped && (
-                <Box pos="absolute" top={8} left={8}>
-                  <CommanderBadge />
-                </Box>
+              {(commander || gameChanger) && !overlapped && (
+                <Group pos="absolute" top={8} left={8} gap={4} wrap="nowrap">
+                  {commander && <CommanderBadge />}
+                  {gameChanger && <GameChangerBadge />}
+                </Group>
               )}
               {quantity > 1 && (
                 <Badge

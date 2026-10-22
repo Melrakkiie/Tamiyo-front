@@ -25,6 +25,7 @@ export function deckCard(printing: ScryfallCard, changes: Partial<DeckCard> = {}
     updated: '2026-01-01T00:00:00Z',
     board: 'main',
     price: null,
+    game_changer: false,
     ...changes,
   };
 }
@@ -51,6 +52,7 @@ export function pendingCard(printing: ScryfallCard, changes: Partial<PendingCard
     color_identity: card.color_identity,
     board: 'main',
     price: null,
+    game_changer: false,
     added: card.added,
     owned_copies: 0,
     owned_same_printing: 0,
