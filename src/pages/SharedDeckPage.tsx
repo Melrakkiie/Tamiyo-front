@@ -157,6 +157,7 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
         <Tabs.Panel value="stats" pt="md">
           {tab === 'stats' && (
             <DeckStatsView
+              format={deck.format}
               stats={stats}
               combos={{ query: combos, creditUrl: commanderSpellbookUrl(comboDeckList(shared.data.cards)) }}
               emptyMessage="Ce deck est vide."
