@@ -50,30 +50,35 @@ describe('isRendered', () => {
 
 describe('splitLastSymbol', () => {
   it('splits a title before its last letter', () => {
-    expect(splitLastSymbol("Le carnet d'Aurore")).toEqual({ head: "Le carnet d'Auror", last: 'e' });
+    expect(splitLastSymbol("Le carnet d'Aurore")).toEqual({ head: "Le carnet d'Auror", last: 'e', tail: '' });
   });
 
   it('keeps a combining accent with its letter', () => {
-    expect(splitLastSymbol('Le carnet de Zoë')).toEqual({ head: 'Le carnet de Zo', last: 'ë' });
+    expect(splitLastSymbol('Le carnet de Zoë')).toEqual({ head: 'Le carnet de Zo', last: 'ë', tail: '' });
   });
 
   it('keeps an emoji whole', () => {
-    expect(splitLastSymbol('Le carnet de Lune 🌙')).toEqual({ head: 'Le carnet de Lune ', last: '🌙' });
+    expect(splitLastSymbol('Le carnet de Lune 🌙')).toEqual({ head: 'Le carnet de Lune ', last: '🌙', tail: '' });
   });
 
   it('perches a single letter on itself', () => {
-    expect(splitLastSymbol('A')).toEqual({ head: '', last: 'A' });
+    expect(splitLastSymbol('A')).toEqual({ head: '', last: 'A', tail: '' });
   });
 
   it('perches on a question mark', () => {
     expect(splitLastSymbol('par quelle page on commence ?')).toEqual({
       head: 'par quelle page on commence ',
       last: '?',
+      tail: '',
     });
   });
 
   it('perches on a closing guillemet', () => {
-    expect(splitLastSymbol('on reprend « Krark »')).toEqual({ head: 'on reprend « Krark ', last: '»' });
+    expect(splitLastSymbol('on reprend « Krark »')).toEqual({ head: 'on reprend « Krark ', last: '»', tail: '' });
+  });
+
+  it('skips trailing spaces and keeps them after the perch', () => {
+    expect(splitLastSymbol('Decks récents  ')).toEqual({ head: 'Decks récent', last: 's', tail: '  ' });
   });
 });
 

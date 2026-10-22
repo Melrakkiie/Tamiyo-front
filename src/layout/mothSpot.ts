@@ -4,10 +4,13 @@ export function mothSize(fontSize: number) {
   return { width: (fontSize * 120) / 140, height: fontSize };
 }
 
+// tail: the trailing whitespace (\s covers non-breaking spaces), kept after the perch.
 export function splitLastSymbol(text: string) {
-  const letters = [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text)];
-  const last = letters.at(-1)?.segment ?? '';
-  return { head: text.slice(0, text.length - last.length), last };
+  const tail = /\s*$/.exec(text)![0];
+  const trimmed = text.slice(0, text.length - tail.length);
+  const symbols = [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(trimmed)];
+  const last = symbols.at(-1)?.segment ?? '';
+  return { head: trimmed.slice(0, trimmed.length - last.length), last, tail };
 }
 
 export function isRendered(box: { width: number; height: number }) {
