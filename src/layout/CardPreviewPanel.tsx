@@ -31,6 +31,7 @@ export function CardPreviewPanel() {
       url={shown}
       loading={!card.imageUrl && fronts.isLoading}
       backUrl={back && shown === back ? front : back}
+      foil={card.foil}
     />
   );
 

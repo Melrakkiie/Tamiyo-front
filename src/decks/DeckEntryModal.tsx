@@ -125,7 +125,14 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
     <Stack gap="lg">
       <Grid gutter="lg">
         <Grid.Col span={{ base: 12, sm: 5 }}>
-          <CardImage key={entry.key} name={entry.name} url={imageUrl} backUrl={backImage} loading={false} />
+          <CardImage
+            key={entry.key}
+            name={entry.name}
+            url={imageUrl}
+            backUrl={backImage}
+            loading={false}
+            foil={entry.foil}
+          />
           <PrintPrice scryfallId={entry.scryfall_id} foil={entry.foil} ta="center" mt="xs" />
           <CardLinkTiles printing={linkedPrinting} />
         </Grid.Col>
