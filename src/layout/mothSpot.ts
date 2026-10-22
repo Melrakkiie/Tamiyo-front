@@ -4,7 +4,7 @@ export function mothSize(fontSize: number) {
   return { width: (fontSize * 120) / 140, height: fontSize };
 }
 
-// tail: the trailing whitespace (\s covers non-breaking spaces), kept after the perch.
+// \s covers non-breaking spaces.
 export function splitLastSymbol(text: string) {
   const tail = /\s*$/.exec(text)![0];
   const trimmed = text.slice(0, text.length - tail.length);

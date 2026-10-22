@@ -107,7 +107,8 @@ export interface PerchingMothProps {
   // Without it, a moth that took off stays flown.
   returnAfter?: number;
   // Called instead of landing back here once returnAfter has passed; the moth stays flown.
-  onReturn?: () => void;
+  // Read once at mount: the caller must pass a callback that stays valid for the moth's life.
+  onRelocate?: () => void;
 }
 
 export function PerchingMoth({
@@ -115,7 +116,7 @@ export function PerchingMoth({
   focusTakeOff = false,
   shadow = false,
   returnAfter,
-  onReturn,
+  onRelocate,
   symbol,
 }: PerchingMothProps & { symbol: string }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -125,6 +126,7 @@ export function PerchingMoth({
   const journey = useRef<Trip | null>(undefined);
   const landing = useRef(false);
   const remeasure = useRef<() => void>(undefined);
+  const measuredFor = useRef(symbol);
 
   useLayoutEffect(() => {
     const moth = ref.current;
@@ -223,7 +225,7 @@ export function PerchingMoth({
       if (!flown || returnAfter === undefined || still) return;
       clearTimeout(returning);
       returning = window.setTimeout(() => {
-        if (onReturn) return onReturn();
+        if (onRelocate) return onRelocate();
         flown = false;
         landing.current = true;
         setPhase('land');
@@ -253,7 +255,11 @@ export function PerchingMoth({
     };
   }, []);
 
-  useLayoutEffect(() => remeasure.current?.(), [symbol]);
+  useLayoutEffect(() => {
+    if (measuredFor.current === symbol) return;
+    measuredFor.current = symbol;
+    remeasure.current?.();
+  }, [symbol]);
 
   return (
     <span

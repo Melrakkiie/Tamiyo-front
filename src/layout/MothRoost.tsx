@@ -13,7 +13,7 @@ import {
 import { MothPerch } from './MothPerch';
 import { isRendered, pickPerch } from './mothSpot';
 
-const returnAfter = 6000;
+const roamDelay = 6000;
 
 interface Perch {
   element: HTMLElement;
@@ -33,12 +33,36 @@ interface Roost {
 
 const RoostContext = createContext<Roost | null>(null);
 
-function inSight(element: HTMLElement) {
-  const box = element.getBoundingClientRect();
-  return isRendered(box) && box.bottom > 0 && box.right > 0 && box.top < innerHeight && box.left < innerWidth;
+// The last line box of a perch that does not hold the moth (plain text, no nested boxes) falls
+// outside the box of a line-clamped ancestor once the text is truncated.
+function symbolClipped(element: HTMLElement) {
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  const rects = range.getClientRects();
+  const end = rects[rects.length - 1];
+  for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+    const style = getComputedStyle(ancestor);
+    if (style.overflowX === 'visible' && style.overflowY === 'visible') continue;
+    const box = ancestor.getBoundingClientRect();
+    const right = box.right - parseFloat(style.paddingRight);
+    const bottom = box.bottom - parseFloat(style.paddingBottom);
+    if (end.right > right + 1 || end.bottom > bottom + 1) return true;
+  }
+  return false;
 }
 
-// One moth shared by every RoamingPerch inside; only the perch holding it renders it.
+function inSight(element: HTMLElement) {
+  const box = element.getBoundingClientRect();
+  return (
+    isRendered(box) &&
+    box.bottom > 0 &&
+    box.right > 0 &&
+    box.top < innerHeight &&
+    box.left < innerWidth &&
+    !symbolClipped(element)
+  );
+}
+
 export function MothRoost({ children }: { children: ReactNode }) {
   const [perches] = useState(() => new Map<string, Perch>());
   const [landing, setLanding] = useState<{ holder: string | null; count: number }>({ holder: null, count: 0 });
@@ -65,7 +89,7 @@ export function MothRoost({ children }: { children: ReactNode }) {
         timers.current.delete(timer);
         // Still registered: a StrictMode remount, not a departure.
         if (!perches.has(from)) fly(from);
-      }, returnAfter);
+      }, roamDelay);
       timers.current.add(timer);
     },
     [perches, fly],
@@ -84,7 +108,9 @@ export function RoamingPerch({ text, title = false, shadow }: { text: string; ti
   const { perches } = roost;
   const holding = roost.holder === null ? title : roost.holder === id;
   const holdingNow = useRef(holding);
-  holdingNow.current = holding;
+  useLayoutEffect(() => {
+    holdingNow.current = holding;
+  });
   const { abandon } = roost;
   useLayoutEffect(() => {
     perches.set(id, { element: ref.current!, title });
@@ -102,8 +128,8 @@ export function RoamingPerch({ text, title = false, shadow }: { text: string; ti
           text={text}
           shadow={shadow}
           trigger=".tamiyo-roaming-perch"
-          returnAfter={returnAfter}
-          onReturn={() => roost.fly(id)}
+          returnAfter={roamDelay}
+          onRelocate={() => roost.fly(id)}
         />
       ) : (
         text
