@@ -127,7 +127,7 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
         <Grid.Col span={{ base: 12, sm: 5 }}>
           <CardImage key={entry.key} name={entry.name} url={imageUrl} backUrl={backImage} loading={false} />
           <PrintPrice scryfallId={entry.scryfall_id} foil={entry.foil} ta="center" mt="xs" />
-          <CardLinkTiles printing={linkedPrinting} placement="image" />
+          <CardLinkTiles printing={linkedPrinting} />
         </Grid.Col>
         <Grid.Col span={{ base: 12, sm: 7 }}>
           <Stack>
@@ -148,7 +148,6 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
             </div>
 
             <CardRulesText scryfallId={entry.scryfall_id} />
-            <CardLinkTiles printing={linkedPrinting} placement="text" />
 
             <CardTagsInput deckId={deckId} cardName={entry.name} />
 
