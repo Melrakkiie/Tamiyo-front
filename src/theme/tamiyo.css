@@ -744,7 +744,8 @@ h6,
 
 :root {
   --tamiyo-foil-size: max(16%, 22px);
-  --tamiyo-foil-inset: calc(var(--tamiyo-foil-size) * 0.45);
+  /* The part over the card; what sticks out stays within the page's 16px gutter. */
+  --tamiyo-foil-inset: max(calc(var(--tamiyo-foil-size) * 0.45), calc(var(--tamiyo-foil-size) - 12px));
 }
 
 .tamiyo-foil-sparkles {
