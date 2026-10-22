@@ -46,6 +46,8 @@ import { SettingsMenu } from '../layout/SettingsMenu';
 import { EmptyNote } from '../theme/EmptyNote';
 import { usePageTitle } from '../layout/usePageTitle';
 
+const collectionToggleDescription = 'Les cartes de ce deck que tu as dans ta collection';
+
 export function SharedDeckRedirect() {
   const { id = '' } = useParams();
   return <Navigate to={`/decks/${id}`} replace />;
@@ -394,6 +396,8 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
           clearable
           w={200}
         />
+        {/* On a phone, beside "Grouper par" rather than on a line of its own. */}
+        {signedIn && <CollectionToggle hiddenFrom="sm" description={collectionToggleDescription} />}
         <CardDisplayControls
           display={display}
           wrap="nowrap"
@@ -409,7 +413,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
             />
           }
         />
-        {signedIn && <CollectionToggle description="Les cartes de ce deck que tu as dans ta collection" />}
+        {signedIn && <CollectionToggle visibleFrom="sm" description={collectionToggleDescription} />}
       </Group>
 
       <DeckBoards
