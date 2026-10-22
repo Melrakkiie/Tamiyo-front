@@ -146,4 +146,16 @@ describe('pickPerch', () => {
     const hidden = { id: 'hidden', visible: false, title: false };
     expect(pickPerch([hidden, title, subtitle], 'title', () => 0)).toBe('subtitle');
   });
+
+  it('falls back to the title when no perch is in sight', () => {
+    const offTitle = { ...title, visible: false };
+    const offSubtitle = { ...subtitle, visible: false };
+    expect(pickPerch([offTitle, offSubtitle], 'subtitle', () => 0.5)).toBe('title');
+  });
+
+  it('falls back to the title when the only perch in sight is the one just left', () => {
+    const offTitle = { ...title, visible: false };
+    expect(pickPerch([offTitle, subtitle], 'subtitle', () => 0.5)).toBe('title');
+    expect(pickPerch([title, { ...subtitle, visible: false }], 'title', () => 0.5)).toBe('title');
+  });
 });

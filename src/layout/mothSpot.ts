@@ -19,7 +19,8 @@ export function pickPerch(
   random: () => number,
 ) {
   const candidates = perches.filter((perch) => perch.visible && perch.id !== left);
-  return candidates[Math.floor(random() * candidates.length)]?.id;
+  if (!candidates.length) return perches.find((perch) => perch.title)?.id;
+  return candidates[Math.floor(random() * candidates.length)].id;
 }
 
 export function isRendered(box: { width: number; height: number }) {
