@@ -14,7 +14,7 @@ export function comparedStackTotals(stack: Card, comparedById: Map<number, Compa
   };
 }
 
-export function copies(card: ComparedCard, side: Side) {
+export function sideQuantity(card: ComparedCard, side: Side) {
   switch (side) {
     case 'deck':
       return card.quantity;
@@ -41,7 +41,7 @@ export function toOwnedSources(cards: ComparedCard[], side: Side): OwnedSource[]
     color_identity: card.color_identity,
     added: '',
     updated: '',
-    quantity: copies(card, side),
+    quantity: sideQuantity(card, side),
     board: 'main',
     game_changer: card.game_changer,
   }));

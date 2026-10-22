@@ -22,7 +22,7 @@ import { useSession } from '../auth/useSession';
 import { type CardDisplay, CardDisplayControls, useCardDisplay } from '../cards/CardDisplay';
 import { useCardVisuals } from '../cards/useCardVisuals';
 import { isCommanderFormat, useDeckComparison } from '../decks/api';
-import { comparedStackTotals, copies, type Side, toOwnedSources } from '../decks/comparedStack';
+import { comparedStackTotals, sideQuantity, type Side, toOwnedSources } from '../decks/comparedStack';
 import { DeckBoards, type DeckBoardsExtras, useDeckBoards } from '../decks/DeckBoards';
 import { type OwnedEntry, ownedEntry } from '../decks/deckEntries';
 import { FormatSticker } from '../decks/FormatSticker';
@@ -188,7 +188,7 @@ interface TabLabelProps {
 }
 
 function TabLabel({ title, cards, side, active }: TabLabelProps) {
-  const total = cards.reduce((sum, card) => sum + copies(card, side), 0);
+  const total = cards.reduce((sum, card) => sum + sideQuantity(card, side), 0);
   return (
     <Group gap={8} wrap="nowrap" justify="center">
       <Text size="sm" fw={600} maw={260} truncate>
