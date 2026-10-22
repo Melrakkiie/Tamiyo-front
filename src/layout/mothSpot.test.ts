@@ -80,6 +80,18 @@ describe('splitLastSymbol', () => {
   it('skips trailing spaces and keeps them after the perch', () => {
     expect(splitLastSymbol('Decks récents  ')).toEqual({ head: 'Decks récent', last: 's', tail: '  ' });
   });
+
+  it('skips a trailing non-breaking space', () => {
+    expect(splitLastSymbol('on commence ? ')).toEqual({ head: 'on commence ', last: '?', tail: ' ' });
+  });
+
+  it('yields no symbol for an empty text', () => {
+    expect(splitLastSymbol('')).toEqual({ head: '', last: '', tail: '' });
+  });
+
+  it('yields no symbol for an all-whitespace text', () => {
+    expect(splitLastSymbol('  ')).toEqual({ head: '', last: '', tail: '  ' });
+  });
 });
 
 describe('mothSize', () => {
