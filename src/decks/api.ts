@@ -94,7 +94,7 @@ export function useDeckLegality(id: string, enabled: boolean) {
   });
 }
 
-export function useInvalidateDecks() {
+function useInvalidateDecks() {
   const queryClient = useQueryClient();
   return () => queryClient.invalidateQueries({ queryKey: ['decks'] });
 }

@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { forest, grizzlyBears, serraAngel } from '../../scryfall/fixtures';
 import { deckCard, pendingCard } from '../boardTestHelpers';
-import { ownedEntry, pendingEntry } from '../deckEntries';
+import { type DeckEntry, ownedEntry, pendingEntry } from '../deckEntries';
+import { fakeDeckApi } from './fakeDeckApi';
 import { planEntryEdit, type PlanDeck } from './plan';
 import { addedPendingId } from './requests';
+import { runPlan } from './runPlan';
+import type { SwapTarget } from './swapEdition';
 
 const deck: PlanDeck = { id: 'deck-1', commander_id: null, partner_id: null };
 
@@ -147,5 +150,56 @@ describe('swap edition to a printing', () => {
     ]);
     expect(plan.affected).toBe(4);
     expect(plan.entry).toEqual(addedPendingId(0));
+  });
+});
+
+describe('running an edition swap', () => {
+  function swap(deckChanges: Partial<PlanDeck>, source: DeckEntry, target: SwapTarget, api = fakeDeckApi()) {
+    const plan = planEntryEdit({ ...deck, ...deckChanges }, source, { kind: 'swapEdition', target });
+    return { api, result: runPlan(plan, api.port, api.invalidate) };
+  }
+
+  it('moves the owned copy in, patches the slot, removes the source, then adds the remaining pending copies', async () => {
+    const from = pendingCard(forest, { quantity: 2 });
+    const copy = deckCard(forest);
+
+    const { api, result } = swap({ commander_pending_id: from.id }, pendingEntry(from), { kind: 'owned', copy });
+
+    expect(await result).toMatchObject({ entry: ownedEntry({ ...copy, board: 'main' }) });
+    expect(api.calls.map((call) => call.kind)).toEqual(['putCardOnBoard', 'patchDeck', 'removePending', 'addPending']);
+    expect(api.invalidations).toEqual([{ collection: false }]);
+  });
+
+  it('adds the printing, hands its pending id to the commander slot, removes the source and returns the added entry', async () => {
+    const from = deckCard(serraAngel);
+
+    const { api, result } = swap(
+      { commander_id: from.id },
+      ownedEntry(from),
+      { kind: 'printing', printing: serraAngel },
+      fakeDeckApi({ nextPendingId: 321 }),
+    );
+
+    const { entry } = await result;
+    expect(api.calls).toEqual([
+      expect.objectContaining({ kind: 'addPending' }),
+      { kind: 'patchDeck', deckId: 'deck-1', changes: { commander_pending_id: 321 } },
+      { kind: 'removeCard', deckId: 'deck-1', cardId: from.id },
+    ]);
+    expect(entry).toMatchObject({ kind: 'pending', key: 'pending-321', pending: { id: 321, name: 'Serra Angel' } });
+  });
+
+  it('stops at a failed step and surfaces its error', async () => {
+    const from = deckCard(serraAngel);
+
+    const { api, result } = swap(
+      { commander_id: from.id },
+      ownedEntry(from),
+      { kind: 'printing', printing: serraAngel },
+      fakeDeckApi({ failOn: 'patchDeck' }),
+    );
+
+    await expect(result).rejects.toThrow('patchDeck failed');
+    expect(api.calls.map((call) => call.kind)).toEqual(['addPending', 'patchDeck']);
   });
 });
