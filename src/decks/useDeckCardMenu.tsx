@@ -11,21 +11,13 @@ import type { CardFace } from '../scryfall/client';
 import { canPair, commanderEligibility } from '../scryfall/commander';
 import { useScryfallCard } from '../scryfall/hooks';
 import { AddCopiesToDeckModal, deckLineFile } from './AddCopiesToDeckModal';
-import {
-  isCommanderFormat,
-  useCommitPendingCards,
-  useRemoveCardFromDeck,
-  useRemovePendingCard,
-  useSetPendingQuantity,
-  useSwitchFoil,
-  useSwitchProxy,
-  useUpdateDeck,
-} from './api';
+import { isCommanderFormat, useCommitPendingCards, useSwitchFoil, useSwitchProxy, useUpdateDeck } from './api';
 import { type ArtChoice, backArtChoice } from './art';
 import { BOARDS } from './boards';
 import { type CommanderSlot, commanderSlotOf, hasCommander, hasPartner, setSlotChanges } from './commanders';
 import { type DeckEntry, entrySlotTarget, entrySources } from './deckEntries';
 import { deckListErrorMessage, deckListSummary } from './DeckListInput';
+import { useDeckEntryMutations } from './entryMutations/useDeckEntryMutations';
 import { SplitPrintingsModal, summaryDetails } from './SplitPrintingsModal';
 import type { DeckCardActions } from './useDeckCardActions';
 
@@ -43,9 +35,7 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
   const switchFoil = useSwitchFoil();
   const switchProxy = useSwitchProxy();
   const importLine = useImportIntoDeck();
-  const removeOwned = useRemoveCardFromDeck();
-  const removePending = useRemovePendingCard();
-  const setPendingQuantity = useSetPendingQuantity();
+  const mutations = useDeckEntryMutations(deck);
   const updateDeck = useUpdateDeck();
   const commit = useCommitPendingCards();
   const createCards = useCreateCards();
@@ -101,21 +91,12 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
     );
   }
 
-  function removeOne(entry: DeckEntry) {
-    const message = `Un exemplaire de ${entry.name} retiré du deck.`;
-    if (entry.kind === 'owned') {
-      const ids = entry.copy_ids;
-      removeOwned.mutate(
-        { deckId: deck.id, cardId: ids[ids.length - 1], commanderSlot: commanderSlotOf(deck, entry) },
-        done(message),
-      );
-      return;
-    }
-    const item = entry.pending;
-    if (item.quantity > 1) {
-      setPendingQuantity.mutate({ deckId: deck.id, pendingId: item.id, quantity: item.quantity - 1 }, done(message));
-    } else {
-      removePending.mutate({ deckId: deck.id, pendingId: item.id }, done(message));
+  async function removeOne(entry: DeckEntry) {
+    try {
+      await mutations.run(entry, { kind: 'removeCopies', count: 1 });
+      notifications.show({ color: 'green', message: `Un exemplaire de ${entry.name} retiré du deck.` });
+    } catch (err) {
+      notifyError(err);
     }
   }
 
