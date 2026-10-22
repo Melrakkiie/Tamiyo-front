@@ -50,9 +50,12 @@ export async function runPlan(plan: Plan, port: DeckApiPort, invalidate: Invalid
       collection ||= touchesCollection[request.kind];
       responses.push(await send(port, request));
     }
-  } finally {
-    await invalidate({ collection });
+  } catch (error) {
+    // The request error is the one to surface, even when refreshing fails too.
+    await Promise.resolve(invalidate({ collection })).catch(() => undefined);
+    throw error;
   }
+  await invalidate({ collection });
   const entry = isAddedPendingId(plan.entry) ? pendingEntry(addedPending(plan.entry, responses)) : plan.entry;
   return { entry, affected: plan.affected, responses };
 }

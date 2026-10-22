@@ -60,6 +60,13 @@ describe('runPlan', () => {
     expect(failed.invalidations).toEqual([{ collection: false }]);
   });
 
+  it('surfaces the request error when the invalidation fails too', async () => {
+    const api = fakeDeckApi({ failOn: 'removeCopies' });
+    const invalidate = () => Promise.reject(new Error('invalidation failed'));
+
+    await expect(runPlan(removePlan, api.port, invalidate)).rejects.toThrow('removeCopies failed');
+  });
+
   it('also invalidates the collection when a request touched it', async () => {
     const api = fakeDeckApi();
 
