@@ -5716,6 +5716,8 @@ export interface components {
             /** @description Part of value coming from the deck's pending cards, rounded to the cent on its own. */
             pending_value: components["schemas"]["Value"];
             board_values: components["schemas"]["BoardValues"];
+            /** @description Number of distinct cards (by name, not by copy) of the main board whose stored printing Scryfall flags as a game changer (Wizards' Commander list), commanders and pending cards included, sideboard and considering left out. A card whose printing isn't stored yet doesn't count. Filled for every format. */
+            game_changer_count: number;
         };
         DeckCombos: {
             /** @description Combos the deck holds; empty when it holds none. */
