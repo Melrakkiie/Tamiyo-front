@@ -73,3 +73,29 @@ describe('add an owned entry to the collection', () => {
     expect(plan.affected).toBe(3);
   });
 });
+
+const slots = [
+  { slot: 'commander', cardField: 'commander_id', pendingField: 'commander_pending_id' },
+  { slot: 'partner', cardField: 'partner_id', pendingField: 'partner_pending_id' },
+] as const;
+
+describe.each(slots)('add the $slot to the collection', ({ cardField, pendingField }) => {
+  it('creates a copy outside the deck and leaves the slot alone', () => {
+    const [first, second] = copies(2, grizzlyBears);
+    const entry = ownedEntry({ ...first, copy_ids: [first.id, second.id], quantity: 2 });
+
+    const plan = planEntryEdit({ ...deck, [cardField]: first.id }, entry, { kind: 'addToCollection' });
+
+    expect(plan.steps.map((step) => step.kind)).toEqual(['createCards']);
+    expect(plan.entry).toBe(entry);
+  });
+
+  it('commits the pending commander and leaves the slot to the API', () => {
+    const entry = pendingEntry(pendingCard(forest, { id: 92, quantity: 1 }));
+
+    const plan = planEntryEdit({ ...deck, [pendingField]: 92 }, entry, { kind: 'addToCollection' });
+
+    expect(plan.steps).toEqual([{ kind: 'commitPending', deckId: 'deck-1', storageId: null, pendingId: 92 }]);
+    expect(plan.entry).toBeNull();
+  });
+});

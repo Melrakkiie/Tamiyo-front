@@ -84,3 +84,30 @@ describe('move a pending entry to another board', () => {
     expect(plan.affected).toBe(3);
   });
 });
+
+const slots = [
+  { slot: 'commander', cardField: 'commander_id', pendingField: 'commander_pending_id' },
+  { slot: 'partner', cardField: 'partner_id', pendingField: 'partner_pending_id' },
+] as const;
+
+describe.each(slots)('move the $slot', ({ cardField, pendingField }) => {
+  it('plans the same move for an owned entry and leaves the slot alone', () => {
+    const { ids, entry } = owned(1, 'main');
+
+    const plan = planEntryEdit({ ...deck, [cardField]: ids[0] }, entry, { kind: 'moveToBoard', board: 'sideboard' });
+
+    expect(plan.steps).toEqual([{ kind: 'moveCards', deckId: 'deck-1', cardIds: ids, board: 'sideboard' }]);
+    expect(plan.entry).toMatchObject({ kind: 'owned', board: 'sideboard', copy_ids: ids });
+  });
+
+  it('plans the same move for a pending entry and leaves the slot alone', () => {
+    const pending = pendingCard(forest, { id: 90 });
+
+    const plan = planEntryEdit({ ...deck, [pendingField]: 90 }, pendingEntry(pending), {
+      kind: 'moveToBoard',
+      board: 'sideboard',
+    });
+
+    expect(plan.steps).toEqual([{ kind: 'movePending', deckId: 'deck-1', pendingId: 90, board: 'sideboard' }]);
+  });
+});
