@@ -8,10 +8,8 @@ import type { DragItem } from './dragDrop';
 import type { Taggable } from './deckEntries';
 import { useDeckEntryMutations } from './entryMutations/useDeckEntryMutations';
 import { useSetCardTags } from './tags';
-import { useMoveEntry } from './useMoveEntry';
 
 export function useDeckCardActions(deck: Deck, tagsOfCard: (entry: Taggable) => string[]) {
-  const mover = useMoveEntry(deck.id);
   const mutations = useDeckEntryMutations(deck);
   const setTags = useSetCardTags();
 
@@ -26,8 +24,8 @@ export function useDeckCardActions(deck: Deck, tagsOfCard: (entry: Taggable) => 
 
   async function moveToBoard({ entry }: DragItem, board: DeckBoard) {
     try {
-      const count = await mover.move(entry, board);
-      notifications.show({ color: 'green', message: movedMessage(entry.name, count, board) });
+      const { affected } = await mutations.run(entry, { kind: 'moveToBoard', board });
+      notifications.show({ color: 'green', message: movedMessage(entry.name, affected, board) });
     } catch (err) {
       notifications.show({ color: 'red', message: errorMessage(err) });
     }

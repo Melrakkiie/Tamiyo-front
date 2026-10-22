@@ -17,7 +17,7 @@ import { notifications } from '@mantine/notifications';
 import { useRef, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import type { Deck } from '../api/types';
+import type { Deck, DeckBoard } from '../api/types';
 import { useUpdateCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
 import { cardPrinting } from '../cards/cardLinks';
@@ -40,7 +40,6 @@ import { type DeckEntry, type OwnedEntry, type PendingEntry, entrySlotTarget } f
 import { EditionSwitcher } from './EditionSwitcher';
 import { useDeckEntryMutations } from './entryMutations/useDeckEntryMutations';
 import { pendingStatus } from './pendingCards';
-import { useMoveEntry } from './useMoveEntry';
 
 interface DeckEntryModalProps {
   deck: Deck;
@@ -108,15 +107,15 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
   const deckId = deck.id;
   const commanderSlot = commanderSlotOf(deck, entry);
   const isCommander = commanderSlot !== null;
-  const mover = useMoveEntry(deckId);
+  const mutations = useDeckEntryMutations(deck);
   const backImage = useBackImage(entry.scryfall_id);
   const status = entry.kind === 'pending' ? pendingStatus(entry.pending) : null;
   const linkedPrinting = cardPrinting(entry);
 
-  async function moveToBoard(next: Parameters<typeof mover.move>[1]) {
+  async function moveToBoard(board: DeckBoard) {
     try {
-      const count = await mover.move(entry, next);
-      notifications.show({ color: 'green', message: movedMessage(entry.name, count, next) });
+      const { affected } = await mutations.run(entry, { kind: 'moveToBoard', board });
+      notifications.show({ color: 'green', message: movedMessage(entry.name, affected, board) });
     } catch {
       return;
     }
@@ -153,12 +152,12 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
 
             <CardTagsInput deckId={deckId} cardName={entry.name} />
 
-            {mover.error && <Alert color="red">{errorMessage(mover.error)}</Alert>}
+            {mutations.error && <Alert color="red">{errorMessage(mutations.error)}</Alert>}
 
             <BoardPicker
               value={entry.board}
               onChange={moveToBoard}
-              disabled={isCommander || mover.isPending}
+              disabled={isCommander || mutations.isPending}
               description={
                 isCommander
                   ? 'Le commandant reste dans le deck principal.'
