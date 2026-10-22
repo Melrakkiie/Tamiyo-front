@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useId,
   useLayoutEffect,
   useRef,
@@ -26,6 +27,8 @@ interface Roost {
   landings: number;
   perches: Map<string, Perch>;
   fly: (from: string) => void;
+  // The holder is gone: after the return delay the moth lands elsewhere, as if chased.
+  abandon: (from: string) => void;
 }
 
 const RoostContext = createContext<Roost | null>(null);
@@ -51,8 +54,24 @@ export function MothRoost({ children }: { children: ReactNode }) {
     },
     [perches],
   );
+  const timers = useRef(new Set<number>());
+  useEffect(() => {
+    const pending = timers.current;
+    return () => pending.forEach(clearTimeout);
+  }, []);
+  const abandon = useCallback(
+    (from: string) => {
+      const timer = window.setTimeout(() => {
+        timers.current.delete(timer);
+        // Still registered: a StrictMode remount, not a departure.
+        if (!perches.has(from)) fly(from);
+      }, returnAfter);
+      timers.current.add(timer);
+    },
+    [perches, fly],
+  );
   return (
-    <RoostContext.Provider value={{ holder: landing.holder, landings: landing.count, perches, fly }}>
+    <RoostContext.Provider value={{ holder: landing.holder, landings: landing.count, perches, fly, abandon }}>
       {children}
     </RoostContext.Provider>
   );
@@ -63,14 +82,18 @@ export function RoamingPerch({ text, title = false, shadow }: { text: string; ti
   const id = useId();
   const ref = useRef<HTMLSpanElement>(null);
   const { perches } = roost;
+  const holding = roost.holder === null ? title : roost.holder === id;
+  const holdingNow = useRef(holding);
+  holdingNow.current = holding;
+  const { abandon } = roost;
   useLayoutEffect(() => {
     perches.set(id, { element: ref.current!, title });
     return () => {
       perches.delete(id);
+      if (holdingNow.current) abandon(id);
     };
-  }, [perches, id, title]);
+  }, [perches, id, title, abandon]);
 
-  const holding = roost.holder === null ? title : roost.holder === id;
   return (
     <span ref={ref} className="tamiyo-roaming-perch">
       {holding ? (

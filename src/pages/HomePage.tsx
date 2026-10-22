@@ -75,10 +75,12 @@ function StatTile({ label, value, note, art, to }: StatTileProps) {
                 {value}
               </Text>
             )}
-            <Text fw={600}>{label}</Text>
+            <Text fw={600}>
+              <RoamingPerch text={label} />
+            </Text>
             {note && (
               <Text className="tamiyo-hand" size="lg" c="dimmed" lineClamp={1}>
-                {note}
+                <RoamingPerch text={note} />
               </Text>
             )}
           </Stack>
@@ -226,7 +228,10 @@ export function HomePage() {
             <Loader />
           </Center>
         ) : empty ? (
-          <EmptyNote title="Ton carnet est encore tout neuf" note="ajoute tes premières cartes, ou monte un deck">
+          <EmptyNote
+            title={<RoamingPerch text="Ton carnet est encore tout neuf" />}
+            note={<RoamingPerch text="ajoute tes premières cartes, ou monte un deck" />}
+          >
             <Group gap="sm" justify="center">
               <Button component={Link} to="/cards">
                 Ajouter des cartes
@@ -242,7 +247,9 @@ export function HomePage() {
               <Stack gap="md">
                 <Group gap="md" wrap="nowrap">
                   <Box style={{ flex: 1, minWidth: 0 }}>
-                    <SectionTitle>Decks récents</SectionTitle>
+                    <SectionTitle>
+                      <RoamingPerch text="Decks récents" />
+                    </SectionTitle>
                   </Box>
                   <SeeAll to="/decks">Tous les decks</SeeAll>
                 </Group>
@@ -258,7 +265,9 @@ export function HomePage() {
               <Stack gap="md">
                 <Group gap="md" wrap="nowrap">
                   <Box style={{ flex: 1, minWidth: 0 }}>
-                    <SectionTitle>Dernières trouvailles</SectionTitle>
+                    <SectionTitle>
+                      <RoamingPerch text="Dernières trouvailles" />
+                    </SectionTitle>
                   </Box>
                   <SeeAll to="/cards">Toute la collection</SeeAll>
                 </Group>
