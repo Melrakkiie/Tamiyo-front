@@ -16,7 +16,7 @@ import { type CollapsibleBoard, DEFAULT_COLLAPSED_BOARDS } from '../decks/boards
 import { DeckBoards, type DeckBoardsExtras, useDeckBoards } from '../decks/DeckBoards';
 import { type OwnedEntry, ownedEntry } from '../decks/deckEntries';
 import { LegalityWarning } from '../decks/DeckLegalityWarning';
-import { useAllDecks } from '../decks/api';
+import { isCommanderFormat, useAllDecks } from '../decks/api';
 import { usePriceCurrency } from '../cards/price';
 import { DeckValue } from '../decks/DeckValue';
 import { DeckBanner } from '../decks/DeckBanner';
@@ -425,6 +425,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
         boardValues={stats.data?.board_values}
         emptyDeck={<EmptyNote title="Ce deck est vide" />}
         extras={tiles.extras}
+        showGameChangers={isCommanderFormat(shared.deck.format)}
         onOpen={setOpenedCard}
       />
 

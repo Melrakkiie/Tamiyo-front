@@ -1,7 +1,7 @@
 import { UnstyledButton } from '@mantine/core';
 import type { ReactNode } from 'react';
 
-export type StickerTone = 'prune' | 'lune' | 'ocelle' | 'paper';
+export type StickerTone = 'prune' | 'lune' | 'ocelle' | 'paper' | 'encre';
 
 interface StickerProps {
   tone: StickerTone;
@@ -102,6 +102,14 @@ export function CrownStickerIcon() {
   return (
     <StickerIcon>
       <path d="M12 6l4 6l5 -4l-2 10h-14l-2 -10l5 4z" />
+    </StickerIcon>
+  );
+}
+
+export function BoltStickerIcon() {
+  return (
+    <StickerIcon>
+      <path d="M13 3v7h6l-8 11v-7H5l8-11z" />
     </StickerIcon>
   );
 }
