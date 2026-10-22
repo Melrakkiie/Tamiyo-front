@@ -76,6 +76,7 @@ interface DeckBoardsProps<E extends DeckEntry> {
   emptyDeck: ReactNode;
   emptyBoardMessages?: Record<CollapsibleBoard, string>;
   extras?: DeckBoardsExtras<E>;
+  showGameChangers?: boolean;
   onOpen: (entry: E, board: DeckBoard) => void;
 }
 
@@ -88,6 +89,7 @@ export function DeckBoards<E extends DeckEntry>({
   emptyDeck,
   emptyBoardMessages,
   extras = {},
+  showGameChangers = false,
   onOpen,
 }: DeckBoardsProps<E>) {
   const visuals = useCardVisuals(
@@ -108,6 +110,7 @@ export function DeckBoards<E extends DeckEntry>({
           imageLoading={visuals.imageLoading}
           display={display}
           commander={commanders.has(entry.key)}
+          gameChanger={showGameChangers && entry.game_changer}
           manaCost={visuals.manaCost(entry)}
           onOpen={(clicked) => onOpen(clicked, board)}
           {...props}

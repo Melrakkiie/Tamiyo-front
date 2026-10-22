@@ -77,5 +77,6 @@ export function sharedCardsToCards(cards: SharedDeckCard[]): DeckCard[] {
     quantity: card.quantity,
     board: card.board,
     price: null,
+    game_changer: card.game_changer,
   }));
 }

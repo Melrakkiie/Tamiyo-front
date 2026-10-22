@@ -5661,6 +5661,8 @@ export interface components {
             board: components["schemas"]["DeckBoard"];
             /** @description Price of one copy in the price_currency preference, with the same fallbacks as the collection value. null when unknown. */
             price: number | null;
+            /** @description Whether the card's stored printing is a game changer according to Scryfall (refreshed daily). false when the printing is not stored yet. Filled for every format. */
+            game_changer: boolean;
         };
         LegalityIssue: {
             /** @description One of the card's owned copies in the deck. Absent when the card is only pending, or for an issue about the whole deck. */
@@ -5980,6 +5982,8 @@ export interface components {
             board: components["schemas"]["DeckBoard"];
             /** @description Price of one copy in the price_currency preference, with the same fallbacks as the collection value. null when unknown. */
             price: number | null;
+            /** @description Whether the card's stored printing is a game changer according to Scryfall (refreshed daily). false when the printing is not stored yet. Filled for every format. */
+            game_changer: boolean;
             added: string;
             /** @description Cards of the same name in the collection, any printing, outside this deck (copies in other decks count), leaving out the storages locked against this deck. Only computed by GET /deck/{id}/pending, 0 elsewhere. */
             owned_copies: number;
@@ -6218,6 +6222,8 @@ export interface components {
             color_identity: string | null;
             /** @description True for the deck's commander, which is always listed on its own. */
             commander: boolean;
+            /** @description Whether the card's stored printing is a game changer according to Scryfall (refreshed daily). false when the printing is not stored yet. Filled for every format and every board. */
+            game_changer: boolean;
             board: components["schemas"]["DeckBoard"];
             /** @description The owner's tags for this card, shared by every printing. */
             tags: string[];

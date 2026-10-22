@@ -727,6 +727,7 @@ function DeckCards({
             }
             emptyBoardMessages={emptyBoardMessages}
             extras={{ tile: tileExtras, groupDrop: tagDrop }}
+            showGameChangers={isCommanderFormat(deck.format)}
             onOpen={opened.open}
           />
         )}
