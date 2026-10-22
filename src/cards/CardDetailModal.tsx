@@ -153,6 +153,7 @@ function CardDetail({ card, imageUrl, onUpdated, onClose }: CardDetailProps) {
             url={printing ? printingImageUrl(printing, 'normal') : imageUrl}
             backUrl={printing ? printingBackImage : backImage}
             loading={false}
+            foil={foil}
           />
           <PrintPrice scryfallId={printing?.id ?? card.scryfall_id} foil={foil} ta="center" mt="xs" />
           <CardLinkTiles printing={linkedPrinting} />
