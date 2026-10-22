@@ -155,7 +155,7 @@ function CardDetail({ card, imageUrl, onUpdated, onClose }: CardDetailProps) {
             loading={false}
           />
           <PrintPrice scryfallId={printing?.id ?? card.scryfall_id} foil={foil} ta="center" mt="xs" />
-          <CardLinkTiles printing={linkedPrinting} placement="image" />
+          <CardLinkTiles printing={linkedPrinting} />
         </Grid.Col>
         <Grid.Col span={{ base: 12, sm: 7 }}>
           <Stack>
@@ -177,7 +177,6 @@ function CardDetail({ card, imageUrl, onUpdated, onClose }: CardDetailProps) {
             </div>
 
             <CardRulesText scryfallId={printing?.id ?? card.scryfall_id} />
-            <CardLinkTiles printing={linkedPrinting} placement="text" />
 
             {error && <Alert color="red">{errorMessage(error)}</Alert>}
 

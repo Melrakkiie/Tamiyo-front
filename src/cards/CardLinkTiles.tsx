@@ -20,15 +20,9 @@ const sites = [
   },
 ] as const;
 
-interface CardLinkTilesProps {
-  printing: CardPrinting;
-  // 'image' sits under the card image on wide screens, 'text' below the rules text on narrow ones.
-  placement: 'image' | 'text';
-}
-
-export function CardLinkTiles({ printing, placement }: CardLinkTilesProps) {
+// Sits under the card's price, which stays above the rules text on narrow screens too.
+export function CardLinkTiles({ printing }: { printing: CardPrinting }) {
   const links = cardLinks(printing);
-  const underImage = placement === 'image';
 
   return (
     <Group
@@ -36,9 +30,7 @@ export function CardLinkTiles({ printing, placement }: CardLinkTilesProps) {
       wrap="nowrap"
       w="fit-content"
       mx="auto"
-      mt={underImage ? 'xs' : undefined}
-      visibleFrom={underImage ? 'sm' : undefined}
-      hiddenFrom={underImage ? undefined : 'sm'}
+      mt="xs"
       style={{ borderRadius: TILE_RADIUS, overflow: 'hidden' }}
     >
       {sites.map(({ key, label, logo, color }) => (

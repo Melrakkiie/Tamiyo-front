@@ -71,7 +71,7 @@ function SharedCardDetail({ card, imageUrl, details, onAdd }: SharedCardDetailPr
       <Grid.Col span={{ base: 12, sm: 5 }}>
         <CardImage name={card.name} url={imageUrl} backUrl={backImage} loading={false} />
         <PrintPrice scryfallId={card.scryfall_id} foil={card.foil} ta="center" mt="xs" />
-        <CardLinkTiles printing={linkedPrinting} placement="image" />
+        <CardLinkTiles printing={linkedPrinting} />
       </Grid.Col>
       <Grid.Col span={{ base: 12, sm: 7 }}>
         <Stack>
@@ -92,7 +92,6 @@ function SharedCardDetail({ card, imageUrl, details, onAdd }: SharedCardDetailPr
             )}
           </div>
           <CardRulesText scryfallId={card.scryfall_id} />
-          <CardLinkTiles printing={linkedPrinting} placement="text" />
           {onAdd && <AddSharedCard onAdd={onAdd} />}
         </Stack>
       </Grid.Col>
