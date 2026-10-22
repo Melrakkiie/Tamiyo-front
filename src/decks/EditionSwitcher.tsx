@@ -29,17 +29,20 @@ import { FoilSticker, ProxySticker } from '../theme/Sticker';
 import type { CommanderSlot } from './commanders';
 import type { DeckEntry } from './deckEntries';
 import { editionChoices } from './editionChoices';
-import { useSwapEdition } from './useSwapEdition';
+import type { PlanDeck } from './entryMutations/requests';
+import type { SwapTarget } from './entryMutations/swapEdition';
+import { useDeckEntryMutations } from './entryMutations/useDeckEntryMutations';
 
 interface EditionSwitcherProps {
-  deckId: string;
+  deck: PlanDeck;
   entry: DeckEntry;
   deckCardIds: Set<number>;
   commanderSlot: CommanderSlot | null;
   onSwapped: (next: DeckEntry) => void;
 }
 
-export function EditionSwitcher({ deckId, entry, deckCardIds, commanderSlot, onSwapped }: EditionSwitcherProps) {
+export function EditionSwitcher({ deck, entry, deckCardIds, commanderSlot, onSwapped }: EditionSwitcherProps) {
+  const deckId = deck.id;
   const becomes = commanderSlot === 'partner' ? 'le second commandant' : 'le commandant';
   const copies = useCollectionCopies(entry.name, entry.scryfall_id);
   const printings = usePrintings(entry.name);
@@ -61,23 +64,28 @@ export function EditionSwitcher({ deckId, entry, deckCardIds, commanderSlot, onS
   );
   const byId = new Map((printings.data ?? []).map((printing) => [printing.id, printing]));
 
-  const { swap, isPending: busy, error } = useSwapEdition(deckId, commanderSlot);
+  const { run, isPending: busy, error } = useDeckEntryMutations(deck);
 
-  function done(message: string, next: DeckEntry) {
-    notifications.show({ color: 'green', message });
-    onSwapped(next);
+  async function swap(target: SwapTarget, message: string) {
+    try {
+      const { entry: next } = await run(entry, { kind: 'swapEdition', target });
+      notifications.show({ color: 'green', message });
+      if (next) {
+        onSwapped(next);
+      }
+    } catch {
+      return;
+    }
   }
-
-  function ignore() {}
 
   function chooseOwned(copy: Card) {
     const message = `${entry.name} : l'exemplaire ${copy.set_code.toUpperCase()} #${copy.collector_number}${copy.foil ? ' foil' : ''} de ta collection est maintenant dans le deck.`;
-    swap(entry, { kind: 'owned', copy }).then((next) => done(message, next), ignore);
+    void swap({ kind: 'owned', copy }, message);
   }
 
   function choosePrinting(printing: ScryfallCard) {
     const message = `${entry.name} : l'édition ${printing.set.toUpperCase()} #${printing.collector_number} est dans le deck, en attendant d'être dans ta collection.`;
-    swap(entry, { kind: 'printing', printing }).then((next) => done(message, next), ignore);
+    void swap({ kind: 'printing', printing }, message);
   }
 
   return (

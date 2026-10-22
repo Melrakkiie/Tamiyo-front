@@ -2,19 +2,15 @@ import { notifications } from '@mantine/notifications';
 
 import { errorMessage } from '../api/errors';
 import type { Deck, DeckBoard } from '../api/types';
-import { useRemoveCardFromDeck, useRemoveCopiesFromDeck, useRemovePendingCard } from './api';
 import { movedMessage } from './boards';
-import { commanderSlotOf } from './commanders';
 import type { DragItem } from './dragDrop';
 import type { Taggable } from './deckEntries';
+import { heldSlot } from './entryMutations/slots';
+import { useDeckEntryMutations } from './entryMutations/useDeckEntryMutations';
 import { useSetCardTags } from './tags';
-import { useMoveEntry } from './useMoveEntry';
 
 export function useDeckCardActions(deck: Deck, tagsOfCard: (entry: Taggable) => string[]) {
-  const mover = useMoveEntry(deck.id);
-  const removeOne = useRemoveCardFromDeck();
-  const removeCopies = useRemoveCopiesFromDeck();
-  const removePending = useRemovePendingCard();
+  const mutations = useDeckEntryMutations(deck);
   const setTags = useSetCardTags();
 
   const callbacks = (message: string) => ({
@@ -23,34 +19,26 @@ export function useDeckCardActions(deck: Deck, tagsOfCard: (entry: Taggable) => 
   });
 
   function canMoveTo(item: DragItem, board: DeckBoard) {
-    return board !== item.board && commanderSlotOf(deck, item.entry) === null;
+    return board !== item.board && heldSlot(deck, item.entry) === null;
   }
 
   async function moveToBoard({ entry }: DragItem, board: DeckBoard) {
     try {
-      const count = await mover.move(entry, board);
-      notifications.show({ color: 'green', message: movedMessage(entry.name, count, board) });
+      const { affected } = await mutations.run(entry, { kind: 'moveToBoard', board });
+      notifications.show({ color: 'green', message: movedMessage(entry.name, affected, board) });
     } catch (err) {
       notifications.show({ color: 'red', message: errorMessage(err) });
     }
   }
 
-  function remove({ entry }: DragItem) {
-    const count = entry.quantity;
-    const message =
-      count > 1 ? `${count} exemplaires de ${entry.name} retirés du deck.` : `${entry.name} retirée du deck.`;
-    if (entry.kind === 'pending') {
-      removePending.mutate({ deckId: deck.id, pendingId: entry.pending.id }, callbacks(message));
-      return;
-    }
-    const ids = entry.copy_ids;
-    if (ids.length === 1) {
-      removeOne.mutate(
-        { deckId: deck.id, cardId: ids[0], commanderSlot: commanderSlotOf(deck, entry) },
-        callbacks(message),
-      );
-    } else {
-      removeCopies.mutate({ deckId: deck.id, cardIds: ids }, callbacks(message));
+  async function remove({ entry }: DragItem) {
+    try {
+      const { affected } = await mutations.run(entry, { kind: 'removeCopies', count: 'all' });
+      const message =
+        affected > 1 ? `${affected} exemplaires de ${entry.name} retirés du deck.` : `${entry.name} retirée du deck.`;
+      notifications.show({ color: 'green', message });
+    } catch (err) {
+      notifications.show({ color: 'red', message: errorMessage(err) });
     }
   }
 

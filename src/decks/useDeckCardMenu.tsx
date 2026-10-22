@@ -4,28 +4,20 @@ import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Deck, DeckBoard } from '../api/types';
-import { useImportIntoDeck } from '../bulk/api';
-import { useCreateCards } from '../cards/api';
 import { CardCopyItems, FoilToggleItem, ProxyToggleItem, type ShownFace } from '../cards/CardContextMenu';
 import type { CardFace } from '../scryfall/client';
 import { canPair, commanderEligibility } from '../scryfall/commander';
 import { useScryfallCard } from '../scryfall/hooks';
-import { AddCopiesToDeckModal, deckLineFile } from './AddCopiesToDeckModal';
-import {
-  isCommanderFormat,
-  useCommitPendingCards,
-  useRemoveCardFromDeck,
-  useRemovePendingCard,
-  useSetPendingQuantity,
-  useSwitchFoil,
-  useSwitchProxy,
-  useUpdateDeck,
-} from './api';
+import { AddCopiesToDeckModal } from './AddCopiesToDeckModal';
+import { isCommanderFormat, useUpdateDeck } from './api';
 import { type ArtChoice, backArtChoice } from './art';
 import { BOARDS } from './boards';
-import { type CommanderSlot, commanderSlotOf, hasCommander, hasPartner, setSlotChanges } from './commanders';
-import { type DeckEntry, entrySlotTarget, entrySources } from './deckEntries';
+import { type CommanderSlot, hasCommander, hasPartner, setSlotChanges } from './commanders';
+import { type DeckEntry, entrySlotTarget } from './deckEntries';
 import { deckListErrorMessage, deckListSummary } from './DeckListInput';
+import type { EntryIntent } from './entryMutations/plan';
+import { heldSlot } from './entryMutations/slots';
+import { useDeckEntryMutations } from './entryMutations/useDeckEntryMutations';
 import { SplitPrintingsModal, summaryDetails } from './SplitPrintingsModal';
 import type { DeckCardActions } from './useDeckCardActions';
 
@@ -40,15 +32,8 @@ function notifyError(err: unknown) {
 }
 
 export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
-  const switchFoil = useSwitchFoil();
-  const switchProxy = useSwitchProxy();
-  const importLine = useImportIntoDeck();
-  const removeOwned = useRemoveCardFromDeck();
-  const removePending = useRemovePendingCard();
-  const setPendingQuantity = useSetPendingQuantity();
+  const mutations = useDeckEntryMutations(deck);
   const updateDeck = useUpdateDeck();
-  const commit = useCommitPendingCards();
-  const createCards = useCreateCards();
   const [otherDeckEntry, setOtherDeckEntry] = useState<DeckEntry | null>(null);
   const [splitEntry, setSplitEntry] = useState<DeckEntry | null>(null);
 
@@ -57,65 +42,55 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
     onError: notifyError,
   });
 
+  async function switchCopies(entry: DeckEntry, intent: EntryIntent, describe: (details: string) => string) {
+    try {
+      const { summary } = await mutations.run(entry, intent);
+      if (summary) {
+        notifications.show({ color: 'green', message: describe(summaryDetails(summary)) });
+      }
+    } catch (err) {
+      notifyError(err);
+    }
+  }
+
   function toggleFoil(entry: DeckEntry, foil: boolean) {
     const finish = foil ? 'foil' : 'non-foil';
-    switchFoil.mutate(
-      { deckId: deck.id, ...entrySources(entry), foil },
-      {
-        onSuccess: (summary) =>
-          notifications.show({
-            color: 'green',
-            message: `${entry.name} est maintenant ${finish} dans ce deck${summaryDetails(summary)}. Ta collection n'a pas changé.`,
-          }),
-        onError: notifyError,
-      },
+    return switchCopies(
+      entry,
+      { kind: 'switchFinish', foil },
+      (details) => `${entry.name} est maintenant ${finish} dans ce deck${details}. Ta collection n'a pas changé.`,
     );
   }
 
   function toggleProxy(entry: DeckEntry, proxy: boolean) {
     const state = proxy ? 'est maintenant proxy' : "n'est plus proxy";
-    switchProxy.mutate(
-      { deckId: deck.id, ...entrySources(entry), proxy },
-      {
-        onSuccess: (summary) =>
-          notifications.show({
-            color: 'green',
-            message: `${entry.name} ${state} dans ce deck${summaryDetails(summary)}. Ta collection n'a pas changé.`,
-          }),
-        onError: notifyError,
-      },
+    return switchCopies(
+      entry,
+      { kind: 'switchProxy', proxy },
+      (details) => `${entry.name} ${state} dans ce deck${details}. Ta collection n'a pas changé.`,
     );
   }
 
-  function addOne(entry: DeckEntry, board: DeckBoard) {
-    importLine.mutate(
-      { deckId: deck.id, file: deckLineFile(entry, 1, board), commanderFromFirstLine: false },
-      {
-        onSuccess: (summary) =>
-          notifications.show({
-            color: (summary.cards_skipped ?? 0) > 0 ? 'yellow' : 'green',
-            message: `${entry.name} ajoutée : ${deckListSummary(summary)}.`,
-          }),
-        onError: (err) => notifications.show({ color: 'red', message: deckListErrorMessage(err) }),
-      },
-    );
-  }
-
-  function removeOne(entry: DeckEntry) {
-    const message = `Un exemplaire de ${entry.name} retiré du deck.`;
-    if (entry.kind === 'owned') {
-      const ids = entry.copy_ids;
-      removeOwned.mutate(
-        { deckId: deck.id, cardId: ids[ids.length - 1], commanderSlot: commanderSlotOf(deck, entry) },
-        done(message),
-      );
-      return;
+  async function addOne(entry: DeckEntry, board: DeckBoard) {
+    try {
+      const { summary } = await mutations.run(entry, { kind: 'addCopies', count: 1, board });
+      if (summary) {
+        notifications.show({
+          color: (summary.cards_skipped ?? 0) > 0 ? 'yellow' : 'green',
+          message: `${entry.name} ajoutée : ${deckListSummary(summary)}.`,
+        });
+      }
+    } catch (err) {
+      notifications.show({ color: 'red', message: deckListErrorMessage(err) });
     }
-    const item = entry.pending;
-    if (item.quantity > 1) {
-      setPendingQuantity.mutate({ deckId: deck.id, pendingId: item.id, quantity: item.quantity - 1 }, done(message));
-    } else {
-      removePending.mutate({ deckId: deck.id, pendingId: item.id }, done(message));
+  }
+
+  async function removeOne(entry: DeckEntry) {
+    try {
+      await mutations.run(entry, { kind: 'removeCopies', count: 1 });
+      notifications.show({ color: 'green', message: `Un exemplaire de ${entry.name} retiré du deck.` });
+    } catch (err) {
+      notifyError(err);
     }
   }
 
@@ -127,38 +102,20 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
     );
   }
 
-  function addToCollection(entry: DeckEntry) {
-    if (entry.kind === 'pending') {
-      const count = entry.quantity;
-      commit.mutate(
-        { deckId: deck.id, storageId: null, pendingId: entry.pending.id },
-        done(
-          count > 1
-            ? `${count} exemplaires de ${entry.name} ajoutés à ta collection, sans rangement.`
-            : `${entry.name} ajoutée à ta collection, sans rangement.`,
-        ),
-      );
-      return;
+  async function addToCollection(entry: DeckEntry) {
+    const count = entry.quantity;
+    const message =
+      entry.kind === 'owned'
+        ? `Un exemplaire de plus de ${entry.name} dans ta collection, hors de ce deck.`
+        : count > 1
+          ? `${count} exemplaires de ${entry.name} ajoutés à ta collection, sans rangement.`
+          : `${entry.name} ajoutée à ta collection, sans rangement.`;
+    try {
+      await mutations.run(entry, { kind: 'addToCollection' });
+      notifications.show({ color: 'green', message });
+    } catch (err) {
+      notifyError(err);
     }
-    createCards.mutate(
-      {
-        card: {
-          name: entry.name,
-          scryfall_id: entry.scryfall_id,
-          set_code: entry.set_code,
-          collector_number: entry.collector_number,
-          foil: entry.foil,
-          proxy: false,
-          storage_id: null,
-          mana_value: entry.mana_value,
-          colors: entry.colors,
-          card_type: entry.card_type,
-          color_identity: entry.color_identity,
-        },
-        quantity: 1,
-      },
-      done(`Un exemplaire de plus de ${entry.name} dans ta collection, hors de ce deck.`),
-    );
   }
 
   function setDeckImage(choice: ArtChoice, name: string) {
@@ -171,7 +128,7 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
   function menuFor(entry: DeckEntry, board: DeckBoard, shown: ShownFace) {
     const { imageUrl } = shown;
     const item = { entry: entry, board, tag: null, imageUrl };
-    const commander = commanderSlotOf(deck, entry) !== null;
+    const commander = heldSlot(deck, entry) !== null;
     const { quantity } = entry;
     return (
       <>

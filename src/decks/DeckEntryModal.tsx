@@ -17,7 +17,7 @@ import { notifications } from '@mantine/notifications';
 import { useRef, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import type { Deck } from '../api/types';
+import type { Deck, DeckBoard } from '../api/types';
 import { useUpdateCard } from '../cards/api';
 import { CardImage } from '../cards/CardImage';
 import { cardPrinting } from '../cards/cardLinks';
@@ -29,17 +29,17 @@ import { useBackImage } from '../scryfall/hooks';
 import { useAllStorages, useStorageOptions } from '../storages/api';
 import { StorageFieldLabel } from '../storages/StorageLabel';
 import { FoilSticker, ProxySticker } from '../theme/Sticker';
-import { isCommanderFormat, useCommitPendingCards } from './api';
+import { isCommanderFormat } from './api';
 import { movedMessage } from './boards';
 import { BoardPicker } from './BoardSection';
 import { CardTagsInput } from './CardTagsInput';
 import { CommanderControl } from './CommanderControl';
-import { commanderSlotOf } from './commanders';
 import { DeckQuantityControl } from './DeckQuantityControl';
 import { type DeckEntry, type OwnedEntry, type PendingEntry, entrySlotTarget } from './deckEntries';
 import { EditionSwitcher } from './EditionSwitcher';
+import { heldSlot } from './entryMutations/slots';
+import { useDeckEntryMutations } from './entryMutations/useDeckEntryMutations';
 import { pendingStatus } from './pendingCards';
-import { useMoveEntry } from './useMoveEntry';
 
 interface DeckEntryModalProps {
   deck: Deck;
@@ -105,17 +105,17 @@ interface DeckEntryDetailProps {
 
 function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwapped }: DeckEntryDetailProps) {
   const deckId = deck.id;
-  const commanderSlot = commanderSlotOf(deck, entry);
+  const commanderSlot = heldSlot(deck, entry)?.slot ?? null;
   const isCommander = commanderSlot !== null;
-  const mover = useMoveEntry(deckId);
+  const mutations = useDeckEntryMutations(deck);
   const backImage = useBackImage(entry.scryfall_id);
   const status = entry.kind === 'pending' ? pendingStatus(entry.pending) : null;
   const linkedPrinting = cardPrinting(entry);
 
-  async function moveToBoard(next: Parameters<typeof mover.move>[1]) {
+  async function moveToBoard(board: DeckBoard) {
     try {
-      const count = await mover.move(entry, next);
-      notifications.show({ color: 'green', message: movedMessage(entry.name, count, next) });
+      const { affected } = await mutations.run(entry, { kind: 'moveToBoard', board });
+      notifications.show({ color: 'green', message: movedMessage(entry.name, affected, board) });
     } catch {
       return;
     }
@@ -152,12 +152,12 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
 
             <CardTagsInput deckId={deckId} cardName={entry.name} />
 
-            {mover.error && <Alert color="red">{errorMessage(mover.error)}</Alert>}
+            {mutations.error && <Alert color="red">{errorMessage(mutations.error)}</Alert>}
 
             <BoardPicker
               value={entry.board}
               onChange={moveToBoard}
-              disabled={isCommander || mover.isPending}
+              disabled={isCommander || mutations.isPending}
               description={
                 isCommander
                   ? 'Le commandant reste dans le deck principal.'
@@ -178,28 +178,16 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
             )}
 
             <Divider />
-            {entry.kind === 'pending' ? (
-              <DeckQuantityControl
-                key={`${entry.pending.id}-${entry.quantity}`}
-                deckId={deckId}
-                card={entry}
-                board={entry.board}
-                source={{ kind: 'pending', item: entry.pending }}
-                onChanged={(removedAll) => removedAll && onClose()}
-              />
-            ) : (
-              <DeckQuantityControl
-                deckId={deckId}
-                card={entry}
-                board={entry.board}
-                source={{ kind: 'owned', copyIds: entry.copy_ids, commanderSlot }}
-                onChanged={onClose}
-              />
-            )}
+            <DeckQuantityControl
+              key={`${entry.key}-${entry.quantity}`}
+              deck={deck}
+              entry={entry}
+              onChanged={(removedAll) => (removedAll || entry.kind === 'owned') && onClose()}
+            />
 
             <Divider />
             {entry.kind === 'pending' ? (
-              <PendingCollectionSection deckId={deckId} entry={entry} onClose={onClose} />
+              <PendingCollectionSection deck={deck} entry={entry} onClose={onClose} />
             ) : (
               <OwnedStorageSection entry={entry} />
             )}
@@ -208,7 +196,7 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
       </Grid>
       <Divider />
       <EditionSwitcher
-        deckId={deckId}
+        deck={deck}
         entry={entry}
         deckCardIds={deckCardIds}
         commanderSlot={commanderSlot}
@@ -279,13 +267,13 @@ function OwnedStorageSection({ entry }: { entry: OwnedEntry }) {
 }
 
 interface PendingCollectionSectionProps {
-  deckId: string;
+  deck: Deck;
   entry: PendingEntry;
   onClose: () => void;
 }
 
-function PendingCollectionSection({ deckId, entry, onClose }: PendingCollectionSectionProps) {
-  const commit = useCommitPendingCards();
+function PendingCollectionSection({ deck, entry, onClose }: PendingCollectionSectionProps) {
+  const mutations = useDeckEntryMutations(deck);
   const [storageId, setStorageId] = useState<string | null>(null);
   const [count, setCount] = useState<number | string>('');
   const total = entry.quantity;
@@ -296,23 +284,25 @@ function PendingCollectionSection({ deckId, entry, onClose }: PendingCollectionS
     return n > 1 ? `${n} exemplaires de ${name}` : name;
   }
 
-  function addToCollection() {
+  async function addToCollection() {
     const n = selected;
-    commit.mutate(
-      { deckId, storageId: storageId ? Number(storageId) : null, pendingId: entry.pending.id, quantity: n },
-      {
-        onSuccess: () => {
-          notifications.show({
-            color: 'green',
-            message: `${copies(n, entry.name)} ajouté${n > 1 ? 's' : 'e'} à ta collection.`,
-          });
-          setCount('');
-          if (n >= total) {
-            onClose();
-          }
-        },
-      },
-    );
+    try {
+      await mutations.run(entry, {
+        kind: 'addToCollection',
+        storageId: storageId ? Number(storageId) : null,
+        count: n,
+      });
+    } catch {
+      return;
+    }
+    notifications.show({
+      color: 'green',
+      message: `${copies(n, entry.name)} ajouté${n > 1 ? 's' : 'e'} à ta collection.`,
+    });
+    setCount('');
+    if (n >= total) {
+      onClose();
+    }
   }
 
   return (
@@ -341,12 +331,12 @@ function PendingCollectionSection({ deckId, entry, onClose }: PendingCollectionS
         )}
         <StorageSelect value={storageId} onChange={setStorageId} />
       </Group>
-      <Button color="orange" onClick={addToCollection} loading={commit.isPending}>
+      <Button color="orange" onClick={addToCollection} loading={mutations.isPending}>
         {selected < total ? `Ajouter ${selected} sur ${total} à ma collection` : 'Ajouter à ma collection'}
       </Button>
-      {commit.error && (
+      {mutations.error && (
         <Alert color="red">
-          {errorMessage(commit.error, { 400: "Le rangement choisi n'existe plus. Choisis-en un autre." })}
+          {errorMessage(mutations.error, { 400: "Le rangement choisi n'existe plus. Choisis-en un autre." })}
         </Alert>
       )}
     </Stack>

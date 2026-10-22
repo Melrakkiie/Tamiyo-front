@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { errorMessage } from '../api/errors';
 import type { DeckBoard } from '../api/types';
 import { useImportIntoDeck } from '../bulk/api';
-import { deckLineFile } from '../decks/AddCopiesToDeckModal';
+import { deckLineFile } from '../decks/deckLine';
 import { useAddPendingCard } from '../decks/api';
 import { BoardPicker } from '../decks/BoardSection';
 import { ADDED_TAGS_DESCRIPTION, TagsField } from '../decks/CardTagsInput';

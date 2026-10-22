@@ -3,21 +3,14 @@ import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import type { Card, DeckBoard, PendingCard } from '../api/types';
-import { useImportIntoDeck } from '../bulk/api';
-import { useRemoveCardFromDeck, useRemoveCopiesFromDeck, useRemovePendingCard, useSetPendingQuantity } from './api';
-import { deckLineFile } from './AddCopiesToDeckModal';
-import type { CommanderSlot } from './commanders';
+import type { DeckEntry } from './deckEntries';
 import { deckListErrorMessage, deckListSummary } from './DeckListInput';
-
-export type QuantitySource =
-  { kind: 'owned'; copyIds: number[]; commanderSlot: CommanderSlot | null } | { kind: 'pending'; item: PendingCard };
+import type { PlanDeck } from './entryMutations/requests';
+import { useDeckEntryMutations } from './entryMutations/useDeckEntryMutations';
 
 interface DeckQuantityControlProps {
-  deckId: string;
-  card: Pick<Card, 'name' | 'set_code' | 'collector_number' | 'foil'>;
-  board: DeckBoard;
-  source: QuantitySource;
+  deck: PlanDeck;
+  entry: DeckEntry;
   onChanged: (removedAll: boolean) => void;
 }
 
@@ -25,70 +18,37 @@ function copies(count: number) {
   return `${count} exemplaire${count > 1 ? 's' : ''}`;
 }
 
-export function DeckQuantityControl({ deckId, card, board, source, onChanged }: DeckQuantityControlProps) {
-  const current = source.kind === 'owned' ? source.copyIds.length : source.item.quantity;
+export function DeckQuantityControl({ deck, entry, onChanged }: DeckQuantityControlProps) {
+  const current = entry.quantity;
   const [value, setValue] = useState<number | string>(current);
+  const [adding, setAdding] = useState(false);
   const target = Math.max(0, Math.floor(Number(value)) || 0);
   const difference = target - current;
+  const mutations = useDeckEntryMutations(deck);
 
-  const addCopies = useImportIntoDeck();
-  const removeOne = useRemoveCardFromDeck();
-  const removeCopies = useRemoveCopiesFromDeck();
-  const removePending = useRemovePendingCard();
-  const setPendingQuantity = useSetPendingQuantity();
-  const busy =
-    addCopies.isPending ||
-    removeOne.isPending ||
-    removeCopies.isPending ||
-    removePending.isPending ||
-    setPendingQuantity.isPending;
-  const removeError = removeOne.error ?? removeCopies.error ?? removePending.error ?? setPendingQuantity.error;
-
-  function add(count: number) {
-    addCopies.mutate(
-      { deckId, file: deckLineFile(card, count, board), commanderFromFirstLine: false },
-      {
-        onSuccess: (summary) => {
-          setValue(current);
-          onChanged(false);
-          notifications.show({
-            color: (summary.cards_skipped ?? 0) > 0 ? 'yellow' : 'green',
-            message: `${copies(count)} de ${card.name} ajouté${count > 1 ? 's' : ''} : ${deckListSummary(summary)}.`,
-          });
-        },
-      },
-    );
-  }
-
-  function remove(count: number) {
-    const onSuccess = () => {
-      notifications.show({
-        color: 'green',
-        message: `${copies(count)} de ${card.name} retiré${count > 1 ? 's' : ''} du deck.`,
-      });
-      onChanged(count >= current);
-    };
-    if (source.kind === 'pending') {
-      if (count >= current) {
-        removePending.mutate({ deckId, pendingId: source.item.id }, { onSuccess });
-      } else {
-        setPendingQuantity.mutate({ deckId, pendingId: source.item.id, quantity: current - count }, { onSuccess });
-      }
+  async function apply() {
+    setAdding(difference > 0);
+    let result;
+    try {
+      result = await mutations.run(entry, { kind: 'setQuantity', quantity: target });
+    } catch {
       return;
     }
-    const ids = source.copyIds.slice(source.copyIds.length - count);
-    if (ids.length === 1) {
-      removeOne.mutate({ deckId, cardId: ids[0], commanderSlot: source.commanderSlot }, { onSuccess });
+    const count = result.affected;
+    if (result.summary) {
+      const { summary } = result;
+      setValue(current);
+      onChanged(false);
+      notifications.show({
+        color: (summary.cards_skipped ?? 0) > 0 ? 'yellow' : 'green',
+        message: `${copies(count)} de ${entry.name} ajouté${count > 1 ? 's' : ''} : ${deckListSummary(summary)}.`,
+      });
     } else {
-      removeCopies.mutate({ deckId, cardIds: ids }, { onSuccess });
-    }
-  }
-
-  function apply() {
-    if (difference > 0) {
-      add(difference);
-    } else if (difference < 0) {
-      remove(-difference);
+      notifications.show({
+        color: 'green',
+        message: `${copies(count)} de ${entry.name} retiré${count > 1 ? 's' : ''} du deck.`,
+      });
+      onChanged(result.entry === null);
     }
   }
 
@@ -109,7 +69,7 @@ export function DeckQuantityControl({ deckId, card, board, source, onChanged }: 
           color={difference < 0 ? 'red' : undefined}
           onClick={apply}
           disabled={difference === 0}
-          loading={busy}
+          loading={mutations.isPending}
         >
           {difference > 0
             ? `Ajouter ${copies(difference)}`
@@ -121,12 +81,13 @@ export function DeckQuantityControl({ deckId, card, board, source, onChanged }: 
         </Button>
       </Group>
       <Text size="xs" c="dimmed">
-        {source.kind === 'owned'
+        {entry.kind === 'owned'
           ? "Les exemplaires ajoutés viennent de ta collection s'il t'en reste dans cette édition, sinon ils apparaissent à part, en orange. Retirer une carte du deck ne la supprime pas de ta collection."
           : "Les exemplaires ajoutés viennent de ta collection s'il t'en reste dans cette édition, sinon ils restent en orange."}
       </Text>
-      {addCopies.error && <Alert color="red">{deckListErrorMessage(addCopies.error)}</Alert>}
-      {removeError && <Alert color="red">{errorMessage(removeError)}</Alert>}
+      {mutations.error && (
+        <Alert color="red">{adding ? deckListErrorMessage(mutations.error) : errorMessage(mutations.error)}</Alert>
+      )}
     </Stack>
   );
 }
