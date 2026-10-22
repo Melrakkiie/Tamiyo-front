@@ -196,7 +196,7 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
       </Grid>
       <Divider />
       <EditionSwitcher
-        deckId={deckId}
+        deck={deck}
         entry={entry}
         deckCardIds={deckCardIds}
         commanderSlot={commanderSlot}
