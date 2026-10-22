@@ -1,4 +1,5 @@
 import type { DeckEntry } from '../deckEntries';
+import { planRemoveCopies } from './removeCopies';
 import type { Plan, PlanDeck } from './requests';
 
 export interface SetQuantity {
@@ -25,5 +26,12 @@ function addCopies(deck: PlanDeck, entry: DeckEntry, count: number): Plan {
 }
 
 export function planSetQuantity(deck: PlanDeck, entry: DeckEntry, intent: SetQuantity): Plan {
-  return addCopies(deck, entry, intent.quantity - entry.quantity);
+  const difference = Math.max(0, intent.quantity) - entry.quantity;
+  if (difference > 0) {
+    return addCopies(deck, entry, difference);
+  }
+  if (difference < 0) {
+    return planRemoveCopies(deck, entry, { kind: 'removeCopies', count: -difference });
+  }
+  return { steps: [], affected: 0, entry };
 }
