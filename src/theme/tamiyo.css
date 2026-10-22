@@ -745,26 +745,27 @@ h6,
 :root {
   --tamiyo-foil-size: max(16%, 22px);
   /* The part over the card; what sticks out stays within the page's 16px gutter. */
-  --tamiyo-foil-inset: max(calc(var(--tamiyo-foil-size) * 0.45), calc(var(--tamiyo-foil-size) - 12px));
+  --tamiyo-foil-over-card: max(calc(var(--tamiyo-foil-size) * 0.45), calc(var(--tamiyo-foil-size) - 12px));
+}
+
+/* In a pile only the top eighth of each card shows: the sparkles must fit that band. */
+.tamiyo-card-tile[data-stacked] {
+  --tamiyo-foil-size: 15%;
+  --tamiyo-foil-over-card: calc(var(--tamiyo-foil-size) * 0.45);
 }
 
 .tamiyo-foil-sparkles {
   position: absolute;
-  z-index: 1;
-  top: 6%;
-  right: calc(var(--tamiyo-foil-inset) - var(--tamiyo-foil-size));
+  top: 14%;
+  right: calc(var(--tamiyo-foil-over-card) - var(--tamiyo-foil-size));
   width: var(--tamiyo-foil-size);
   aspect-ratio: 1;
   overflow: visible;
   pointer-events: none;
 }
 
-.tamiyo-card-tile .tamiyo-foil-sparkles {
-  top: 36px;
-}
-
 .tamiyo-card-tile[data-stacked] .tamiyo-foil-sparkles {
-  top: 2px;
+  top: 0.5%;
 }
 
 .tamiyo-foil-star {

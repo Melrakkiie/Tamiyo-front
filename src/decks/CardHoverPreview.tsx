@@ -1,8 +1,8 @@
-import { Box, HoverCard, Image, Skeleton, Text } from '@mantine/core';
+import { HoverCard, Image, Skeleton, Text } from '@mantine/core';
 import type { ReactNode } from 'react';
 
 import { useCardImageByName, useCardImages } from '../scryfall/hooks';
-import { FoilSparkles } from '../theme/FoilSparkles';
+import { FoilFrame } from '../theme/FoilSparkles';
 
 const PREVIEW_WIDTH = 244;
 const PREVIEW_HEIGHT = Math.round((PREVIEW_WIDTH * 680) / 488);
@@ -32,19 +32,19 @@ function PreviewById({ scryfallId, name, foil }: { scryfallId: string; name: str
 
 function PreviewByName({ name }: { name: string }) {
   const image = useCardImageByName(name);
-  return <Preview src={image.data ?? undefined} loading={image.isLoading} name={name} foil={false} />;
+  return <Preview src={image.data ?? undefined} loading={image.isLoading} name={name} />;
 }
 
 function Preview({
   src,
   loading,
   name,
-  foil,
+  foil = false,
 }: {
   src: string | undefined;
   loading: boolean;
   name: string;
-  foil: boolean;
+  foil?: boolean;
 }) {
   if (loading) {
     return <Skeleton w={PREVIEW_WIDTH} h={PREVIEW_HEIGHT} radius="md" />;
@@ -57,9 +57,8 @@ function Preview({
     );
   }
   return (
-    <Box pos="relative" w={PREVIEW_WIDTH}>
+    <FoilFrame foil={foil} w={PREVIEW_WIDTH}>
       <Image src={src} alt={name} w={PREVIEW_WIDTH} radius="md" />
-      {foil && <FoilSparkles />}
-    </Box>
+    </FoilFrame>
   );
 }

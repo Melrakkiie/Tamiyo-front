@@ -214,7 +214,7 @@ export function CardTile<T extends TileCard = Card>({
             <Group
               pos="absolute"
               top={4}
-              right={card.foil ? 'calc(var(--tamiyo-foil-inset) + 4px)' : 4}
+              right={card.foil ? 'calc(var(--tamiyo-foil-over-card) + 4px)' : 4}
               gap={4}
               wrap="nowrap"
             >

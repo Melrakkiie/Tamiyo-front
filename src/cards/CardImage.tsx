@@ -1,7 +1,7 @@
 import { AspectRatio, Box, Center, Image, Paper, Skeleton, Text } from '@mantine/core';
 import { useState } from 'react';
 
-import { FoilSparkles } from '../theme/FoilSparkles';
+import { FoilFrame } from '../theme/FoilSparkles';
 
 const CARD_RATIO = 488 / 680;
 
@@ -30,7 +30,7 @@ export function CardImage({ name, url, loading, backUrl, onFlip, foil = false }:
   }
 
   return (
-    <Box pos="relative">
+    <FoilFrame foil={foil}>
       <AspectRatio ratio={CARD_RATIO}>
         {shown && !failed ? (
           <Image src={shown} alt={name} radius="md" loading="lazy" onError={() => setFailedUrl(shown)} />
@@ -46,7 +46,6 @@ export function CardImage({ name, url, loading, backUrl, onFlip, foil = false }:
           </Paper>
         )}
       </AspectRatio>
-      {foil && <FoilSparkles />}
       {backUrl && (
         <Box
           role="button"
@@ -81,6 +80,6 @@ export function CardImage({ name, url, loading, backUrl, onFlip, foil = false }:
           ⟲
         </Box>
       )}
-    </Box>
+    </FoilFrame>
   );
 }

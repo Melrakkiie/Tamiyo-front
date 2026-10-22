@@ -1,8 +1,8 @@
-import { Box, Image, Paper, Text } from '@mantine/core';
+import { Image, Paper, Text } from '@mantine/core';
 
 import type { DeckBoard } from '../api/types';
 import { createDragDrop } from '../layout/dragDrop';
-import { FoilSparkles } from '../theme/FoilSparkles';
+import { FoilFrame } from '../theme/FoilSparkles';
 import type { DeckEntry } from './deckEntries';
 
 export interface DragItem {
@@ -16,10 +16,9 @@ function CardGhost({ item }: { item: DragItem }) {
   const { entry, imageUrl } = item;
   const { quantity } = entry;
   return imageUrl ? (
-    <Box w={110} pos="relative">
+    <FoilFrame foil={entry.foil} w={110}>
       <Image src={imageUrl} alt={entry.name} radius="md" style={{ boxShadow: 'var(--mantine-shadow-lg)' }} />
-      {entry.foil && <FoilSparkles />}
-    </Box>
+    </FoilFrame>
   ) : (
     <Paper shadow="lg" px="sm" py={6} radius="md" withBorder>
       <Text size="sm" fw={500}>
