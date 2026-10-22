@@ -79,7 +79,14 @@ function StatTile({ label, value, note, art, to }: StatTileProps) {
               <RoamingPerch text={label} />
             </Text>
             {note && (
-              <Text className="tamiyo-hand" size="lg" c="dimmed" lineClamp={1}>
+              <Text
+                className="tamiyo-hand"
+                size="lg"
+                c="dimmed"
+                lineClamp={1}
+                // lineClamp clips overflow: leave room for the moth above and beside the last symbol.
+                style={{ padding: '0.5em 0.75em 0 0', margin: '-0.5em -0.75em 0 0' }}
+              >
                 <RoamingPerch text={note} />
               </Text>
             )}
