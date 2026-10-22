@@ -1,9 +1,12 @@
-import { CrownStickerIcon, Sticker } from '../theme/Sticker';
+import { CrownStickerIcon } from '../theme/Sticker';
+import { CardInlineMark, CardMarkBadge } from './CardMark';
+
+const mark = { tone: 'ocelle', icon: <CrownStickerIcon />, tilt: -6, title: 'Commandant' } as const;
 
 export function CommanderBadge({ size = 'md' }: { size?: 'sm' | 'md' }) {
-  return <Sticker tone="ocelle" icon={<CrownStickerIcon />} size={size} tilt={-6} title="Commandant" />;
+  return <CardMarkBadge {...mark} size={size} />;
 }
 
 export function CommanderInlineMark() {
-  return <Sticker tone="ocelle" icon={<CrownStickerIcon />} size="xs" tilt={-6} title="Commandant" />;
+  return <CardInlineMark {...mark} />;
 }
