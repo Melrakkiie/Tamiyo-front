@@ -11,6 +11,7 @@ import { FoilSticker, ProxySticker } from '../theme/Sticker';
 import type { ContextMenuEvent, ShownFace } from './CardContextMenu';
 import type { CardDisplay } from './CardDisplay';
 import { CardImage } from './CardImage';
+import { cardTileLabel } from './cardTileLabel';
 import { CommanderBadge, CommanderInlineMark } from './CommanderMark';
 import { GameChangerBadge, GameChangerInlineMark } from './GameChangerMark';
 import { CollectionBadge, PendingBadge, type PendingStatus } from './PendingBadge';
@@ -85,7 +86,7 @@ function CardRow<T extends TileCard>({
       onContextMenu={onContextMenu}
       onMouseEnter={onPreview}
       onFocus={onPreview}
-      aria-label={quantity > 1 ? `${card.name}, ${quantity} exemplaires` : card.name}
+      aria-label={cardTileLabel({ name: card.name, quantity, foil: card.foil })}
       display="block"
       w="100%"
     >
@@ -175,7 +176,7 @@ export function CardTile<T extends TileCard = Card>({
       onContextMenu={openMenu}
       onMouseEnter={onPreview}
       onFocus={onPreview}
-      aria-label={quantity > 1 ? `${card.name}, ${quantity} exemplaires` : card.name}
+      aria-label={cardTileLabel({ name: card.name, quantity, foil: card.foil })}
       display="block"
       w="100%"
     >
