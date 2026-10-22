@@ -29,7 +29,7 @@ import { useBackImage } from '../scryfall/hooks';
 import { useAllStorages, useStorageOptions } from '../storages/api';
 import { StorageFieldLabel } from '../storages/StorageLabel';
 import { FoilSticker, ProxySticker } from '../theme/Sticker';
-import { isCommanderFormat, useCommitPendingCards } from './api';
+import { isCommanderFormat } from './api';
 import { movedMessage } from './boards';
 import { BoardPicker } from './BoardSection';
 import { CardTagsInput } from './CardTagsInput';
@@ -187,7 +187,7 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
 
             <Divider />
             {entry.kind === 'pending' ? (
-              <PendingCollectionSection deckId={deckId} entry={entry} onClose={onClose} />
+              <PendingCollectionSection deck={deck} entry={entry} onClose={onClose} />
             ) : (
               <OwnedStorageSection entry={entry} />
             )}
@@ -267,13 +267,13 @@ function OwnedStorageSection({ entry }: { entry: OwnedEntry }) {
 }
 
 interface PendingCollectionSectionProps {
-  deckId: string;
+  deck: Deck;
   entry: PendingEntry;
   onClose: () => void;
 }
 
-function PendingCollectionSection({ deckId, entry, onClose }: PendingCollectionSectionProps) {
-  const commit = useCommitPendingCards();
+function PendingCollectionSection({ deck, entry, onClose }: PendingCollectionSectionProps) {
+  const mutations = useDeckEntryMutations(deck);
   const [storageId, setStorageId] = useState<string | null>(null);
   const [count, setCount] = useState<number | string>('');
   const total = entry.quantity;
@@ -284,23 +284,25 @@ function PendingCollectionSection({ deckId, entry, onClose }: PendingCollectionS
     return n > 1 ? `${n} exemplaires de ${name}` : name;
   }
 
-  function addToCollection() {
+  async function addToCollection() {
     const n = selected;
-    commit.mutate(
-      { deckId, storageId: storageId ? Number(storageId) : null, pendingId: entry.pending.id, quantity: n },
-      {
-        onSuccess: () => {
-          notifications.show({
-            color: 'green',
-            message: `${copies(n, entry.name)} ajouté${n > 1 ? 's' : 'e'} à ta collection.`,
-          });
-          setCount('');
-          if (n >= total) {
-            onClose();
-          }
-        },
-      },
-    );
+    try {
+      await mutations.run(entry, {
+        kind: 'addToCollection',
+        storageId: storageId ? Number(storageId) : null,
+        count: n,
+      });
+    } catch {
+      return;
+    }
+    notifications.show({
+      color: 'green',
+      message: `${copies(n, entry.name)} ajouté${n > 1 ? 's' : 'e'} à ta collection.`,
+    });
+    setCount('');
+    if (n >= total) {
+      onClose();
+    }
   }
 
   return (
@@ -329,12 +331,12 @@ function PendingCollectionSection({ deckId, entry, onClose }: PendingCollectionS
         )}
         <StorageSelect value={storageId} onChange={setStorageId} />
       </Group>
-      <Button color="orange" onClick={addToCollection} loading={commit.isPending}>
+      <Button color="orange" onClick={addToCollection} loading={mutations.isPending}>
         {selected < total ? `Ajouter ${selected} sur ${total} à ma collection` : 'Ajouter à ma collection'}
       </Button>
-      {commit.error && (
+      {mutations.error && (
         <Alert color="red">
-          {errorMessage(commit.error, { 400: "Le rangement choisi n'existe plus. Choisis-en un autre." })}
+          {errorMessage(mutations.error, { 400: "Le rangement choisi n'existe plus. Choisis-en un autre." })}
         </Alert>
       )}
     </Stack>
