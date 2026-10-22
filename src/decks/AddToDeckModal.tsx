@@ -207,7 +207,7 @@ function AddToDeckList({ deck, deckCardIds }: { deck: Deck; deckCardIds: Set<num
                     <Group key={card.id} justify="space-between" wrap="nowrap">
                       <div style={{ minWidth: 0 }}>
                         <Group gap={6} wrap="nowrap">
-                          <CardHoverPreview scryfallId={card.scryfall_id} name={card.name}>
+                          <CardHoverPreview scryfallId={card.scryfall_id} name={card.name} foil={card.foil}>
                             <Text size="sm" fw={500} lineClamp={1}>
                               {card.name}
                             </Text>
