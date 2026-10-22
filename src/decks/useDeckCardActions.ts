@@ -3,9 +3,9 @@ import { notifications } from '@mantine/notifications';
 import { errorMessage } from '../api/errors';
 import type { Deck, DeckBoard } from '../api/types';
 import { movedMessage } from './boards';
-import { commanderSlotOf } from './commanders';
 import type { DragItem } from './dragDrop';
 import type { Taggable } from './deckEntries';
+import { heldSlot } from './entryMutations/slots';
 import { useDeckEntryMutations } from './entryMutations/useDeckEntryMutations';
 import { useSetCardTags } from './tags';
 
@@ -19,7 +19,7 @@ export function useDeckCardActions(deck: Deck, tagsOfCard: (entry: Taggable) => 
   });
 
   function canMoveTo(item: DragItem, board: DeckBoard) {
-    return board !== item.board && commanderSlotOf(deck, item.entry) === null;
+    return board !== item.board && heldSlot(deck, item.entry) === null;
   }
 
   async function moveToBoard({ entry }: DragItem, board: DeckBoard) {

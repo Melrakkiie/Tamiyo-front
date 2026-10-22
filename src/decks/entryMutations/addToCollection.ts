@@ -1,4 +1,5 @@
 import type { DeckEntry, OwnedEntry, PendingEntry } from '../deckEntries';
+import { printingFields } from './printingFields';
 import type { Plan, PlanDeck } from './requests';
 
 export interface AddToCollection {
@@ -9,7 +10,7 @@ export interface AddToCollection {
   count?: number;
 }
 
-// Commits the pending copies into the collection (ADR-0004).
+// Pending cards are not collection cards: committing creates them there (ADR-0004).
 function commitPending(deck: PlanDeck, entry: PendingEntry, { storageId = null, count }: AddToCollection): Plan {
   const { pending } = entry;
   const committed = count === undefined ? pending.quantity : Math.min(count, pending.quantity);
@@ -31,24 +32,11 @@ function commitPending(deck: PlanDeck, entry: PendingEntry, { storageId = null, 
 
 // Creates real copies of the owned entry's printing in the collection, outside the deck.
 function createCopies(entry: OwnedEntry, { storageId = null, count = 1 }: AddToCollection): Plan {
-  const { name, scryfall_id, set_code, collector_number, foil, mana_value, colors, card_type, color_identity } = entry;
   return {
     steps: [
       {
         kind: 'createCards',
-        card: {
-          name,
-          scryfall_id,
-          set_code,
-          collector_number,
-          foil,
-          proxy: false,
-          storage_id: storageId,
-          mana_value,
-          colors,
-          card_type,
-          color_identity,
-        },
+        card: { ...printingFields(entry), proxy: false, storage_id: storageId },
         quantity: count,
       },
     ],

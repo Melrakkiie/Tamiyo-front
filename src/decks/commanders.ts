@@ -1,27 +1,8 @@
 import type { Deck, UpdateDeckInput } from '../api/types';
-import type { DeckEntry } from './deckEntries';
 
 export type CommanderSlot = 'commander' | 'partner';
 
 export type DeckCommanders = Pick<Deck, 'commander_id' | 'commander_pending_id' | 'partner_id' | 'partner_pending_id'>;
-
-function cardSlot(deck: DeckCommanders, cardId: number): CommanderSlot | null {
-  if (deck.commander_id === cardId) {
-    return 'commander';
-  }
-  return deck.partner_id === cardId ? 'partner' : null;
-}
-
-function pendingSlot(deck: DeckCommanders, pendingId: number): CommanderSlot | null {
-  if (deck.commander_pending_id === pendingId) {
-    return 'commander';
-  }
-  return deck.partner_pending_id === pendingId ? 'partner' : null;
-}
-
-export function commanderSlotOf(deck: DeckCommanders, entry: DeckEntry): CommanderSlot | null {
-  return entry.kind === 'pending' ? pendingSlot(deck, entry.pending.id) : cardSlot(deck, entry.id);
-}
 
 function slotTarget(cardId: number | null | undefined, pendingId: number | null | undefined): SlotTarget[] {
   if (cardId != null) {
@@ -45,9 +26,20 @@ export function hasPartner(deck: DeckCommanders) {
   return deck.partner_id != null || deck.partner_pending_id != null;
 }
 
-export type SlotTarget = { cardId: number } | { pendingId: number };
+// `PendingId` lets a plan name a pending card that does not exist yet.
+export type SlotTarget<PendingId = number> = { cardId: number } | { pendingId: PendingId };
 
-export function setSlotChanges(slot: CommanderSlot, target: SlotTarget): UpdateDeckInput {
+interface SlotChanges<PendingId> {
+  commander_id?: number;
+  partner_id?: number;
+  commander_pending_id?: PendingId;
+  partner_pending_id?: PendingId;
+}
+
+export function setSlotChanges<PendingId = number>(
+  slot: CommanderSlot,
+  target: SlotTarget<PendingId>,
+): SlotChanges<PendingId> {
   if ('cardId' in target) {
     return slot === 'commander' ? { commander_id: target.cardId } : { partner_id: target.cardId };
   }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { forest, grizzlyBears, serraAngel } from '../../scryfall/fixtures';
-import { deckCard, pendingCard } from '../boardTestHelpers';
+import { copies, deckCard, pendingCard } from '../boardTestHelpers';
 import { type DeckEntry, ownedEntry, pendingEntry } from '../deckEntries';
 import { fakeDeckApi } from './fakeDeckApi';
 import { planEntryEdit, type PlanDeck } from './plan';
@@ -39,6 +39,19 @@ describe('swap edition to an owned copy', () => {
       { kind: 'patchDeck', deckId: 'deck-1', changes: { commander_id: copy.id } },
       { kind: 'removeCard', deckId: 'deck-1', cardId: from.id },
     ]);
+  });
+
+  it('leaves the commander slot alone when it sits on another copy of the stack', () => {
+    const [kept, replaced] = copies(2, grizzlyBears);
+    const copy = deckCard(grizzlyBears);
+    const stack = ownedEntry({ ...replaced, copy_ids: [replaced.id, kept.id], quantity: 2 });
+
+    const plan = planEntryEdit({ ...deck, commander_id: kept.id }, stack, {
+      kind: 'swapEdition',
+      target: { kind: 'owned', copy },
+    });
+
+    expect(plan.steps.map((step) => step.kind)).toEqual(['putCardOnBoard', 'removeCard']);
   });
 
   it('makes a pending entry owned, keeping the board, the partner slot and the other pending copies', () => {

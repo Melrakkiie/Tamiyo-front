@@ -50,20 +50,14 @@ import {
   usePendingCards,
   useUpdateDeck,
 } from '../decks/api';
-import {
-  clearSlotChanges,
-  type CommanderSlot,
-  commanderSlotOf,
-  commanderTargets,
-  hasCommander,
-  hasPartner,
-} from '../decks/commanders';
+import { clearSlotChanges, type CommanderSlot, commanderTargets, hasCommander, hasPartner } from '../decks/commanders';
 import { type DeckEntry, deckEntries, type Taggable } from '../decks/deckEntries';
 import { type CollapsibleBoard, COLLAPSIBLE_BOARDS, DEFAULT_COLLAPSED_BOARDS } from '../decks/boards';
 import { DeckBoards, type TileContext, type TileExtras, useDeckBoards } from '../decks/DeckBoards';
 import type { GroupDrop } from '../decks/DeckCardGroups';
 import { DeckDropBar } from '../decks/DeckDropBar';
 import { DeckDragProvider, DraggableCard } from '../decks/dragDrop';
+import { heldSlot } from '../decks/entryMutations/slots';
 import { useDeckCardActions } from '../decks/useDeckCardActions';
 import { useDeckCardMenu } from '../decks/useDeckCardMenu';
 import { useOpenedEntry } from '../decks/useOpenedEntry';
@@ -600,7 +594,7 @@ function DeckCards({
   });
   useEffect(() => () => setDefaultCardPreview(null), []);
   const partnerCard = boards.main.stacks.find(
-    (entry) => boards.main.commanders.has(entry.key) && commanderSlotOf(deck, entry) === 'partner',
+    (entry) => boards.main.commanders.has(entry.key) && heldSlot(deck, entry)?.slot === 'partner',
   );
   useEffect(() => {
     openPartner.current = partnerCard ? () => opened.open(partnerCard) : null;

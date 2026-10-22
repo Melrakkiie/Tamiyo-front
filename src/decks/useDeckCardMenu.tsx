@@ -13,10 +13,11 @@ import { AddCopiesToDeckModal, deckLineFile } from './AddCopiesToDeckModal';
 import { isCommanderFormat, useUpdateDeck } from './api';
 import { type ArtChoice, backArtChoice } from './art';
 import { BOARDS } from './boards';
-import { type CommanderSlot, commanderSlotOf, hasCommander, hasPartner, setSlotChanges } from './commanders';
+import { type CommanderSlot, hasCommander, hasPartner, setSlotChanges } from './commanders';
 import { type DeckEntry, entrySlotTarget } from './deckEntries';
 import { deckListErrorMessage, deckListSummary } from './DeckListInput';
 import type { EntryIntent } from './entryMutations/plan';
+import { heldSlot } from './entryMutations/slots';
 import { useDeckEntryMutations } from './entryMutations/useDeckEntryMutations';
 import { SplitPrintingsModal, summaryDetails } from './SplitPrintingsModal';
 import type { DeckCardActions } from './useDeckCardActions';
@@ -128,7 +129,7 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
   function menuFor(entry: DeckEntry, board: DeckBoard, shown: ShownFace) {
     const { imageUrl } = shown;
     const item = { entry: entry, board, tag: null, imageUrl };
-    const commander = commanderSlotOf(deck, entry) !== null;
+    const commander = heldSlot(deck, entry) !== null;
     const { quantity } = entry;
     return (
       <>
