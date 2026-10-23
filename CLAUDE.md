@@ -14,7 +14,7 @@ npm run format       # Prettier on the whole repo; CI and the pre-commit hook ru
 npm run gen:api      # regenerate src/api/schema.d.ts from the API's doc/openapi.yaml (main branch)
 ```
 
-Vitest covers pure TypeScript only; tests sit next to their module (`foo.test.ts`), and shared Scryfall card fixtures live in `src/scryfall/fixtures.ts`. There are no rendering tests: run `npm test` and `npm run build` before calling a change done, and check UI changes in the browser.
+Vitest covers pure TypeScript only; tests sit next to their module (`foo.test.ts`), and shared Scryfall card fixtures live in `src/scryfall/fixtures.ts`. There are no rendering tests: run `npm test` and `npm run build` before calling a change done, and check UI changes in the browser (headless, with screenshots: `docs/agents/browser-check.md`).
 
 To check a front branch against an unmerged API branch: `make check-stack-up PORT=8081` in the API checkout (fresh Postgres, seed account `seed@tamiyo.local` / `password123`), then `API_PROXY=http://localhost:8081 npx vite --port 5174 --strictPort` here; `make check-stack-down PORT=8081` afterwards.
 
