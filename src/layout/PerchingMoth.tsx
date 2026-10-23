@@ -106,15 +106,27 @@ export interface PerchingMothProps {
   shadow?: boolean;
   // Without it, a moth that took off stays flown.
   returnAfter?: number;
+  // Called instead of landing back here once returnAfter has passed; the moth stays flown.
+  // Read once at mount: the caller must pass a callback that stays valid for the moth's life.
+  onRelocate?: () => void;
 }
 
-export function PerchingMoth({ trigger, focusTakeOff = false, shadow = false, returnAfter }: PerchingMothProps) {
+export function PerchingMoth({
+  trigger,
+  focusTakeOff = false,
+  shadow = false,
+  returnAfter,
+  onRelocate,
+  symbol,
+}: PerchingMothProps & { symbol: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const [phase, setPhase] = useState<Phase>('land');
   const [style, setStyle] = useState<CSSProperties>();
   const [height, setHeight] = useState(0);
   const journey = useRef<Trip | null>(undefined);
   const landing = useRef(false);
+  const remeasure = useRef<() => void>(undefined);
+  const measuredFor = useRef(symbol);
 
   useLayoutEffect(() => {
     const moth = ref.current;
@@ -180,6 +192,7 @@ export function PerchingMoth({ trigger, focusTakeOff = false, shadow = false, re
       setHeight(spot.fontSize);
       setStyle((current) => ({ ...current, ...spotStyle(spot) }));
     };
+    remeasure.current = refresh;
     let mounted = true;
     void document.fonts.ready.then(() => {
       if (mounted) refresh();
@@ -212,6 +225,7 @@ export function PerchingMoth({ trigger, focusTakeOff = false, shadow = false, re
       if (!flown || returnAfter === undefined || still) return;
       clearTimeout(returning);
       returning = window.setTimeout(() => {
+        if (onRelocate) return onRelocate();
         flown = false;
         landing.current = true;
         setPhase('land');
@@ -240,6 +254,12 @@ export function PerchingMoth({ trigger, focusTakeOff = false, shadow = false, re
         : null;
     };
   }, []);
+
+  useLayoutEffect(() => {
+    if (measuredFor.current === symbol) return;
+    measuredFor.current = symbol;
+    remeasure.current?.();
+  }, [symbol]);
 
   return (
     <span
