@@ -1,10 +1,11 @@
 import { Button, Group, Menu, Modal, Stack, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Card } from '../api/types';
 import { AddCopiesToDeckModal } from '../decks/AddCopiesToDeckModal';
+import { useLastShown } from '../layout/useLastShown';
 import { useCreateCards, useDeleteCopies, useUpdateCopies } from './api';
 import { copyIds } from './copies';
 import { CardCopyItems, FoilToggleItem, type ShownFace } from './CardContextMenu';
@@ -23,11 +24,7 @@ export function useCollectionCardMenu() {
   const deleteCopies = useDeleteCopies();
   const [deckCard, setDeckCard] = useState<Card | null>(null);
   const [deleting, setDeleting] = useState<Card | null>(null);
-  const lastDeleting = useRef<Card | null>(null);
-  if (deleting) {
-    lastDeleting.current = deleting;
-  }
-  const shownDeleting = lastDeleting.current;
+  const shownDeleting = useLastShown(deleting);
 
   const done = (message: string) => ({
     onSuccess: () => notifications.show({ color: 'green', message }),

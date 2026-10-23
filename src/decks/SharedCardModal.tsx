@@ -1,5 +1,5 @@
 import { Button, Grid, Group, Modal, Paper, Select, Stack, Text, Title } from '@mantine/core';
-import { type ReactNode, useRef, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 
 import type { Card, DeckBoard } from '../api/types';
 import { useSession } from '../auth/useSession';
@@ -8,6 +8,7 @@ import { CardImage } from '../cards/CardImage';
 import { cardPrinting } from '../cards/cardLinks';
 import { CardLinkTiles } from '../cards/CardLinkTiles';
 import { PrintPrice } from '../cards/price';
+import { useLastShown } from '../layout/useLastShown';
 import { CardRulesText } from '../scryfall/CardRulesText';
 import { useBackImage, useScryfallCard } from '../scryfall/hooks';
 import { FoilSticker } from '../theme/Sticker';
@@ -22,11 +23,7 @@ interface SharedCardModalProps {
 }
 
 export function SharedCardModal({ card, imageUrl, details, onClose }: SharedCardModalProps) {
-  const lastShown = useRef<{ card: Card; imageUrl: string | undefined; details: ReactNode } | null>(null);
-  if (card) {
-    lastShown.current = { card, imageUrl, details };
-  }
-  const shown = lastShown.current;
+  const shown = useLastShown(useMemo(() => (card ? { card, imageUrl, details } : null), [card, imageUrl, details]));
   const signedIn = useSession().status === 'authenticated';
   const [adding, setAdding] = useState<{ card: Card; target: AddTarget } | null>(null);
   const printing = useScryfallCard(adding?.card.scryfall_id);

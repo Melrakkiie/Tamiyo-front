@@ -14,7 +14,9 @@ export function useScryfallDrop(onCard: (card: ScryfallCard) => void) {
   const [dragging, setDragging] = useState(false);
   const [resolving, setResolving] = useState(false);
   const onCardRef = useRef(onCard);
-  onCardRef.current = onCard;
+  useEffect(() => {
+    onCardRef.current = onCard;
+  });
 
   useEffect(() => {
     let depth = 0;

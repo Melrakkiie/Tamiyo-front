@@ -14,7 +14,7 @@ import {
   Title,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Deck, DeckBoard } from '../api/types';
@@ -24,6 +24,7 @@ import { cardPrinting } from '../cards/cardLinks';
 import { CardLinkTiles } from '../cards/CardLinkTiles';
 import { PendingBadge, pendingStatusDescription } from '../cards/PendingBadge';
 import { PrintPrice } from '../cards/price';
+import { useLastShown } from '../layout/useLastShown';
 import { CardRulesText } from '../scryfall/CardRulesText';
 import { useBackImage } from '../scryfall/hooks';
 import { useAllStorages, useStorageOptions } from '../storages/api';
@@ -60,11 +61,9 @@ export function DeckEntryModal({
   onClose,
   onSwapped,
 }: DeckEntryModalProps) {
-  const lastShown = useRef<{ entry: DeckEntry; imageUrl: string | undefined } | null>(null);
-  if (entry && !loading) {
-    lastShown.current = { entry, imageUrl };
-  }
-  const shown = lastShown.current;
+  const shown = useLastShown(
+    useMemo(() => (entry && !loading ? { entry, imageUrl } : null), [entry, imageUrl, loading]),
+  );
 
   return (
     <Modal opened={entry !== null} onClose={onClose} title={entry?.name ?? shown?.entry.name} size="xl">
