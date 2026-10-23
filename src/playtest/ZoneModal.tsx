@@ -16,7 +16,7 @@ import {
   UnstyledButton,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { COLORLESS, type ColorMode, type TypeFilter } from '../cards/advancedFilters';
 import { ColorChips, ComparisonInput, colorModes, typeOptions } from '../cards/AdvancedSearch';
@@ -61,13 +61,11 @@ export function ZoneModal({ zone, onClose }: { zone: ViewedZone | null; onClose:
   const searching = shownZone === 'library';
   const cards = useScryfallCards(zone !== null ? Object.values(state.cards).map((card) => card.scryfallId) : []);
   const parsed = useMemo(() => parseScryfallQuery(search), [search]);
-  const lastValid = useRef<QueryNode | null>(null);
-  useEffect(() => {
-    if (!parsed.error) {
-      lastValid.current = parsed.node;
-    }
-  }, [parsed]);
-  const query = parsed.error ? lastValid.current : parsed.node;
+  const [lastValid, setLastValid] = useState<QueryNode | null>(null);
+  if (!parsed.error && parsed.node !== lastValid) {
+    setLastValid(parsed.node);
+  }
+  const query = parsed.error ? lastValid : parsed.node;
   const libraryQuery = useMemo(
     () => (searching ? allOf([query, libraryFiltersToQuery(filters)]) : query),
     [searching, query, filters],
@@ -83,7 +81,7 @@ export function ZoneModal({ zone, onClose }: { zone: ViewedZone | null; onClose:
 
   function close() {
     setSearch('');
-    lastValid.current = null;
+    setLastValid(null);
     setFilters(emptyLibraryFilters);
     setFiltersOpen(false);
     onClose();

@@ -1,7 +1,9 @@
 import { defineConfig } from 'eslint/config';
+import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
-// Each rule here enforces a rule from CLAUDE.md. A config object that sets
+// Each rule here enforces a rule from CLAUDE.md, plus React's rules of hooks
+// (refs: no ref read or written during render). A config object that sets
 // no-restricted-syntax replaces the earlier one, hence the selector lists.
 
 const scryfallHost = [
@@ -55,8 +57,10 @@ export default defineConfig([
   {
     files: ['src/**/*.{ts,tsx}'],
     languageOptions: { parser: tseslint.parser },
-    plugins: { tamiyo: { rules: { 'page-title': pageTitle } } },
+    plugins: { tamiyo: { rules: { 'page-title': pageTitle } }, 'react-hooks': reactHooks },
     rules: {
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/refs': 'error',
       'no-restricted-syntax': ['error', ...scryfallHost, ...rawHex],
       'no-restricted-globals': [
         'error',

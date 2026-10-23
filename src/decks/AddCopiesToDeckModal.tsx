@@ -1,9 +1,10 @@
 import { Alert, Button, Group, Modal, NumberInput, Select, Stack, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 
 import type { DeckBoard } from '../api/types';
 import { useImportIntoDeck } from '../bulk/api';
+import { useLastShown } from '../layout/useLastShown';
 import { useAllDecks } from './api';
 import { BoardPicker } from './BoardSection';
 import { ADDED_TAGS_DESCRIPTION, TagsField } from './CardTagsInput';
@@ -24,11 +25,7 @@ interface AddCopiesToDeckModalProps {
 }
 
 export function AddCopiesToDeckModal({ card, excludedDeckId, onClose }: AddCopiesToDeckModalProps) {
-  const lastShown = useRef<DeckLinePrinting | null>(null);
-  if (card) {
-    lastShown.current = card;
-  }
-  const shown = lastShown.current;
+  const shown = useLastShown(card);
   return (
     <Modal opened={card !== null} onClose={onClose} title={shown ? `Ajouter ${shown.name} à un deck` : undefined}>
       {shown && (

@@ -15,10 +15,11 @@ import {
   Title,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Card, UpdateCardInput } from '../api/types';
+import { useLastShown } from '../layout/useLastShown';
 import { CardRulesText } from '../scryfall/CardRulesText';
 import { imageUrl as printingImageUrl, type ScryfallCard } from '../scryfall/client';
 import { useBackImage, useBackImageOf, usePrintings } from '../scryfall/hooks';
@@ -43,11 +44,7 @@ interface CardDetailModalProps {
 }
 
 export function CardDetailModal({ card, imageUrl, onUpdated, onClose }: CardDetailModalProps) {
-  const lastShown = useRef<{ card: Card; imageUrl: string | undefined } | null>(null);
-  if (card) {
-    lastShown.current = { card, imageUrl };
-  }
-  const shown = lastShown.current;
+  const shown = useLastShown(useMemo(() => (card ? { card, imageUrl } : null), [card, imageUrl]));
 
   return (
     <Modal opened={card !== null} onClose={onClose} title={shown?.card.name} size="xl">

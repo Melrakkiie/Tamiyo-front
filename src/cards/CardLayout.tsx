@@ -221,7 +221,7 @@ export function CardGroupsLayout<T extends LayoutCard, G extends LayoutGroup<T>>
   const columns = useColumnCount(display.columns);
   const theme = useMantineTheme();
   const { ref, width } = useElementSize();
-  const headers = useHeaderWidths();
+  const { ref: headersRef, widths: headerWidths } = useHeaderWidths();
   const wrap = (group: G, content: ReactNode) => (group.wrap ? group.wrap(content) : content);
 
   if (display.mode === 'stacks') {
@@ -284,7 +284,7 @@ export function CardGroupsLayout<T extends LayoutCard, G extends LayoutGroup<T>>
   }
 
   const separator = width > 0 ? (groupGap - cardGap) / (cardWidth + cardGap) : 1;
-  const headerWidth = (group: G) => headers.widths.get(group.key) ?? 0;
+  const headerWidth = (group: G) => headerWidths.get(group.key) ?? 0;
   const span = (group: G) =>
     width > 0
       ? Math.max(group.cards.length, (headerWidth(group) + cardGap) / (cardWidth + cardGap))
@@ -295,7 +295,7 @@ export function CardGroupsLayout<T extends LayoutCard, G extends LayoutGroup<T>>
   return (
     <Box pos="relative">
       <div
-        ref={headers.ref}
+        ref={headersRef}
         aria-hidden
         style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', visibility: 'hidden' }}
       >
