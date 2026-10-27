@@ -286,7 +286,11 @@ export function HomePage() {
                       to={`/cards?carte=${card.id}`}
                       {...tapeProps(`home-card-${card.id}`)}
                     >
-                      <CardImage name={card.name} url={images.data?.[card.scryfall_id]} loading={images.isLoading} />
+                      <CardImage
+                        name={card.name}
+                        frontUrl={images.data?.[card.scryfall_id]}
+                        loading={images.isLoading}
+                      />
                     </Box>
                   ))}
                 </SimpleGrid>

@@ -29,7 +29,7 @@ function TokenGrid({ tokens, onPick }: { tokens: RelatedToken[]; onPick: (token:
       {tokens.map((token) => (
         <UnstyledButton key={token.id} onClick={() => onPick(token)} aria-label={`Créer ${token.name}`}>
           <Box w={THUMB_WIDTH}>
-            <CardImage name={token.name} url={images.data?.[token.id]} loading={images.isLoading} />
+            <CardImage name={token.name} frontUrl={images.data?.[token.id]} loading={images.isLoading} />
           </Box>
         </UnstyledButton>
       ))}

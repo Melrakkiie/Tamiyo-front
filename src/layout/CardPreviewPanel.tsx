@@ -25,7 +25,7 @@ export function CardPreviewPanel() {
     <CardImage
       key={`${card.scryfallId}:${face}`}
       name={card.name}
-      url={card.imageUrl ?? printing?.front.images.normal}
+      frontUrl={card.imageUrl ?? printing?.front.images.normal}
       loading={!card.imageUrl && faces.isLoading}
       back={printing?.back}
       initialFace={face}

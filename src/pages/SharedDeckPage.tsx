@@ -278,7 +278,7 @@ function CommanderCard({ card, label, imageUrl, onOpen }: CommanderCardProps) {
     >
       <Group wrap="nowrap" align="center">
         <Box w={72} style={{ flexShrink: 0, cursor: 'pointer' }} onClick={onOpen}>
-          <CardImage name={card.name} url={imageUrl} loading={!imageUrl} />
+          <CardImage name={card.name} frontUrl={imageUrl} loading={!imageUrl} />
         </Box>
         <Stack gap={4} style={{ minWidth: 0 }}>
           <Text size="xs" c="dimmed">

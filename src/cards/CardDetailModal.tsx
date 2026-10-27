@@ -147,7 +147,7 @@ function CardDetail({ card, imageUrl, onUpdated, onClose }: CardDetailProps) {
           <CardImage
             key={printing?.id ?? card.scryfall_id}
             name={card.name}
-            url={faces?.front.images.normal ?? (printing ? printingImageUrl(printing, 'normal') : imageUrl)}
+            frontUrl={faces?.front.images.normal ?? (printing ? printingImageUrl(printing, 'normal') : imageUrl)}
             back={faces?.back}
             loading={false}
           />
