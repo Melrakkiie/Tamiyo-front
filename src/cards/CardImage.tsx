@@ -13,17 +13,15 @@ interface CardImageProps {
   loading: boolean;
   // The flip button shows only when there is a back face.
   back?: PrintingFace;
-  // shortcut: the card modals still pass their back as a URL; #57 moves them to `back`.
-  backUrl?: string;
   initialFace?: CardFace;
   onFlip?: (shown: CardFace) => void;
 }
 
-export function CardImage({ name, url, loading, back, backUrl, initialFace = 'front', onFlip }: CardImageProps) {
+export function CardImage({ name, url, loading, back, initialFace = 'front', onFlip }: CardImageProps) {
   const [showBack, setShowBack] = useState(initialFace === 'back');
-  const hasBack = !!back || !!backUrl;
+  const hasBack = !!back;
   const flipped = showBack && hasBack;
-  const shown = flipped ? (back?.images.normal ?? backUrl) : url;
+  const shown = flipped ? back?.images.normal : url;
   const [failedUrl, setFailedUrl] = useState<string | undefined>();
   const failed = !!shown && failedUrl === shown;
 

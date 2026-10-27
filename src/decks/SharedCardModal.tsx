@@ -10,7 +10,7 @@ import { CardLinkTiles } from '../cards/CardLinkTiles';
 import { PrintPrice } from '../cards/price';
 import { useLastShown } from '../layout/useLastShown';
 import { CardRulesText } from '../scryfall/CardRulesText';
-import { useBackImage, useScryfallCard } from '../scryfall/hooks';
+import { usePrintingFaces, useScryfallCard } from '../scryfall/hooks';
 import { FoilSticker } from '../theme/Sticker';
 import { useAllDecks } from './api';
 import { BoardPicker } from './BoardSection';
@@ -59,14 +59,14 @@ interface SharedCardDetailProps {
 }
 
 function SharedCardDetail({ card, imageUrl, details, onAdd }: SharedCardDetailProps) {
-  const backImage = useBackImage(card.scryfall_id);
+  const faces = usePrintingFaces([card.scryfall_id]).data[card.scryfall_id];
   const quantity = card.quantity ?? 1;
   const linkedPrinting = cardPrinting(card);
 
   return (
     <Grid gutter="lg">
       <Grid.Col span={{ base: 12, sm: 5 }}>
-        <CardImage name={card.name} url={imageUrl} backUrl={backImage} loading={false} />
+        <CardImage name={card.name} url={imageUrl} back={faces?.back} loading={false} />
         <PrintPrice scryfallId={card.scryfall_id} foil={card.foil} ta="center" mt="xs" />
         <CardLinkTiles printing={linkedPrinting} />
       </Grid.Col>

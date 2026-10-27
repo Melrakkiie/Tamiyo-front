@@ -22,7 +22,7 @@ import type { Card, UpdateCardInput } from '../api/types';
 import { useLastShown } from '../layout/useLastShown';
 import { CardRulesText } from '../scryfall/CardRulesText';
 import { imageUrl as printingImageUrl, type ScryfallCard } from '../scryfall/client';
-import { useBackImage, useBackImageOf, usePrintings } from '../scryfall/hooks';
+import { usePrintingFaces, usePrintings } from '../scryfall/hooks';
 import { canBeFoil, canBeNonFoil, foilFor, printingDetails } from '../scryfall/printing';
 import { PrintingGrid } from '../scryfall/PrintingGrid';
 import { useStorageOptions } from '../storages/api';
@@ -78,8 +78,8 @@ function CardDetail({ card, imageUrl, onUpdated, onClose }: CardDetailProps) {
   const [foil, setFoil] = useState(card.foil);
   const [proxy, setProxy] = useState(card.proxy);
   const [printing, setPrinting] = useState<ScryfallCard | null>(null);
-  const backImage = useBackImage(card.scryfall_id);
-  const printingBackImage = useBackImageOf(printing);
+  const shownId = printing?.id ?? card.scryfall_id;
+  const faces = usePrintingFaces([shownId]).data[shownId];
   const printings = usePrintings(card.name);
   const otherPrintings = (printings.data ?? []).filter((candidate) => candidate.id !== card.scryfall_id);
   const shownPrinting = printing ?? (printings.data ?? []).find((candidate) => candidate.id === card.scryfall_id);
@@ -148,7 +148,7 @@ function CardDetail({ card, imageUrl, onUpdated, onClose }: CardDetailProps) {
             key={printing?.id ?? card.scryfall_id}
             name={card.name}
             url={printing ? printingImageUrl(printing, 'normal') : imageUrl}
-            backUrl={printing ? printingBackImage : backImage}
+            back={faces?.back}
             loading={false}
           />
           <PrintPrice scryfallId={printing?.id ?? card.scryfall_id} foil={foil} ta="center" mt="xs" />
