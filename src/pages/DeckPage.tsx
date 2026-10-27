@@ -221,10 +221,7 @@ function DeckView({ id }: { id: string }) {
             <Menu.Divider />
             <Menu.Item onClick={() => setBulkEditOpened(true)}>Édition en masse</Menu.Item>
             <Menu.Item onClick={() => setCompareOpened(true)}>Comparer avec un autre deck</Menu.Item>
-            <Menu.Item
-              disabled={current.card_count + (current.pending_count ?? 0) === 0}
-              onClick={() => navigate(`/decks/${current.id}/playtest`)}
-            >
+            <Menu.Item disabled={current.card_count === 0} onClick={() => navigate(`/decks/${current.id}/playtest`)}>
               Tester le deck
             </Menu.Item>
             <Menu.Divider />
@@ -280,7 +277,7 @@ function DeckView({ id }: { id: string }) {
 
       <Tabs value={tab} onChange={setTab}>
         <Tabs.List>
-          <Tabs.Tab value="cards">Cartes ({current.card_count + (current.pending_count ?? 0)})</Tabs.Tab>
+          <Tabs.Tab value="cards">Cartes ({current.card_count})</Tabs.Tab>
           <Tabs.Tab value="stats">Statistiques</Tabs.Tab>
         </Tabs.List>
 

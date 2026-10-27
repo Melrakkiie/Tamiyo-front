@@ -45,6 +45,7 @@ export interface paths {
                         "application/json": {
                             /** @example unavailable */
                             status: string;
+                            /** @example database unreachable */
                             error: string;
                         };
                     };
@@ -6153,9 +6154,9 @@ export interface components {
             visibility: components["schemas"]["DeckVisibility"];
             /** @description Commander bracket, 1 (Exhibition) to 5 (cEDH); null when not set. */
             bracket?: number | null;
-            /** @description Cards of the main board. */
+            /** @description Copies in the main board, owned or pending. */
             card_count: number;
-            /** @description Copies waiting in the main board's pending list (not in the collection yet), not counted in card_count. */
+            /** @description Copies waiting in the main board's pending list (not in the collection yet), included in card_count. */
             pending_count?: number;
             /** @description How many users liked the deck. */
             likes_count: number;
@@ -6474,7 +6475,7 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
-        /** @description A bulk import couldn't reach or parse a response from the Scryfall API while resolving Moxfield rows. */
+        /** @description A bulk import couldn't reach or parse a response from the Scryfall API while resolving Moxfield rows. The body is {"error": "could not resolve cards against scryfall"}, whatever the upstream failure. */
         BadGateway: {
             headers: {
                 [name: string]: unknown;
