@@ -19,7 +19,8 @@ import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import { artCredit } from '../decks/art';
-import { cardArt, type ScryfallCard } from '../scryfall/client';
+import type { ScryfallCard } from '../scryfall/client';
+import { printingFaces } from '../scryfall/faces';
 import { usePrintings } from '../scryfall/hooks';
 import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
 import { useAccount, useUpdateAvatar } from './account';
@@ -81,7 +82,7 @@ function AvatarPicker({ current, onDone }: { current: string | null; onDone: () 
   const [name, setName] = useState<string | null>(null);
   const printings = usePrintings(name);
   const withArt = (printings.data ?? []).flatMap((printing) => {
-    const art = cardArt(printing);
+    const art = printingFaces(printing).front.art;
     return art ? [{ printing, art }] : [];
   });
   const update = useUpdateAvatar();

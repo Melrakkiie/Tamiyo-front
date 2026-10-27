@@ -1,6 +1,7 @@
 import type { Deck } from '../api/types';
-import { type CardArt, type CardFace, cardArt } from '../scryfall/client';
-import { useScryfallCards } from '../scryfall/hooks';
+import type { CardArt, CardFace } from '../scryfall/client';
+import type { PrintingFaces } from '../scryfall/faces';
+import { usePrintingFaces } from '../scryfall/hooks';
 
 type ArtDeck = Pick<Deck, 'background_scryfall_id' | 'background_face' | 'commander_scryfall_id'>;
 
@@ -16,13 +17,18 @@ export function deckArtChoice(deck: ArtDeck): ArtChoice | null {
   return deck.commander_scryfall_id ? { scryfallId: deck.commander_scryfall_id, face: 'front' } : null;
 }
 
+// A printing without art on the chosen face shows its front art.
+export function choiceArt(faces: PrintingFaces, face: CardFace): CardArt | null {
+  return (face === 'back' ? faces.back?.art : null) ?? faces.front.art;
+}
+
 export function useDeckArts(decks: ArtDeck[]) {
   const choices = decks.map(deckArtChoice).filter((choice) => choice !== null);
-  const cards = useScryfallCards(choices.map((choice) => choice.scryfallId));
+  const faces = usePrintingFaces(choices.map((choice) => choice.scryfallId));
   return (deck: ArtDeck): CardArt | null => {
     const choice = deckArtChoice(deck);
-    const card = choice ? cards.data?.[choice.scryfallId] : undefined;
-    return choice && card ? cardArt(card, choice.face) : null;
+    const printing = choice ? faces.data[choice.scryfallId] : undefined;
+    return choice && printing ? choiceArt(printing, choice.face) : null;
   };
 }
 

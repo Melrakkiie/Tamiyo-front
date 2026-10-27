@@ -2,6 +2,7 @@ import { Divider, Group, Paper, SegmentedControl, Skeleton, Stack, Text } from '
 import { Fragment, useState } from 'react';
 
 import type { ScryfallCard } from './client';
+import { printingFaces } from './faces';
 import { useFrenchPrinting, useScryfallCard } from './hooks';
 import { withSymbols } from './manaSymbols';
 
@@ -101,6 +102,7 @@ export function CardRulesText({ scryfallId }: { scryfallId: string }) {
 
   const faces = facesOf(card.data, showFrench ? (french.data ?? null) : null);
   const showFaceNames = faces.length > 1 || showFrench;
+  const artist = printingFaces(card.data).front.art?.artist;
 
   return (
     <Stack gap="xs">
@@ -163,7 +165,7 @@ export function CardRulesText({ scryfallId }: { scryfallId: string }) {
       <Text size="xs" c="dimmed">
         {card.data.set_name}
         {card.data.rarity ? ` · ${rarityLabels[card.data.rarity] ?? card.data.rarity}` : ''}
-        {card.data.artist ? ` · Illustration : ${card.data.artist}` : ''}
+        {artist ? ` · Illustration : ${artist}` : ''}
       </Text>
     </Stack>
   );
