@@ -17,6 +17,8 @@ export const grizzlyBears: ScryfallCard = {
   rarity: 'common',
   colors: ['G'],
   color_identity: ['G'],
+  artist: 'Jeff A. Menges',
+  image_uris: { small: 'bears-small', normal: 'bears-normal', art_crop: 'bears-art' },
 };
 
 export const esperSentinel: ScryfallCard = {
@@ -97,6 +99,8 @@ export const alrundGodOfTheCosmos: ScryfallCard = {
       colors: ['U'],
       power: '1',
       toughness: '1',
+      artist: 'Kieran Yanner',
+      image_uris: { small: 'alrund-small', normal: 'alrund-normal', art_crop: 'alrund-art' },
     },
     {
       name: 'Hakka, Whispering Raven',
@@ -107,6 +111,8 @@ export const alrundGodOfTheCosmos: ScryfallCard = {
       colors: ['U'],
       power: '2',
       toughness: '3',
+      artist: 'Aaron Miller',
+      image_uris: { small: 'hakka-small', normal: 'hakka-normal', art_crop: 'hakka-art' },
     },
   ],
 };
@@ -158,6 +164,8 @@ export const commitMemory: ScryfallCard = {
   rarity: 'rare',
   colors: ['U'],
   color_identity: ['U'],
+  artist: 'Ryan Pancoast',
+  image_uris: { small: 'commit-small', normal: 'commit-normal', art_crop: 'commit-art' },
   card_faces: [
     {
       name: 'Commit',
@@ -225,6 +233,7 @@ export const delverOfSecrets: ScryfallCard = {
   mana_cost: '',
   rarity: 'common',
   color_identity: ['U'],
+  artist: 'Nils Hamm',
   card_faces: [
     {
       name: 'Delver of Secrets',
@@ -235,6 +244,7 @@ export const delverOfSecrets: ScryfallCard = {
       colors: ['U'],
       power: '1',
       toughness: '1',
+      image_uris: { small: 'delver-small', normal: 'delver-normal', art_crop: 'delver-art' },
     },
     {
       name: 'Insectile Aberration',
@@ -244,6 +254,7 @@ export const delverOfSecrets: ScryfallCard = {
       colors: ['U'],
       power: '3',
       toughness: '2',
+      image_uris: { small: 'aberration-small', normal: 'aberration-normal', art_crop: 'aberration-art' },
     },
   ],
 };
@@ -284,4 +295,83 @@ export const starredPromo: ScryfallCard = {
   rarity: 'special',
   colors: ['R'],
   color_identity: ['R'],
+};
+
+export const zndrspltReversible: ScryfallCard = {
+  id: 'fixture-zndrsplt-reversible',
+  layout: 'reversible_card',
+  name: 'Zndrsplt, Eye of Wisdom',
+  set: 'sld',
+  set_name: 'Secret Lair Drop',
+  collector_number: '379',
+  released_at: '2022-04-25',
+  cmc: 5,
+  rarity: 'rare',
+  color_identity: ['U'],
+  card_faces: [
+    {
+      name: 'Zndrsplt, Eye of Wisdom',
+      mana_cost: '{4}{U}',
+      type_line: 'Legendary Creature — Homunculus',
+      colors: ['U'],
+      artist: 'Alexis Ziritt',
+      image_uris: { small: 'zndrsplt-small', normal: 'zndrsplt-normal', art_crop: 'zndrsplt-art' },
+    },
+    {
+      name: 'Zndrsplt, Eye of Wisdom',
+      mana_cost: '{4}{U}',
+      type_line: 'Legendary Creature — Homunculus',
+      colors: ['U'],
+      artist: 'Wizard of Barge',
+      image_uris: { small: 'zndrsplt-back-small', normal: 'zndrsplt-back-normal', art_crop: 'zndrsplt-back-art' },
+    },
+  ],
+};
+
+const meldParts = [
+  { id: 'fixture-bruna-the-fading-light', component: 'meld_part', name: 'Bruna, the Fading Light' },
+  { id: 'fixture-gisela-the-broken-blade', component: 'meld_part', name: 'Gisela, the Broken Blade' },
+  { id: 'fixture-brisela-voice-of-nightmares', component: 'meld_result', name: 'Brisela, Voice of Nightmares' },
+];
+
+export const brunaTheFadingLight: ScryfallCard = {
+  id: 'fixture-bruna-the-fading-light',
+  layout: 'meld',
+  all_parts: meldParts,
+  name: 'Bruna, the Fading Light',
+  set: 'emn',
+  set_name: 'Eldritch Moon',
+  collector_number: '15a',
+  released_at: '2016-07-22',
+  cmc: 7,
+  type_line: 'Legendary Creature — Angel Horror',
+  mana_cost: '{5}{W}{W}',
+  power: '5',
+  toughness: '7',
+  rarity: 'rare',
+  colors: ['W'],
+  color_identity: ['W'],
+  artist: 'Clint Cearley',
+  image_uris: { small: 'bruna-small', normal: 'bruna-normal', art_crop: 'bruna-art' },
+};
+
+export const briselaVoiceOfNightmares: ScryfallCard = {
+  id: 'fixture-brisela-voice-of-nightmares',
+  layout: 'meld',
+  all_parts: meldParts,
+  name: 'Brisela, Voice of Nightmares',
+  set: 'emn',
+  set_name: 'Eldritch Moon',
+  collector_number: '15b',
+  released_at: '2016-07-22',
+  cmc: 11,
+  type_line: 'Legendary Creature — Eldrazi Angel',
+  mana_cost: '',
+  power: '9',
+  toughness: '10',
+  rarity: 'rare',
+  colors: ['W'],
+  color_identity: ['W'],
+  artist: 'Clint Cearley',
+  image_uris: { small: 'brisela-small', normal: 'brisela-normal', art_crop: 'brisela-art' },
 };

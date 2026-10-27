@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ApiError } from '../api/errors';
 import { loadCards, rememberCards } from './cardCache';
 import { type FaceTypes, faceTypes, subtypes } from './classify';
+import { frontManaCost, type PrintingFace, type PrintingFaces, printingFaces } from './faces';
 import {
   autocompleteCardNames,
   backImageUrl,
@@ -77,6 +78,46 @@ export function useCardBackImages(scryfallIds: string[], size: 'small' | 'normal
   return { data: urls };
 }
 
+// Each printing's faces, its melded card loaded through the same cache. While a card loads it has
+// no faces; once settled, a front without an image (or a card Scryfall lacks) falls back to the CDN.
+export function usePrintingFaces(scryfallIds: string[]) {
+  const cards = useScryfallCardsByIds(scryfallIds, (byId) => byId);
+  const meldIds = Object.values(cards.data ?? {})
+    .map(meldResultId)
+    .filter((id) => id !== undefined);
+  const melded = useScryfallCardsByIds(meldIds, (byId) => byId);
+  const settled = !cards.isLoading;
+
+  const faces: Record<string, PrintingFaces | undefined> = {};
+  for (const id of scryfallIds) {
+    const card = cards.data?.[id];
+    if (!card && !settled) {
+      continue;
+    }
+    const resolved: PrintingFaces = card
+      ? printingFaces(card, melded.data?.[meldResultId(card) ?? ''])
+      : { front: { ...emptyFront, deckArt: { scryfallId: id, face: 'front' } } };
+    const images = resolved.front.images;
+    faces[id] = {
+      ...resolved,
+      front: {
+        ...resolved.front,
+        images: { small: images.small ?? cdnImageUrl(id, 'small'), normal: images.normal ?? cdnImageUrl(id, 'normal') },
+      },
+    };
+  }
+  return { data: faces, isLoading: cards.isLoading, isFetching: cards.isFetching || melded.isFetching };
+}
+
+// shortcut: a card Scryfall lacks gets a nameless front, enough to show its CDN image.
+const emptyFront: Omit<PrintingFace, 'deckArt'> = {
+  face: 'front',
+  name: '',
+  images: { small: undefined, normal: undefined },
+  art: null,
+  manaCost: '',
+};
+
 export function useCardFaceTypes(scryfallIds: string[]) {
   return useScryfallCardsByIds(scryfallIds, (cards) => {
     const types: Record<string, FaceTypes> = {};
@@ -101,7 +142,7 @@ export function useManaCosts(scryfallIds: string[]) {
   return useScryfallCardsByIds(scryfallIds, (cards) => {
     const costs: Record<string, string> = {};
     for (const [id, card] of Object.entries(cards)) {
-      costs[id] = card.mana_cost ?? card.card_faces?.[0]?.mana_cost ?? '';
+      costs[id] = frontManaCost(card);
     }
     return costs;
   });
