@@ -445,6 +445,8 @@ describe('mana cost', () => {
       ['m:{1}{G}', grizzlyBears, true],
       ['m:1g', grizzlyBears, true],
       ['mana:1G', grizzlyBears, true],
+      ['m:3u', alrundGodOfTheCosmos, true],
+      ['m=u', delverOfSecrets, true],
       ['m:g', grizzlyBears, true],
       ['m:1', grizzlyBears, true],
       ['m:gg', grizzlyBears, false],

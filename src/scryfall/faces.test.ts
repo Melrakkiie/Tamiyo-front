@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { printingFaces } from './faces';
+import { frontManaCost, printingFaces } from './faces';
 import {
   alrundGodOfTheCosmos,
   briselaVoiceOfNightmares,
@@ -130,5 +130,19 @@ describe('printingFaces', () => {
 
   it('gives the melded card itself no back', () => {
     expect(printingFaces(briselaVoiceOfNightmares, briselaVoiceOfNightmares).back).toBeUndefined();
+  });
+});
+
+describe('frontManaCost', () => {
+  it("takes the card's own cost", () => {
+    expect(frontManaCost(grizzlyBears)).toBe('{1}{G}');
+  });
+
+  it("takes the first face's cost when the card has none", () => {
+    expect(frontManaCost(alrundGodOfTheCosmos)).toBe('{3}{U}');
+  });
+
+  it("takes the first face's cost when the card's own is empty", () => {
+    expect(frontManaCost(delverOfSecrets)).toBe('{U}');
   });
 });
