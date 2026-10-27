@@ -9,8 +9,6 @@ import {
   backImageUrl,
   cdnImageUrl,
   meldResultId,
-  type CardArt,
-  cardArt,
   type CardSuggestions,
   fetchCardByName,
   fetchFrenchPrinting,
@@ -234,24 +232,6 @@ export function useFrenchPrinting(card: ScryfallCard | null | undefined) {
     staleTime: ONE_DAY,
     gcTime: ONE_DAY,
     retry: false,
-  });
-}
-
-export function useCardArts(scryfallIds: (string | null | undefined)[]) {
-  const ids = [...new Set(scryfallIds.filter((id): id is string => !!id))].sort();
-
-  return useQuery({
-    queryKey: ['scryfall', 'arts', ids],
-    queryFn: async () => {
-      const arts: Record<string, CardArt | null> = {};
-      for (const [id, card] of Object.entries(await loadCards(ids))) {
-        arts[id] = cardArt(card);
-      }
-      return arts;
-    },
-    enabled: ids.length > 0,
-    staleTime: ONE_DAY,
-    gcTime: ONE_DAY,
   });
 }
 
