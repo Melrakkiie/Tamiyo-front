@@ -107,8 +107,8 @@ function ArtPicker({ deck, onClose }: { deck: Deck; onClose: () => void }) {
             <Center p="lg">
               <Loader />
             </Center>
-          ) : owned.error || pending.error ? (
-            <Alert color="red">{errorMessage(owned.error ?? pending.error)}</Alert>
+          ) : owned.error || pending.error || deckArts.error ? (
+            <Alert color="red">{errorMessage(owned.error ?? pending.error ?? deckArts.error)}</Alert>
           ) : deckPrintings.length === 0 ? (
             <Text size="sm" c="dimmed">
               Ce deck est vide : ajoute des cartes pour pouvoir choisir une illustration.

@@ -183,7 +183,7 @@ export function CardTile<T extends TileCard = Card>({
         <Box pos="relative">
           <CardImage
             name={card.name}
-            url={imageUrl}
+            frontUrl={imageUrl}
             loading={imageLoading}
             back={faces?.back}
             onFlip={(face) => {

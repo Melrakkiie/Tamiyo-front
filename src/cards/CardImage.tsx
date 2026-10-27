@@ -8,8 +8,7 @@ const CARD_RATIO = 488 / 680;
 
 interface CardImageProps {
   name: string;
-  // The front face's image.
-  url: string | undefined;
+  frontUrl: string | undefined;
   loading: boolean;
   // The flip button shows only when there is a back face.
   back?: PrintingFace;
@@ -17,11 +16,11 @@ interface CardImageProps {
   onFlip?: (shown: CardFace) => void;
 }
 
-export function CardImage({ name, url, loading, back, initialFace = 'front', onFlip }: CardImageProps) {
+export function CardImage({ name, frontUrl, loading, back, initialFace = 'front', onFlip }: CardImageProps) {
   const [showBack, setShowBack] = useState(initialFace === 'back');
   const hasBack = !!back;
   const flipped = showBack && hasBack;
-  const shown = flipped ? back?.images.normal : url;
+  const shown = flipped ? back.images.normal : frontUrl;
   const [failedUrl, setFailedUrl] = useState<string | undefined>();
   const failed = !!shown && failedUrl === shown;
 
