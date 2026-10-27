@@ -164,6 +164,8 @@ export const commitMemory: ScryfallCard = {
   rarity: 'rare',
   colors: ['U'],
   color_identity: ['U'],
+  artist: 'Ryan Pancoast',
+  image_uris: { small: 'commit-small', normal: 'commit-normal', art_crop: 'commit-art' },
   card_faces: [
     {
       name: 'Commit',
@@ -293,4 +295,83 @@ export const starredPromo: ScryfallCard = {
   rarity: 'special',
   colors: ['R'],
   color_identity: ['R'],
+};
+
+export const zndrspltReversible: ScryfallCard = {
+  id: 'fixture-zndrsplt-reversible',
+  layout: 'reversible_card',
+  name: 'Zndrsplt, Eye of Wisdom',
+  set: 'sld',
+  set_name: 'Secret Lair Drop',
+  collector_number: '379',
+  released_at: '2022-04-25',
+  cmc: 5,
+  rarity: 'rare',
+  color_identity: ['U'],
+  card_faces: [
+    {
+      name: 'Zndrsplt, Eye of Wisdom',
+      mana_cost: '{4}{U}',
+      type_line: 'Legendary Creature — Homunculus',
+      colors: ['U'],
+      artist: 'Alexis Ziritt',
+      image_uris: { small: 'zndrsplt-small', normal: 'zndrsplt-normal', art_crop: 'zndrsplt-art' },
+    },
+    {
+      name: 'Zndrsplt, Eye of Wisdom',
+      mana_cost: '{4}{U}',
+      type_line: 'Legendary Creature — Homunculus',
+      colors: ['U'],
+      artist: 'Wizard of Barge',
+      image_uris: { small: 'zndrsplt-back-small', normal: 'zndrsplt-back-normal', art_crop: 'zndrsplt-back-art' },
+    },
+  ],
+};
+
+const meldParts = [
+  { id: 'fixture-bruna-the-fading-light', component: 'meld_part', name: 'Bruna, the Fading Light' },
+  { id: 'fixture-gisela-the-broken-blade', component: 'meld_part', name: 'Gisela, the Broken Blade' },
+  { id: 'fixture-brisela-voice-of-nightmares', component: 'meld_result', name: 'Brisela, Voice of Nightmares' },
+];
+
+export const brunaTheFadingLight: ScryfallCard = {
+  id: 'fixture-bruna-the-fading-light',
+  layout: 'meld',
+  all_parts: meldParts,
+  name: 'Bruna, the Fading Light',
+  set: 'emn',
+  set_name: 'Eldritch Moon',
+  collector_number: '15a',
+  released_at: '2016-07-22',
+  cmc: 7,
+  type_line: 'Legendary Creature — Angel Horror',
+  mana_cost: '{5}{W}{W}',
+  power: '5',
+  toughness: '7',
+  rarity: 'rare',
+  colors: ['W'],
+  color_identity: ['W'],
+  artist: 'Clint Cearley',
+  image_uris: { small: 'bruna-small', normal: 'bruna-normal', art_crop: 'bruna-art' },
+};
+
+export const briselaVoiceOfNightmares: ScryfallCard = {
+  id: 'fixture-brisela-voice-of-nightmares',
+  layout: 'meld',
+  all_parts: meldParts,
+  name: 'Brisela, Voice of Nightmares',
+  set: 'emn',
+  set_name: 'Eldritch Moon',
+  collector_number: '15b',
+  released_at: '2016-07-22',
+  cmc: 11,
+  type_line: 'Legendary Creature — Eldrazi Angel',
+  mana_cost: '',
+  power: '9',
+  toughness: '10',
+  rarity: 'rare',
+  colors: ['W'],
+  color_identity: ['W'],
+  artist: 'Clint Cearley',
+  image_uris: { small: 'brisela-small', normal: 'brisela-normal', art_crop: 'brisela-art' },
 };

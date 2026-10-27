@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { printingFaces } from './faces';
-import { alrundGodOfTheCosmos, delverOfSecrets, grizzlyBears } from './fixtures';
+import { alrundGodOfTheCosmos, commitMemory, delverOfSecrets, grizzlyBears, zndrspltReversible } from './fixtures';
 
 describe('printingFaces', () => {
   it('gives a single-faced card a front and no back', () => {
@@ -55,6 +55,40 @@ describe('printingFaces', () => {
         art: { url: 'aberration-art', artist: 'Nils Hamm' },
         manaCost: '',
         deckArt: { scryfallId: 'fixture-delver-of-secrets', face: 'back' },
+      },
+    });
+  });
+
+  it('gives a split card one front showing both halves, and no back', () => {
+    expect(printingFaces(commitMemory)).toEqual({
+      front: {
+        face: 'front',
+        name: 'Commit // Memory',
+        images: { small: 'commit-small', normal: 'commit-normal' },
+        art: { url: 'commit-art', artist: 'Ryan Pancoast' },
+        manaCost: '{3}{U} // {4}{U}{U}',
+        deckArt: { scryfallId: 'fixture-commit-memory', face: 'front' },
+      },
+    });
+  });
+
+  it("gives a reversible card's back from its second face", () => {
+    expect(printingFaces(zndrspltReversible)).toEqual({
+      front: {
+        face: 'front',
+        name: 'Zndrsplt, Eye of Wisdom',
+        images: { small: 'zndrsplt-small', normal: 'zndrsplt-normal' },
+        art: { url: 'zndrsplt-art', artist: 'Alexis Ziritt' },
+        manaCost: '{4}{U}',
+        deckArt: { scryfallId: 'fixture-zndrsplt-reversible', face: 'front' },
+      },
+      back: {
+        face: 'back',
+        name: 'Zndrsplt, Eye of Wisdom',
+        images: { small: 'zndrsplt-back-small', normal: 'zndrsplt-back-normal' },
+        art: { url: 'zndrsplt-back-art', artist: 'Wizard of Barge' },
+        manaCost: '{4}{U}',
+        deckArt: { scryfallId: 'fixture-zndrsplt-reversible', face: 'back' },
       },
     });
   });
