@@ -16,10 +16,6 @@ import { VisibilitySticker } from './visibility';
 
 const TILE_HEIGHT = 152;
 
-function totalCards(deck: Deck) {
-  return deck.card_count + (deck.pending_count ?? 0);
-}
-
 interface DeckTileProps {
   deck: Deck;
   art: CardArt | null;
@@ -61,7 +57,7 @@ export function DeckTile({
         </Group>
         <Group gap="xs">
           <Text size="sm" c={art ? 'gray.3' : 'dimmed'}>
-            {totalCards(deck)} carte{totalCards(deck) > 1 ? 's' : ''}
+            {deck.card_count} carte{deck.card_count > 1 ? 's' : ''}
           </Text>
           <LikeCount count={deck.likes_count} onImage={art !== null} />
         </Group>
