@@ -58,26 +58,6 @@ export function useCardImages(scryfallIds: string[], size: 'small' | 'normal' = 
   };
 }
 
-export function useCardBackImages(scryfallIds: string[], size: 'small' | 'normal' = 'normal') {
-  const cards = useScryfallCardsByIds(scryfallIds, (byId) => byId);
-  const byId: Record<string, ScryfallCard> = cards.data ?? {};
-  const meldIds: Record<string, string> = {};
-  for (const [id, card] of Object.entries(byId)) {
-    const meldId = meldResultId(card);
-    if (meldId) {
-      meldIds[id] = meldId;
-    }
-  }
-  const meldResults = useScryfallCardsByIds(Object.values(meldIds), (byId) => byId);
-
-  const urls: Record<string, string | undefined> = {};
-  for (const [id, card] of Object.entries(byId)) {
-    const meldResult: ScryfallCard | undefined = meldIds[id] ? meldResults.data?.[meldIds[id]] : undefined;
-    urls[id] = meldResult ? imageUrl(meldResult, size) : backImageUrl(card, size);
-  }
-  return { data: urls };
-}
-
 // Each printing's faces, its melded card loaded through the same cache. While a card loads it has
 // no faces; once settled, a front without an image (or a card Scryfall lacks) falls back to the CDN.
 export function usePrintingFaces(scryfallIds: string[]) {

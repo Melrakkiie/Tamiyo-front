@@ -1,9 +1,13 @@
 import { useSyncExternalStore } from 'react';
 
+import type { CardFace } from '../scryfall/client';
+
 export interface PreviewCard {
   name: string;
   scryfallId: string;
+  // The front face's image, shown before the printing's faces load.
   imageUrl: string | undefined;
+  face?: CardFace;
   foil?: boolean;
   open?: () => void;
 }
@@ -22,6 +26,7 @@ function sameCard(a: PreviewCard | null, b: PreviewCard | null) {
       !!b &&
       a.scryfallId === b.scryfallId &&
       a.imageUrl === b.imageUrl &&
+      a.face === b.face &&
       a.name === b.name &&
       a.foil === b.foil &&
       a.open === b.open)

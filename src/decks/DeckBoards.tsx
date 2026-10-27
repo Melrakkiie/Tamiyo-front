@@ -105,8 +105,7 @@ export function DeckBoards<E extends DeckEntry>({
       const tile = (
         <CardTile
           card={entry}
-          imageUrl={imageUrl}
-          backImageUrl={visuals.backImageUrl(entry)}
+          faces={visuals.faces(entry)}
           imageLoading={visuals.imageLoading}
           display={display}
           commander={commanders.has(entry.key)}

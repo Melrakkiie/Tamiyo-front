@@ -4,13 +4,13 @@ import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Deck, DeckBoard } from '../api/types';
-import { CardCopyItems, FoilToggleItem, ProxyToggleItem, type ShownFace } from '../cards/CardContextMenu';
-import type { CardFace } from '../scryfall/client';
+import { CardCopyItems, FoilToggleItem, ProxyToggleItem } from '../cards/CardContextMenu';
 import { canPair, commanderEligibility } from '../scryfall/commander';
+import type { PrintingFace } from '../scryfall/faces';
 import { useScryfallCard } from '../scryfall/hooks';
 import { AddCopiesToDeckModal } from './AddCopiesToDeckModal';
 import { isCommanderFormat, useUpdateDeck } from './api';
-import { type ArtChoice, backArtChoice } from './art';
+import type { ArtChoice } from './art';
 import { BOARDS } from './boards';
 import { type CommanderSlot, hasCommander, hasPartner, setSlotChanges } from './commanders';
 import { type DeckEntry, entrySlotTarget } from './deckEntries';
@@ -125,8 +125,8 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
     );
   }
 
-  function menuFor(entry: DeckEntry, board: DeckBoard, shown: ShownFace) {
-    const { imageUrl } = shown;
+  function menuFor(entry: DeckEntry, board: DeckBoard, shown: PrintingFace | undefined) {
+    const imageUrl = shown?.images.normal;
     const item = { entry: entry, board, tag: null, imageUrl };
     const commander = heldSlot(deck, entry) !== null;
     const { quantity } = entry;
@@ -164,7 +164,7 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
         </Menu.Item>
         <Menu.Divider />
         <CardCopyItems card={entry} imageUrl={imageUrl} />
-        <DeckImageItem deck={deck} entry={entry} face={shown.face} onClick={setDeckImage} />
+        <DeckImageItem deck={deck} entry={entry} shown={shown} onClick={setDeckImage} />
       </>
     );
   }
@@ -182,22 +182,16 @@ export function useDeckCardMenu(deck: Deck, actions: DeckCardActions) {
 interface DeckImageItemProps {
   deck: Deck;
   entry: DeckEntry;
-  face: CardFace;
+  shown: PrintingFace | undefined;
   onClick: (choice: ArtChoice, name: string) => void;
 }
 
-function DeckImageItem({ deck, entry, face, onClick }: DeckImageItemProps) {
-  const printing = useScryfallCard(face === 'back' ? entry.scryfall_id : null);
-  const choice =
-    face === 'front'
-      ? { scryfallId: entry.scryfall_id, face, name: entry.name }
-      : printing.data
-        ? backArtChoice(printing.data)
-        : null;
-  const current =
-    choice !== null && deck.background_scryfall_id === choice.scryfallId && deck.background_face === choice.face;
+function DeckImageItem({ deck, entry, shown, onClick }: DeckImageItemProps) {
+  const choice = shown?.deckArt;
+  const name = shown?.face === 'back' ? shown.name : entry.name;
+  const current = !!choice && deck.background_scryfall_id === choice.scryfallId && deck.background_face === choice.face;
   return (
-    <Menu.Item onClick={() => choice && onClick(choice, choice.name)} disabled={!choice || current}>
+    <Menu.Item onClick={() => choice && onClick(choice, name)} disabled={!choice || current}>
       Utiliser comme image du deck
     </Menu.Item>
   );

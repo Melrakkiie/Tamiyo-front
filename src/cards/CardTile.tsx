@@ -8,7 +8,9 @@ import { withSymbols } from '../scryfall/manaSymbols';
 import { StorageLabel } from '../storages/StorageLabel';
 import type { StorageName } from '../storages/storageDirectory';
 import { FoilSticker, ProxySticker } from '../theme/Sticker';
-import type { ContextMenuEvent, ShownFace } from './CardContextMenu';
+import type { CardFace } from '../scryfall/client';
+import type { PrintingFace, PrintingFaces } from '../scryfall/faces';
+import type { ContextMenuEvent } from './CardContextMenu';
 import type { CardDisplay } from './CardDisplay';
 import { CardImage } from './CardImage';
 import { CommanderBadge, CommanderInlineMark } from './CommanderMark';
@@ -22,8 +24,7 @@ export type TileCard = Pick<
 
 export interface CardTileProps<T extends TileCard = Card> {
   card: T;
-  imageUrl: string | undefined;
-  backImageUrl?: string;
+  faces: PrintingFaces | undefined;
   imageLoading: boolean;
   storageName?: StorageName;
   pendingStatus?: PendingStatus;
@@ -34,7 +35,7 @@ export interface CardTileProps<T extends TileCard = Card> {
   manaCost?: string | null;
   details?: ReactNode;
   onOpen: (card: T) => void;
-  onContextMenu?: (event: ContextMenuEvent, card: T, shown: ShownFace) => void;
+  onContextMenu?: (event: ContextMenuEvent, card: T, shown: PrintingFace | undefined) => void;
 }
 
 function ManaCost({ card, manaCost }: { card: TileCard; manaCost: string | null | undefined }) {
@@ -121,8 +122,7 @@ function CardRow<T extends TileCard>({
 
 export function CardTile<T extends TileCard = Card>({
   card,
-  imageUrl,
-  backImageUrl,
+  faces,
   imageLoading,
   storageName,
   pendingStatus,
@@ -135,18 +135,19 @@ export function CardTile<T extends TileCard = Card>({
   onOpen,
   onContextMenu,
 }: CardTileProps<T>) {
-  const [shownUrl, setShownUrl] = useState<string | undefined>(undefined);
-  const onPreview = () =>
-    !document.body.dataset.cardDragging &&
+  const [shownFace, setShownFace] = useState<CardFace>('front');
+  const imageUrl = faces?.front.images.normal;
+  const preview = (face: CardFace) =>
     showCardPreview({
       name: card.name,
       scryfallId: card.scryfall_id,
       foil: card.foil,
-      imageUrl: shownUrl ?? imageUrl,
+      imageUrl,
+      face,
       open: () => onOpen(card),
     });
-  const shown: ShownFace =
-    backImageUrl && shownUrl === backImageUrl ? { face: 'back', imageUrl: backImageUrl } : { face: 'front', imageUrl };
+  const onPreview = () => !document.body.dataset.cardDragging && preview(shownFace);
+  const shown = (shownFace === 'back' && faces?.back) || faces?.front;
   const openMenu = onContextMenu && ((event: ContextMenuEvent) => onContextMenu(event, card, shown));
   const { textOnly, compact, stacked, overlapped, showDetails } = display;
   if (textOnly) {
@@ -184,16 +185,10 @@ export function CardTile<T extends TileCard = Card>({
             name={card.name}
             url={imageUrl}
             loading={imageLoading}
-            backUrl={backImageUrl}
-            onFlip={(url) => {
-              setShownUrl(url);
-              showCardPreview({
-                name: card.name,
-                scryfallId: card.scryfall_id,
-                foil: card.foil,
-                imageUrl: url,
-                open: () => onOpen(card),
-              });
+            back={faces?.back}
+            onFlip={(face) => {
+              setShownFace(face);
+              preview(face);
             }}
           />
           {overlapped && (pendingStatus || hasCollection || commander || gameChanger) && (
