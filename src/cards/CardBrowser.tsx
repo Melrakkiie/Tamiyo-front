@@ -184,8 +184,7 @@ export function CardBrowser({ storageId: fixedStorageId, pageSize: fixedPageSize
       <CardTile
         key={card.id}
         card={card}
-        imageUrl={visuals.imageUrl(card)}
-        backImageUrl={visuals.backImageUrl(card)}
+        faces={visuals.faces(card)}
         imageLoading={visuals.imageLoading}
         display={display}
         manaCost={visuals.manaCost(card)}

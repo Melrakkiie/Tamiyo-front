@@ -18,7 +18,7 @@ import { type ReactNode, useState } from 'react';
 import { Link } from 'react-router';
 
 import { useCardContextMenu } from '../cards/CardContextMenu';
-import { useCardBackImages, useCardImages } from '../scryfall/hooks';
+import { usePrintingFaces } from '../scryfall/hooks';
 import { Sticker, type StickerTone } from '../theme/Sticker';
 import { Battlefield } from './Battlefield';
 import { CardBack } from './CardBack';
@@ -61,8 +61,7 @@ export function PlaytestTable({ deckId, deckName, deck, commanderFormat, zoom }:
   const playtest = usePlaytest(deck, commanderFormat, zoom.scale);
   const { state, act, undo } = playtest;
   const ids = [...new Set(Object.values(state.cards).map((card) => card.scryfallId))];
-  const fronts = useCardImages(ids);
-  const backs = useCardBackImages(ids);
+  const faces = usePrintingFaces(ids);
   const menu = useCardContextMenu();
   const [hovered, setHovered] = useState<{ id: string; zone: Zone | null } | null>(null);
   const [viewed, setViewed] = useState<ViewedZone | null>(null);
@@ -75,9 +74,9 @@ export function PlaytestTable({ deckId, deckName, deck, commanderFormat, zoom }:
   const table: Table = {
     ...playtest,
     ...zoom,
-    frontOf: (card) => fronts.data?.[card.scryfallId],
-    backOf: (card) => backs.data?.[card.scryfallId],
-    imagesLoading: fronts.isLoading,
+    frontOf: (card) => faces.data[card.scryfallId]?.front.images.normal,
+    backOf: (card) => faces.data[card.scryfallId]?.back?.images.normal,
+    imagesLoading: faces.isLoading,
     preview: (card) => setHovered(card && { id: card.id, zone: zoneOf(state, card.id) }),
     openMenu: (x, y, id) =>
       menu.open(

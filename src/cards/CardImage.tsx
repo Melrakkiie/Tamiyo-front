@@ -1,20 +1,29 @@
 import { AspectRatio, Box, Center, Image, Paper, Skeleton, Text } from '@mantine/core';
 import { useState } from 'react';
 
+import type { CardFace } from '../scryfall/client';
+import type { PrintingFace } from '../scryfall/faces';
+
 const CARD_RATIO = 488 / 680;
 
 interface CardImageProps {
   name: string;
+  // The front face's image.
   url: string | undefined;
   loading: boolean;
+  // The flip button shows only when there is a back face.
+  back?: PrintingFace;
+  // shortcut: the card modals still pass their back as a URL; #57 moves them to `back`.
   backUrl?: string;
-  onFlip?: (url: string | undefined) => void;
+  initialFace?: CardFace;
+  onFlip?: (shown: CardFace) => void;
 }
 
-export function CardImage({ name, url, loading, backUrl, onFlip }: CardImageProps) {
-  const [showBack, setShowBack] = useState(false);
-  const flipped = showBack && !!backUrl;
-  const shown = flipped ? backUrl : url;
+export function CardImage({ name, url, loading, back, backUrl, initialFace = 'front', onFlip }: CardImageProps) {
+  const [showBack, setShowBack] = useState(initialFace === 'back');
+  const hasBack = !!back || !!backUrl;
+  const flipped = showBack && hasBack;
+  const shown = flipped ? (back?.images.normal ?? backUrl) : url;
   const [failedUrl, setFailedUrl] = useState<string | undefined>();
   const failed = !!shown && failedUrl === shown;
 
@@ -23,7 +32,7 @@ export function CardImage({ name, url, loading, backUrl, onFlip }: CardImageProp
     event.stopPropagation();
     const next = !flipped;
     setShowBack(next);
-    onFlip?.(next ? backUrl : url);
+    onFlip?.(next ? 'back' : 'front');
   }
 
   return (
@@ -43,7 +52,7 @@ export function CardImage({ name, url, loading, backUrl, onFlip }: CardImageProp
           </Paper>
         )}
       </AspectRatio>
-      {backUrl && (
+      {hasBack && (
         <Box
           role="button"
           tabIndex={0}

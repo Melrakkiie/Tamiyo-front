@@ -1,5 +1,5 @@
 import type { Deck } from '../api/types';
-import { type CardArt, type CardFace, meldResultId, type ScryfallCard } from '../scryfall/client';
+import type { CardArt, CardFace } from '../scryfall/client';
 import type { PrintingFaces } from '../scryfall/faces';
 import { usePrintingFaces } from '../scryfall/hooks';
 
@@ -15,16 +15,6 @@ export function deckArtChoice(deck: ArtDeck): ArtChoice | null {
     return { scryfallId: deck.background_scryfall_id, face: deck.background_face };
   }
   return deck.commander_scryfall_id ? { scryfallId: deck.commander_scryfall_id, face: 'front' } : null;
-}
-
-// A meld card's back is the melded card, a printing of its own shown on its front.
-export function backArtChoice(card: ScryfallCard): ArtChoice & { name: string } {
-  const meldId = meldResultId(card);
-  if (meldId) {
-    const melded = card.all_parts?.find((part) => part.id === meldId);
-    return { scryfallId: meldId, face: 'front', name: melded?.name ?? card.name };
-  }
-  return { scryfallId: card.id, face: 'back', name: card.card_faces?.[1]?.name ?? card.name };
 }
 
 // A printing without art on the chosen face shows its front art.

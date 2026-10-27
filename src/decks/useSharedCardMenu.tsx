@@ -3,7 +3,8 @@ import { useState } from 'react';
 
 import type { Card } from '../api/types';
 import { AddCardModal } from '../cards/AddCardModal';
-import { CardCopyItems, type ShownFace } from '../cards/CardContextMenu';
+import { CardCopyItems } from '../cards/CardContextMenu';
+import type { PrintingFace } from '../scryfall/faces';
 import { useScryfallCard } from '../scryfall/hooks';
 import { AddCopiesToDeckModal } from './AddCopiesToDeckModal';
 
@@ -12,7 +13,7 @@ export function useSharedCardMenu(signedIn: boolean) {
   const [collectionCard, setCollectionCard] = useState<Card | null>(null);
   const printing = useScryfallCard(collectionCard?.scryfall_id);
 
-  function menuFor(card: Card, shown: ShownFace) {
+  function menuFor(card: Card, shown: PrintingFace | undefined) {
     return (
       <>
         {signedIn && (
@@ -22,7 +23,7 @@ export function useSharedCardMenu(signedIn: boolean) {
             <Menu.Divider />
           </>
         )}
-        <CardCopyItems card={card} imageUrl={shown.imageUrl} />
+        <CardCopyItems card={card} imageUrl={shown?.images.normal} />
       </>
     );
   }
