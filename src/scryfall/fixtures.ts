@@ -17,6 +17,8 @@ export const grizzlyBears: ScryfallCard = {
   rarity: 'common',
   colors: ['G'],
   color_identity: ['G'],
+  artist: 'Jeff A. Menges',
+  image_uris: { small: 'bears-small', normal: 'bears-normal', art_crop: 'bears-art' },
 };
 
 export const esperSentinel: ScryfallCard = {
