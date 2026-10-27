@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import { printingFaces } from './faces';
-import { alrundGodOfTheCosmos, commitMemory, delverOfSecrets, grizzlyBears, zndrspltReversible } from './fixtures';
+import {
+  alrundGodOfTheCosmos,
+  briselaVoiceOfNightmares,
+  brunaTheFadingLight,
+  commitMemory,
+  delverOfSecrets,
+  grizzlyBears,
+  zndrspltReversible,
+} from './fixtures';
 
 describe('printingFaces', () => {
   it('gives a single-faced card a front and no back', () => {
@@ -91,5 +99,36 @@ describe('printingFaces', () => {
         deckArt: { scryfallId: 'fixture-zndrsplt-reversible', face: 'back' },
       },
     });
+  });
+
+  const bruna = {
+    face: 'front',
+    name: 'Bruna, the Fading Light',
+    images: { small: 'bruna-small', normal: 'bruna-normal' },
+    art: { url: 'bruna-art', artist: 'Clint Cearley' },
+    manaCost: '{5}{W}{W}',
+    deckArt: { scryfallId: 'fixture-bruna-the-fading-light', face: 'front' },
+  };
+
+  it("gives a meld card's back as its melded card's front, stored as that printing's front (ADR-0010)", () => {
+    expect(printingFaces(brunaTheFadingLight, briselaVoiceOfNightmares)).toEqual({
+      front: bruna,
+      back: {
+        face: 'back',
+        name: 'Brisela, Voice of Nightmares',
+        images: { small: 'brisela-small', normal: 'brisela-normal' },
+        art: { url: 'brisela-art', artist: 'Clint Cearley' },
+        manaCost: '',
+        deckArt: { scryfallId: 'fixture-brisela-voice-of-nightmares', face: 'front' },
+      },
+    });
+  });
+
+  it('gives a meld card no back until its melded card is loaded', () => {
+    expect(printingFaces(brunaTheFadingLight)).toEqual({ front: bruna });
+  });
+
+  it('gives the melded card itself no back', () => {
+    expect(printingFaces(briselaVoiceOfNightmares, briselaVoiceOfNightmares).back).toBeUndefined();
   });
 });

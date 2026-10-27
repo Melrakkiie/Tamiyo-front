@@ -1,4 +1,4 @@
-import { type CardArt, type CardFace, imageUrl, isDoubleFaced, type ScryfallCard } from './client';
+import { type CardArt, type CardFace, imageUrl, isDoubleFaced, meldResultId, type ScryfallCard } from './client';
 
 export interface PrintingFace {
   face: CardFace;
@@ -49,6 +49,12 @@ function backFace(card: ScryfallCard): PrintingFace | undefined {
   };
 }
 
-export function printingFaces(card: ScryfallCard): PrintingFaces {
+// A meld card's back is its melded card, a printing of its own: its deck art is that printing's
+// front, never the meld half's back (ADR-0010). Without the melded card loaded, there is no back.
+export function printingFaces(card: ScryfallCard, melded?: ScryfallCard): PrintingFaces {
+  const meldId = meldResultId(card);
+  if (meldId) {
+    return { front: frontFace(card), back: melded?.id === meldId ? { ...frontFace(melded), face: 'back' } : undefined };
+  }
   return { front: frontFace(card), back: backFace(card) };
 }
