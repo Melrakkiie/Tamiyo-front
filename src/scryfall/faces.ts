@@ -1,4 +1,4 @@
-import { type CardArt, type CardFace, imageUrl, type ScryfallCard } from './client';
+import { type CardArt, type CardFace, imageUrl, isDoubleFaced, type ScryfallCard } from './client';
 
 export interface PrintingFace {
   face: CardFace;
@@ -25,7 +25,7 @@ function frontFace(card: ScryfallCard): PrintingFace {
   const artUrl = card.image_uris?.art_crop ?? first?.image_uris?.art_crop;
   return {
     face: 'front',
-    name: card.name,
+    name: (isDoubleFaced(card) && first?.name) || card.name,
     images: { small: imageUrl(card, 'small'), normal: imageUrl(card, 'normal') },
     art: artUrl ? { url: artUrl, artist: card.artist ?? first?.artist ?? null } : null,
     manaCost: frontManaCost(card),
@@ -33,6 +33,22 @@ function frontFace(card: ScryfallCard): PrintingFace {
   };
 }
 
+function backFace(card: ScryfallCard): PrintingFace | undefined {
+  const second = isDoubleFaced(card) ? card.card_faces?.[1] : undefined;
+  if (!second) {
+    return undefined;
+  }
+  const artUrl = second.image_uris?.art_crop;
+  return {
+    face: 'back',
+    name: second.name ?? card.name,
+    images: { small: second.image_uris?.small, normal: second.image_uris?.normal },
+    art: artUrl ? { url: artUrl, artist: second.artist ?? card.artist ?? null } : null,
+    manaCost: second.mana_cost ?? '',
+    deckArt: { scryfallId: card.id, face: 'back' },
+  };
+}
+
 export function printingFaces(card: ScryfallCard): PrintingFaces {
-  return { front: frontFace(card) };
+  return { front: frontFace(card), back: backFace(card) };
 }

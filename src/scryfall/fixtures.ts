@@ -99,6 +99,8 @@ export const alrundGodOfTheCosmos: ScryfallCard = {
       colors: ['U'],
       power: '1',
       toughness: '1',
+      artist: 'Kieran Yanner',
+      image_uris: { small: 'alrund-small', normal: 'alrund-normal', art_crop: 'alrund-art' },
     },
     {
       name: 'Hakka, Whispering Raven',
@@ -109,6 +111,8 @@ export const alrundGodOfTheCosmos: ScryfallCard = {
       colors: ['U'],
       power: '2',
       toughness: '3',
+      artist: 'Aaron Miller',
+      image_uris: { small: 'hakka-small', normal: 'hakka-normal', art_crop: 'hakka-art' },
     },
   ],
 };
@@ -227,6 +231,7 @@ export const delverOfSecrets: ScryfallCard = {
   mana_cost: '',
   rarity: 'common',
   color_identity: ['U'],
+  artist: 'Nils Hamm',
   card_faces: [
     {
       name: 'Delver of Secrets',
@@ -237,6 +242,7 @@ export const delverOfSecrets: ScryfallCard = {
       colors: ['U'],
       power: '1',
       toughness: '1',
+      image_uris: { small: 'delver-small', normal: 'delver-normal', art_crop: 'delver-art' },
     },
     {
       name: 'Insectile Aberration',
@@ -246,6 +252,7 @@ export const delverOfSecrets: ScryfallCard = {
       colors: ['U'],
       power: '3',
       toughness: '2',
+      image_uris: { small: 'aberration-small', normal: 'aberration-normal', art_crop: 'aberration-art' },
     },
   ],
 };
