@@ -83,7 +83,12 @@ export function usePrintingFaces(scryfallIds: string[]) {
       },
     };
   }
-  return { data: faces, isLoading: cards.isLoading, isFetching: cards.isFetching || melded.isFetching };
+  return {
+    data: faces,
+    isLoading: cards.isLoading,
+    isFetching: cards.isFetching || melded.isFetching,
+    error: cards.error,
+  };
 }
 
 // shortcut: a card Scryfall lacks gets a nameless front, enough to show its CDN image.
