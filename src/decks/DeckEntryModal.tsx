@@ -26,7 +26,7 @@ import { PendingBadge, pendingStatusDescription } from '../cards/PendingBadge';
 import { PrintPrice } from '../cards/price';
 import { useLastShown } from '../layout/useLastShown';
 import { CardRulesText } from '../scryfall/CardRulesText';
-import { useBackImage } from '../scryfall/hooks';
+import { usePrintingFaces } from '../scryfall/hooks';
 import { useAllStorages, useStorageOptions } from '../storages/api';
 import { StorageFieldLabel } from '../storages/StorageLabel';
 import { FoilSticker, ProxySticker } from '../theme/Sticker';
@@ -107,7 +107,7 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
   const commanderSlot = heldSlot(deck, entry)?.slot ?? null;
   const isCommander = commanderSlot !== null;
   const mutations = useDeckEntryMutations(deck);
-  const backImage = useBackImage(entry.scryfall_id);
+  const faces = usePrintingFaces([entry.scryfall_id]).data[entry.scryfall_id];
   const status = entry.kind === 'pending' ? pendingStatus(entry.pending) : null;
   const linkedPrinting = cardPrinting(entry);
 
@@ -124,7 +124,7 @@ function DeckEntryDetail({ deck, deckCardIds, entry, imageUrl, onClose, onSwappe
     <Stack gap="lg">
       <Grid gutter="lg">
         <Grid.Col span={{ base: 12, sm: 5 }}>
-          <CardImage key={entry.key} name={entry.name} url={imageUrl} backUrl={backImage} loading={false} />
+          <CardImage key={entry.key} name={entry.name} url={imageUrl} back={faces?.back} loading={false} />
           <PrintPrice scryfallId={entry.scryfall_id} foil={entry.foil} ta="center" mt="xs" />
           <CardLinkTiles printing={linkedPrinting} />
         </Grid.Col>

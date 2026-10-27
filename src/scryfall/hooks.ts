@@ -6,7 +6,6 @@ import { type FaceTypes, faceTypes, subtypes } from './classify';
 import { frontManaCost, type PrintingFace, type PrintingFaces, printingFaces } from './faces';
 import {
   autocompleteCardNames,
-  backImageUrl,
   cdnImageUrl,
   meldResultId,
   type CardSuggestions,
@@ -262,22 +261,6 @@ export function usePrintings(name: string | null) {
     enabled: !!name,
     staleTime: ONE_DAY,
   });
-}
-
-export function useBackImageOf(card: ScryfallCard | null | undefined) {
-  const meldResult = useScryfallCard(card ? meldResultId(card) : null);
-  if (!card) {
-    return undefined;
-  }
-  if (meldResultId(card)) {
-    return meldResult.data ? imageUrl(meldResult.data, 'normal') : undefined;
-  }
-  return backImageUrl(card, 'normal');
-}
-
-export function useBackImage(scryfallId: string | null | undefined) {
-  const card = useScryfallCard(scryfallId);
-  return useBackImageOf(card.data);
 }
 
 export function useSetIcons() {

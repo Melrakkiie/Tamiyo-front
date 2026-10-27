@@ -156,10 +156,6 @@ export function isDoubleFaced(card: ScryfallCard) {
   return !!card.layout && doubleFacedLayouts.includes(card.layout);
 }
 
-export function backImageUrl(card: ScryfallCard, size: ImageSize): string | undefined {
-  return isDoubleFaced(card) ? card.card_faces?.[1]?.image_uris?.[size] : undefined;
-}
-
 export function meldResultId(card: ScryfallCard): string | undefined {
   if (card.layout !== 'meld') {
     return undefined;
