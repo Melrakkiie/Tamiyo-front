@@ -1,4 +1,5 @@
 import { cardColors, cardManaValue, type ScryfallCard } from './client';
+import { frontManaCost } from './faces';
 
 export type Op = '=' | '<' | '<=' | '>' | '>=';
 
@@ -570,16 +571,12 @@ function typeLines(card: ScryfallCard) {
   return faceTexts(card, card.type_line, (i) => card.card_faces?.[i].type_line);
 }
 
-function manaCost(card: ScryfallCard) {
-  return card.mana_cost || card.card_faces?.[0]?.mana_cost || '';
-}
-
 function symbolCount(cost: string, symbol: string) {
   return cost.split(symbol).length - 1;
 }
 
 function manaCostMatches(card: ScryfallCard, op: Op, wanted: string) {
-  const cost = manaCost(card);
+  const cost = frontManaCost(card);
   if (op === '=') {
     return cost === wanted;
   }

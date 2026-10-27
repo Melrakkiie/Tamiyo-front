@@ -1,33 +1,31 @@
 import { describe, expect, it } from 'vitest';
 
-import { cardArt, type ScryfallCard } from '../scryfall/client';
-import { delverOfSecrets, grizzlyBears } from '../scryfall/fixtures';
-import { backArtChoice, deckArtChoice } from './art';
+import type { PrintingFaces } from '../scryfall/faces';
+import { choiceArt, deckArtChoice } from './art';
 
-const delver: ScryfallCard = {
-  ...delverOfSecrets,
-  card_faces: [
-    {
-      ...delverOfSecrets.card_faces![0],
-      artist: 'Nils Hamm',
-      image_uris: { small: 's1', normal: 'n1', art_crop: 'front-art' },
-    },
-    {
-      ...delverOfSecrets.card_faces![1],
-      artist: 'Nils Hamm',
-      image_uris: { small: 's2', normal: 'n2', art_crop: 'back-art' },
-    },
-  ],
-};
+const face = (face: 'front' | 'back', art: PrintingFaces['front']['art']): PrintingFaces['front'] => ({
+  face,
+  name: 'n',
+  images: { small: undefined, normal: undefined },
+  art,
+  manaCost: '',
+  deckArt: { scryfallId: 'id', face },
+});
+const frontArt = { url: 'front-art', artist: 'A' };
+const backArt = { url: 'back-art', artist: 'B' };
 
-const brisela = { id: 'fixture-brisela', component: 'meld_result', name: 'Brisela, Voice of Nightmares' };
-const bruna: ScryfallCard = {
-  ...grizzlyBears,
-  id: 'fixture-bruna',
-  layout: 'meld',
-  name: 'Bruna, the Fading Light',
-  all_parts: [{ id: 'fixture-bruna', component: 'meld_part', name: 'Bruna, the Fading Light' }, brisela],
-};
+describe('choiceArt', () => {
+  it('reads the chosen face', () => {
+    const faces = { front: face('front', frontArt), back: face('back', backArt) };
+    expect(choiceArt(faces, 'front')).toEqual(frontArt);
+    expect(choiceArt(faces, 'back')).toEqual(backArt);
+  });
+
+  it('falls back to the front art when the back has none', () => {
+    expect(choiceArt({ front: face('front', frontArt) }, 'back')).toEqual(frontArt);
+    expect(choiceArt({ front: face('front', frontArt), back: face('back', null) }, 'back')).toEqual(frontArt);
+  });
+});
 
 describe('deckArtChoice', () => {
   it('shows the chosen printing on its chosen face', () => {
@@ -46,26 +44,5 @@ describe('deckArtChoice', () => {
     expect(
       deckArtChoice({ background_scryfall_id: null, background_face: 'front', commander_scryfall_id: null }),
     ).toBeNull();
-  });
-});
-
-describe('backArtChoice', () => {
-  it("picks a double-faced card's back face, named after it", () => {
-    expect(backArtChoice(delver)).toEqual({ scryfallId: delver.id, face: 'back', name: 'Insectile Aberration' });
-  });
-
-  it("picks a meld card's melded card, on its front", () => {
-    expect(backArtChoice(bruna)).toEqual({ scryfallId: brisela.id, face: 'front', name: brisela.name });
-  });
-});
-
-describe('cardArt', () => {
-  it('shows the back face art when asked', () => {
-    expect(cardArt(delver, 'back')).toEqual({ url: 'back-art', artist: 'Nils Hamm' });
-  });
-
-  it('falls back to the front art when the printing has no back face', () => {
-    const bears = { ...grizzlyBears, image_uris: { small: 's', normal: 'n', art_crop: 'bears-art' } };
-    expect(cardArt(bears, 'back')).toEqual(cardArt(bears, 'front'));
   });
 });

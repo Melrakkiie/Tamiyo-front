@@ -16,7 +16,7 @@ export function CardFace({ card, width, hidden = false }: { card: CardInstance; 
   const back = card.flipped ? backOf(card) : undefined;
   return (
     <Box w={width}>
-      <CardImage name={card.name} url={back ?? frontOf(card)} loading={imagesLoading} />
+      <CardImage name={card.name} frontUrl={back ?? frontOf(card)} loading={imagesLoading} />
     </Box>
   );
 }

@@ -20,7 +20,7 @@ import { useState } from 'react';
 import { errorMessage } from '../api/errors';
 import type { Deck } from '../api/types';
 import { EditionSearchInput, NoEditionMatch } from '../scryfall/EditionSearchInput';
-import { useCardArts, usePrintings } from '../scryfall/hooks';
+import { usePrintingFaces, usePrintings } from '../scryfall/hooks';
 import { matchesEdition } from '../scryfall/printing';
 import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
 import { useDeckCards, usePendingCards, useUpdateDeck } from './api';
@@ -65,10 +65,10 @@ function ArtPicker({ deck, onClose }: { deck: Deck; onClose: () => void }) {
   const owned = useDeckCards(deck.id, 'name');
   const pending = usePendingCards(deck.id);
   const deckPrintings = uniquePrintings([...(owned.data ?? []), ...(pending.data ?? [])]);
-  const deckArts = useCardArts(deckPrintings.map((card) => card.scryfall_id));
+  const deckArts = usePrintingFaces(deckPrintings.map((card) => card.scryfall_id));
 
   const scryfallPrintings = usePrintings(selectedCardName);
-  const scryfallArts = useCardArts((scryfallPrintings.data ?? []).map((card) => card.id));
+  const scryfallArts = usePrintingFaces((scryfallPrintings.data ?? []).map((card) => card.id));
   const shownPrintings = (scryfallPrintings.data ?? []).filter((card) =>
     matchesEdition(editionQuery, card.set_name, card.set),
   );
@@ -117,7 +117,7 @@ function ArtPicker({ deck, onClose }: { deck: Deck; onClose: () => void }) {
             <ScrollArea.Autosize mah={480} type="auto">
               <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="sm">
                 {deckPrintings.map((card) => {
-                  const art = deckArts.data?.[card.scryfall_id];
+                  const art = deckArts.data[card.scryfall_id]?.front.art;
                   if (!art) {
                     return null;
                   }
@@ -182,7 +182,7 @@ function ArtPicker({ deck, onClose }: { deck: Deck; onClose: () => void }) {
                     <ScrollArea.Autosize mah={480} type="auto">
                       <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="sm">
                         {shownPrintings.map((card) => {
-                          const art = scryfallArts.data?.[card.id];
+                          const art = scryfallArts.data[card.id]?.front.art;
                           if (!art) {
                             return null;
                           }

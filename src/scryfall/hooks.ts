@@ -3,13 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { ApiError } from '../api/errors';
 import { loadCards, rememberCards } from './cardCache';
 import { type FaceTypes, faceTypes, subtypes } from './classify';
+import { frontManaCost, type PrintingFace, type PrintingFaces, printingFaces } from './faces';
 import {
   autocompleteCardNames,
-  backImageUrl,
   cdnImageUrl,
   meldResultId,
-  type CardArt,
-  cardArt,
   type CardSuggestions,
   fetchCardByName,
   fetchFrenchPrinting,
@@ -57,25 +55,50 @@ export function useCardImages(scryfallIds: string[], size: 'small' | 'normal' = 
   };
 }
 
-export function useCardBackImages(scryfallIds: string[], size: 'small' | 'normal' = 'normal') {
+// Each printing's faces, its melded card loaded through the same cache. While a card loads it has
+// no faces; once settled, a front without an image (or a card Scryfall lacks) falls back to the CDN.
+export function usePrintingFaces(scryfallIds: string[]) {
   const cards = useScryfallCardsByIds(scryfallIds, (byId) => byId);
-  const byId: Record<string, ScryfallCard> = cards.data ?? {};
-  const meldIds: Record<string, string> = {};
-  for (const [id, card] of Object.entries(byId)) {
-    const meldId = meldResultId(card);
-    if (meldId) {
-      meldIds[id] = meldId;
-    }
-  }
-  const meldResults = useScryfallCardsByIds(Object.values(meldIds), (byId) => byId);
+  const meldIds = Object.values(cards.data ?? {})
+    .map(meldResultId)
+    .filter((id) => id !== undefined);
+  const melded = useScryfallCardsByIds(meldIds, (byId) => byId);
+  const settled = !cards.isLoading;
 
-  const urls: Record<string, string | undefined> = {};
-  for (const [id, card] of Object.entries(byId)) {
-    const meldResult: ScryfallCard | undefined = meldIds[id] ? meldResults.data?.[meldIds[id]] : undefined;
-    urls[id] = meldResult ? imageUrl(meldResult, size) : backImageUrl(card, size);
+  const faces: Record<string, PrintingFaces | undefined> = {};
+  for (const id of scryfallIds) {
+    const card = cards.data?.[id];
+    if (!card && !settled) {
+      continue;
+    }
+    const resolved: PrintingFaces = card
+      ? printingFaces(card, melded.data?.[meldResultId(card) ?? ''])
+      : { front: { ...emptyFront, deckArt: { scryfallId: id, face: 'front' } } };
+    const images = resolved.front.images;
+    faces[id] = {
+      ...resolved,
+      front: {
+        ...resolved.front,
+        images: { small: images.small ?? cdnImageUrl(id, 'small'), normal: images.normal ?? cdnImageUrl(id, 'normal') },
+      },
+    };
   }
-  return { data: urls };
+  return {
+    data: faces,
+    isLoading: cards.isLoading,
+    isFetching: cards.isFetching || melded.isFetching,
+    error: cards.error,
+  };
 }
+
+// shortcut: a card Scryfall lacks gets a nameless front, enough to show its CDN image.
+const emptyFront: Omit<PrintingFace, 'deckArt'> = {
+  face: 'front',
+  name: '',
+  images: { small: undefined, normal: undefined },
+  art: null,
+  manaCost: '',
+};
 
 export function useCardFaceTypes(scryfallIds: string[]) {
   return useScryfallCardsByIds(scryfallIds, (cards) => {
@@ -101,7 +124,7 @@ export function useManaCosts(scryfallIds: string[]) {
   return useScryfallCardsByIds(scryfallIds, (cards) => {
     const costs: Record<string, string> = {};
     for (const [id, card] of Object.entries(cards)) {
-      costs[id] = card.mana_cost ?? card.card_faces?.[0]?.mana_cost ?? '';
+      costs[id] = frontManaCost(card);
     }
     return costs;
   });
@@ -196,24 +219,6 @@ export function useFrenchPrinting(card: ScryfallCard | null | undefined) {
   });
 }
 
-export function useCardArts(scryfallIds: (string | null | undefined)[]) {
-  const ids = [...new Set(scryfallIds.filter((id): id is string => !!id))].sort();
-
-  return useQuery({
-    queryKey: ['scryfall', 'arts', ids],
-    queryFn: async () => {
-      const arts: Record<string, CardArt | null> = {};
-      for (const [id, card] of Object.entries(await loadCards(ids))) {
-        arts[id] = cardArt(card);
-      }
-      return arts;
-    },
-    enabled: ids.length > 0,
-    staleTime: ONE_DAY,
-    gcTime: ONE_DAY,
-  });
-}
-
 export function useCardNameSuggestions(query: string) {
   const trimmed = query.trim();
 
@@ -261,22 +266,6 @@ export function usePrintings(name: string | null) {
     enabled: !!name,
     staleTime: ONE_DAY,
   });
-}
-
-export function useBackImageOf(card: ScryfallCard | null | undefined) {
-  const meldResult = useScryfallCard(card ? meldResultId(card) : null);
-  if (!card) {
-    return undefined;
-  }
-  if (meldResultId(card)) {
-    return meldResult.data ? imageUrl(meldResult.data, 'normal') : undefined;
-  }
-  return backImageUrl(card, 'normal');
-}
-
-export function useBackImage(scryfallId: string | null | undefined) {
-  const card = useScryfallCard(scryfallId);
-  return useBackImageOf(card.data);
 }
 
 export function useSetIcons() {

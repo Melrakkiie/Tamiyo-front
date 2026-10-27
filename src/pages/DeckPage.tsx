@@ -404,7 +404,7 @@ function CommanderPanel({ deck, slot, cardId, pendingId, openPartner }: Commande
         <Box w={72} style={{ flexShrink: 0 }}>
           <CardImage
             name={commanderName ?? ''}
-            url={commanderScryfallId ? image.data?.[commanderScryfallId] : undefined}
+            frontUrl={commanderScryfallId ? image.data?.[commanderScryfallId] : undefined}
             loading={commander.isLoading || pending.isLoading || image.isLoading}
           />
         </Box>

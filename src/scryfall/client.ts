@@ -156,10 +156,6 @@ export function isDoubleFaced(card: ScryfallCard) {
   return !!card.layout && doubleFacedLayouts.includes(card.layout);
 }
 
-export function backImageUrl(card: ScryfallCard, size: ImageSize): string | undefined {
-  return isDoubleFaced(card) ? card.card_faces?.[1]?.image_uris?.[size] : undefined;
-}
-
 export function meldResultId(card: ScryfallCard): string | undefined {
   if (card.layout !== 'meld') {
     return undefined;
@@ -174,19 +170,6 @@ export interface CardArt {
 }
 
 export type CardFace = 'front' | 'back';
-
-export function cardArt(card: ScryfallCard, shown: CardFace = 'front'): CardArt | null {
-  const back = shown === 'back' && isDoubleFaced(card) ? card.card_faces?.[1] : undefined;
-  if (back?.image_uris?.art_crop) {
-    return { url: back.image_uris.art_crop, artist: back.artist ?? card.artist ?? null };
-  }
-  const face = card.card_faces?.[0];
-  const url = card.image_uris?.art_crop ?? face?.image_uris?.art_crop;
-  if (!url) {
-    return null;
-  }
-  return { url, artist: card.artist ?? face?.artist ?? null };
-}
 
 export function cardColors(card: ScryfallCard): string[] {
   return card.colors ?? card.card_faces?.flatMap((face) => face.colors ?? []) ?? [];

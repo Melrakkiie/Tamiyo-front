@@ -3,15 +3,13 @@ import { useLocation } from 'react-router';
 
 import { CardImage } from '../cards/CardImage';
 import { PrintPrice } from '../cards/price';
-import { useCardBackImages, useCardImages } from '../scryfall/hooks';
+import { usePrintingFaces } from '../scryfall/hooks';
 import { useCardPreview } from './cardPreview';
 
 export function CardPreviewPanel() {
   const { pathname } = useLocation();
   const card = useCardPreview(pathname);
-  const ids = card ? [card.scryfallId] : [];
-  const fronts = useCardImages(ids);
-  const backs = useCardBackImages(ids);
+  const faces = usePrintingFaces(card ? [card.scryfallId] : []);
 
   if (!card) {
     return (
@@ -21,16 +19,16 @@ export function CardPreviewPanel() {
     );
   }
 
-  const front = fronts.data?.[card.scryfallId];
-  const back = backs.data?.[card.scryfallId];
-  const shown = card.imageUrl ?? front;
+  const printing = faces.data[card.scryfallId];
+  const face = card.face ?? 'front';
   const image = (
     <CardImage
-      key={`${card.scryfallId}:${shown ?? ''}`}
+      key={`${card.scryfallId}:${face}`}
       name={card.name}
-      url={shown}
-      loading={!card.imageUrl && fronts.isLoading}
-      backUrl={back && shown === back ? front : back}
+      frontUrl={card.imageUrl ?? printing?.front.images.normal}
+      loading={!card.imageUrl && faces.isLoading}
+      back={printing?.back}
+      initialFace={face}
     />
   );
 

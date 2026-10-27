@@ -8,7 +8,8 @@ import { AddCopiesToDeckModal } from '../decks/AddCopiesToDeckModal';
 import { useLastShown } from '../layout/useLastShown';
 import { useCreateCards, useDeleteCopies, useUpdateCopies } from './api';
 import { copyIds } from './copies';
-import { CardCopyItems, FoilToggleItem, type ShownFace } from './CardContextMenu';
+import type { PrintingFace } from '../scryfall/faces';
+import { CardCopyItems, FoilToggleItem } from './CardContextMenu';
 
 function copies(count: number) {
   return `${count} exemplaire${count > 1 ? 's' : ''}`;
@@ -84,7 +85,7 @@ export function useCollectionCardMenu() {
     });
   }
 
-  function menuFor(card: Card, shown: ShownFace) {
+  function menuFor(card: Card, shown: PrintingFace | undefined) {
     return (
       <>
         <FoilToggleItem card={card} onToggle={(foil) => toggleFoil(card, foil)} />
@@ -96,7 +97,7 @@ export function useCollectionCardMenu() {
         <Menu.Divider />
         <Menu.Item onClick={() => setDeckCard(card)}>Ajouter à un deck</Menu.Item>
         <Menu.Divider />
-        <CardCopyItems card={card} imageUrl={shown.imageUrl} />
+        <CardCopyItems card={card} imageUrl={shown?.images.normal} />
       </>
     );
   }
