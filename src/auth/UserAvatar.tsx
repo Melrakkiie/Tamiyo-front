@@ -1,6 +1,6 @@
 import { Avatar } from '@mantine/core';
 
-import { useCardArts } from '../scryfall/hooks';
+import { usePrintingFaces } from '../scryfall/hooks';
 import { useAccount } from './account';
 
 function initials(name: string) {
@@ -15,8 +15,8 @@ function initials(name: string) {
 }
 
 export function useAvatarArt(scryfallId: string | null | undefined) {
-  const arts = useCardArts([scryfallId]);
-  return scryfallId ? (arts.data?.[scryfallId] ?? null) : null;
+  const faces = usePrintingFaces(scryfallId ? [scryfallId] : []);
+  return scryfallId ? (faces.data[scryfallId]?.front.art ?? null) : null;
 }
 
 interface ProfileAvatarProps {
