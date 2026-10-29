@@ -11,9 +11,8 @@ import { planPutBackFromHistory, planRemoveFromHistory } from './entryMutations/
 import { useDeckEntryMutations } from './entryMutations/useDeckEntryMutations';
 import type { HistoryChange } from './history';
 import { type HistoryCountRequest, HistoryCountModal } from './HistoryCountModal';
-import { putBackAction, retireAction } from './historyMenu';
+import { putBackAction, removeAction } from './historyMenu';
 
-/** Owner-only actions on the lines of the history. */
 export function useHistoryMenu(deck: Deck) {
   const cards = useDeckCards(deck.id, 'mana_value');
   const pending = usePendingCards(deck.id);
@@ -21,40 +20,37 @@ export function useHistoryMenu(deck: Deck) {
   const [request, setRequest] = useState<HistoryCountRequest | null>(null);
   const entries = deckEntries(cards.data ?? [], pending.data ?? []);
 
-  async function retire(change: HistoryChange, board: DeckBoard, count: number) {
+  async function runAndNotify(
+    makePlan: () => Parameters<typeof mutations.runPlan>[0],
+    messages: (affected: number) => string,
+  ) {
     try {
-      const plan = planRemoveFromHistory(deck, entries, board, change, count);
-      const { affected } = await mutations.runPlan(plan);
-      notifications.show({
-        color: 'green',
-        message:
-          affected > 1
-            ? `${affected} exemplaires de ${change.name} retirés du deck.`
-            : `${change.name} retirée du deck.`,
-      });
+      const { affected } = await mutations.runPlan(makePlan());
+      notifications.show({ color: 'green', message: messages(affected) });
     } catch (err) {
       notifications.show({ color: 'red', message: errorMessage(err) });
     }
   }
 
-  async function putBack(change: HistoryChange, board: DeckBoard, count: number) {
-    try {
-      const { affected } = await mutations.runPlan(planPutBackFromHistory(deck, board, change, count));
-      notifications.show({
-        color: 'green',
-        message:
-          affected > 1
-            ? `${affected} exemplaires de ${change.name} remis dans le deck.`
-            : `${change.name} remise dans le deck.`,
-      });
-    } catch (err) {
-      notifications.show({ color: 'red', message: errorMessage(err) });
-    }
-  }
+  const retire = (change: HistoryChange, board: DeckBoard, count: number) =>
+    runAndNotify(
+      () => planRemoveFromHistory(deck, entries, board, change, count),
+      (affected) =>
+        affected > 1 ? `${affected} exemplaires de ${change.name} retirés du deck.` : `${change.name} retirée du deck.`,
+    );
+
+  const putBack = (change: HistoryChange, board: DeckBoard, count: number) =>
+    runAndNotify(
+      () => planPutBackFromHistory(deck, board, change, count),
+      (affected) =>
+        affected > 1
+          ? `${affected} exemplaires de ${change.name} remis dans le deck.`
+          : `${change.name} remise dans le deck.`,
+    );
 
   function menuFor(change: HistoryChange, board: DeckBoard, date: string): ReactNode {
     const removal = change.count < 0;
-    const { max, disabledReason } = removal ? putBackAction(change, date) : retireAction(change, board, entries);
+    const { max, disabledReason } = removal ? putBackAction(change, date) : removeAction(change, board, entries);
     const verb = removal ? 'Remettre' : 'Retirer';
     const label = `${verb} ${Math.abs(change.count)} × ${change.name} ${removal ? 'dans' : 'de'} ${boardLabels[board]}`;
     const run = removal ? putBack : retire;

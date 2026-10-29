@@ -1,5 +1,7 @@
 import type { DeckHistory } from '../api/types';
 
+export const historyDateFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeZone: 'UTC' });
+
 export type HistoryFilter = 'all' | 'additions' | 'removals';
 
 export type HistoryDay = DeckHistory['days'][number];

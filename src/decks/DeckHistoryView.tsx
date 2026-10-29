@@ -8,7 +8,7 @@ import { EmptyNote } from '../theme/EmptyNote';
 import { useDeckHistory } from './api';
 import { boardLabels } from './boards';
 import { CardHoverPreview } from './CardHoverPreview';
-import { filterHistory, type HistoryFilter } from './history';
+import { filterHistory, type HistoryFilter, historyDateFormat } from './history';
 import { useSharedDeckHistory } from './shared';
 import { type HistoryMenu, useHistoryMenu } from './useHistoryMenu';
 
@@ -17,8 +17,6 @@ const filterOptions: { value: HistoryFilter; label: string }[] = [
   { value: 'additions', label: 'Ajouts' },
   { value: 'removals', label: 'Retraits' },
 ];
-
-const dateFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeZone: 'UTC' });
 
 interface DeckHistoryViewProps {
   history: { data: DeckHistory | undefined; error: Error | null; isLoading: boolean };
@@ -60,7 +58,7 @@ export function DeckHistoryView({ history, menu }: DeckHistoryViewProps) {
       ) : (
         days.map((day) => (
           <Stack key={day.date} gap="xs">
-            <Title order={4}>{dateFormat.format(new Date(day.date))}</Title>
+            <Title order={4}>{historyDateFormat.format(new Date(day.date))}</Title>
             {day.boards.map((board) => (
               <Stack key={board.board} gap={2}>
                 <Text size="sm" fw={600} c="dimmed">
@@ -72,13 +70,7 @@ export function DeckHistoryView({ history, menu }: DeckHistoryViewProps) {
                     name={change.name}
                     count={change.count}
                     onContextMenu={
-                      menu &&
-                      ((event) => {
-                        const items = menu.menuFor(change, board.board, day.date);
-                        if (items) {
-                          contextMenu.open(event, items);
-                        }
-                      })
+                      menu && ((event) => contextMenu.open(event, menu.menuFor(change, board.board, day.date)))
                     }
                   />
                 ))}
