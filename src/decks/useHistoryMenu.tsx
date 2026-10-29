@@ -72,7 +72,14 @@ export function useHistoryMenu(deck: Deck) {
         : void run(change, board, 1);
     return (
       // The wrapper receives the hover: a disabled item gets no pointer events.
-      <Tooltip label={disabledReason} disabled={disabledReason === undefined} position="right" withinPortal>
+      <Tooltip
+        label={disabledReason}
+        disabled={disabledReason === undefined}
+        position="right"
+        multiline
+        w={260}
+        withinPortal
+      >
         <div>
           <Menu.Item color={removal ? undefined : 'red'} onClick={onClick} disabled={disabledReason !== undefined}>
             {label}
