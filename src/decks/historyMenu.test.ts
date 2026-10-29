@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { grizzlyBears } from '../scryfall/fixtures';
 import { copies } from './boardTestHelpers';
 import { type DeckEntry, ownedEntry } from './deckEntries';
-import { retireAction } from './historyMenu';
+import { putBackAction, retireAction } from './historyMenu';
 
 function owned(count: number, changes = {}): DeckEntry {
   const cards = copies(count, grizzlyBears, changes);
@@ -25,6 +25,21 @@ describe('retireAction', () => {
     expect(retireAction({ name: 'Grizzly Bears', count: 2 }, 'main', [owned(3, { board: 'sideboard' })])).toEqual({
       max: 0,
       disabledReason: 'Il ne reste aucun exemplaire de cette carte dans cette section.',
+    });
+  });
+});
+
+describe('putBackAction', () => {
+  const known = { count: -3, set_code: 'tst' };
+
+  it('allows the whole line count', () => {
+    expect(putBackAction(known, '2026-10-02')).toEqual({ max: 3 });
+  });
+
+  it('is disabled, with the line date, when the printing is unknown', () => {
+    expect(putBackAction({ count: -3 }, '2026-10-02')).toEqual({
+      max: 0,
+      disabledReason: "Impression inconnue : ce retrait du 2 octobre 2026 précède l'enregistrement des impressions.",
     });
   });
 });

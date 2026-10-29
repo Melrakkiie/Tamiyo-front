@@ -38,3 +38,19 @@ export function planRemoveFromHistory(
   }
   return plan;
 }
+
+/** Puts `count` copies of a removal back: one import line, which picks a free collection copy or a pending card. */
+export function planPutBackFromHistory(deck: PlanDeck, board: DeckBoard, line: LinePrinting, count: number): Plan {
+  const { name, set_code, collector_number, foil } = line;
+  // Lines recorded before the printing was remembered cannot be put back.
+  if (set_code === undefined || collector_number === undefined || foil === undefined) {
+    return { steps: [], affected: 0, entry: null };
+  }
+  return {
+    steps: [
+      { kind: 'importDeckLine', deckId: deck.id, card: { name, set_code, collector_number, foil }, count, board },
+    ],
+    affected: count,
+    entry: null,
+  };
+}

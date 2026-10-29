@@ -4,7 +4,7 @@ import { grizzlyBears } from '../../scryfall/fixtures';
 import { copies, pendingCard } from '../boardTestHelpers';
 import { type DeckEntry, ownedEntry, pendingEntry } from '../deckEntries';
 import type { PlanDeck } from './requests';
-import { planRemoveFromHistory } from './undoHistory';
+import { planPutBackFromHistory, planRemoveFromHistory } from './undoHistory';
 
 const deck: PlanDeck = { id: 'deck-1', commander_id: null, partner_id: null };
 const otherPrinting = { ...grizzlyBears, set: 'xyz', collector_number: '9' };
@@ -90,5 +90,31 @@ describe('plan removing an addition of the history', () => {
       { kind: 'patchDeck', deckId: 'deck-1', changes: { clear_commander_id: true } },
       { kind: 'removeCard', deckId: 'deck-1', cardId: ids[0] },
     ]);
+  });
+});
+
+describe('plan putting a removal back', () => {
+  it('imports one line with the annotated printing, finish, count and board', () => {
+    const plan = planPutBackFromHistory(deck, 'sideboard', { ...annotated, foil: true }, 2);
+
+    expect(plan.steps).toEqual([
+      {
+        kind: 'importDeckLine',
+        deckId: 'deck-1',
+        card: {
+          name: 'Grizzly Bears',
+          set_code: grizzlyBears.set,
+          collector_number: grizzlyBears.collector_number,
+          foil: true,
+        },
+        count: 2,
+        board: 'sideboard',
+      },
+    ]);
+    expect(plan.affected).toBe(2);
+  });
+
+  it('plans nothing when the printing is unknown', () => {
+    expect(planPutBackFromHistory(deck, 'main', { name: 'Grizzly Bears' }, 1).steps).toEqual([]);
   });
 });
