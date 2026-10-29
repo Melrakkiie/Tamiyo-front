@@ -69,6 +69,11 @@ export function DeckHistoryView({ history, menu }: DeckHistoryViewProps) {
                     key={change.name}
                     name={change.name}
                     count={change.count}
+                    printing={
+                      change.set_code && change.collector_number
+                        ? { set: change.set_code, number: change.collector_number }
+                        : undefined
+                    }
                     onContextMenu={
                       menu && ((event) => contextMenu.open(event, menu.menuFor(change, board.board, day.date)))
                     }
@@ -87,10 +92,12 @@ export function DeckHistoryView({ history, menu }: DeckHistoryViewProps) {
 function HistoryLine({
   name,
   count,
+  printing,
   onContextMenu,
 }: {
   name: string;
   count: number;
+  printing?: { set: string; number: string };
   onContextMenu?: (event: MouseEvent<HTMLElement>) => void;
 }) {
   const added = count > 0;
@@ -99,7 +106,7 @@ function HistoryLine({
       <Text span fw={700} w={12} ta="center" aria-label={added ? 'Ajout' : 'Retrait'}>
         {added ? '+' : '−'}
       </Text>
-      <CardHoverPreview name={name}>
+      <CardHoverPreview name={name} printing={printing}>
         <Text span>
           {Math.abs(count)} × {name}
         </Text>

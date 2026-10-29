@@ -9,6 +9,7 @@ import {
   cdnImageUrl,
   meldResultId,
   type CardSuggestions,
+  fetchCard,
   fetchCardByName,
   fetchFrenchPrinting,
   fetchSetIcons,
@@ -192,11 +193,12 @@ export function useScryfallCard(scryfallId: string | null | undefined) {
   });
 }
 
-export function useCardImageByName(name: string) {
+// The given printing when Scryfall knows it, else the card's default printing.
+export function useCardImageByName(name: string, printing?: { set: string; number: string }) {
   return useQuery({
-    queryKey: ['scryfall', 'named', name],
+    queryKey: ['scryfall', 'named', name, printing?.set, printing?.number],
     queryFn: async () => {
-      const card = await fetchCardByName(name);
+      const card = (printing && (await fetchCard(printing))) || (await fetchCardByName(name));
       if (!card) {
         return null;
       }
