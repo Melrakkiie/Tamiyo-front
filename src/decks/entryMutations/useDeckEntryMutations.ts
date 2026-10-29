@@ -4,7 +4,7 @@ import type { DeckEntry } from '../deckEntries';
 import { deckApi } from './apiPort';
 import { type EntryIntent, planEntryEdit } from './plan';
 import type { Invalidate } from './port';
-import type { PlanDeck } from './requests';
+import type { Plan, PlanDeck } from './requests';
 import { runPlan } from './runPlan';
 
 export function useDeckEntryMutations(deck: PlanDeck) {
@@ -17,12 +17,13 @@ export function useDeckEntryMutations(deck: PlanDeck) {
     );
 
   const mutation = useMutation({
-    mutationFn: ({ entry, intent }: { entry: DeckEntry; intent: EntryIntent }) =>
-      runPlan(planEntryEdit(deck, entry, intent), deckApi, invalidate),
+    mutationFn: (plan: Plan) => runPlan(plan, deckApi, invalidate),
   });
 
   return {
-    run: (entry: DeckEntry, intent: EntryIntent) => mutation.mutateAsync({ entry, intent }),
+    run: (entry: DeckEntry, intent: EntryIntent) => mutation.mutateAsync(planEntryEdit(deck, entry, intent)),
+    // For plans that span several entries (history lines).
+    runPlan: (plan: Plan) => mutation.mutateAsync(plan),
     isPending: mutation.isPending,
     error: mutation.error,
   };
