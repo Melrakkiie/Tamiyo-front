@@ -638,15 +638,20 @@ function DeckCards({
             : `group:${board}:tag:${group.tag}`,
       accepts: (group, item) => changesTags(group, item.entry) || actions.canMoveTo(item, board),
       onDrop: (group, item) => {
-        if (changesTags(group, item.entry)) {
+        const retag = () => {
+          if (!changesTags(group, item.entry)) {
+            return;
+          }
           if (group.tag === null) {
             actions.removeAllTags(item);
           } else if (group.tag !== undefined) {
             actions.addTag(item, group.tag);
           }
-        }
+        };
         if (actions.canMoveTo(item, board)) {
-          actions.moveToBoard(item, board);
+          actions.moveToBoard(item, board, retag);
+        } else {
+          retag();
         }
       },
     };

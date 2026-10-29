@@ -34,12 +34,13 @@ export function useDeckCardActions(deck: Deck, tagsOfCard: (entry: Taggable) => 
     }
   }
 
-  // An entry of several copies asks how many to move; a single copy moves at once.
-  function moveToBoard({ entry }: DragItem, board: DeckBoard) {
+  // `beforeMove` runs only once the move is going ahead, so cancelling the modal changes nothing.
+  function moveToBoard({ entry }: DragItem, board: DeckBoard, beforeMove?: () => void) {
     if (entry.quantity >= 2) {
-      setMoveRequest({ entry, board });
+      setMoveRequest({ entry, board, beforeMove });
       return Promise.resolve();
     }
+    beforeMove?.();
     return moveCopies({ entry, board }, 1);
   }
 
@@ -83,6 +84,7 @@ export function useDeckCardActions(deck: Deck, tagsOfCard: (entry: Taggable) => 
     request: moveRequest,
     onConfirm: (request: MoveRequest, count: number) => {
       setMoveRequest(null);
+      request.beforeMove?.();
       void moveCopies(request, count);
     },
     onClose: () => setMoveRequest(null),

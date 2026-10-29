@@ -9,6 +9,7 @@ import type { DeckEntry } from './deckEntries';
 export interface MoveRequest {
   entry: DeckEntry;
   board: DeckBoard;
+  beforeMove?: () => void;
 }
 
 interface MoveCopiesModalProps {
@@ -41,7 +42,7 @@ function MoveCopiesForm({
   const [count, setCount] = useState<number | string>(quantity);
 
   function submit() {
-    onConfirm(request, Math.min(quantity, Math.max(1, Math.floor(Number(count)) || 1)));
+    onConfirm(request, Number(count) || 1);
   }
 
   return (
