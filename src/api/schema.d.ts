@@ -4062,6 +4062,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/deck/{id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * History of a deck
+         * @description Net change in copies of each card name, day by day (Europe/Paris), per board. Recorded from the release of this route on. The whole history comes in one response.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeckHistory"];
+                    };
+                };
+                /** @description id is not a UUID. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description Deck not found, or not owned by the authenticated user */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                500: components["responses"]["InternalError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deck/{id}/combos": {
         parameters: {
             query?: never;
@@ -4351,6 +4416,62 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["DeckStats"];
+                    };
+                };
+                /** @description No deck has this id, or the deck is private. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                429: components["responses"]["SharedTooManyRequests"];
+                500: components["responses"]["InternalError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shared/decks/{id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Deck ID (a UUID) */
+                id: components["parameters"]["DeckID"];
+            };
+            cookie?: never;
+        };
+        /**
+         * History of a shared deck
+         * @description Same history as GET /deck/{id}/history. Works without authentication.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Deck ID (a UUID) */
+                    id: components["parameters"]["DeckID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeckHistory"];
                     };
                 };
                 /** @description No deck has this id, or the deck is private. */
@@ -5695,6 +5816,27 @@ export interface components {
             quantity: number;
             /** @description Primary type of the card, as in type_breakdown. */
             type: string;
+        };
+        DeckHistory: {
+            /** @description Newest day first. Empty for a deck with no history. */
+            days: {
+                /**
+                 * Format: date
+                 * @description Day in Europe/Paris time.
+                 */
+                date: string;
+                /** @description In the order main, sideboard, considering; empty boards left out. */
+                boards: {
+                    /** @enum {string} */
+                    board: "main" | "sideboard" | "considering";
+                    /** @description Sorted by name. */
+                    changes: {
+                        name: string;
+                        /** @description Positive for an addition, negative for a removal, never zero. */
+                        count: number;
+                    }[];
+                }[];
+            }[];
         };
         DeckStats: {
             card_count: number;

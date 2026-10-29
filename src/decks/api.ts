@@ -74,6 +74,13 @@ export function useDeckStats(id: string, enabled: boolean) {
   });
 }
 
+export function useDeckHistory(id: string) {
+  return useQuery({
+    queryKey: ['decks', 'history', id],
+    queryFn: async () => unwrap(await api.GET('/deck/{id}/history', { params: { path: { id } } })),
+  });
+}
+
 export function useDeckCombos(id: string, enabled: boolean) {
   return useQuery({
     queryKey: ['decks', 'combos', id],
