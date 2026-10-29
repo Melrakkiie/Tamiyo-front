@@ -1,14 +1,16 @@
 import { Alert, Center, Group, Loader, SegmentedControl, Stack, Text, Title } from '@mantine/core';
-import { useState } from 'react';
+import { type MouseEvent, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
-import type { DeckHistory } from '../api/types';
+import type { Deck, DeckHistory } from '../api/types';
+import { useCardContextMenu } from '../cards/CardContextMenu';
 import { EmptyNote } from '../theme/EmptyNote';
 import { useDeckHistory } from './api';
 import { boardLabels } from './boards';
 import { CardHoverPreview } from './CardHoverPreview';
-import { filterHistory, type HistoryFilter } from './history';
+import { filterHistory, type HistoryFilter, historyDateFormat } from './history';
 import { useSharedDeckHistory } from './shared';
+import { type HistoryMenu, useHistoryMenu } from './useHistoryMenu';
 
 const filterOptions: { value: HistoryFilter; label: string }[] = [
   { value: 'all', label: 'Tout' },
@@ -16,14 +18,15 @@ const filterOptions: { value: HistoryFilter; label: string }[] = [
   { value: 'removals', label: 'Retraits' },
 ];
 
-const dateFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeZone: 'UTC' });
-
 interface DeckHistoryViewProps {
   history: { data: DeckHistory | undefined; error: Error | null; isLoading: boolean };
+  /** Owner page only: the shared page passes none, so its lines have no menu. */
+  menu?: HistoryMenu;
 }
 
-export function DeckHistoryView({ history }: DeckHistoryViewProps) {
+export function DeckHistoryView({ history, menu }: DeckHistoryViewProps) {
   const [filter, setFilter] = useState<HistoryFilter>('all');
+  const contextMenu = useCardContextMenu();
 
   if (history.isLoading) {
     return (
@@ -55,28 +58,44 @@ export function DeckHistoryView({ history }: DeckHistoryViewProps) {
       ) : (
         days.map((day) => (
           <Stack key={day.date} gap="xs">
-            <Title order={4}>{dateFormat.format(new Date(day.date))}</Title>
+            <Title order={4}>{historyDateFormat.format(new Date(day.date))}</Title>
             {day.boards.map((board) => (
               <Stack key={board.board} gap={2}>
                 <Text size="sm" fw={600} c="dimmed">
                   {boardLabels[board.board]}
                 </Text>
                 {board.changes.map((change) => (
-                  <HistoryLine key={change.name} name={change.name} count={change.count} />
+                  <HistoryLine
+                    key={change.name}
+                    name={change.name}
+                    count={change.count}
+                    onContextMenu={
+                      menu && ((event) => contextMenu.open(event, menu.menuFor(change, board.board, day.date)))
+                    }
+                  />
                 ))}
               </Stack>
             ))}
           </Stack>
         ))
       )}
+      {contextMenu.element}
     </Stack>
   );
 }
 
-function HistoryLine({ name, count }: { name: string; count: number }) {
+function HistoryLine({
+  name,
+  count,
+  onContextMenu,
+}: {
+  name: string;
+  count: number;
+  onContextMenu?: (event: MouseEvent<HTMLElement>) => void;
+}) {
   const added = count > 0;
   return (
-    <Group gap="xs" wrap="nowrap" c={added ? 'green' : 'red'}>
+    <Group gap="xs" wrap="nowrap" c={added ? 'green' : 'red'} onContextMenu={onContextMenu}>
       <Text span fw={700} w={12} ta="center" aria-label={added ? 'Ajout' : 'Retrait'}>
         {added ? '+' : '−'}
       </Text>
@@ -89,8 +108,14 @@ function HistoryLine({ name, count }: { name: string; count: number }) {
   );
 }
 
-export function DeckHistoryPanel({ deckId }: { deckId: string }) {
-  return <DeckHistoryView history={useDeckHistory(deckId)} />;
+export function DeckHistoryPanel({ deck }: { deck: Deck }) {
+  const menu = useHistoryMenu(deck);
+  return (
+    <>
+      <DeckHistoryView history={useDeckHistory(deck.id)} menu={menu} />
+      {menu.modal}
+    </>
+  );
 }
 
 export function SharedDeckHistoryPanel({ deckId }: { deckId: string }) {

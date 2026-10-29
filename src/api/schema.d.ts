@@ -5834,6 +5834,12 @@ export interface components {
                         name: string;
                         /** @description Positive for an addition, negative for a removal, never zero. */
                         count: number;
+                        /** @description Set of the printing of one copy behind the line (an added copy for an addition, a removed one for a removal). Omitted on lines recorded before it was remembered. */
+                        set_code?: string;
+                        /** @description Collector number of that printing; omitted with set_code. */
+                        collector_number?: string;
+                        /** @description Finish of that copy; omitted with set_code. */
+                        foil?: boolean;
                     }[];
                 }[];
             }[];
