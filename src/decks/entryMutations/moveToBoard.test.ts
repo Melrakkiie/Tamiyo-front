@@ -86,6 +86,65 @@ describe('move a pending entry to another board', () => {
   });
 });
 
+describe('move only some copies of an entry', () => {
+  it('moves the last copies of an owned entry and leaves the rest as one entry', () => {
+    const { ids, entry } = owned(4, 'main');
+
+    const plan = planEntryEdit(deck, entry, { kind: 'moveToBoard', board: 'sideboard', count: 1 });
+
+    expect(plan.steps).toEqual([{ kind: 'moveCards', deckId: 'deck-1', cardIds: [ids[3]], board: 'sideboard' }]);
+    expect(plan.affected).toBe(1);
+    expect(plan.entry).toMatchObject({ kind: 'owned', board: 'main', copy_ids: ids.slice(0, 3), quantity: 3 });
+  });
+
+  it('splits a pending entry: reduces it, then adds the moved copies on the target board', () => {
+    const pending = pendingCard(forest, { id: 60, quantity: 4, board: 'main', foil: true, proxy: true });
+
+    const plan = planEntryEdit(deck, pendingEntry(pending), { kind: 'moveToBoard', board: 'considering', count: 3 });
+
+    expect(plan.steps).toEqual([
+      { kind: 'setPendingQuantity', deckId: 'deck-1', pendingId: 60, quantity: 1 },
+      {
+        kind: 'addPending',
+        deckId: 'deck-1',
+        card: expect.objectContaining({
+          scryfall_id: pending.scryfall_id,
+          foil: true,
+          proxy: true,
+          quantity: 3,
+          board: 'considering',
+        }),
+      },
+    ]);
+    expect(plan.affected).toBe(3);
+    expect(plan.entry).toMatchObject({ kind: 'pending', board: 'main', quantity: 1, pending: { id: 60, quantity: 1 } });
+  });
+
+  it.each(moves)('a count equal to the entry moves it whole from $from to $to', ({ from, to }) => {
+    const { ids, entry } = owned(3, from);
+    const pending = pendingEntry(pendingCard(forest, { id: 61, quantity: 2, board: from }));
+
+    const whole = planEntryEdit(deck, entry, { kind: 'moveToBoard', board: to, count: 3 });
+    expect(whole.steps).toEqual([{ kind: 'moveCards', deckId: 'deck-1', cardIds: ids, board: to }]);
+    expect(whole).toEqual(planEntryEdit(deck, entry, { kind: 'moveToBoard', board: to }));
+    expect(planEntryEdit(deck, pending, { kind: 'moveToBoard', board: to, count: 2 }).steps).toEqual([
+      { kind: 'movePending', deckId: 'deck-1', pendingId: 61, board: to },
+    ]);
+  });
+
+  it('clamps a count above the size of the entry', () => {
+    const { entry } = owned(2, 'main');
+    const pending = pendingEntry(pendingCard(forest, { id: 62, quantity: 2 }));
+
+    expect(planEntryEdit(deck, entry, { kind: 'moveToBoard', board: 'sideboard', count: 9 })).toEqual(
+      planEntryEdit(deck, entry, { kind: 'moveToBoard', board: 'sideboard' }),
+    );
+    expect(planEntryEdit(deck, pending, { kind: 'moveToBoard', board: 'sideboard', count: 9 })).toEqual(
+      planEntryEdit(deck, pending, { kind: 'moveToBoard', board: 'sideboard' }),
+    );
+  });
+});
+
 const slots = [
   { slot: 'commander', cardField: 'commander_id', pendingField: 'commander_pending_id' },
   { slot: 'partner', cardField: 'partner_id', pendingField: 'partner_pending_id' },
