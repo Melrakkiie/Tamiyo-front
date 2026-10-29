@@ -58,6 +58,7 @@ import type { GroupDrop } from '../decks/DeckCardGroups';
 import { DeckDropBar } from '../decks/DeckDropBar';
 import { DeckDragProvider, DraggableCard } from '../decks/dragDrop';
 import { heldSlot } from '../decks/entryMutations/slots';
+import { MoveCopiesModal } from '../decks/MoveCopiesModal';
 import { useDeckCardActions } from '../decks/useDeckCardActions';
 import { useDeckCardMenu } from '../decks/useDeckCardMenu';
 import { useOpenedEntry } from '../decks/useOpenedEntry';
@@ -731,6 +732,7 @@ function DeckCards({
 
         {contextMenu.element}
         {cardMenu.modals}
+        <MoveCopiesModal {...actions.moveModal} />
         <ImportListModal deck={deck} opened={importOpened} onClose={() => setImportOpened(false)} />
         <DropOverlay
           dragging={scryfallDrop.dragging}

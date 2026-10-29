@@ -1,4 +1,5 @@
 import { notifications } from '@mantine/notifications';
+import { useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Deck, DeckBoard } from '../api/types';
@@ -7,11 +8,13 @@ import type { DragItem } from './dragDrop';
 import type { Taggable } from './deckEntries';
 import { heldSlot } from './entryMutations/slots';
 import { useDeckEntryMutations } from './entryMutations/useDeckEntryMutations';
+import type { MoveRequest } from './MoveCopiesModal';
 import { useSetCardTags } from './tags';
 
 export function useDeckCardActions(deck: Deck, tagsOfCard: (entry: Taggable) => string[]) {
   const mutations = useDeckEntryMutations(deck);
   const setTags = useSetCardTags();
+  const [moveRequest, setMoveRequest] = useState<MoveRequest | null>(null);
 
   const callbacks = (message: string) => ({
     onSuccess: () => notifications.show({ color: 'green', message }),
@@ -22,13 +25,22 @@ export function useDeckCardActions(deck: Deck, tagsOfCard: (entry: Taggable) => 
     return board !== item.board && heldSlot(deck, item.entry) === null;
   }
 
-  async function moveToBoard({ entry }: DragItem, board: DeckBoard) {
+  async function moveCopies({ entry, board }: MoveRequest, count: number) {
     try {
-      const { affected } = await mutations.run(entry, { kind: 'moveToBoard', board });
+      const { affected } = await mutations.run(entry, { kind: 'moveToBoard', board, count });
       notifications.show({ color: 'green', message: movedMessage(entry.name, affected, board) });
     } catch (err) {
       notifications.show({ color: 'red', message: errorMessage(err) });
     }
+  }
+
+  // An entry of several copies asks how many to move; a single copy moves at once.
+  function moveToBoard({ entry }: DragItem, board: DeckBoard) {
+    if (entry.quantity >= 2) {
+      setMoveRequest({ entry, board });
+      return Promise.resolve();
+    }
+    return moveCopies({ entry, board }, 1);
   }
 
   async function remove({ entry }: DragItem) {
@@ -67,7 +79,16 @@ export function useDeckCardActions(deck: Deck, tagsOfCard: (entry: Taggable) => 
     changeTags(entry, [], `${entry.name} n'a plus de tag.`);
   }
 
-  return { canMoveTo, moveToBoard, remove, addTag, removeTag, removeAllTags };
+  const moveModal = {
+    request: moveRequest,
+    onConfirm: (request: MoveRequest, count: number) => {
+      setMoveRequest(null);
+      void moveCopies(request, count);
+    },
+    onClose: () => setMoveRequest(null),
+  };
+
+  return { canMoveTo, moveToBoard, moveModal, remove, addTag, removeTag, removeAllTags };
 }
 
 export type DeckCardActions = ReturnType<typeof useDeckCardActions>;
