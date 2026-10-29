@@ -4,6 +4,8 @@ export type HistoryFilter = 'all' | 'additions' | 'removals';
 
 export type HistoryDay = DeckHistory['days'][number];
 
+export type HistoryChange = HistoryDay['boards'][number]['changes'][number];
+
 const keeps: Record<HistoryFilter, (count: number) => boolean> = {
   all: () => true,
   additions: (count) => count > 0,
