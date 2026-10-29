@@ -5,7 +5,7 @@ import type { DeckBoard } from '../api/types';
 import { useLastShown } from '../layout/useLastShown';
 import type { HistoryChange } from './history';
 
-/** A history action waiting for its copy count; the texts let each action ("Retirer", later "Remettre") reuse the modal. */
+/** A history action waiting for its copy count; the texts and `run` let each action ("Retirer", "Remettre") reuse the modal. */
 export interface HistoryCountRequest {
   change: HistoryChange;
   board: DeckBoard;
@@ -13,6 +13,7 @@ export interface HistoryCountRequest {
   label: string;
   confirm: string;
   max: number;
+  run: (change: HistoryChange, board: DeckBoard, count: number) => Promise<void>;
 }
 
 interface HistoryCountModalProps {

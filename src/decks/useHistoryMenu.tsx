@@ -1,4 +1,4 @@
-import { Menu } from '@mantine/core';
+import { Menu, Tooltip } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { type ReactNode, useState } from 'react';
 
@@ -7,13 +7,13 @@ import type { Deck, DeckBoard } from '../api/types';
 import { useDeckCards, usePendingCards } from './api';
 import { boardLabels } from './boards';
 import { deckEntries } from './deckEntries';
-import { planRemoveFromHistory } from './entryMutations/undoHistory';
+import { planPutBackFromHistory, planRemoveFromHistory } from './entryMutations/undoHistory';
 import { useDeckEntryMutations } from './entryMutations/useDeckEntryMutations';
 import type { HistoryChange } from './history';
 import { type HistoryCountRequest, HistoryCountModal } from './HistoryCountModal';
-import { retireAction } from './historyMenu';
+import { putBackAction, retireAction } from './historyMenu';
 
-/** Owner-only actions on the lines of the history; a second action ("Remettre") adds its own item and request. */
+/** Owner-only actions on the lines of the history. */
 export function useHistoryMenu(deck: Deck) {
   const cards = useDeckCards(deck.id, 'mana_value');
   const pending = usePendingCards(deck.id);
@@ -37,12 +37,27 @@ export function useHistoryMenu(deck: Deck) {
     }
   }
 
-  function menuFor(change: HistoryChange, board: DeckBoard): ReactNode {
-    if (change.count <= 0) {
-      return null;
+  async function putBack(change: HistoryChange, board: DeckBoard, count: number) {
+    try {
+      const { affected } = await mutations.runPlan(planPutBackFromHistory(deck, board, change, count));
+      notifications.show({
+        color: 'green',
+        message:
+          affected > 1
+            ? `${affected} exemplaires de ${change.name} remis dans le deck.`
+            : `${change.name} remise dans le deck.`,
+      });
+    } catch (err) {
+      notifications.show({ color: 'red', message: errorMessage(err) });
     }
-    const { max, disabledReason } = retireAction(change, board, entries);
-    const label = `Retirer ${change.count} × ${change.name} de ${boardLabels[board]}`;
+  }
+
+  function menuFor(change: HistoryChange, board: DeckBoard, date: string): ReactNode {
+    const removal = change.count < 0;
+    const { max, disabledReason } = removal ? putBackAction(change, date) : retireAction(change, board, entries);
+    const verb = removal ? 'Remettre' : 'Retirer';
+    const label = `${verb} ${Math.abs(change.count)} × ${change.name} ${removal ? 'dans' : 'de'} ${boardLabels[board]}`;
+    const run = removal ? putBack : retire;
     const onClick = () =>
       max >= 2
         ? setRequest({
@@ -50,14 +65,20 @@ export function useHistoryMenu(deck: Deck) {
             board,
             max,
             title: label,
-            label: 'Exemplaires à retirer',
-            confirm: 'Retirer',
+            label: removal ? 'Exemplaires à remettre' : 'Exemplaires à retirer',
+            confirm: verb,
+            run,
           })
-        : void retire(change, board, 1);
+        : void run(change, board, 1);
     return (
-      <Menu.Item color="red" onClick={onClick} disabled={disabledReason !== undefined} title={disabledReason}>
-        {label}
-      </Menu.Item>
+      // The wrapper receives the hover: a disabled item gets no pointer events.
+      <Tooltip label={disabledReason} disabled={disabledReason === undefined} position="right" withinPortal>
+        <div>
+          <Menu.Item color={removal ? undefined : 'red'} onClick={onClick} disabled={disabledReason !== undefined}>
+            {label}
+          </Menu.Item>
+        </div>
+      </Tooltip>
     );
   }
 
@@ -67,7 +88,7 @@ export function useHistoryMenu(deck: Deck) {
       onClose={() => setRequest(null)}
       onConfirm={(confirmed, count) => {
         setRequest(null);
-        void retire(confirmed.change, confirmed.board, count);
+        void confirmed.run(confirmed.change, confirmed.board, count);
       }}
     />
   );

@@ -74,7 +74,7 @@ export function DeckHistoryView({ history, menu }: DeckHistoryViewProps) {
                     onContextMenu={
                       menu &&
                       ((event) => {
-                        const items = menu.menuFor(change, board.board);
+                        const items = menu.menuFor(change, board.board, day.date);
                         if (items) {
                           contextMenu.open(event, items);
                         }
