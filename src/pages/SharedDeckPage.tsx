@@ -25,6 +25,7 @@ import { CollectionToggle } from '../decks/CollectionToggle';
 import { CompareDeckModal } from '../decks/CompareDeckModal';
 import { useDeckCopyActions } from '../decks/DeckCopyActions';
 import { comboDeckList, commanderSpellbookUrl } from '../decks/combos';
+import { SharedDeckHistoryPanel } from '../decks/DeckHistoryView';
 import { DeckStatsView } from '../decks/DeckStatsPanel';
 import { ExportDeckModal } from '../decks/ExportDeckModal';
 import {
@@ -149,6 +150,7 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
         <Tabs.List>
           <Tabs.Tab value="cards">Cartes ({deck.card_count})</Tabs.Tab>
           <Tabs.Tab value="stats">Statistiques</Tabs.Tab>
+          <Tabs.Tab value="history">Historique</Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="cards" pt="md">
@@ -163,6 +165,9 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
               emptyMessage="Ce deck est vide."
             />
           )}
+        </Tabs.Panel>
+        <Tabs.Panel value="history" pt="md">
+          {tab === 'history' && <SharedDeckHistoryPanel deckId={deckId} />}
         </Tabs.Panel>
       </Tabs>
     </Stack>
