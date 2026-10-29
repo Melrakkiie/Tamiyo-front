@@ -30,7 +30,7 @@ export function inBoard<T extends { board: DeckBoard }>(items: T[], board: DeckB
   return items.filter((item) => item.board === board);
 }
 
-const boardDestinations: Record<DeckBoard, string> = {
+export const boardDestinations: Record<DeckBoard, string> = {
   main: 'le deck principal',
   sideboard: 'le sideboard',
   considering: 'la section Considering',

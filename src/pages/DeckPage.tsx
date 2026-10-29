@@ -58,6 +58,7 @@ import type { GroupDrop } from '../decks/DeckCardGroups';
 import { DeckDropBar } from '../decks/DeckDropBar';
 import { DeckDragProvider, DraggableCard } from '../decks/dragDrop';
 import { heldSlot } from '../decks/entryMutations/slots';
+import { MoveCopiesModal } from '../decks/MoveCopiesModal';
 import { useDeckCardActions } from '../decks/useDeckCardActions';
 import { useDeckCardMenu } from '../decks/useDeckCardMenu';
 import { useOpenedEntry } from '../decks/useOpenedEntry';
@@ -637,15 +638,20 @@ function DeckCards({
             : `group:${board}:tag:${group.tag}`,
       accepts: (group, item) => changesTags(group, item.entry) || actions.canMoveTo(item, board),
       onDrop: (group, item) => {
-        if (changesTags(group, item.entry)) {
+        const retag = () => {
+          if (!changesTags(group, item.entry)) {
+            return;
+          }
           if (group.tag === null) {
             actions.removeAllTags(item);
           } else if (group.tag !== undefined) {
             actions.addTag(item, group.tag);
           }
-        }
+        };
         if (actions.canMoveTo(item, board)) {
-          actions.moveToBoard(item, board);
+          actions.moveToBoard(item, board, retag);
+        } else {
+          retag();
         }
       },
     };
@@ -731,6 +737,7 @@ function DeckCards({
 
         {contextMenu.element}
         {cardMenu.modals}
+        <MoveCopiesModal {...actions.moveModal} />
         <ImportListModal deck={deck} opened={importOpened} onClose={() => setImportOpened(false)} />
         <DropOverlay
           dragging={scryfallDrop.dragging}
