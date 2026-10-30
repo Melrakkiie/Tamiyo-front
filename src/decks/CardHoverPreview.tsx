@@ -1,7 +1,7 @@
 import { HoverCard, Image, Skeleton, Text } from '@mantine/core';
 import type { ReactNode } from 'react';
 
-import { useCardImageByName, useCardImages } from '../scryfall/hooks';
+import { useCardByName, useCardImages } from '../scryfall/hooks';
 
 const PREVIEW_WIDTH = 244;
 const PREVIEW_HEIGHT = Math.round((PREVIEW_WIDTH * 680) / 488);
@@ -37,8 +37,8 @@ function PreviewById({ scryfallId, name }: { scryfallId: string; name: string })
 }
 
 function PreviewByName({ name, printing }: { name: string; printing?: Printing }) {
-  const image = useCardImageByName(name, printing);
-  return <Preview src={image.data ?? undefined} loading={image.isLoading} name={name} />;
+  const card = useCardByName(name, printing);
+  return <Preview src={card.data?.image} loading={card.isLoading} name={name} />;
 }
 
 function Preview({ src, loading, name }: { src: string | undefined; loading: boolean; name: string }) {

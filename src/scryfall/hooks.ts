@@ -194,16 +194,17 @@ export function useScryfallCard(scryfallId: string | null | undefined) {
 }
 
 // The given printing when Scryfall knows it, else the card's default printing.
-export function useCardImageByName(name: string, printing?: { set: string; number: string }) {
+export function useCardByName(name: string, printing?: { set: string; number: string }, enabled = true) {
   return useQuery({
     queryKey: ['scryfall', 'named', name, printing?.set, printing?.number],
+    enabled,
     queryFn: async () => {
       const card = (printing && (await fetchCard(printing))) || (await fetchCardByName(name));
       if (!card) {
         return null;
       }
       rememberCards([card]);
-      return imageUrl(card, 'normal') ?? null;
+      return { id: card.id, image: imageUrl(card, 'normal') };
     },
     staleTime: ONE_DAY,
     gcTime: ONE_DAY,
