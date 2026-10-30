@@ -1,13 +1,14 @@
 import { Alert, Center, Group, Loader, SegmentedControl, Stack, Text, Title } from '@mantine/core';
-import { type MouseEvent, useState } from 'react';
+import { type MouseEvent, useEffect, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Deck, DeckHistory } from '../api/types';
 import { useCardContextMenu } from '../cards/CardContextMenu';
+import { showCardPreview } from '../layout/cardPreview';
+import { useCardByName } from '../scryfall/hooks';
 import { EmptyNote } from '../theme/EmptyNote';
 import { useDeckHistory } from './api';
 import { boardLabels } from './boards';
-import { CardHoverPreview } from './CardHoverPreview';
 import { filterHistory, type HistoryFilter, historyDateFormat } from './history';
 import { useSharedDeckHistory } from './shared';
 import { type HistoryMenu, useHistoryMenu } from './useHistoryMenu';
@@ -74,6 +75,7 @@ export function DeckHistoryView({ history, menu }: DeckHistoryViewProps) {
                         ? { set: change.set_code, number: change.collector_number }
                         : undefined
                     }
+                    foil={change.foil}
                     onContextMenu={
                       menu && ((event) => contextMenu.open(event, menu.menuFor(change, board.board, day.date)))
                     }
@@ -93,24 +95,39 @@ function HistoryLine({
   name,
   count,
   printing,
+  foil,
   onContextMenu,
 }: {
   name: string;
   count: number;
   printing?: { set: string; number: string };
+  foil?: boolean;
   onContextMenu?: (event: MouseEvent<HTMLElement>) => void;
 }) {
   const added = count > 0;
+  const [hovered, setHovered] = useState(false);
+  // Looked up on hover only (then cached); the side panel keeps the previous card until it resolves.
+  const card = useCardByName(name, printing, hovered).data;
+  useEffect(() => {
+    if (hovered && card) {
+      showCardPreview({ name, scryfallId: card.id, imageUrl: card.image, foil });
+    }
+  }, [hovered, card, name, foil]);
   return (
-    <Group gap="xs" wrap="nowrap" c={added ? 'green' : 'red'} onContextMenu={onContextMenu}>
+    <Group
+      gap="xs"
+      wrap="nowrap"
+      c={added ? 'green' : 'red'}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onContextMenu={onContextMenu}
+    >
       <Text span fw={700} w={12} ta="center" aria-label={added ? 'Ajout' : 'Retrait'}>
         {added ? '+' : '−'}
       </Text>
-      <CardHoverPreview name={name} printing={printing}>
-        <Text span>
-          {Math.abs(count)} × {name}
-        </Text>
-      </CardHoverPreview>
+      <Text span>
+        {Math.abs(count)} × {name}
+      </Text>
     </Group>
   );
 }
