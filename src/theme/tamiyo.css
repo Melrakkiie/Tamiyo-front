@@ -584,6 +584,20 @@ h6,
   text-underline-offset: 6px;
 }
 
+/* On a phone the headings font wraps tabs onto a second row: shrink them and scroll the overflow instead. */
+@media (max-width: 48em) {
+  .mantine-Tabs-list:not([data-orientation='vertical']) {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .mantine-Tabs-list:not([data-orientation='vertical']) .mantine-Tabs-tab {
+    flex-shrink: 0;
+    padding-inline: var(--mantine-spacing-xs);
+    font-size: var(--mantine-font-size-md);
+  }
+}
+
 .tamiyo-drop-panel {
   background: var(--mantine-color-body);
   border: 2px solid var(--tamiyo-ink);
