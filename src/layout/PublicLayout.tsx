@@ -1,4 +1,4 @@
-import { AppShell, Burger, Button, Drawer, Group, NavLink, Title, UnstyledButton } from '@mantine/core';
+import { AppShell, Burger, Button, Drawer, Group, NavLink, Title, UnstyledButton, useMatches } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
@@ -21,6 +21,8 @@ export function PublicLayout() {
   const navigate = useNavigate();
   const showPreview = pagesWithCards.test(location.pathname);
   const [authMode, setAuthMode] = useState<AuthMode | null>(null);
+  // compact-md overflows a 360px phone by a few pixels.
+  const authButtonSize = useMatches({ base: 'compact-sm', sm: 'compact-md' });
 
   useEffect(() => {
     showCardPreview(null);
@@ -63,10 +65,10 @@ export function PublicLayout() {
             </Group>
           </Group>
           <Group gap="xs" wrap="nowrap">
-            <Button variant="default" size="compact-sm" onClick={() => setAuthMode('login')}>
+            <Button variant="default" size={authButtonSize} onClick={() => setAuthMode('login')}>
               Se connecter
             </Button>
-            <Button size="compact-sm" onClick={() => setAuthMode('register')}>
+            <Button size={authButtonSize} onClick={() => setAuthMode('register')}>
               Créer un compte
             </Button>
           </Group>
