@@ -10,7 +10,7 @@ Stop both afterwards, Vite by its PID (`ss -ltnp | grep 5174`): `pkill -f vite` 
 
 ## 2. Drive the page
 
-Write the check script in your scratchpad and import `scripts/browser-check.mjs` by its absolute path. `openApp` launches Playwright's Chromium (already in `~/.cache/ms-playwright`), signs in as `seed@tamiyo.local`, sets the theme and opens `/`:
+Write the check script in your scratchpad and import `scripts/browser-check.mjs` by its absolute path. `openApp` launches Playwright's Chromium (already in `~/.cache/ms-playwright`), signs in as `seed@tamiyo.local`, sets the theme and opens `/`. Pass `signIn: false` to check as a logged-out visitor: no API stack is needed, `api` is undefined and `theme` is ignored (visitors get day or night by the hour, so set it with `clock: true` and `page.clock.setFixedTime`):
 
 ```js
 import { openApp } from '/abs/path/to/Tamiyo-front/scripts/browser-check.mjs';

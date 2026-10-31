@@ -1,4 +1,5 @@
-import { AppShell, Button, Group, Title, UnstyledButton } from '@mantine/core';
+import { AppShell, Burger, Button, Drawer, Group, NavLink, Title, UnstyledButton, useMatches } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 
@@ -9,14 +10,23 @@ import { CardPreviewPanel } from './CardPreviewPanel';
 import { HeaderNavLink } from './HeaderNavLink';
 import { PageWithFooter } from './PageWithFooter';
 
+const navItems = [
+  { label: 'Explorer', to: '/explorer' },
+  { label: 'Aide', to: '/aide' },
+];
+
 export function PublicLayout() {
+  const [opened, { toggle, close }] = useDisclosure();
   const location = useLocation();
   const navigate = useNavigate();
   const showPreview = pagesWithCards.test(location.pathname);
   const [authMode, setAuthMode] = useState<AuthMode | null>(null);
+  // compact-md overflows a 360px phone by a few pixels.
+  const authButtonSize = useMatches({ base: 'compact-sm', sm: 'compact-md' });
 
   useEffect(() => {
     showCardPreview(null);
+    close();
   }, [location.pathname]);
 
   return (
@@ -32,27 +42,51 @@ export function PublicLayout() {
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
           <Group gap="lg" wrap="nowrap">
-            <UnstyledButton component={Link} to="/">
-              <Group gap={8} wrap="nowrap">
-                <LunaMoth size={30} />
-                <Title order={3}>Tamiyo</Title>
-              </Group>
-            </UnstyledButton>
-            <Group gap={4} wrap="nowrap">
-              <HeaderNavLink label="Explorer" to="/explorer" active={location.pathname.startsWith('/explorer')} />
-              <HeaderNavLink label="Aide" to="/aide" active={location.pathname.startsWith('/aide')} />
+            <Group gap="sm" wrap="nowrap">
+              <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" aria-label="Menu" />
+              <UnstyledButton component={Link} to="/" aria-label="Tamiyo">
+                <Group gap={8} wrap="nowrap">
+                  <LunaMoth size={30} />
+                  <Title order={3} visibleFrom="xs">
+                    Tamiyo
+                  </Title>
+                </Group>
+              </UnstyledButton>
+            </Group>
+            <Group gap={4} visibleFrom="sm" wrap="nowrap">
+              {navItems.map((item) => (
+                <HeaderNavLink
+                  key={item.to}
+                  label={item.label}
+                  to={item.to}
+                  active={location.pathname.startsWith(item.to)}
+                />
+              ))}
             </Group>
           </Group>
           <Group gap="xs" wrap="nowrap">
-            <Button variant="default" size="compact-md" onClick={() => setAuthMode('login')}>
+            <Button variant="default" size={authButtonSize} onClick={() => setAuthMode('login')}>
               Se connecter
             </Button>
-            <Button size="compact-md" onClick={() => setAuthMode('register')}>
+            <Button size={authButtonSize} onClick={() => setAuthMode('register')}>
               Créer un compte
             </Button>
           </Group>
         </Group>
       </AppShell.Header>
+
+      <Drawer opened={opened} onClose={close} title="Tamiyo" size={260}>
+        {navItems.map((item) => (
+          <NavLink
+            key={item.to}
+            component={Link}
+            to={item.to}
+            label={item.label}
+            active={location.pathname.startsWith(item.to)}
+            onClick={close}
+          />
+        ))}
+      </Drawer>
 
       <AppShell.Navbar p="md">{showPreview && <CardPreviewPanel />}</AppShell.Navbar>
 
