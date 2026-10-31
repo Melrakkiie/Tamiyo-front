@@ -10,9 +10,18 @@ export async function openApp({
   height = 900,
   theme = 'day',
   clock = false,
+  signIn = true,
 } = {}) {
   const browser = await chromium.launch();
   const page = await browser.newPage({ baseURL: url, viewport: { width, height } });
+  if (!signIn) {
+    // Logged-out visitor: no session, no seeded theme, so `api` is not available.
+    if (clock) {
+      await page.clock.install();
+    }
+    await page.goto('/');
+    return { browser, page };
+  }
   // The refresh cookie lands in the browser context, and the app restores the session from it.
   const login = await page.request.post('/api/auth/login', {
     headers: { 'X-Refresh-Token-Transport': 'cookie' },
