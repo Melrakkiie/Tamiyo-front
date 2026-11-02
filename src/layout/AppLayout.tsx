@@ -18,6 +18,7 @@ import { Link, useLocation } from 'react-router';
 
 import { useAccount } from '../auth/account';
 import { logout } from '../auth/actions';
+import { UnverifiedEmailNotice } from '../auth/EmailVerification';
 import { UserAvatar } from '../auth/UserAvatar';
 import { pagesWithCards, showCardPreview } from './cardPreview';
 import { LunaMoth } from '../theme/LunaMoth';
@@ -156,6 +157,7 @@ export function AppLayout() {
       <AppShell.Navbar p="md">{showPreview && <CardPreviewPanel />}</AppShell.Navbar>
 
       <AppShell.Main>
+        <UnverifiedEmailNotice />
         <PageWithFooter />
       </AppShell.Main>
     </AppShell>

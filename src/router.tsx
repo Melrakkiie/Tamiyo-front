@@ -24,6 +24,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { SharedDeckRedirect } from './pages/SharedDeckPage';
 import { StoragePage } from './pages/StoragePage';
 import { StoragesPage } from './pages/StoragesPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
 
 export const router = createBrowserRouter([
   {
@@ -44,6 +45,7 @@ export const router = createBrowserRouter([
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
       { path: '/reset-password', element: <ResetPasswordPage /> },
       { path: '/confirm-email', element: <ConfirmEmailPage /> },
+      { path: '/verify-email', element: <VerifyEmailPage /> },
     ],
   },
   {

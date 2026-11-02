@@ -43,14 +43,14 @@ export function ChangeEmailSection() {
                 Adresse actuelle : <strong>{account.data.email}</strong>.{' '}
               </>
             ) : null}
-            Pour ta sécurité, on envoie un lien de confirmation à ton adresse actuelle : la nouvelle ne la remplace
-            qu'une fois ce lien ouvert.
+            Pour ta sécurité, on envoie un lien de confirmation à ton adresse actuelle, puis un second à la nouvelle :
+            elle ne remplace l'actuelle qu'une fois ce second lien ouvert, et tes decks restent cachés d'ici là.
           </Text>
 
           {mutation.isSuccess && mutation.variables && (
             <Alert color="green">
-              Lien de confirmation envoyé à {account.data?.email ?? 'ton adresse actuelle'}. Ouvre-le pour passer à{' '}
-              {mutation.variables.newEmail.trim()} : d'ici là, tu continues à te connecter avec ton adresse actuelle.
+              Lien de confirmation envoyé à {account.data?.email ?? 'ton adresse actuelle'}. Ouvre-le : un second lien
+              partira alors à {mutation.variables.newEmail.trim()}. D'ici là, tu te connectes avec ton adresse actuelle.
             </Alert>
           )}
           {mutation.error && (
