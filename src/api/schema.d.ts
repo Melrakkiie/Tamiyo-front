@@ -3475,7 +3475,7 @@ export interface paths {
                         "application/json": components["schemas"]["ImportSummary"];
                     };
                 };
-                /** @description id is not a UUID, or the file is missing or can't be parsed. */
+                /** @description id is not a UUID, or the file is missing or can't be parsed (a line with a quantity above 1000 is refused). */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -3494,6 +3494,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
+                413: components["responses"]["PayloadTooLarge"];
                 500: components["responses"]["InternalError"];
                 502: components["responses"]["BadGateway"];
             };
@@ -3789,7 +3790,7 @@ export interface paths {
                         "application/json": components["schemas"]["ImportSummary"];
                     };
                 };
-                /** @description id is not a UUID, the file is missing or can't be parsed, or commander_from_first_line or include_locked_storages is invalid. */
+                /** @description id is not a UUID, the file is missing or can't be parsed (a line with a quantity above 1000 is refused), or commander_from_first_line or include_locked_storages is invalid. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -3808,6 +3809,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
+                413: components["responses"]["PayloadTooLarge"];
                 500: components["responses"]["InternalError"];
                 502: components["responses"]["BadGateway"];
             };
@@ -5264,7 +5266,7 @@ export interface paths {
                         "application/json": components["schemas"]["ImportSummary"];
                     };
                 };
-                /** @description No file field, the file couldn't be parsed, or storage_id is invalid or does not reference an existing storage. */
+                /** @description No file field, the file couldn't be parsed (a row with a Quantity above 1000 is refused), or storage_id is invalid or does not reference an existing storage. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -5274,6 +5276,7 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["Unauthorized"];
+                413: components["responses"]["PayloadTooLarge"];
                 500: components["responses"]["InternalError"];
             };
         };
@@ -5326,7 +5329,7 @@ export interface paths {
                         "application/json": components["schemas"]["ImportSummary"];
                     };
                 };
-                /** @description No file field, the file couldn't be parsed, or storage_id does not reference an existing storage. */
+                /** @description No file field, the file couldn't be parsed (a row with a Count above 1000 is refused), or storage_id does not reference an existing storage. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -5336,6 +5339,7 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["Unauthorized"];
+                413: components["responses"]["PayloadTooLarge"];
                 500: components["responses"]["InternalError"];
                 502: components["responses"]["BadGateway"];
             };
@@ -5389,7 +5393,7 @@ export interface paths {
                         "application/json": components["schemas"]["ImportSummary"];
                     };
                 };
-                /** @description No file field, the list couldn't be parsed, or storage_id is invalid or does not reference an existing storage. */
+                /** @description No file field, the list couldn't be parsed (a line with a quantity above 1000 is refused), or storage_id is invalid or does not reference an existing storage. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -5399,6 +5403,7 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["Unauthorized"];
+                413: components["responses"]["PayloadTooLarge"];
                 500: components["responses"]["InternalError"];
                 502: components["responses"]["BadGateway"];
             };
@@ -5515,7 +5520,7 @@ export interface paths {
                         "application/json": components["schemas"]["ImportSummary"];
                     };
                 };
-                /** @description No file field, the file isn't a valid Tamiyo collection or storage file (a deck file is refused), or storage_id is invalid or does not reference an existing storage. */
+                /** @description No file field, the file isn't a valid Tamiyo collection or storage file (a deck file or a card quantity above 1000 is refused), or storage_id is invalid or does not reference an existing storage. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -5525,6 +5530,7 @@ export interface paths {
                     };
                 };
                 401: components["responses"]["Unauthorized"];
+                413: components["responses"]["PayloadTooLarge"];
                 502: components["responses"]["BadGateway"];
             };
         };
@@ -6660,6 +6666,15 @@ export interface components {
         };
     };
     responses: {
+        /** @description The uploaded request body is larger than 10 MB; nothing is imported */
+        PayloadTooLarge: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         /** @description Unknown or malformed deck id, or someone else's private deck */
         LikeDeckNotFound: {
             headers: {
