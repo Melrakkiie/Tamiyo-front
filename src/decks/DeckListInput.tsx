@@ -2,6 +2,7 @@ import { FileInput, Group, SegmentedControl, Stack, Textarea } from '@mantine/co
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 import { ApiError, errorMessage } from '../api/errors';
+import { quantityErrorMessage } from '../api/quantityError';
 import type { ImportSummary } from '../api/types';
 import { InfoHint } from '../theme/InfoHint';
 
@@ -131,6 +132,10 @@ export function DeckListInput({ list, minRows = 8, hint = deckHint }: DeckListIn
 export function tamiyoFileErrorMessage(err: unknown): string | null {
   if (!(err instanceof ApiError) || err.status !== 400) {
     return null;
+  }
+  const quantity = quantityErrorMessage(err);
+  if (quantity) {
+    return quantity;
   }
   if (err.message.includes('is a deck')) {
     return "Ce fichier Tamiyo contient un deck : importe-le depuis la page d'un deck.";

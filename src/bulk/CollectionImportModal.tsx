@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 
 import { errorMessage } from '../api/errors';
+import { quantityErrorMessage } from '../api/quantityError';
 import type { ImportSummary } from '../api/types';
 import { DeckListInput, deckListErrorMessage, tamiyoFileErrorMessage, useDeckList } from '../decks/DeckListInput';
 import { useStorageOptions } from '../storages/api';
@@ -34,10 +35,13 @@ const longImportNote =
   "Un gros fichier peut prendre une à deux minutes : Tamiyo interroge Scryfall pour chaque lot de 75 cartes, à son rythme. Garde cette fenêtre ouverte jusqu'à la fin.";
 
 function importErrorMessage(err: unknown, expected: string) {
-  return errorMessage(err, {
-    400: `Le fichier n'a pas pu être lu. Vérifie qu'il s'agit bien ${expected}.`,
-    502: "Scryfall n'a pas répondu, l'import n'a pas eu lieu. Réessaie dans un moment.",
-  });
+  return (
+    quantityErrorMessage(err) ??
+    errorMessage(err, {
+      400: `Le fichier n'a pas pu être lu. Vérifie qu'il s'agit bien ${expected}.`,
+      502: "Scryfall n'a pas répondu, l'import n'a pas eu lieu. Réessaie dans un moment.",
+    })
+  );
 }
 
 export function CollectionImportModal({ opened, onClose, storage }: CollectionImportModalProps) {
