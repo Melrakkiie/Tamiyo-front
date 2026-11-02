@@ -434,7 +434,7 @@ export interface paths {
         put?: never;
         /**
          * Reset a password using a token from the forgot-password email
-         * @description Consumes a single-use reset token and sets a new password. On success, every refresh token belonging to the account is revoked — all other sessions must log in again, same as /auth/password.
+         * @description Consumes a single-use reset token and sets a new password. A link works once, and a successful reset voids the account's other pending reset links. On success, every refresh token belonging to the account is revoked — all other sessions must log in again, same as /auth/password.
          */
         post: {
             parameters: {
@@ -475,6 +475,114 @@ export interface paths {
                     };
                 };
                 500: components["responses"]["InternalError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/verify-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify an account's email with the token mailed at registration
+         * @description Consumes a single-use verification token and makes the address it carries the account's email, verified (see email_verified on /auth/me); after an email change this is when the account switches to the new address. If another account took that address in the meantime the call answers 409 and the token stays used. The token is valid for EMAIL_VERIFICATION_TOKEN_TTL_MINUTES (a day by default). Shares the same rate limiter as /auth/register and /auth/login.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["VerifyEmailRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Missing token, or unknown, expired or already-used token. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The address was registered by another account in the meantime; the token stays used. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                429: components["responses"]["TooManyRequests"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/verify-email/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Email a new verification link to the authenticated account
+         * @description Issues a new verification token and emails it to the account's current address. Shares the same rate limiter as /auth/register and /auth/login.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Unauthorized"];
+                /** @description The email is already verified; nothing is sent. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                429: components["responses"]["TooManyRequests"];
             };
         };
         delete?: never;
@@ -716,7 +824,7 @@ export interface paths {
         put?: never;
         /**
          * Confirm an email change
-         * @description Consumes the single-use token emailed to the current address by /auth/email and switches the account to the new email. A notice is then sent to the new address. Sessions stay open.
+         * @description Consumes the single-use token emailed to the current address by /auth/email, then sends a verification email to the new address. The account keeps its current email (used to sign in and to recover the password) and its verified state until that link is followed (/auth/verify-email). If the verification email cannot be sent the call answers 500 and nothing changes. Sessions stay open.
          */
         post: {
             parameters: {
@@ -4274,7 +4382,7 @@ export interface paths {
         };
         /**
          * A shared deck, its owner and its cards
-         * @description Works without authentication. Resolves only public and unlisted decks. Owned copies and pending cards are merged into one list, with no storage, proxy or ownership details.
+         * @description Works without authentication. Resolves only public and unlisted decks, and only once their owner has verified their email address (until then the deck answers 404, as a private one does). Owned copies and pending cards are merged into one list, with no storage, proxy or ownership details.
          */
         get: {
             parameters: {
@@ -5965,6 +6073,8 @@ export interface components {
              * @description Scryfall card whose art crop is the avatar, null until set.
              */
             avatar_scryfall_id: string | null;
+            /** @description True once the owner followed the verification link; accounts that predate email verification are verified. */
+            email_verified: boolean;
         };
         PublicDeck: {
             /** Format: uuid */
@@ -6070,6 +6180,9 @@ export interface components {
             new_email: string;
         };
         ConfirmEmailRequest: {
+            token: string;
+        };
+        VerifyEmailRequest: {
             token: string;
         };
         ForgotPasswordRequest: {

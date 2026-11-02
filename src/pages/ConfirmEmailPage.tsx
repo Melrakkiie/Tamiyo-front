@@ -41,11 +41,12 @@ export function ConfirmEmailPage() {
     return (
       <Stack>
         <Title order={2} size="h3">
-          Adresse mail changée
+          Dernière étape : confirme ta nouvelle adresse
         </Title>
         <Text size="sm">
-          Le changement est confirmé : c'est désormais avec ta nouvelle adresse que tu te connectes. Un mail de
-          confirmation vient d'y être envoyé.
+          Un lien vient d'être envoyé à ta nouvelle adresse. Tant que tu ne l'as pas ouvert, tu continues à te connecter
+          avec l'ancienne, et tes decks restent cachés : ils ne sont partagés avec personne avant que la nouvelle
+          adresse soit confirmée.
         </Text>
         <Button component={Link} to={authenticated ? '/settings' : '/login'} fullWidth>
           {authenticated ? 'Retour aux paramètres' : 'Se connecter'}

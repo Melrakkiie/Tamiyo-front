@@ -47,6 +47,14 @@ export async function confirmEmailChange(token: string) {
   unwrap(await api.POST('/auth/confirm-email', { body: { token } }));
 }
 
+export async function verifyEmail(token: string) {
+  unwrap(await api.POST('/auth/verify-email', { body: { token } }));
+}
+
+export async function resendVerificationEmail() {
+  unwrap(await api.POST('/auth/verify-email/resend'));
+}
+
 export async function deleteAccount(password: string) {
   unwrap(await api.DELETE('/auth/me', { body: { password } }));
   clearSession();

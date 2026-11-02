@@ -18,6 +18,7 @@ import { useEffect, useState } from 'react';
 
 import { errorMessage } from '../api/errors';
 import type { Deck } from '../api/types';
+import { unverifiedDecksNote, useEmailUnverified } from '../auth/EmailVerification';
 import { ScryfallCardSearch } from '../scryfall/ScryfallCardSearch';
 import { isCommanderFormat, useDeckFormats, type DeckInput } from './api';
 import { bracketOptions, GaugeIcon } from './bracket';
@@ -63,6 +64,7 @@ function DeckForm({
   onSubmit,
 }: Omit<DeckFormModalProps, 'opened' | 'title'>) {
   const formats = useDeckFormats();
+  const emailUnverified = useEmailUnverified();
   const list = useDeckList();
   const [listOpened, setListOpened] = useState(false);
   const [commanderFromFirstLine, setCommanderFromFirstLine] = useState(true);
@@ -189,7 +191,7 @@ function DeckForm({
         )}
         <Select
           label="Visibilité"
-          description={visibilityOption(visibility).description}
+          description={`${visibilityOption(visibility).description}${emailUnverified ? ` ${unverifiedDecksNote}` : ''}`}
           data={visibilityOptions.map(({ value, label }) => ({ value, label }))}
           allowDeselect={false}
           key={form.key('visibility')}

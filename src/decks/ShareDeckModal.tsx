@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 
 import { errorMessage } from '../api/errors';
 import type { Deck } from '../api/types';
+import { unverifiedDecksNote, useEmailUnverified } from '../auth/EmailVerification';
 import { useUpdateDeck } from './api';
 import { deckUrl } from './shared';
 
@@ -17,6 +18,7 @@ export function ShareDeckModal({ deck, opened, onClose }: ShareDeckModalProps) {
   const update = useUpdateDeck();
   const url = deckUrl(deck.id);
   const isPrivate = deck.visibility === 'private';
+  const emailUnverified = useEmailUnverified();
 
   function makeUnlisted() {
     update.mutate(
@@ -30,6 +32,11 @@ export function ShareDeckModal({ deck, opened, onClose }: ShareDeckModalProps) {
 
   return (
     <Modal opened={opened} onClose={onClose} title="Partager le deck">
+      {emailUnverified && (
+        <Text size="sm" c="dimmed" mb="sm">
+          {unverifiedDecksNote}
+        </Text>
+      )}
       {isPrivate ? (
         <Stack gap="sm">
           <Text size="sm">Ce deck est privé : personne d'autre que toi ne peut le voir, même avec son lien.</Text>
