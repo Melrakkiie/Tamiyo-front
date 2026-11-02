@@ -133,6 +133,10 @@ export function tamiyoFileErrorMessage(err: unknown): string | null {
   if (!(err instanceof ApiError) || err.status !== 400) {
     return null;
   }
+  const quantity = quantityErrorMessage(err);
+  if (quantity) {
+    return quantity;
+  }
   if (err.message.includes('is a deck')) {
     return "Ce fichier Tamiyo contient un deck : importe-le depuis la page d'un deck.";
   }
@@ -152,10 +156,6 @@ export function deckListErrorMessage(err: unknown) {
   const tamiyo = tamiyoFileErrorMessage(err);
   if (tamiyo) {
     return tamiyo;
-  }
-  const quantity = quantityErrorMessage(err);
-  if (quantity) {
-    return quantity;
   }
   const unreadLine =
     err instanceof ApiError && err.status === 400 ? /line (\d+): unrecognized format "(.*)"/.exec(err.message) : null;
