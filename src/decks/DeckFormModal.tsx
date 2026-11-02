@@ -191,11 +191,7 @@ function DeckForm({
         )}
         <Select
           label="Visibilité"
-          description={
-            emailUnverified && visibility !== 'private'
-              ? `${visibilityOption(visibility).description} ${unverifiedDecksNote}`
-              : visibilityOption(visibility).description
-          }
+          description={`${visibilityOption(visibility).description}${emailUnverified ? ` ${unverifiedDecksNote}` : ''}`}
           data={visibilityOptions.map(({ value, label }) => ({ value, label }))}
           allowDeselect={false}
           key={form.key('visibility')}

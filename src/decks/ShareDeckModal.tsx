@@ -33,7 +33,7 @@ export function ShareDeckModal({ deck, opened, onClose }: ShareDeckModalProps) {
   return (
     <Modal opened={opened} onClose={onClose} title="Partager le deck">
       {emailUnverified && (
-        <Text size="sm" c="yellow.8" mb="sm">
+        <Text size="sm" c="dimmed" mb="sm">
           {unverifiedDecksNote}
         </Text>
       )}
