@@ -2,6 +2,7 @@ import { FileInput, Group, SegmentedControl, Stack, Textarea } from '@mantine/co
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 import { ApiError, errorMessage } from '../api/errors';
+import { quantityErrorMessage } from '../api/quantityError';
 import type { ImportSummary } from '../api/types';
 import { InfoHint } from '../theme/InfoHint';
 
@@ -151,6 +152,10 @@ export function deckListErrorMessage(err: unknown) {
   const tamiyo = tamiyoFileErrorMessage(err);
   if (tamiyo) {
     return tamiyo;
+  }
+  const quantity = quantityErrorMessage(err);
+  if (quantity) {
+    return quantity;
   }
   const unreadLine =
     err instanceof ApiError && err.status === 400 ? /line (\d+): unrecognized format "(.*)"/.exec(err.message) : null;
