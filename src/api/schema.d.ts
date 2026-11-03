@@ -71,7 +71,7 @@ export interface paths {
         put?: never;
         /**
          * Register a new account
-         * @description Creates a user and returns an access/refresh token pair, the same as /auth/login. Rate-limited per client IP (shared with /auth/login); see the 429 response. Emails are case-insensitive: trimmed, lowercased and stored lowercased, so a case variant of a registered address is a 409.
+         * @description Creates a user and returns an access/refresh token pair, the same as /auth/login. Rate-limited per client IP (sign-in budget, shared with /auth/login); see the 429 response. Emails are case-insensitive: trimmed, lowercased and stored lowercased, so a case variant of a registered address is a 409.
          */
         post: {
             parameters: {
@@ -137,7 +137,7 @@ export interface paths {
         put?: never;
         /**
          * Log in
-         * @description Returns an access/refresh token pair. Rate-limited per client IP (shared with /auth/register); see the 429 response.
+         * @description Returns an access/refresh token pair. Rate-limited per client IP (sign-in budget, shared with /auth/register); see the 429 response.
          */
         post: {
             parameters: {
@@ -383,7 +383,7 @@ export interface paths {
         put?: never;
         /**
          * Request a password reset email
-         * @description Always responds 204, whether or not the email belongs to an account — this prevents an attacker from using the endpoint to discover which emails are registered. When the account exists, a single-use reset token is emailed to it (valid for PASSWORD_RESET_TOKEN_TTL_MINUTES, 30 minutes by default). Shares the same rate limiter as /auth/register and /auth/login.
+         * @description Always responds 204, whether or not the email belongs to an account — this prevents an attacker from using the endpoint to discover which emails are registered. When the account exists, a single-use reset token is emailed to it (valid for PASSWORD_RESET_TOKEN_TTL_MINUTES, 30 minutes by default). Shares the email-link rate limit budget (not the sign-in one).
          */
         post: {
             parameters: {
@@ -494,7 +494,7 @@ export interface paths {
         put?: never;
         /**
          * Verify an account's email with the token mailed at registration
-         * @description Consumes a single-use verification token and makes the address it carries the account's email, verified (see email_verified on /auth/me); after an email change this is when the account switches to the new address. If another account took that address in the meantime the call answers 409 and the token stays used. The token is valid for EMAIL_VERIFICATION_TOKEN_TTL_MINUTES (a day by default). Shares the same rate limiter as /auth/register and /auth/login.
+         * @description Consumes a single-use verification token and makes the address it carries the account's email, verified (see email_verified on /auth/me); after an email change this is when the account switches to the new address. If another account took that address in the meantime the call answers 409 and the token stays used. The token is valid for EMAIL_VERIFICATION_TOKEN_TTL_MINUTES (a day by default). Shares the email-link rate limit budget (not the sign-in one).
          */
         post: {
             parameters: {
@@ -554,7 +554,7 @@ export interface paths {
         put?: never;
         /**
          * Email a new verification link to the authenticated account
-         * @description Issues a new verification token and emails it to the account's current address. Shares the same rate limiter as /auth/register and /auth/login.
+         * @description Issues a new verification token and emails it to the account's current address. Shares the email-link rate limit budget (not the sign-in one).
          */
         post: {
             parameters: {
@@ -5234,7 +5234,7 @@ export interface paths {
         put?: never;
         /**
          * Bulk import a ManaBox collection export
-         * @description Imports a ManaBox_Collection.csv export. For each row, gets or creates the matching storage (Binder Name/Binder Type, a "deck" binder becoming a storage of type "deckbox"), gets or creates a deck too if Binder Type is "deck" (format defaults to "commander" — correct it afterwards with PATCH /deck/:id if needed), creates one card per physical copy (Quantity), and links deck cards accordingly. The export already carries the Scryfall ID directly, so cards are created even when Scryfall is unreachable and this route never returns 502. Cards are stored under their English Scryfall name, whatever the export's language; while Scryfall is unreachable the file's name is kept until the background printing refresher renames them.
+         * @description Imports a ManaBox_Collection.csv export. For each row, gets or creates the matching storage (Binder Name/Binder Type, a "deck" binder becoming a storage of type "deckbox"), gets or creates a deck too if Binder Type is "deck" (format defaults to "commander" — correct it afterwards with PATCH /deck/:id if needed), creates one card per physical copy (Quantity), and links deck cards accordingly. The export already carries the Scryfall ID directly, so cards are created even when Scryfall is unreachable and this route never returns 502. Cards are stored under their English Scryfall name, whatever the export's language; while Scryfall is unreachable the file's name is kept until the background printing refresher renames them. The whole import is one transaction, storages, decks and deck links included: every storage, deck, card and link is created, or none, and on a failure (a database error, the request cancelled) the route returns the error alone, with no summary, so retrying never creates duplicates.
          */
         post: {
             parameters: {
@@ -5266,7 +5266,7 @@ export interface paths {
                         "application/json": components["schemas"]["ImportSummary"];
                     };
                 };
-                /** @description No file field, the file couldn't be parsed (a row with a Quantity above 1000 is refused), or storage_id is invalid or does not reference an existing storage. */
+                /** @description No file field, the file couldn't be parsed (a row with a Quantity above 1000 is refused), storage_id is invalid or does not reference an existing storage, or a storage or deck of the import was deleted while it ran. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -5297,7 +5297,7 @@ export interface paths {
         put?: never;
         /**
          * Bulk import a Moxfield collection export
-         * @description Imports a Moxfield "Export Collection" CSV. Moxfield's export has no storage concept, so every created card is assigned to the existing storage given by storage_id. It also has no Scryfall ID, so each row is resolved by (set, collector number) against the Scryfall API (https://scryfall.com/docs/api/cards/collection). Cards are stored under their English Scryfall name, whatever the export's language.
+         * @description Imports a Moxfield "Export Collection" CSV. Moxfield's export has no storage concept, so every created card is assigned to the existing storage given by storage_id. It also has no Scryfall ID, so each row is resolved by (set, collector number) against the Scryfall API (https://scryfall.com/docs/api/cards/collection). Cards are stored under their English Scryfall name, whatever the export's language. The whole import is one transaction: every card is created, or none, and on a failure (a database error, the request cancelled) the route returns the error alone, with no summary, so retrying never creates duplicates. Rows Scryfall can't resolve don't count as a failure: they are skipped and noted in warnings.
          */
         post: {
             parameters: {
@@ -5329,7 +5329,7 @@ export interface paths {
                         "application/json": components["schemas"]["ImportSummary"];
                     };
                 };
-                /** @description No file field, the file couldn't be parsed (a row with a Count above 1000 is refused), or storage_id does not reference an existing storage. */
+                /** @description No file field, the file couldn't be parsed (a row with a Count above 1000 is refused), storage_id does not reference an existing storage, or the storage was deleted while the import ran. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -5361,7 +5361,7 @@ export interface paths {
         put?: never;
         /**
          * Bulk import a plain card list
-         * @description Creates one card per copy from a card list, in the storage given by storage_id or in no storage. Same line format as POST /deck/{id}/import: "1 Sol Ring (SLD) 1011 *F*" creates that printing (resolved by set and collector number against Scryfall), "4 Lightning Bolt" creates the printing Scryfall returns by default for that name; section headers are skipped. Lines that can't be resolved are skipped and reported in ImportSummary.warnings. Cards are stored under their English Scryfall name, whatever the list's language.
+         * @description Creates one card per copy from a card list, in the storage given by storage_id or in no storage. Same line format as POST /deck/{id}/import: "1 Sol Ring (SLD) 1011 *F*" creates that printing (resolved by set and collector number against Scryfall), "4 Lightning Bolt" creates the printing Scryfall returns by default for that name; section headers are skipped. Lines that can't be resolved are skipped and reported in ImportSummary.warnings. Cards are stored under their English Scryfall name, whatever the list's language. The whole import is one transaction: every card is created, or none, and on a failure (a database error, the request cancelled) the route returns the error alone, with no summary, so retrying never creates duplicates. Lines Scryfall can't resolve don't count as a failure: they are skipped and noted in warnings.
          */
         post: {
             parameters: {
@@ -5393,7 +5393,7 @@ export interface paths {
                         "application/json": components["schemas"]["ImportSummary"];
                     };
                 };
-                /** @description No file field, the list couldn't be parsed (a line with a quantity above 1000 is refused), or storage_id is invalid or does not reference an existing storage. */
+                /** @description No file field, the list couldn't be parsed (a line with a quantity above 1000 is refused), storage_id is invalid or does not reference an existing storage, or the storage was deleted while the import ran. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -5488,7 +5488,7 @@ export interface paths {
         put?: never;
         /**
          * Bulk import a Tamiyo collection or storage file
-         * @description Creates one card per copy from a Tamiyo file of kind collection or storage, keeping each printing, finish and proxy status. Without storage_id, cards go in the storage named in the file (an existing storage with that exact name, or a new one of the file's type); with storage_id, they all go in that storage. Printings Scryfall doesn't know are skipped and reported in ImportSummary.warnings.
+         * @description Creates one card per copy from a Tamiyo file of kind collection or storage, keeping each printing, finish and proxy status. Without storage_id, cards go in the storage named in the file (an existing storage with that exact name, or a new one of the file's type); with storage_id, they all go in that storage. The whole import is one transaction, storages included: every storage and card is created, or none, and on a failure (a database error, the request cancelled) the route returns the error alone, with no summary, so retrying never creates duplicates. Printings Scryfall doesn't know are skipped and reported in ImportSummary.warnings.
          */
         post: {
             parameters: {
@@ -5520,7 +5520,7 @@ export interface paths {
                         "application/json": components["schemas"]["ImportSummary"];
                     };
                 };
-                /** @description No file field, the file isn't a valid Tamiyo collection or storage file (a deck file or a card quantity above 1000 is refused), or storage_id is invalid or does not reference an existing storage. */
+                /** @description No file field, the file isn't a valid Tamiyo collection or storage file (a deck file or a card quantity above 1000 is refused), storage_id is invalid or does not reference an existing storage, or a storage of the import was deleted while it ran. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -6664,7 +6664,7 @@ export interface components {
          * @enum {string}
          */
         DeckVisibility: "private" | "unlisted" | "public";
-        /** @description Result of a bulk import. A malformed or unresolvable row never aborts the whole import — it's recorded as a skipped card with a warning instead. */
+        /** @description Result of a bulk import. An unresolvable row never aborts the whole import — it's recorded as a skipped card with a warning instead. An import that is one transaction returns no summary when it fails. */
         ImportSummary: {
             cards_created?: number;
             /** @description Deck import only — copies from the collection put in the deck. */
@@ -6744,7 +6744,7 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
-        /** @description Too many requests from this client IP on /auth/register, /auth/login, and /auth/forgot-password combined (AUTH_RATE_LIMIT_MAX per AUTH_RATE_LIMIT_WINDOW_SECONDS, 5 per 60s by default). A Retry-After header (seconds) indicates when to retry. */
+        /** @description Too many requests from this client IP within one of two budgets, each AUTH_RATE_LIMIT_MAX per AUTH_RATE_LIMIT_WINDOW_SECONDS (5 per 60s by default): sign-in (/auth/register and /auth/login) or email-link (/auth/forgot-password, /auth/reset-password, /auth/confirm-email, /auth/verify-email and /auth/verify-email/resend). A Retry-After header (seconds) indicates when to retry. */
         TooManyRequests: {
             headers: {
                 /** @description Seconds until the rate limit window resets. */
