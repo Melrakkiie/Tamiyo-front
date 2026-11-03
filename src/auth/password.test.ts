@@ -2,9 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { newPasswordRule } from './password';
 
-const MESSAGE = '72 octets maximum : raccourcis ton mot de passe ou retire des accents';
+const MESSAGE = '72 octets maximum (les lettres accentuées comptent double) : raccourcis ton mot de passe';
 
-// The three forms plug this rule into useForm({ validate }); a non-null result blocks onSubmit.
 describe('newPasswordRule', () => {
   it('accepts 72 bytes', () => {
     expect(newPasswordRule('a'.repeat(72))).toBeNull();

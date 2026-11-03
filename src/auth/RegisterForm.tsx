@@ -65,7 +65,7 @@ export function RegisterForm({ onSwitch, onSuccess }: { onSwitch?: () => void; o
         />
         <PasswordInput
           label="Mot de passe"
-          description="8 caractères minimum"
+          description="8 caractères minimum, 72 octets maximum"
           autoComplete="new-password"
           key={form.key('password')}
           {...form.getInputProps('password')}

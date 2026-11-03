@@ -54,7 +54,7 @@ export function ChangePasswordSection() {
           />
           <PasswordInput
             label="Nouveau mot de passe"
-            description="8 caractères minimum"
+            description="8 caractères minimum, 72 octets maximum"
             autoComplete="new-password"
             key={form.key('newPassword')}
             {...form.getInputProps('newPassword')}
