@@ -16,7 +16,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "git config core.hooksPath .githooks",
-    "gen:api": "openapi-typescript https://raw.githubusercontent.com/Melrakkiie/tamiyo/main/doc/openapi.yaml -o src/api/schema.d.ts"
+    "gen:api": "openapi-typescript https://raw.githubusercontent.com/Melrakkiie/tamiyo/main/doc/openapi.yaml -o src/api/schema.d.ts && node scripts/fetch-search-cases.mjs"
   },
   "dependencies": {
     "@mantine/core": "^8.0.0",

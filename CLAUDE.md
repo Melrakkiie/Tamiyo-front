@@ -11,7 +11,7 @@ npm test             # Vitest suite, run once (node environment, no DOM)
 npm run typecheck
 npm run lint         # ESLint: the mechanical rules of this file (eslint.config.js)
 npm run format       # Prettier on the whole repo; CI and the pre-commit hook run format:check
-npm run gen:api      # regenerate src/api/schema.d.ts from the API's doc/openapi.yaml (main branch)
+npm run gen:api      # regenerate src/api/schema.d.ts from the API's doc/openapi.yaml (main branch), and fetch the shared search cases (src/api/searchCases.json)
 ```
 
 Vitest covers pure TypeScript only; tests sit next to their module (`foo.test.ts`), and shared Scryfall card fixtures live in `src/scryfall/fixtures.ts`. There are no rendering tests: run `npm test` and `npm run build` before calling a change done, and check UI changes in the browser (headless, with screenshots: `docs/agents/browser-check.md`).
