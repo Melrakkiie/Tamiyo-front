@@ -151,17 +151,6 @@ export function useCard(id: number | null | undefined) {
   });
 }
 
-export function useDeleteCard() {
-  const invalidate = useInvalidateCollection();
-
-  return useMutation({
-    mutationFn: async (id: number) => {
-      unwrap(await api.DELETE('/cards/{id}', { params: { path: { id } } }));
-    },
-    onSettled: invalidate,
-  });
-}
-
 export interface DetailsRefreshProgress {
   updated: number;
   notFound: number;
