@@ -710,13 +710,13 @@ describe('subtype term', () => {
 
 type SharedCase = { query: string; tree?: unknown; invalid?: boolean; sides?: string[] };
 
-const snake = (field: string) => field.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+const toSnakeCase = (field: string) => field.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
 
 function neutralTree(node: QueryNode): unknown {
   if ('children' in node) return { [node.kind]: node.children.map(neutralTree) };
   if (node.kind === 'not') return { not: neutralTree(node.child) };
   const isText = node.text !== '' || node.field === 'color' || node.field === 'identity';
-  return { field: snake(node.field), op: node.op, value: isText ? node.text : node.number };
+  return { field: toSnakeCase(node.field), op: node.op, value: isText ? node.text : node.number };
 }
 
 describe('shared search cases', () => {
@@ -726,6 +726,7 @@ describe('shared search cases', () => {
     const parsed = parseScryfallQuery(query);
     if (invalid) {
       expect(parsed.node).toBeNull();
+      expect(parsed.error).not.toBeNull();
       return;
     }
     expect(parsed.error).toBeNull();
