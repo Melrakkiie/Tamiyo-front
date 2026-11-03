@@ -1,11 +1,12 @@
 import { Alert, Anchor, Button, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core';
-import { hasLength, isNotEmpty, matchesField, useForm } from '@mantine/form';
+import { isNotEmpty, matchesField, useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { errorMessage } from '../api/errors';
 import { resetPassword } from '../auth/actions';
+import { newPasswordRule } from '../auth/password';
 import { usePageTitle } from '../layout/usePageTitle';
 
 type ResetPasswordValues = { token: string; password: string; confirmPassword: string };
@@ -21,7 +22,7 @@ export function ResetPasswordPage() {
     initialValues: { token: tokenFromLink, password: '', confirmPassword: '' },
     validate: {
       token: isNotEmpty('Code de réinitialisation requis'),
-      password: hasLength({ min: 8 }, '8 caractères minimum'),
+      password: newPasswordRule,
       confirmPassword: matchesField('password', 'Les mots de passe ne correspondent pas'),
     },
   });
