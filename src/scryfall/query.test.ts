@@ -14,7 +14,8 @@ import {
   tarmogoyf,
   westvaleAbbey,
 } from './fixtures';
-import { allOf, matchesScryfallQuery, parseScryfallQuery, subtypeTerm } from './query';
+import sharedCases from '../api/searchCases.json';
+import { allOf, matchesScryfallQuery, parseScryfallQuery, subtypeTerm, type QueryNode } from './query';
 import { cases, matches, parsedQuery } from './queryTestHelpers';
 
 function failsToParse(rows: [string, RegExp][]) {
@@ -704,5 +705,30 @@ describe('subtype term', () => {
   ];
   it.each(cases)('subtype %s on %s gives %s', (text, card, expected) => {
     expect(matchesScryfallQuery(subtypeTerm(text), card, card.name)).toBe(expected);
+  });
+});
+
+type SharedCase = { query: string; tree?: unknown; invalid?: boolean; sides?: string[] };
+
+const snake = (field: string) => field.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+
+function neutralTree(node: QueryNode): unknown {
+  if ('children' in node) return { [node.kind]: node.children.map(neutralTree) };
+  if (node.kind === 'not') return { not: neutralTree(node.child) };
+  const isText = node.text !== '' || node.field === 'color' || node.field === 'identity';
+  return { field: snake(node.field), op: node.op, value: isText ? node.text : node.number };
+}
+
+describe('shared search cases', () => {
+  const frontCases = (sharedCases as SharedCase[]).filter((c) => !c.sides || c.sides.includes('front'));
+
+  it.each(frontCases)('$query', ({ query, tree, invalid }) => {
+    const parsed = parseScryfallQuery(query);
+    if (invalid) {
+      expect(parsed.node).toBeNull();
+      return;
+    }
+    expect(parsed.error).toBeNull();
+    expect(neutralTree(parsed.node!)).toEqual(tree);
   });
 });
