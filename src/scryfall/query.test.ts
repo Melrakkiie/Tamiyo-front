@@ -257,6 +257,7 @@ describe('parse errors', () => {
     ['t:"legendary creature', /guillemet fermant manquant/],
     ['mv>two', /« two » n'est pas un nombre/],
     ['pow>=x', /« x » n'est pas un nombre/],
+    ['mv>1e7', /« 1e7 » n'est pas un nombre/],
     ['c=purple', /« purple » n'est pas une couleur/],
     ['foo:bar', /mot-clé inconnu « foo »/],
     ['t>creature', /« t » n'accepte pas « > »/],

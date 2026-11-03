@@ -266,7 +266,8 @@ function comparison(op: string): Op {
 
 function parseNumber(value: string, op: string, field: Field): QueryNode {
   const number = Number(value);
-  if (value.trim() === '' || !Number.isFinite(number)) {
+  // Same bound as the API's search parser.
+  if (value.trim() === '' || !Number.isFinite(number) || Math.abs(number) > 1_000_000) {
     fail(`« ${value} » n'est pas un nombre`);
   }
   return term(field, comparison(op), '', number);
