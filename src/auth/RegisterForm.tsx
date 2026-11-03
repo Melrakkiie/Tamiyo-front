@@ -1,11 +1,12 @@
 import { Alert, Anchor, Button, PasswordInput, Stack, Text, TextInput } from '@mantine/core';
-import { hasLength, isEmail, matchesField, useForm } from '@mantine/form';
+import { isEmail, matchesField, useForm } from '@mantine/form';
 import { useMutation } from '@tanstack/react-query';
 import { Link } from 'react-router';
 
 import { errorMessage } from '../api/errors';
 import { MAX_DISPLAY_NAME_LENGTH } from './account';
 import { register } from './actions';
+import { newPasswordRule } from './password';
 
 type RegisterValues = {
   email: string;
@@ -27,7 +28,7 @@ export function RegisterForm({ onSwitch, onSuccess }: { onSwitch?: () => void; o
       email: isEmail('Email invalide'),
       displayName: (value) =>
         [...value.trim()].length > MAX_DISPLAY_NAME_LENGTH ? `${MAX_DISPLAY_NAME_LENGTH} caractères maximum` : null,
-      password: hasLength({ min: 8 }, '8 caractères minimum'),
+      password: newPasswordRule,
       confirmPassword: matchesField('password', 'Les mots de passe ne correspondent pas'),
     },
   });
@@ -64,7 +65,7 @@ export function RegisterForm({ onSwitch, onSuccess }: { onSwitch?: () => void; o
         />
         <PasswordInput
           label="Mot de passe"
-          description="8 caractères minimum"
+          description="8 caractères minimum, 72 octets maximum"
           autoComplete="new-password"
           key={form.key('password')}
           {...form.getInputProps('password')}
