@@ -71,7 +71,7 @@ export interface paths {
         put?: never;
         /**
          * Register a new account
-         * @description Creates a user and returns an access/refresh token pair, the same as /auth/login. Rate-limited per client IP (shared with /auth/login); see the 429 response.
+         * @description Creates a user and returns an access/refresh token pair, the same as /auth/login. Rate-limited per client IP (shared with /auth/login); see the 429 response. Emails are case-insensitive: trimmed, lowercased and stored lowercased, so a case variant of a registered address is a 409.
          */
         post: {
             parameters: {
@@ -6035,14 +6035,21 @@ export interface components {
             error: string;
         };
         RegisterRequest: {
-            /** Format: email */
+            /**
+             * Format: email
+             * @description Case-insensitive; trimmed and stored lowercased.
+             */
             email: string;
+            /** @description Maximum counts UTF-8 bytes, not characters (an accented character is 2). */
             password: string;
             /** @description Optional cosmetic name, trimmed; blank means none. */
             display_name?: string | null;
         };
         LoginRequest: {
-            /** Format: email */
+            /**
+             * Format: email
+             * @description Case-insensitive; trimmed and compared lowercased.
+             */
             email: string;
             password: string;
         };
@@ -6062,6 +6069,7 @@ export interface components {
         };
         ChangePasswordRequest: {
             current_password: string;
+            /** @description Maximum counts UTF-8 bytes, not characters (an accented character is 2). */
             new_password: string;
         };
         DeleteAccountRequest: {
@@ -6182,7 +6190,10 @@ export interface components {
         };
         ChangeEmailRequest: {
             current_password: string;
-            /** Format: email */
+            /**
+             * Format: email
+             * @description Case-insensitive; trimmed and compared lowercased.
+             */
             new_email: string;
         };
         ConfirmEmailRequest: {
@@ -6192,11 +6203,15 @@ export interface components {
             token: string;
         };
         ForgotPasswordRequest: {
-            /** Format: email */
+            /**
+             * Format: email
+             * @description Case-insensitive; trimmed and compared lowercased.
+             */
             email: string;
         };
         ResetPasswordRequest: {
             token: string;
+            /** @description Maximum counts UTF-8 bytes, not characters (an accented character is 2). */
             new_password: string;
         };
         Card: {

@@ -1,10 +1,11 @@
 import { Alert, Button, Paper, PasswordInput, Stack, Text, Title } from '@mantine/core';
-import { hasLength, isNotEmpty, matchesField, useForm } from '@mantine/form';
+import { isNotEmpty, matchesField, useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useMutation } from '@tanstack/react-query';
 
 import { errorMessage } from '../api/errors';
 import { changePassword } from './actions';
+import { newPasswordRule } from './password';
 
 type ChangePasswordValues = { currentPassword: string; newPassword: string; confirmPassword: string };
 
@@ -14,7 +15,7 @@ export function ChangePasswordSection() {
     initialValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
     validate: {
       currentPassword: isNotEmpty('Mot de passe actuel requis'),
-      newPassword: hasLength({ min: 8 }, '8 caractères minimum'),
+      newPassword: newPasswordRule,
       confirmPassword: matchesField('newPassword', 'Les mots de passe ne correspondent pas'),
     },
   });
