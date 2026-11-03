@@ -22,7 +22,7 @@ Requirements: Node 20.19+ or 22.12+ (22 recommended, see `.nvmrc`) and the API r
 
    ```bash
    npm install
-   npm run gen:api   # generates src/api/schema.d.ts from the backend's doc/openapi.yaml
+   npm run gen:api   # generates src/api/schema.d.ts from the backend's doc/openapi.yaml, and fetches the shared search cases (src/api/searchCases.json)
    ```
 
    `src/api/schema.d.ts` is committed: run `npm run gen:api` again and commit the result whenever the backend spec changes.
@@ -35,13 +35,13 @@ Requirements: Node 20.19+ or 22.12+ (22 recommended, see `.nvmrc`) and the API r
 
 ## Scripts
 
-| Script              | Purpose                                                                  |
-| ------------------- | ------------------------------------------------------------------------ |
-| `npm run dev`       | Development server                                                       |
-| `npm run build`     | Type check, then production build into `dist/`                           |
-| `npm run typecheck` | Type check only                                                          |
-| `npm run preview`   | Serve the production build locally                                       |
-| `npm run gen:api`   | Regenerate the API types from the backend's OpenAPI spec (`main` branch) |
+| Script              | Purpose                                                                                                    |
+| ------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `npm run dev`       | Development server                                                                                         |
+| `npm run build`     | Type check, then production build into `dist/`                                                             |
+| `npm run typecheck` | Type check only                                                                                            |
+| `npm run preview`   | Serve the production build locally                                                                         |
+| `npm run gen:api`   | Regenerate the API types from the backend's OpenAPI spec (`main` branch) and fetch the shared search cases |
 
 ## Authentication
 
