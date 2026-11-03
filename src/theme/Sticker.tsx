@@ -82,22 +82,6 @@ export function SwapIcon() {
   );
 }
 
-export function PlusIcon() {
-  return (
-    <StickerIcon>
-      <path d="M12 5v14M5 12h14" />
-    </StickerIcon>
-  );
-}
-
-export function ScissorsIcon() {
-  return (
-    <StickerIcon>
-      <path d="M6 6m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M6 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M8.6 7.6L20 18M8.6 16.4L20 6" />
-    </StickerIcon>
-  );
-}
-
 export function CrownStickerIcon() {
   return (
     <StickerIcon>
