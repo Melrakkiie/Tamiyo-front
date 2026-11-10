@@ -169,6 +169,9 @@ const sections: HelpSection[] = [
           deck. Tu peux aussi glisser-déposer une carte depuis scryfall.com ou edhrec.com sur la page du deck.
         </Text>
         <Text>
+          <b>Jetons</b> montre les jetons que les cartes du deck principal mentionnent, avec les cartes liées au survol.
+        </Text>
+        <Text>
           <b>Statistiques</b> montre la courbe de mana, la répartition par couleur et par type, et le prix. La valeur du
           deck ne compte ni les proxys, ni le sideboard, ni les cartes envisagées. Si une carte n'est pas légale dans le
           format, un avertissement l'indique ; en Commander, le bracket (Exhibition, Core, Upgraded, Optimized, cEDH)

@@ -14,8 +14,10 @@ import { CardDisplayControls, useCardDisplay } from '../cards/CardDisplay';
 import { useCardVisuals } from '../cards/useCardVisuals';
 import { type CollapsibleBoard, DEFAULT_COLLAPSED_BOARDS } from '../decks/boards';
 import { DeckBoards, type DeckBoardsExtras, useDeckBoards } from '../decks/DeckBoards';
+import { DeckTabsList } from '../decks/DeckTabsList';
 import { type OwnedEntry, ownedEntry } from '../decks/deckEntries';
 import { LegalityWarning } from '../decks/DeckLegalityWarning';
+import { SharedDeckTokensPanel } from '../decks/DeckTokensPanel';
 import { isCommanderFormat, useAllDecks } from '../decks/api';
 import { usePriceCurrency } from '../cards/price';
 import { DeckValue } from '../decks/DeckValue';
@@ -147,14 +149,18 @@ export function SharedDeckView({ deckId }: { deckId: string }) {
       <LegalityWarning legality={legality} />
 
       <Tabs value={tab} onChange={setTab}>
-        <Tabs.List>
+        <DeckTabsList value={tab}>
           <Tabs.Tab value="cards">Cartes ({deck.card_count})</Tabs.Tab>
+          <Tabs.Tab value="tokens">Jetons</Tabs.Tab>
           <Tabs.Tab value="stats">Statistiques</Tabs.Tab>
           <Tabs.Tab value="history">Historique</Tabs.Tab>
-        </Tabs.List>
+        </DeckTabsList>
 
         <Tabs.Panel value="cards" pt="md">
           <SharedDeckCards shared={shared.data} signedIn={signedIn} />
+        </Tabs.Panel>
+        <Tabs.Panel value="tokens" pt="md">
+          {tab === 'tokens' && <SharedDeckTokensPanel cards={shared.data.cards} />}
         </Tabs.Panel>
         <Tabs.Panel value="stats" pt="md">
           {tab === 'stats' && (

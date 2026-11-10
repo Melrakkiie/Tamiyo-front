@@ -41,6 +41,7 @@ import { AddToDeckModal } from '../decks/AddToDeckModal';
 import { DropOverlay } from '../scryfall/DropOverlay';
 import { useScryfallDrop } from '../scryfall/useScryfallDrop';
 import { ArtPickerModal } from '../decks/ArtPickerModal';
+import { DeckTabsList } from '../decks/DeckTabsList';
 import {
   isCommanderFormat,
   useDeck,
@@ -78,6 +79,7 @@ import { DeckBanner } from '../decks/DeckBanner';
 import { LikeButton } from '../decks/LikeButton';
 import { DeckHistoryPanel } from '../decks/DeckHistoryView';
 import { DeckStatsPanel } from '../decks/DeckStatsPanel';
+import { DeckTokensPanel } from '../decks/DeckTokensPanel';
 import { ExportDeckModal } from '../decks/ExportDeckModal';
 import { ImportListModal } from '../decks/ImportListModal';
 import { pendingStatus } from '../decks/pendingCards';
@@ -278,14 +280,18 @@ function DeckView({ id }: { id: string }) {
       <CommanderSection deck={current} openPartner={openPartner} />
 
       <Tabs value={tab} onChange={setTab}>
-        <Tabs.List>
+        <DeckTabsList value={tab}>
           <Tabs.Tab value="cards">Cartes ({current.card_count})</Tabs.Tab>
+          <Tabs.Tab value="tokens">Jetons</Tabs.Tab>
           <Tabs.Tab value="stats">Statistiques</Tabs.Tab>
           <Tabs.Tab value="history">Historique</Tabs.Tab>
-        </Tabs.List>
+        </DeckTabsList>
 
         <Tabs.Panel value="cards" pt="md">
           <DeckCardsWithView deck={current} openPartner={openPartner} />
+        </Tabs.Panel>
+        <Tabs.Panel value="tokens" pt="md">
+          {tab === 'tokens' && <DeckTokensPanel deck={current} />}
         </Tabs.Panel>
         <Tabs.Panel value="stats" pt="md">
           {tab === 'stats' && <DeckStatsPanel deck={current} />}
