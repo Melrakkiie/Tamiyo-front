@@ -1,10 +1,13 @@
 name: CI
 
+# A change touching only docs skips the whole workflow (no checks, no deploy).
 on:
   push:
     branches: [main]
+    paths-ignore: ['**.md', 'docs/**']
   pull_request:
     branches: [main]
+    paths-ignore: ['**.md', 'docs/**']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
