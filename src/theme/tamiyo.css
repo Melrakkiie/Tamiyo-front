@@ -763,3 +763,33 @@ h6,
     user-select: none;
   }
 }
+
+@media (max-width: 47.99em) {
+  .tamiyo-deck-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tamiyo-deck-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tamiyo-deck-tabs > .mantine-Tabs-tab {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* A mask fades to whatever is behind the list, so it follows day and night. */
+  .tamiyo-deck-tabs[data-fade-end] {
+    mask-image: linear-gradient(to right, black calc(100% - 2rem), transparent);
+  }
+
+  .tamiyo-deck-tabs[data-fade-start] {
+    mask-image: linear-gradient(to right, transparent, black 2rem);
+  }
+
+  .tamiyo-deck-tabs[data-fade-start][data-fade-end] {
+    mask-image: linear-gradient(to right, transparent, black 2rem, black calc(100% - 2rem), transparent);
+  }
+}
