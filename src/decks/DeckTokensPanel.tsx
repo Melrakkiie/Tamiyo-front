@@ -1,6 +1,6 @@
 import { Box, Center, Loader, Stack, Text, Tooltip } from '@mantine/core';
 
-import type { Deck, DeckBoard } from '../api/types';
+import type { Deck } from '../api/types';
 import { cardDisplay, displayFromStored, useCardDisplay } from '../cards/CardDisplay';
 import { CardGrid } from '../cards/CardLayout';
 import { CardCopyItems, useCardContextMenu } from '../cards/CardContextMenu';
@@ -10,8 +10,11 @@ import { useCardImages, useRelatedTokens } from '../scryfall/hooks';
 import { EmptyNote } from '../theme/EmptyNote';
 import { useDeckCards, usePendingCards } from './api';
 import { deckEntries } from './deckEntries';
-import { mainBoardScryfallIds } from './tokenSources';
+import { type BoardEntry, mainBoardScryfallIds } from './tokenSources';
 import { useDeckView } from './view';
+
+const preview = (token: { id: string; name: string }, imageUrl: string | undefined) =>
+  !document.body.dataset.cardDragging && showCardPreview({ name: token.name, scryfallId: token.id, imageUrl });
 
 export function DeckTokensView({ scryfallIds, columns }: { scryfallIds: string[]; columns: number }) {
   const tokens = useRelatedTokens(scryfallIds);
@@ -41,6 +44,7 @@ export function DeckTokensView({ scryfallIds, columns }: { scryfallIds: string[]
               key={token.id}
               multiline
               withArrow
+              events={{ hover: true, focus: true, touch: false }}
               position="bottom"
               label={
                 <Stack gap={2}>
@@ -56,7 +60,9 @@ export function DeckTokensView({ scryfallIds, columns }: { scryfallIds: string[]
               }
             >
               <Box
-                onMouseEnter={() => showCardPreview({ name: token.name, scryfallId: token.id, imageUrl })}
+                tabIndex={0}
+                onMouseEnter={() => preview(token, imageUrl)}
+                onFocus={() => preview(token, imageUrl)}
                 onContextMenu={(event) =>
                   contextMenu.open(event, <CardCopyItems card={{ name: token.name }} imageUrl={imageUrl} />)
                 }
@@ -73,7 +79,7 @@ export function DeckTokensView({ scryfallIds, columns }: { scryfallIds: string[]
 }
 
 // A shared deck has no saved view: the viewer's own column count applies.
-export function SharedDeckTokensPanel({ cards }: { cards: { board: DeckBoard; scryfall_id: string }[] }) {
+export function SharedDeckTokensPanel({ cards }: { cards: BoardEntry[] }) {
   const { columns } = useCardDisplay();
   return <DeckTokensView scryfallIds={mainBoardScryfallIds(cards)} columns={columns} />;
 }

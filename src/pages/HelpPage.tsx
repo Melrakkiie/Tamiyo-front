@@ -169,8 +169,7 @@ const sections: HelpSection[] = [
           deck. Tu peux aussi glisser-déposer une carte depuis scryfall.com ou edhrec.com sur la page du deck.
         </Text>
         <Text>
-          <b>Jetons</b> montre les jetons que les cartes du deck principal mentionnent. Survole-en un pour voir les
-          cartes liées, ou fais un clic droit pour copier son nom ou son image.
+          <b>Jetons</b> montre les jetons que les cartes du deck principal mentionnent, avec les cartes liées au survol.
         </Text>
         <Text>
           <b>Statistiques</b> montre la courbe de mana, la répartition par couleur et par type, et le prix. La valeur du

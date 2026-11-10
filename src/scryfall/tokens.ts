@@ -1,22 +1,22 @@
 import type { ScryfallCard } from './client';
+import type { RelatedToken } from './hooks';
 
-export interface DeckToken {
-  id: string;
-  name: string;
+export interface DeckToken extends RelatedToken {
   relatedCards: string[];
 }
 
-// Ids of the token parts the given cards list, other than the cards themselves.
-export function tokenPartIds(cards: ScryfallCard[]): string[] {
-  const ids = new Set<string>();
-  for (const card of cards) {
-    for (const part of card.all_parts ?? []) {
-      if (part.component === 'token' && part.id !== card.id) {
-        ids.add(part.id);
-      }
+// The token parts a card lists, other than the card itself.
+function* tokenParts(card: ScryfallCard) {
+  for (const part of card.all_parts ?? []) {
+    if (part.component === 'token' && part.id !== card.id) {
+      yield part;
     }
   }
-  return [...ids];
+}
+
+// Ids of the token parts the given cards list.
+export function tokenPartIds(cards: ScryfallCard[]): string[] {
+  return [...new Set(cards.flatMap((card) => [...tokenParts(card)].map((part) => part.id)))];
 }
 
 // A deck's tokens: the fetched token parts, printings of one token merged (the first kept), each with
@@ -24,10 +24,8 @@ export function tokenPartIds(cards: ScryfallCard[]): string[] {
 export function deriveTokens(cards: ScryfallCard[], tokenCards: ScryfallCard[]): DeckToken[] {
   const listedBy = new Map<string, Set<string>>();
   for (const card of cards) {
-    for (const part of card.all_parts ?? []) {
-      if (part.component === 'token' && part.id !== card.id) {
-        listedBy.set(part.id, (listedBy.get(part.id) ?? new Set()).add(card.name));
-      }
+    for (const part of tokenParts(card)) {
+      listedBy.set(part.id, (listedBy.get(part.id) ?? new Set()).add(card.name));
     }
   }
 

@@ -2,11 +2,9 @@ import { Tabs, type TabsListProps } from '@mantine/core';
 import { useEffect, useRef, useState } from 'react';
 
 interface Props extends TabsListProps {
-  /** The active tab value, so the list can scroll it into view. */
   value: string | null;
 }
 
-/** The deck pages' tab list: one line that scrolls sideways on small screens, with edge fades. */
 export function DeckTabsList({ value, ...props }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ start: false, end: false });
