@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ApiError } from '../api/errors';
 import { loadCards, rememberCards } from './cardCache';
 import { type FaceTypes, faceTypes, subtypes } from './classify';
+import { deriveTokens, tokenPartIds } from './tokens';
 import { frontManaCost, type PrintingFace, type PrintingFaces, printingFaces } from './faces';
 import {
   autocompleteCardNames,
@@ -137,27 +138,13 @@ export interface RelatedToken {
 }
 
 export function useRelatedTokens(scryfallIds: string[]) {
-  const parts = useScryfallCardsByIds(scryfallIds, (cards) => {
-    const ids = new Set<string>();
-    for (const card of Object.values(cards)) {
-      for (const part of card.all_parts ?? []) {
-        if (part.component === 'token' && part.id !== card.id) {
-          ids.add(part.id);
-        }
-      }
-    }
-    return [...ids];
-  });
-  const tokens = useScryfallCardsByIds(parts.data ?? [], (cards) => {
-    const byOracle = new Map<string, RelatedToken>();
-    for (const card of Object.values(cards)) {
-      const key = card.oracle_id ?? card.id;
-      if (!byOracle.has(key)) {
-        byOracle.set(key, { id: card.id, name: card.name });
-      }
-    }
-    return [...byOracle.values()].sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-  });
+  const parts = useScryfallCardsByIds(scryfallIds, (cards) => ({
+    cards: Object.values(cards),
+    ids: tokenPartIds(Object.values(cards)),
+  }));
+  const tokens = useScryfallCardsByIds(parts.data?.ids ?? [], (tokenCards) =>
+    deriveTokens(parts.data?.cards ?? [], Object.values(tokenCards)),
+  );
   return { data: tokens.data, isLoading: parts.isLoading || tokens.isLoading };
 }
 
