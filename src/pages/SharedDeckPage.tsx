@@ -37,7 +37,8 @@ import {
   useSharedDeckLegality,
   useSharedDeckStats,
 } from '../decks/shared';
-import { priceSortOptions, sharedCardsToCards, sharedDeckSortOptions } from '../decks/sharedCards';
+import { priceSortOptions } from '../decks/pendingCards';
+import { sharedCardsToCards, sharedDeckSortOptions } from '../decks/sharedCards';
 import { SharedCardModal } from '../decks/SharedCardModal';
 import { useSharedCardMenu } from '../decks/useSharedCardMenu';
 import { parseSharedGrouping, type SharedCardGrouping, sharedGroupingOptions } from '../decks/storageGrouping';
@@ -324,12 +325,14 @@ function useSharedDeckTiles(signedIn: boolean, collectionCounts: Map<string, num
   };
 }
 
+const DEFAULT_SORT: DeckCardSort = 'mana_value';
+
 function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: boolean }) {
   const { pathname } = useLocation();
   const showCollection = useShowCollectionInDecks(signedIn) && signedIn;
   const ownership = useDeckOwnership(shared.deck.id, showCollection);
   const ownedByName = new Map((ownership.data?.cards ?? []).map((entry) => [cardNameKey(entry.name), entry.owned]));
-  const [sort, setSort] = useState<DeckCardSort>('mana_value');
+  const [sort, setSort] = useState<DeckCardSort>(DEFAULT_SORT);
   const [grouping, setGrouping] = useState<SharedCardGrouping | null>('type');
   const display = useCardDisplay({ showDetails: false });
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
@@ -337,7 +340,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
   const currency = usePriceCurrency();
   const stats = useSharedDeckStats(shared.deck.id, currency !== null);
   const sortChoices = currency ? [...sharedDeckSortOptions, ...priceSortOptions] : sharedDeckSortOptions;
-  const shownSort = sortChoices.some((option) => option.value === sort) ? sort : 'mana_value';
+  const shownSort = sortChoices.some((option) => option.value === sort) ? sort : DEFAULT_SORT;
   const all = sharedCardsToCards(shared.cards, currency);
   const commanders = all
     .filter((_, index) => shared.cards[index].commander)
