@@ -194,7 +194,7 @@ export interface paths {
         put?: never;
         /**
          * Exchange a refresh token for a new token pair
-         * @description The submitted refresh token is single-use: a successful call revokes it and returns a new one. Reusing an already-rotated refresh token is treated as a possible theft and revokes every refresh token for that user, so all of that user's other sessions are also logged out. Exception: a token rotated out less than 10 seconds ago, whose replacement is still valid, is accepted once more (the client most likely never received the response). The token is read from the JSON body, or, when the body has none, from the tamiyo_refresh_token cookie (browser clients send an empty body).
+         * @description The submitted refresh token is single-use: a successful call revokes it and returns a new one. Reusing an already-rotated refresh token is treated as a possible theft and ends only that token's session (the token and every token that replaced it); the user's other sessions are untouched. Replaying a token revoked by a logout is simply refused. Exception: a token rotated out less than 10 seconds ago, whose replacement is still valid, is accepted once more (the client most likely never received the response). The token is read from the JSON body, or, when the body has none, from the tamiyo_refresh_token cookie (browser clients send an empty body).
          */
         post: {
             parameters: {
@@ -364,6 +364,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
+                429: components["responses"]["TooManyRequests"];
             };
         };
         delete?: never;
@@ -682,6 +683,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
+                429: components["responses"]["TooManyRequests"];
             };
         };
         options?: never;
@@ -804,6 +806,7 @@ export interface paths {
                         "application/json": components["schemas"]["Error"];
                     };
                 };
+                429: components["responses"]["TooManyRequests"];
                 500: components["responses"]["InternalError"];
             };
         };
@@ -3475,7 +3478,7 @@ export interface paths {
                         "application/json": components["schemas"]["ImportSummary"];
                     };
                 };
-                /** @description id is not a UUID, or the file is missing or can't be parsed (a line with a quantity above 1000 is refused). */
+                /** @description id is not a UUID, or the file is missing or can't be parsed (a line with a quantity above 1000, or a file asking for more than 100000 copies in total, is refused). */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -3790,7 +3793,7 @@ export interface paths {
                         "application/json": components["schemas"]["ImportSummary"];
                     };
                 };
-                /** @description id is not a UUID, the file is missing or can't be parsed (a line with a quantity above 1000 is refused), or commander_from_first_line or include_locked_storages is invalid. */
+                /** @description id is not a UUID, the file is missing or can't be parsed (a line with a quantity above 1000, or a file asking for more than 100000 copies in total, is refused), or commander_from_first_line or include_locked_storages is invalid. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -5266,7 +5269,7 @@ export interface paths {
                         "application/json": components["schemas"]["ImportSummary"];
                     };
                 };
-                /** @description No file field, the file couldn't be parsed (a row with a Quantity above 1000 is refused), storage_id is invalid or does not reference an existing storage, or a storage or deck of the import was deleted while it ran. */
+                /** @description No file field, the file couldn't be parsed (a row with a Quantity above 1000, or a file asking for more than 100000 copies in total, is refused), storage_id is invalid or does not reference an existing storage, or a storage or deck of the import was deleted while it ran. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -5329,7 +5332,7 @@ export interface paths {
                         "application/json": components["schemas"]["ImportSummary"];
                     };
                 };
-                /** @description No file field, the file couldn't be parsed (a row with a Count above 1000 is refused), storage_id does not reference an existing storage, or the storage was deleted while the import ran. */
+                /** @description No file field, the file couldn't be parsed (a row with a Count above 1000, or a file asking for more than 100000 copies in total, is refused), storage_id does not reference an existing storage, or the storage was deleted while the import ran. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -5393,7 +5396,7 @@ export interface paths {
                         "application/json": components["schemas"]["ImportSummary"];
                     };
                 };
-                /** @description No file field, the list couldn't be parsed (a line with a quantity above 1000 is refused), storage_id is invalid or does not reference an existing storage, or the storage was deleted while the import ran. */
+                /** @description No file field, the list couldn't be parsed (a line with a quantity above 1000, or a file asking for more than 100000 copies in total, is refused), storage_id is invalid or does not reference an existing storage, or the storage was deleted while the import ran. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -5520,7 +5523,7 @@ export interface paths {
                         "application/json": components["schemas"]["ImportSummary"];
                     };
                 };
-                /** @description No file field, the file isn't a valid Tamiyo collection or storage file (a deck file or a card quantity above 1000 is refused), storage_id is invalid or does not reference an existing storage, or a storage of the import was deleted while it ran. */
+                /** @description No file field, the file isn't a valid Tamiyo collection or storage file (a deck file, a card quantity above 1000, or more than 100000 copies in total is refused), storage_id is invalid or does not reference an existing storage, or a storage of the import was deleted while it ran. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -6510,6 +6513,12 @@ export interface components {
             board: components["schemas"]["DeckBoard"];
             /** @description The owner's tags for this card, shared by every printing. */
             tags: string[];
+            price: components["schemas"]["CardPrice"];
+        };
+        /** @description Price of one copy in euros and in US dollars, each null when unknown, with the fallbacks of the owner's deck cards (foil price for a foil copy, the other price when missing, the dollar price converted with the stored exchange rate when there is no euro price). Proxies keep their price. The same for every viewer. */
+        CardPrice: {
+            eur: number | null;
+            usd: number | null;
         };
         SharedDeck: {
             deck: components["schemas"]["SharedDeckInfo"];
@@ -6681,7 +6690,7 @@ export interface components {
         };
     };
     responses: {
-        /** @description The uploaded request body is larger than 10 MB; nothing is imported */
+        /** @description The request body is larger than 10 MB (any route, with the error "request body too large", or the upload message on the import routes); nothing is processed */
         PayloadTooLarge: {
             headers: {
                 [name: string]: unknown;
@@ -6744,7 +6753,7 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
-        /** @description Too many requests from this client IP within one of two budgets, each AUTH_RATE_LIMIT_MAX per AUTH_RATE_LIMIT_WINDOW_SECONDS (5 per 60s by default): sign-in (/auth/register and /auth/login) or email-link (/auth/forgot-password, /auth/reset-password, /auth/confirm-email, /auth/verify-email and /auth/verify-email/resend). A Retry-After header (seconds) indicates when to retry. */
+        /** @description Too many requests from this client IP within one of two budgets, each AUTH_RATE_LIMIT_MAX per AUTH_RATE_LIMIT_WINDOW_SECONDS (5 per 60s by default): sign-in (/auth/register, /auth/login, /auth/password, DELETE /auth/me and /auth/email) or email-link (/auth/forgot-password, /auth/reset-password, /auth/confirm-email, /auth/verify-email and /auth/verify-email/resend). A Retry-After header (seconds) indicates when to retry. */
         TooManyRequests: {
             headers: {
                 /** @description Seconds until the rate limit window resets. */
