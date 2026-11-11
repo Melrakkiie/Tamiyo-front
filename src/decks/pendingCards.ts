@@ -34,6 +34,11 @@ function compare(a: SortableCard, b: SortableCard, sort: DeckCardSort) {
   return (descending ? -result : result) || (field === 'name' ? 0 : a.name.localeCompare(b.name));
 }
 
+export const priceSortOptions: { value: DeckCardSort; label: string }[] = [
+  { value: '-price', label: 'Prix décroissant' },
+  { value: 'price', label: 'Prix croissant' },
+];
+
 export function sortDeckCards<T extends SortableCard>(cards: T[], sort: DeckCardSort): T[] {
   return cards
     .map((card, index) => ({ card, index }))

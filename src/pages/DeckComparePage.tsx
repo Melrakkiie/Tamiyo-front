@@ -27,7 +27,7 @@ import { DeckBoards, type DeckBoardsExtras, useDeckBoards } from '../decks/DeckB
 import { type OwnedEntry, ownedEntry } from '../decks/deckEntries';
 import { FormatSticker } from '../decks/FormatSticker';
 import { SharedCardModal } from '../decks/SharedCardModal';
-import { type SharedDeckSort, sharedDeckSortOptions } from '../decks/shared';
+import { type SharedDeckSort, sharedDeckSortOptions } from '../decks/sharedCards';
 import { type CardGrouping, groupingOptions, parseGrouping } from '../cards/grouping';
 import { usePageTitle } from '../layout/usePageTitle';
 
