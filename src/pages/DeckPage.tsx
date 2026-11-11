@@ -83,6 +83,7 @@ import { DeckTokensPanel } from '../decks/DeckTokensPanel';
 import { ExportDeckModal } from '../decks/ExportDeckModal';
 import { ImportListModal } from '../decks/ImportListModal';
 import { pendingStatus } from '../decks/pendingCards';
+import { priceSortOptions } from '../decks/sharedCards';
 import { PendingCardsSection } from '../decks/PendingCardsSection';
 import { ShareDeckModal } from '../decks/ShareDeckModal';
 import { type DeckCardGrouping, deckGroupingOptions, parseDeckGrouping } from '../decks/storageGrouping';
@@ -101,11 +102,6 @@ const sortOptions: { value: DeckCardSort; label: string }[] = [
   { value: 'name', label: 'Nom (A → Z)' },
   { value: '-mana_value', label: 'Coût de mana décroissant' },
   { value: '-added', label: 'Ajoutées récemment' },
-];
-
-const priceSortOptions: { value: DeckCardSort; label: string }[] = [
-  { value: '-price', label: 'Prix décroissant' },
-  { value: 'price', label: 'Prix croissant' },
 ];
 
 const collectionToggleDescription = 'Les cartes en attente et le rangement de chaque exemplaire';
