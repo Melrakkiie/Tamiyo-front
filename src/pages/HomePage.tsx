@@ -67,7 +67,8 @@ function StatTile({ label, value, note, art, to }: StatTileProps) {
       <Card withBorder shadow="sm" h="100%" component={Link} to={to}>
         <Group gap="md" wrap="nowrap">
           {art}
-          <Stack gap={0} style={{ minWidth: 0 }}>
+          {/* Fill the tile: a column only as wide as the note lets a sub-pixel or the perched moth tip it into the ellipsis. */}
+          <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
             {value === undefined ? (
               <Skeleton h={36} w={56} my={4} />
             ) : (
