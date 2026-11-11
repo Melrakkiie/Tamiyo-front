@@ -3,7 +3,7 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
 
 import { ApiError, errorMessage } from '../api/errors';
-import type { Card, SharedDeck } from '../api/types';
+import type { Card, DeckCardSort, SharedDeck } from '../api/types';
 import { useAccount } from '../auth/account';
 import { ProfileAvatar } from '../auth/UserAvatar';
 import { useShowCollectionInDecks } from '../auth/preferences';
@@ -31,15 +31,13 @@ import { SharedDeckHistoryPanel } from '../decks/DeckHistoryView';
 import { DeckStatsView } from '../decks/DeckStatsPanel';
 import { ExportDeckModal } from '../decks/ExportDeckModal';
 import {
-  type SharedDeckSort,
-  sharedCardsToCards,
-  sharedDeckSortOptions,
   useDeckOwnership,
   useSharedDeck,
   useSharedDeckCombos,
   useSharedDeckLegality,
   useSharedDeckStats,
 } from '../decks/shared';
+import { priceSortOptions, sharedCardsToCards, sharedDeckSortOptions } from '../decks/sharedCards';
 import { SharedCardModal } from '../decks/SharedCardModal';
 import { useSharedCardMenu } from '../decks/useSharedCardMenu';
 import { parseSharedGrouping, type SharedCardGrouping, sharedGroupingOptions } from '../decks/storageGrouping';
@@ -331,14 +329,16 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
   const showCollection = useShowCollectionInDecks(signedIn) && signedIn;
   const ownership = useDeckOwnership(shared.deck.id, showCollection);
   const ownedByName = new Map((ownership.data?.cards ?? []).map((entry) => [cardNameKey(entry.name), entry.owned]));
-  const [sort, setSort] = useState<SharedDeckSort>('mana_value');
+  const [sort, setSort] = useState<DeckCardSort>('mana_value');
   const [grouping, setGrouping] = useState<SharedCardGrouping | null>('type');
   const display = useCardDisplay({ showDetails: false });
   const [openedCard, setOpenedCard] = useState<Card | null>(null);
   const [collapsed, setCollapsed] = useState<CollapsibleBoard[]>(DEFAULT_COLLAPSED_BOARDS);
   const currency = usePriceCurrency();
   const stats = useSharedDeckStats(shared.deck.id, currency !== null);
-  const all = sharedCardsToCards(shared.cards);
+  const sortChoices = currency ? [...sharedDeckSortOptions, ...priceSortOptions] : sharedDeckSortOptions;
+  const shownSort = sortChoices.some((option) => option.value === sort) ? sort : 'mana_value';
+  const all = sharedCardsToCards(shared.cards, currency);
   const commanders = all
     .filter((_, index) => shared.cards[index].commander)
     .sort(
@@ -350,7 +350,7 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
   const cardTags = tagsByName(shared.cards);
   const boards = useDeckBoards({
     entries: all.map(ownedEntry),
-    sort,
+    sort: shownSort,
     grouping,
     commanders: commanders.map((card) => ({ cardId: card.id })),
     tagsOf: (card) => tagsOf(cardTags, card.name),
@@ -416,9 +416,9 @@ function SharedDeckCards({ shared, signedIn }: { shared: SharedDeck; signedIn: b
           options={
             <Select
               label={grouping ? 'Tri dans chaque groupe' : 'Tri'}
-              data={sharedDeckSortOptions}
-              value={sort}
-              onChange={(value) => value && setSort(value as SharedDeckSort)}
+              data={sortChoices}
+              value={shownSort}
+              onChange={(value) => value && setSort(value as DeckCardSort)}
               allowDeselect={false}
               w={240}
               miw={0}
